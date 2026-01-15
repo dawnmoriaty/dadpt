@@ -1,0 +1,103 @@
+services:
+  # PostgreSQL 16 Database
+  bus.postgres:
+    image: postgres:16-alpine
+    container_name: bus.postgres
+    environment:
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres123}
+      POSTGRES_DB: ${DATABASE_NAME:-bus_ticketing_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - bus_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bus_ticketing_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  bus.redis:
+    image: redis:7-alpine
+    container_name: bus.redis
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:-redis123}"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - bus_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-redis123}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # RabbitMQ Message Broker
+  bus.rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: bus.rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USER:-rabbitmq}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD:-rabbitmq123}
+      RABBITMQ_DEFAULT_VHOST: ${RABBITMQ_VHOST:-/}
+    ports:
+      - "5672:5672"   # AMQP protocol
+      - "15672:15672" # Management UI
+    volumes:
+      - bus_rabbitmq_data:/var/lib/rabbitmq
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    restart: unless-stopped
+
+  # MinIO Object Storage
+  bus.minio:
+    image: minio/minio:latest
+    container_name: bus.minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin123}
+    ports:
+      - "9000:9000" # MinIO API
+      - "9001:9001" # MinIO Console
+    volumes:
+      - bus_minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+
+  # PGAdmin for Database Management
+  bus.pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: bus.pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@bus.local
+      PGADMIN_DEFAULT_PASSWORD: admin123
+      PGADMIN_LISTEN_PORT: 5050
+    ports:
+      - "5050:5050"
+    volumes:
+      - bus_pgadmin_data:/var/lib/pgadmin
+    depends_on:
+      - bus.postgres
+    restart: unless-stopped
+
+volumes:
+  bus_postgres_data:
+    name: bus_postgres_data
+  bus_redis_data:
+    name: bus_redis_data
+  bus_rabbitmq_data:
+    name: bus_rabbitmq_data
+  bus_minio_data:
+    name: bus_minio_data
+  bus_pgadmin_data:
+    name: bus_pgadmin_data
