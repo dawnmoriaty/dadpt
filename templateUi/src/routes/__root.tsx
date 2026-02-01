@@ -15,18 +15,11 @@ const queryClient = new QueryClient({
     },
 })
 
-import { Header } from '@/components/common/header'
-
-export const Route = createRootRoute({
-    component: () => (
+function RootComponent() {
+    return (
         <QueryClientProvider client={queryClient}>
             <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-                <div className="flex min-h-screen flex-col">
-                    <Header />
-                    <main className="flex-1">
-                        <Outlet />
-                    </main>
-                </div>
+                <Outlet />
                 {import.meta.env.DEV && (
                     <>
                         <ReactQueryDevtools initialIsOpen={false} />
@@ -35,5 +28,9 @@ export const Route = createRootRoute({
                 )}
             </ThemeProvider>
         </QueryClientProvider>
-    ),
+    )
+}
+
+export const Route = createRootRoute({
+    component: RootComponent,
 })

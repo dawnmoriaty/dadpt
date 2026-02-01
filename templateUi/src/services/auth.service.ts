@@ -1,11 +1,11 @@
-import type { User, LoginDto, RegisterDto, AuthResponse } from '@/types/auth.types'
+import type { AuthResponse, LoginRequest, RegisterRequest, User } from '@/types/auth.types'
 
 import { api } from './api/client'
 import { API_ENDPOINTS } from './api/endpoints'
 
 
 export const authService = {
-    async login(dto: LoginDto): Promise<AuthResponse> {
+    async login(dto: LoginRequest): Promise<AuthResponse> {
         const { data } = await api.post<AuthResponse>(
             API_ENDPOINTS.AUTH.LOGIN,
             dto
@@ -13,7 +13,7 @@ export const authService = {
         return data
     },
 
-    async register(dto: RegisterDto): Promise<AuthResponse> {
+    async register(dto: RegisterRequest): Promise<AuthResponse> {
         const { data } = await api.post<AuthResponse>(
             API_ENDPOINTS.AUTH.REGISTER,
             dto
@@ -30,3 +30,4 @@ export const authService = {
         return data
     },
 }
+

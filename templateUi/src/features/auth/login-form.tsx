@@ -16,11 +16,14 @@ import {
 import { Input } from "@/components/ui/input"
 import { api } from "@/services/api/client"
 import { useAuthStore } from "@/stores/use-auth-store"
+import type { ApiError, AuthResponse } from "@/types/auth.types"
 
 const loginSchema = z.object({
     identifier: z.string().min(3, "Phone or Username is required"),
     password: z.string().min(6, "Password must be at least 6 characters"),
 })
+
+type LoginFormData = z.infer<typeof loginSchema>
 
 interface LoginFormProps {
     onSuccess?: () => void
@@ -28,10 +31,10 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess }: LoginFormProps) {
     const [isLoading, setIsLoading] = useState(false)
-    const setAuth = useAuthStore((state) => state.setAuth)
     const [error, setError] = useState("")
+    const setAuth = useAuthStore((state) => state.setAuth)
 
-    const form = useForm<z.infer<typeof loginSchema>>({
+    const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
         defaultValues: {
             identifier: "",
@@ -39,27 +42,24 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
         },
     })
 
-    async function onSubmit(values: z.infer<typeof loginSchema>) {
+    async function onSubmit(values: LoginFormData) {
         setIsLoading(true)
         setError("")
+
         try {
-            console.log("Login attempt with:", values)
-            const res = await api.post("/auth/login", values)
-            console.log("Login response:", res.data)
-            
+            const res = await api.post<{ data: AuthResponse }>("/auth/login", values)
             const { accessToken, user } = res.data.data
 
-            // Store token
             localStorage.setItem("token", accessToken)
             setAuth(accessToken, user)
 
-            if (onSuccess) onSuccess()
-        } catch (err: unknown) {
-            const errorMessage = err instanceof Error && 'response' in err 
-                ? (err as { response?: { data?: { message?: string } } }).response?.data?.message || "Login failed"
-                : "Login failed"
-            console.error("Login error:", err)
-            setError(errorMessage)
+            onSuccess?.()
+
+            // Role-based redirection
+            window.location.href = user.role === 'admin' ? '/dashboard' : '/'
+        } catch (err) {
+            const apiError = err as ApiError
+            setError(apiError.response?.data?.message || "Login failed")
         } finally {
             setIsLoading(false)
         }

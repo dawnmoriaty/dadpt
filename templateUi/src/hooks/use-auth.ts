@@ -2,15 +2,15 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 
 import { authService } from '@/services/auth.service'
 import { useAuthStore } from '@/stores/use-auth-store'
-import type { LoginDto, RegisterDto } from '@/types/auth.types'
+import type { LoginRequest, RegisterRequest } from '@/types/auth.types'
 
 export function useLogin() {
     const setAuth = useAuthStore((state) => state.setAuth)
 
     return useMutation({
-        mutationFn: (dto: LoginDto) => authService.login(dto),
+        mutationFn: (dto: LoginRequest) => authService.login(dto),
         onSuccess: (data) => {
-            setAuth(data.token, data.user)
+            setAuth(data.accessToken, data.user)
         },
     })
 }
@@ -19,9 +19,9 @@ export function useRegister() {
     const setAuth = useAuthStore((state) => state.setAuth)
 
     return useMutation({
-        mutationFn: (dto: RegisterDto) => authService.register(dto),
+        mutationFn: (dto: RegisterRequest) => authService.register(dto),
         onSuccess: (data) => {
-            setAuth(data.token, data.user)
+            setAuth(data.accessToken, data.user)
         },
     })
 }
@@ -48,3 +48,4 @@ export function useCurrentUser() {
         enabled: isAuthenticated,
     })
 }
+

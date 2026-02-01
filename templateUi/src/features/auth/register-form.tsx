@@ -16,7 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { api } from "@/services/api/client"
 import { useAuthStore } from "@/stores/use-auth-store"
-
+import type { ApiError, AuthResponse } from "@/types/auth.types"
 
 const registerSchema = z.object({
     fullName: z.string().min(2, "Name is required"),
@@ -26,16 +26,18 @@ const registerSchema = z.object({
     password: z.string().min(6, "Password must be > 6 chars"),
 })
 
+type RegisterFormData = z.infer<typeof registerSchema>
+
 interface RegisterFormProps {
     onSuccess?: () => void
 }
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
     const [isLoading, setIsLoading] = useState(false)
-    const setAuth = useAuthStore((state) => state.setAuth)
     const [error, setError] = useState("")
+    const setAuth = useAuthStore((state) => state.setAuth)
 
-    const form = useForm<z.infer<typeof registerSchema>>({
+    const form = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
             fullName: "",
@@ -46,19 +48,24 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
         },
     })
 
-    async function onSubmit(values: z.infer<typeof registerSchema>) {
+    async function onSubmit(values: RegisterFormData) {
         setIsLoading(true)
         setError("")
+
         try {
-            const res = await api.post("/auth/register", values)
+            const res = await api.post<{ data: AuthResponse }>("/auth/register", values)
             const { accessToken, user } = res.data.data
 
             localStorage.setItem("token", accessToken)
             setAuth(accessToken, user)
 
-            if (onSuccess) onSuccess()
-        } catch (err: any) {
-            setError(err.response?.data?.message || "Registration failed")
+            onSuccess?.()
+
+            // Role-based redirection (new users are usually customers)
+            window.location.href = user.role === 'admin' ? '/dashboard' : '/'
+        } catch (err) {
+            const apiError = err as ApiError
+            setError(apiError.response?.data?.message || "Registration failed")
         } finally {
             setIsLoading(false)
         }

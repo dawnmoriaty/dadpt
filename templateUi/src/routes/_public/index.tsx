@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router'
 
 import { SearchForm } from '@/features/search/search-form'
 
-function Index() {
+function HomePage() {
     return (
         <div className="relative min-h-[calc(100vh-4rem)] flex flex-col">
             {/* Hero Section Background */}
@@ -47,6 +47,6 @@ function Index() {
     )
 }
 
-export const Route = createFileRoute('/')({
-    component: Index,
+export const Route = createFileRoute('/_public/')({
+    component: HomePage,
 })

@@ -1,21 +1,38 @@
+// User type matching backend response
 export interface User {
-    id: string
+    id: number
+    phone: string
+    username: string
+    fullName: string
     email: string
-    name: string
+    role: 'admin' | 'customer'
 }
 
-export interface LoginDto {
-    email: string
+// Request DTOs
+export interface LoginRequest {
+    identifier: string
     password: string
 }
 
-export interface RegisterDto {
-    email: string
+export interface RegisterRequest {
+    fullName: string
+    username: string
+    phone: string
+    email?: string
     password: string
-    name: string
 }
 
+// Response DTOs
 export interface AuthResponse {
-    token: string
+    accessToken: string
     user: User
+}
+
+// Error type for API calls
+export interface ApiError {
+    response?: {
+        data?: {
+            message?: string
+        }
+    }
 }

@@ -16,7 +16,7 @@ func NewTripHandler(usecase usecase.ITripUseCase) *TripHandler {
 	return &TripHandler{usecase: usecase}
 }
 
-// @Summary     Search trips
+// SearchTrips @Summary     Search trips
 // @Tags        Trips
 // @Produce     json
 // @Param       request query dto.SearchTripsRequest true "Search params"
@@ -40,7 +40,7 @@ func (h *TripHandler) SearchTrips(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// @Summary     Get trip by ID
+// GetTripByID @Summary     Get trip by ID
 // @Tags        Trips
 // @Produce     json
 // @Param       id path int true "Trip ID"
@@ -58,7 +58,7 @@ func (h *TripHandler) GetTripByID(c *gin.Context) {
 	response.Success(c, result)
 }
 
-// @Summary     Create trip
+// CreateTrip @Summary     Create trip
 // @Tags        Trips
 // @Accept      json
 // @Produce     json
