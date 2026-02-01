@@ -1,6 +1,7 @@
 package response
 
 import (
+	"backend/pkgs/errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -8,6 +9,7 @@ import (
 
 type Response struct {
 	Code    int         `json:"code"`
+	Status  string      `json:"status"`
 	Message string      `json:"message"`
 	Data    interface{} `json:"data,omitempty"`
 }
@@ -15,6 +17,7 @@ type Response struct {
 func Success(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusOK, Response{
 		Code:    http.StatusOK,
+		Status:  "success",
 		Message: "Success",
 		Data:    data,
 	})
@@ -23,30 +26,58 @@ func Success(c *gin.Context, data interface{}) {
 func Created(c *gin.Context, data interface{}) {
 	c.JSON(http.StatusCreated, Response{
 		Code:    http.StatusCreated,
+		Status:  "success",
 		Message: "Created",
 		Data:    data,
 	})
 }
 
-func Error(c *gin.Context, statusCode int, message string) {
-	c.JSON(statusCode, Response{
-		Code:    statusCode,
-		Message: message,
+func HandleError(c *gin.Context, err error) {
+	if appErr, ok := err.(*errors.AppError); ok {
+		c.JSON(appErr.Status, Response{
+			Code:    appErr.Status,
+			Status:  string(appErr.Code),
+			Message: appErr.Message,
+		})
+		return
+	}
+
+	// Fallback for unknown errors
+	c.JSON(http.StatusInternalServerError, Response{
+		Code:    http.StatusInternalServerError,
+		Status:  string(errors.ErrCodeInternal),
+		Message: err.Error(),
 	})
 }
 
 func BadRequest(c *gin.Context, message string) {
-	Error(c, http.StatusBadRequest, message)
+	c.JSON(http.StatusBadRequest, Response{
+		Code:    http.StatusBadRequest,
+		Status:  string(errors.ErrCodeBadRequest),
+		Message: message,
+	})
 }
 
 func Unauthorized(c *gin.Context, message string) {
-	Error(c, http.StatusUnauthorized, message)
+	c.JSON(http.StatusUnauthorized, Response{
+		Code:    http.StatusUnauthorized,
+		Status:  string(errors.ErrCodeUnauthorized),
+		Message: message,
+	})
 }
 
 func NotFound(c *gin.Context, message string) {
-	Error(c, http.StatusNotFound, message)
+	c.JSON(http.StatusNotFound, Response{
+		Code:    http.StatusNotFound,
+		Status:  string(errors.ErrCodeNotFound),
+		Message: message,
+	})
 }
 
 func InternalServerError(c *gin.Context, message string) {
-	Error(c, http.StatusInternalServerError, message)
+	c.JSON(http.StatusInternalServerError, Response{
+		Code:    http.StatusInternalServerError,
+		Status:  string(errors.ErrCodeInternal),
+		Message: message,
+	})
 }

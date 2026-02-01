@@ -44,3 +44,38 @@ RETURNING *;
 
 -- name: UpdateTripStatus :one
 UPDATE trips SET status = $2 WHERE id = $1 RETURNING *;
+
+-- name: UpdateTrip :one
+UPDATE trips SET
+    departure_time = COALESCE($2, departure_time),
+    arrival_time = COALESCE($3, arrival_time),
+    base_price = COALESCE($4, base_price),
+    price_modifier = COALESCE($5, price_modifier),
+    is_hot_deal = COALESCE($6, is_hot_deal),
+    pickup_points = COALESCE($7, pickup_points),
+    dropoff_points = COALESCE($8, dropoff_points)
+WHERE id = $1
+RETURNING *;
+
+-- name: DeleteTrip :exec
+DELETE FROM trips WHERE id = $1;
+
+-- name: ListTripsAdmin :many
+SELECT t.*, 
+       p.name as provider_name,
+       o.name as origin_name, o.city as origin_city,
+       d.name as destination_name, d.city as destination_city
+FROM trips t
+JOIN providers p ON t.provider_id = p.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE ($1::int IS NULL OR t.provider_id = $1)
+  AND ($2::text IS NULL OR t.status = $2)
+ORDER BY t.created_at DESC
+LIMIT $3 OFFSET $4;
+
+-- name: CountTripsAdmin :one
+SELECT COUNT(*) FROM trips
+WHERE ($1::int IS NULL OR provider_id = $1)
+  AND ($2::text IS NULL OR status = $2);
+

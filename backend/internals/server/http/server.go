@@ -2,8 +2,9 @@ package http
 
 import (
 	"backend/configs"
-	"backend/db"
 	authHttp "backend/internals/auth/controller/http"
+	locationHttp "backend/internals/locations/controller/http"
+	providerHttp "backend/internals/providers/controller/http"
 	tripHttp "backend/internals/trip/controller/http"
 	"backend/pkgs/jwt"
 	"backend/pkgs/middlewares"
@@ -15,21 +16,35 @@ import (
 )
 
 type Server struct {
-	engine   *gin.Engine
-	cfg      *configs.Config
-	database *db.Database
-	cache    redis.IRedis
-	jwtProv  jwt.JWTProvider
+	engine          *gin.Engine
+	cfg             *configs.Config
+	authHandler     *authHttp.AuthHandler
+	tripHandler     *tripHttp.TripHandler
+	locationHandler *locationHttp.LocationHandler
+	providerHandler *providerHttp.ProviderHandler
+	jwtProvider     jwt.JWTProvider
+	cache           redis.IRedis
 }
 
 // NewServer is injectable by DI container
-func NewServer(cfg *configs.Config, database *db.Database, cache redis.IRedis, jwtProv jwt.JWTProvider) *Server {
+func NewServer(
+	cfg *configs.Config,
+	authHandler *authHttp.AuthHandler,
+	tripHandler *tripHttp.TripHandler,
+	locationHandler *locationHttp.LocationHandler,
+	providerHandler *providerHttp.ProviderHandler,
+	jwtProvider jwt.JWTProvider,
+	cache redis.IRedis,
+) *Server {
 	return &Server{
-		engine:   gin.Default(),
-		cfg:      cfg,
-		database: database,
-		cache:    cache,
-		jwtProv:  jwtProv,
+		engine:          gin.Default(),
+		cfg:             cfg,
+		authHandler:     authHandler,
+		tripHandler:     tripHandler,
+		locationHandler: locationHandler,
+		providerHandler: providerHandler,
+		jwtProvider:     jwtProvider,
+		cache:           cache,
 	}
 }
 
@@ -66,8 +81,67 @@ func (s *Server) MapRoutes() {
 	v1 := s.engine.Group("/api/v1")
 
 	// Auth routes
-	authHttp.Routes(v1, s.database, s.cfg, s.cache, s.jwtProv)
+	authGroup := v1.Group("/auth")
+	{
+		authGroup.POST("/register", s.authHandler.Register)
+		authGroup.POST("/login", s.authHandler.Login)
+		authGroup.POST("/refresh", s.authHandler.RefreshToken)
+		authGroup.POST("/logout", s.authHandler.Logout)
+	}
 
-	// Trip routes
-	tripHttp.Routes(v1, s.database, s.cache)
+	// Public Trip routes
+	tripGroup := v1.Group("/trips")
+	{
+		tripGroup.GET("", s.tripHandler.Search)
+		tripGroup.GET("/:id", s.tripHandler.GetByID)
+	}
+
+	// Public Location routes
+	locationGroup := v1.Group("/locations")
+	{
+		locationGroup.GET("/search", s.locationHandler.Search)
+	}
+
+	// Public Provider routes
+	providerGroup := v1.Group("/providers")
+	{
+		providerGroup.GET("", s.providerHandler.ListActive)
+	}
+
+	// Admin routes - requires auth + admin/operator role
+	admin := v1.Group("/admin")
+	admin.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
+	admin.Use(middlewares.RoleMiddleware("admin", "operator"))
+	{
+		// Admin Trip routes
+		adminTrips := admin.Group("/trips")
+		{
+			adminTrips.POST("", s.tripHandler.Create)
+			adminTrips.GET("", s.tripHandler.List)
+			adminTrips.PUT("/:id", s.tripHandler.Update)
+			adminTrips.PATCH("/:id/status", s.tripHandler.UpdateStatus)
+			adminTrips.DELETE("/:id", s.tripHandler.Delete)
+		}
+
+		// Admin Location routes
+		adminLocations := admin.Group("/locations")
+		{
+			adminLocations.POST("", s.locationHandler.Create)
+			adminLocations.GET("", s.locationHandler.List)
+			adminLocations.GET("/:id", s.locationHandler.GetByID)
+			adminLocations.PUT("/:id", s.locationHandler.Update)
+			adminLocations.DELETE("/:id", s.locationHandler.Delete)
+		}
+
+		// Admin Provider routes
+		adminProviders := admin.Group("/providers")
+		{
+			adminProviders.POST("", s.providerHandler.Create)
+			adminProviders.GET("", s.providerHandler.List)
+			adminProviders.GET("/:id", s.providerHandler.GetByID)
+			adminProviders.PUT("/:id", s.providerHandler.Update)
+			adminProviders.PATCH("/:id/toggle", s.providerHandler.ToggleActive)
+			adminProviders.DELETE("/:id", s.providerHandler.Delete)
+		}
+	}
 }

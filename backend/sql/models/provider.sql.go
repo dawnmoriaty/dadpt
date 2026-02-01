@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countProviders = `-- name: CountProviders :one
+SELECT COUNT(*) FROM providers
+`
+
+func (q *Queries) CountProviders(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countProviders)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createProvider = `-- name: CreateProvider :one
 INSERT INTO providers (name, hotline, slug, policy_refund)
 VALUES ($1, $2, $3, $4)
@@ -39,6 +50,15 @@ func (q *Queries) CreateProvider(ctx context.Context, arg CreateProviderParams) 
 		&i.IsActive,
 	)
 	return i, err
+}
+
+const deleteProvider = `-- name: DeleteProvider :exec
+DELETE FROM providers WHERE id = $1
+`
+
+func (q *Queries) DeleteProvider(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteProvider, id)
+	return err
 }
 
 const getProviderByID = `-- name: GetProviderByID :one
@@ -106,4 +126,96 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const listProvidersAdmin = `-- name: ListProvidersAdmin :many
+SELECT id, name, hotline, slug, policy_refund, is_active FROM providers ORDER BY name LIMIT $1 OFFSET $2
+`
+
+type ListProvidersAdminParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListProvidersAdmin(ctx context.Context, arg ListProvidersAdminParams) ([]Provider, error) {
+	rows, err := q.db.Query(ctx, listProvidersAdmin, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Provider{}
+	for rows.Next() {
+		var i Provider
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Hotline,
+			&i.Slug,
+			&i.PolicyRefund,
+			&i.IsActive,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const toggleProviderActive = `-- name: ToggleProviderActive :one
+UPDATE providers SET is_active = NOT is_active WHERE id = $1 RETURNING id, name, hotline, slug, policy_refund, is_active
+`
+
+func (q *Queries) ToggleProviderActive(ctx context.Context, id int32) (Provider, error) {
+	row := q.db.QueryRow(ctx, toggleProviderActive, id)
+	var i Provider
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Hotline,
+		&i.Slug,
+		&i.PolicyRefund,
+		&i.IsActive,
+	)
+	return i, err
+}
+
+const updateProvider = `-- name: UpdateProvider :one
+UPDATE providers SET 
+    name = COALESCE($2, name),
+    hotline = COALESCE($3, hotline),
+    slug = COALESCE($4, slug),
+    policy_refund = COALESCE($5, policy_refund)
+WHERE id = $1
+RETURNING id, name, hotline, slug, policy_refund, is_active
+`
+
+type UpdateProviderParams struct {
+	ID           int32   `json:"id"`
+	Name         string  `json:"name"`
+	Hotline      *string `json:"hotline"`
+	Slug         *string `json:"slug"`
+	PolicyRefund *string `json:"policyRefund"`
+}
+
+func (q *Queries) UpdateProvider(ctx context.Context, arg UpdateProviderParams) (Provider, error) {
+	row := q.db.QueryRow(ctx, updateProvider,
+		arg.ID,
+		arg.Name,
+		arg.Hotline,
+		arg.Slug,
+		arg.PolicyRefund,
+	)
+	var i Provider
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Hotline,
+		&i.Slug,
+		&i.PolicyRefund,
+		&i.IsActive,
+	)
+	return i, err
 }

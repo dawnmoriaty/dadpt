@@ -11,13 +11,19 @@ import (
 )
 
 type Querier interface {
+	CountLocations(ctx context.Context) (int64, error)
+	CountProviders(ctx context.Context) (int64, error)
 	CountSearchTrips(ctx context.Context, arg CountSearchTripsParams) (int64, error)
+	CountTripsAdmin(ctx context.Context, arg CountTripsAdminParams) (int64, error)
 	CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventParams) (OutboxEvent, error)
 	CreateProvider(ctx context.Context, arg CreateProviderParams) (Provider, error)
 	CreateTrip(ctx context.Context, arg CreateTripParams) (Trip, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	DeleteLocation(ctx context.Context, id int32) error
+	DeleteProvider(ctx context.Context, id int32) error
+	DeleteTrip(ctx context.Context, id int64) error
 	GetBookingByCode(ctx context.Context, code string) (Booking, error)
 	GetBookingByID(ctx context.Context, id int64) (Booking, error)
 	GetLocationByID(ctx context.Context, id int32) (Location, error)
@@ -32,13 +38,20 @@ type Querier interface {
 	GetUserByPhone(ctx context.Context, phone string) (User, error)
 	GetUserByUsername(ctx context.Context, username *string) (User, error)
 	ListBookingsByUser(ctx context.Context, arg ListBookingsByUserParams) ([]ListBookingsByUserRow, error)
+	ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error)
 	ListLocationsByCity(ctx context.Context, city string) ([]Location, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
+	ListProvidersAdmin(ctx context.Context, arg ListProvidersAdminParams) ([]Provider, error)
+	ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) ([]ListTripsAdminRow, error)
 	MarkOutboxEventFailed(ctx context.Context, id uuid.UUID) error
 	MarkOutboxEventProcessed(ctx context.Context, id uuid.UUID) error
 	SearchLocations(ctx context.Context, dollar_1 *string) ([]Location, error)
 	SearchTrips(ctx context.Context, arg SearchTripsParams) ([]SearchTripsRow, error)
+	ToggleProviderActive(ctx context.Context, id int32) (Provider, error)
 	UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) (Booking, error)
+	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
+	UpdateProvider(ctx context.Context, arg UpdateProviderParams) (Provider, error)
+	UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error)
 	UpdateTripSeats(ctx context.Context, arg UpdateTripSeatsParams) (Trip, error)
 	UpdateTripStatus(ctx context.Context, arg UpdateTripStatusParams) (Trip, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)

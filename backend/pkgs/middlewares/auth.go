@@ -1,10 +1,11 @@
 package middlewares
 
 import (
+	"backend/pkgs/errors"
 	"backend/pkgs/jwt"
 	"backend/pkgs/redis"
+	"backend/pkgs/response"
 	"fmt"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,13 +15,15 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Authorization header required"})
+			response.HandleError(c, errors.ErrMissingAuthHeader)
+			c.Abort()
 			return
 		}
 
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || strings.ToLower(parts[0]) != "bearer" {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid authorization format"})
+			response.HandleError(c, errors.ErrInvalidToken)
+			c.Abort()
 			return
 		}
 
@@ -30,7 +33,8 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 		// 1. Validate Token Signature
 		claims, err := jwtProv.ValidateToken(tokenString)
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Invalid token"})
+			response.HandleError(c, errors.ErrInvalidToken)
+			c.Abort()
 			return
 		}
 
@@ -40,7 +44,8 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 			var val string
 			_ = cache.Get(blacklistKey, &val)
 			if val == "revoked" {
-				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Token revoked"})
+				response.HandleError(c, errors.ErrInvalidToken)
+				c.Abort()
 				return
 			}
 		}
@@ -57,5 +62,36 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 
 		c.Set("token", token)
 		c.Next()
+	}
+}
+
+// RoleMiddleware checks if user has required role(s)
+// Usage: RoleMiddleware("admin", "operator") - allows admin OR operator
+func RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		role, exists := c.Get("role")
+		if !exists {
+			response.HandleError(c, errors.ErrUnauthorized)
+			c.Abort()
+			return
+		}
+
+		userRole, ok := role.(string)
+		if !ok {
+			response.HandleError(c, errors.ErrUnauthorized)
+			c.Abort()
+			return
+		}
+
+		// Check if user role is in allowed roles
+		for _, allowed := range allowedRoles {
+			if userRole == allowed {
+				c.Next()
+				return
+			}
+		}
+
+		response.HandleError(c, errors.ErrInsufficientRole)
+		c.Abort()
 	}
 }

@@ -1,7 +1,6 @@
 package dto
 
 import (
-	"backend/pkgs/paging"
 	"time"
 )
 
@@ -10,7 +9,8 @@ type SearchTripsRequest struct {
 	DestinationID int    `form:"destinationId"`
 	DepartureDate string `form:"departureDate"` // YYYY-MM-DD
 	MinSeats      int    `form:"minSeats"`
-	paging.Paging
+	Page          int    `form:"page"`
+	Limit         int    `form:"limit"`
 }
 
 type CreateTripRequest struct {
@@ -24,6 +24,26 @@ type CreateTripRequest struct {
 	AvailableSeats int       `json:"availableSeats" binding:"required"`
 	PickupPoints   []Point   `json:"pickupPoints"`
 	DropoffPoints  []Point   `json:"dropoffPoints"`
+}
+
+type UpdateTripRequest struct {
+	DepartureTime *time.Time `json:"departureTime"`
+	ArrivalTime   *time.Time `json:"arrivalTime"`
+	BasePrice     *float64   `json:"basePrice"`
+	IsHotDeal     *bool      `json:"isHotDeal"`
+	PickupPoints  []Point    `json:"pickupPoints"`
+	DropoffPoints []Point    `json:"dropoffPoints"`
+}
+
+type UpdateTripStatusRequest struct {
+	Status string `json:"status" binding:"required"`
+}
+
+type AdminTripListRequest struct {
+	ProviderID *int    `form:"providerId"`
+	Status     *string `form:"status"`
+	Page       int     `form:"page"`
+	Limit      int     `form:"limit"`
 }
 
 type Point struct {
@@ -52,5 +72,4 @@ type TripResponse struct {
 type TripListResponse struct {
 	Trips      []TripResponse `json:"trips"`
 	TotalPages int            `json:"totalPages"`
-	paging.Paging
 }

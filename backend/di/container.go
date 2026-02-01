@@ -7,7 +7,19 @@ import (
 
 	"backend/configs"
 	"backend/db"
+	authHttp "backend/internals/auth/controller/http"
+	authRepo "backend/internals/auth/repository"
+	authUc "backend/internals/auth/usecase"
+	locationHttp "backend/internals/locations/controller/http"
+	locationRepo "backend/internals/locations/repository"
+	locationUc "backend/internals/locations/usecase"
+	providerHttp "backend/internals/providers/controller/http"
+	providerRepo "backend/internals/providers/repository"
+	providerUc "backend/internals/providers/usecase"
 	httpServer "backend/internals/server/http"
+	tripHttp "backend/internals/trip/controller/http"
+	tripRepo "backend/internals/trip/repository"
+	tripUc "backend/internals/trip/usecase"
 	"backend/pkgs/jwt"
 	"backend/pkgs/logger"
 	"backend/pkgs/minio"
@@ -35,6 +47,26 @@ func NewContainer() (*Container, error) {
 		provideRabbitMQ,
 		provideMinio,
 		provideJWTProvider,
+
+		// Auth Module
+		authRepo.NewAuthRepository,
+		authUc.NewAuthUseCase,
+		authHttp.NewAuthHandler,
+
+		// Location Module
+		locationRepo.NewLocationRepository,
+		locationUc.NewLocationUseCase,
+		locationHttp.NewLocationHandler,
+
+		// Provider Module
+		providerRepo.NewProviderRepository,
+		providerUc.NewProviderUseCase,
+		providerHttp.NewProviderHandler,
+
+		// Trip Module
+		tripRepo.NewTripRepository,
+		tripUc.NewTripUseCase,
+		tripHttp.NewTripHandler,
 
 		// Server
 		httpServer.NewServer,

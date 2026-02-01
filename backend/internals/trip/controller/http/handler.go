@@ -1,83 +1,148 @@
 package http
 
 import (
+	"strconv"
+
 	"backend/internals/trip/controller/dto"
 	"backend/internals/trip/usecase"
+	"backend/pkgs/errors"
+	"backend/pkgs/paging"
 	"backend/pkgs/response"
 
 	"github.com/gin-gonic/gin"
 )
 
 type TripHandler struct {
-	usecase usecase.ITripUseCase
+	uc *usecase.TripUseCase
 }
 
-func NewTripHandler(usecase usecase.ITripUseCase) *TripHandler {
-	return &TripHandler{usecase: usecase}
+func NewTripHandler(uc *usecase.TripUseCase) *TripHandler {
+	return &TripHandler{uc: uc}
 }
 
-// SearchTrips @Summary     Search trips
-// @Tags        Trips
-// @Produce     json
-// @Param       request query dto.SearchTripsRequest true "Search params"
-// @Success     200 {object} response.Response
-// @Router      /trips [get]
-func (h *TripHandler) SearchTrips(c *gin.Context) {
+func (h *TripHandler) Search(c *gin.Context) {
 	var req dto.SearchTripsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.BadRequest(c, err.Error())
+		response.HandleError(c, errors.ValidationError(err.Error()))
 		return
 	}
 
-	req.Paging.Process()
-
-	result, err := h.usecase.SearchTrips(c.Request.Context(), &req)
+	result, err := h.uc.Search(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalServerError(c, err.Error())
+		response.HandleError(c, err)
 		return
 	}
 
 	response.Success(c, result)
 }
 
-// GetTripByID @Summary     Get trip by ID
-// @Tags        Trips
-// @Produce     json
-// @Param       id path int true "Trip ID"
-// @Success     200 {object} response.Response
-// @Router      /trips/{id} [get]
-func (h *TripHandler) GetTripByID(c *gin.Context) {
-	id := c.Param("id")
-
-	result, err := h.usecase.GetTripByID(c.Request.Context(), id)
+func (h *TripHandler) GetByID(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {
-		response.NotFound(c, "Trip not found")
+		response.HandleError(c, errors.InvalidID("trip"))
+		return
+	}
+
+	result, err := h.uc.GetByID(c.Request.Context(), id)
+	if err != nil {
+		response.HandleError(c, err)
 		return
 	}
 
 	response.Success(c, result)
 }
 
-// CreateTrip @Summary     Create trip
-// @Tags        Trips
-// @Accept      json
-// @Produce     json
-// @Param       request body dto.CreateTripRequest true "Trip data"
-// @Success     201 {object} response.Response
-// @Router      /trips [post]
-// @Security    ApiKeyAuth
-func (h *TripHandler) CreateTrip(c *gin.Context) {
+func (h *TripHandler) Create(c *gin.Context) {
 	var req dto.CreateTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.BadRequest(c, err.Error())
+		response.HandleError(c, errors.ValidationError(err.Error()))
 		return
 	}
 
-	result, err := h.usecase.CreateTrip(c.Request.Context(), &req)
+	result, err := h.uc.Create(c.Request.Context(), &req)
 	if err != nil {
-		response.InternalServerError(c, err.Error())
+		response.HandleError(c, err)
 		return
 	}
 
 	response.Created(c, result)
+}
+
+func (h *TripHandler) Update(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.HandleError(c, errors.InvalidID("trip"))
+		return
+	}
+
+	var req dto.UpdateTripRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.HandleError(c, errors.ValidationError(err.Error()))
+		return
+	}
+
+	result, err := h.uc.Update(c.Request.Context(), id, &req)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, result)
+}
+
+func (h *TripHandler) UpdateStatus(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.HandleError(c, errors.InvalidID("trip"))
+		return
+	}
+
+	var req dto.UpdateTripStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.HandleError(c, errors.ValidationError(err.Error()))
+		return
+	}
+
+	result, err := h.uc.UpdateStatus(c.Request.Context(), id, req.Status)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, result)
+}
+
+func (h *TripHandler) Delete(c *gin.Context) {
+	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
+	if err != nil {
+		response.HandleError(c, errors.InvalidID("trip"))
+		return
+	}
+
+	if err := h.uc.Delete(c.Request.Context(), id); err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, gin.H{"message": "Trip deleted"})
+}
+
+func (h *TripHandler) List(c *gin.Context) {
+	var pg paging.Paging
+	if err := c.ShouldBindQuery(&pg); err != nil {
+		response.HandleError(c, errors.ValidationError(err.Error()))
+		return
+	}
+	pg.Process()
+
+	var req dto.AdminTripListRequest
+	c.ShouldBindQuery(&req)
+
+	result, err := h.uc.List(c.Request.Context(), &pg, &req)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	response.Success(c, result)
 }

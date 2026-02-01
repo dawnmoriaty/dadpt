@@ -2,25 +2,19 @@ package usecase
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
 	"backend/configs"
 	"backend/internals/auth/controller/dto"
+	"backend/internals/auth/domain"
 	"backend/internals/auth/repository"
+	"backend/pkgs/errors"
 	"backend/pkgs/jwt"
 	"backend/pkgs/redis"
-	"backend/sql/models"
 
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
-)
-
-var (
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrPhoneExists        = errors.New("phone number already registered")
-	ErrInvalidToken       = errors.New("invalid token")
 )
 
 type IAuthUseCase interface {
@@ -31,14 +25,15 @@ type IAuthUseCase interface {
 }
 
 type authUseCase struct {
-	repo    repository.IAuthRepository
+	repo    domain.Repository
+	legacy  repository.IAuthRepository // Keep for backward compatibility during transition
 	jwtProv jwt.JWTProvider
 	cache   redis.IRedis
 	cfg     *configs.Config
 }
 
 func NewAuthUseCase(
-	repo repository.IAuthRepository,
+	repo domain.Repository,
 	jwtProv jwt.JWTProvider,
 	cache redis.IRedis,
 	cfg *configs.Config,
@@ -52,76 +47,84 @@ func NewAuthUseCase(
 }
 
 func (u *authUseCase) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.AuthResponse, error) {
+	// 1. Create domain entity for validation
+	user := &domain.User{
+		Phone:    req.Phone,
+		Username: req.Username,
+		FullName: req.FullName,
+		Email:    req.Email,
+		Role:     domain.RoleCustomer,
+	}
+
+	// 2. Run domain validation
+	if !user.ValidatePhone() {
+		return nil, errors.ValidationError("invalid phone format")
+	}
+	if !user.ValidateEmail() {
+		return nil, errors.ValidationError("invalid email format")
+	}
+	if !user.ValidateFullName() {
+		return nil, errors.ValidationError("full name must be at least 2 characters")
+	}
+	if !user.ValidateUsername() {
+		return nil, errors.ValidationError("username must be 3-30 alphanumeric characters")
+	}
+	if !user.ValidatePassword(req.Password) {
+		return nil, errors.ValidationError("password must be at least 6 characters")
+	}
+
+	// 3. Check phone uniqueness
 	exists, err := u.repo.PhoneExists(ctx, req.Phone)
 	if err != nil {
 		return nil, err
 	}
 	if exists {
-		return nil, ErrPhoneExists
+		return nil, errors.ErrPhoneExists
 	}
 
+	// 4. Hash password
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to hash password")
 	}
+	user.PasswordHash = string(hashedPassword)
 
-	// Helper to handle optional fields for generated models
-	username := &req.Username
-	if req.Username == "" {
-		username = nil
-	}
-	email := &req.Email
-	if req.Email == "" {
-		email = nil
-	}
-	role := "customer"
-
-	user, err := u.repo.CreateUser(ctx, models.CreateUserParams{
-		Phone:        req.Phone,
-		Username:     username,
-		PasswordHash: string(hashedPassword),
-		FullName:     req.FullName,
-		Email:        email,
-		Role:         &role,
-	})
+	// 5. Create user via domain repository
+	created, err := u.repo.Create(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
-	return u.generateAuthResponse(ctx, user)
+	return u.generateAuthResponse(ctx, created)
 }
 
 func (u *authUseCase) Login(ctx context.Context, req *dto.LoginRequest) (*dto.AuthResponse, error) {
 	// 1. Find user by Identifier (Phone OR Email OR Username)
-	user, err := u.repo.GetUserByIdentifier(ctx, req.Identifier)
+	user, err := u.repo.GetByIdentifier(ctx, req.Identifier)
 	if err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	// 2. Check Password
 	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, ErrInvalidCredentials
+		return nil, errors.ErrInvalidCredentials
 	}
 
 	return u.generateAuthResponse(ctx, user)
 }
 
 func (u *authUseCase) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
-	// 1. Verify Refresh Token in Redis?
-	// Simplified: We assume refresh token is opaque string.
-	// But robust way: Check if it exists in Redis.
-
 	key := fmt.Sprintf("refresh_token:%s", req.RefreshToken)
 	var userID int64
 	err := u.cache.Get(key, &userID)
 	if err != nil {
-		return nil, ErrInvalidToken // Not found or expired
+		return nil, errors.ErrInvalidToken
 	}
 
 	// 2. Get User
-	user, err := u.repo.GetUserByID(ctx, userID)
+	user, err := u.repo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, err
+		return nil, errors.ErrInvalidToken
 	}
 
 	// 3. Rotate Token: Delete old, create new
@@ -134,14 +137,13 @@ func (u *authUseCase) Logout(ctx context.Context, tokenString string) error {
 	// 1. Validate Token format & signature first
 	claims, err := u.jwtProv.ValidateToken(tokenString)
 	if err != nil {
-		return err
+		return errors.ErrInvalidToken
 	}
 
 	// 2. Calculate remaining time for expiration to set key TTL
-	// We only need to blacklist it until it expires naturally.
 	expFloat, ok := (*claims)["exp"].(float64)
 	if !ok {
-		return ErrInvalidToken
+		return errors.ErrInvalidToken
 	}
 	expTime := time.Unix(int64(expFloat), 0)
 	remainingTime := time.Until(expTime)
@@ -151,37 +153,22 @@ func (u *authUseCase) Logout(ctx context.Context, tokenString string) error {
 	}
 
 	// 3. Add to Redis Blacklist
-	// Key: blacklist:{token} -> Val: "revoked"
 	if u.cache != nil && u.cache.IsConnected() {
 		blacklistKey := fmt.Sprintf("blacklist:%s", tokenString)
 		err := u.cache.SetWithExpiration(blacklistKey, "revoked", remainingTime)
 		if err != nil {
-			return fmt.Errorf("failed to blacklist token: %w", err)
+			return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to blacklist token")
 		}
 	}
 
 	return nil
 }
 
-func (u *authUseCase) generateAuthResponse(ctx context.Context, user *models.User) (*dto.AuthResponse, error) {
-	// Handle nil pointer dereference for optional fields
-	username := ""
-	if user.Username != nil {
-		username = *user.Username
-	}
-	email := ""
-	if user.Email != nil {
-		email = *user.Email
-	}
-	role := "customer"
-	if user.Role != nil {
-		role = *user.Role
-	}
-
-	// 1. Access Token (HS512)
-	td, err := u.jwtProv.GenerateToken(user.ID, role, u.cfg.AccessTokenDuration)
+func (u *authUseCase) generateAuthResponse(ctx context.Context, user *domain.User) (*dto.AuthResponse, error) {
+	// 1. Access Token (HS512) - use role from domain entity
+	td, err := u.jwtProv.GenerateToken(user.ID, user.Role.String(), u.cfg.AccessTokenDuration)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to generate token")
 	}
 
 	// 2. Refresh Token (Random UUID)
@@ -200,10 +187,10 @@ func (u *authUseCase) generateAuthResponse(ctx context.Context, user *models.Use
 		User: dto.UserResponse{
 			ID:       user.ID,
 			Phone:    user.Phone,
-			Username: username,
+			Username: user.Username,
 			FullName: user.FullName,
-			Email:    email,
-			Role:     role,
+			Email:    user.Email,
+			Role:     user.Role.String(),
 		},
 	}, nil
 }

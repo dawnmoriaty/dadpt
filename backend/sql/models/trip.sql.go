@@ -40,6 +40,24 @@ func (q *Queries) CountSearchTrips(ctx context.Context, arg CountSearchTripsPara
 	return count, err
 }
 
+const countTripsAdmin = `-- name: CountTripsAdmin :one
+SELECT COUNT(*) FROM trips
+WHERE ($1::int IS NULL OR provider_id = $1)
+  AND ($2::text IS NULL OR status = $2)
+`
+
+type CountTripsAdminParams struct {
+	Column1 int32  `json:"column1"`
+	Column2 string `json:"column2"`
+}
+
+func (q *Queries) CountTripsAdmin(ctx context.Context, arg CountTripsAdminParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countTripsAdmin, arg.Column1, arg.Column2)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createTrip = `-- name: CreateTrip :one
 INSERT INTO trips (
     provider_id, bus_id, origin_id, destination_id,
@@ -102,6 +120,15 @@ func (q *Queries) CreateTrip(ctx context.Context, arg CreateTripParams) (Trip, e
 	return i, err
 }
 
+const deleteTrip = `-- name: DeleteTrip :exec
+DELETE FROM trips WHERE id = $1
+`
+
+func (q *Queries) DeleteTrip(ctx context.Context, id int64) error {
+	_, err := q.db.Exec(ctx, deleteTrip, id)
+	return err
+}
+
 const getTripByID = `-- name: GetTripByID :one
 SELECT id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at FROM trips WHERE id = $1
 `
@@ -128,6 +155,99 @@ func (q *Queries) GetTripByID(ctx context.Context, id int64) (Trip, error) {
 		&i.CreatedAt,
 	)
 	return i, err
+}
+
+const listTripsAdmin = `-- name: ListTripsAdmin :many
+SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, 
+       p.name as provider_name,
+       o.name as origin_name, o.city as origin_city,
+       d.name as destination_name, d.city as destination_city
+FROM trips t
+JOIN providers p ON t.provider_id = p.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE ($1::int IS NULL OR t.provider_id = $1)
+  AND ($2::text IS NULL OR t.status = $2)
+ORDER BY t.created_at DESC
+LIMIT $3 OFFSET $4
+`
+
+type ListTripsAdminParams struct {
+	Column1 int32  `json:"column1"`
+	Column2 string `json:"column2"`
+	Limit   int32  `json:"limit"`
+	Offset  int32  `json:"offset"`
+}
+
+type ListTripsAdminRow struct {
+	ID              int64              `json:"id"`
+	ProviderID      int32              `json:"providerId"`
+	BusID           int32              `json:"busId"`
+	OriginID        int32              `json:"originId"`
+	DestinationID   int32              `json:"destinationId"`
+	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
+	BasePrice       pgtype.Numeric     `json:"basePrice"`
+	PriceModifier   pgtype.Numeric     `json:"priceModifier"`
+	IsHotDeal       *bool              `json:"isHotDeal"`
+	PickupPoints    json.RawMessage    `json:"pickupPoints"`
+	DropoffPoints   json.RawMessage    `json:"dropoffPoints"`
+	BookedSeats     []string           `json:"bookedSeats"`
+	AvailableSeats  int32              `json:"availableSeats"`
+	Status          *string            `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	ProviderName    string             `json:"providerName"`
+	OriginName      string             `json:"originName"`
+	OriginCity      string             `json:"originCity"`
+	DestinationName string             `json:"destinationName"`
+	DestinationCity string             `json:"destinationCity"`
+}
+
+func (q *Queries) ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) ([]ListTripsAdminRow, error) {
+	rows, err := q.db.Query(ctx, listTripsAdmin,
+		arg.Column1,
+		arg.Column2,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListTripsAdminRow{}
+	for rows.Next() {
+		var i ListTripsAdminRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProviderID,
+			&i.BusID,
+			&i.OriginID,
+			&i.DestinationID,
+			&i.DepartureTime,
+			&i.ArrivalTime,
+			&i.BasePrice,
+			&i.PriceModifier,
+			&i.IsHotDeal,
+			&i.PickupPoints,
+			&i.DropoffPoints,
+			&i.BookedSeats,
+			&i.AvailableSeats,
+			&i.Status,
+			&i.CreatedAt,
+			&i.ProviderName,
+			&i.OriginName,
+			&i.OriginCity,
+			&i.DestinationName,
+			&i.DestinationCity,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const searchTrips = `-- name: SearchTrips :many
@@ -228,6 +348,63 @@ func (q *Queries) SearchTrips(ctx context.Context, arg SearchTripsParams) ([]Sea
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateTrip = `-- name: UpdateTrip :one
+UPDATE trips SET
+    departure_time = COALESCE($2, departure_time),
+    arrival_time = COALESCE($3, arrival_time),
+    base_price = COALESCE($4, base_price),
+    price_modifier = COALESCE($5, price_modifier),
+    is_hot_deal = COALESCE($6, is_hot_deal),
+    pickup_points = COALESCE($7, pickup_points),
+    dropoff_points = COALESCE($8, dropoff_points)
+WHERE id = $1
+RETURNING id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at
+`
+
+type UpdateTripParams struct {
+	ID            int64              `json:"id"`
+	DepartureTime pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime   pgtype.Timestamptz `json:"arrivalTime"`
+	BasePrice     pgtype.Numeric     `json:"basePrice"`
+	PriceModifier pgtype.Numeric     `json:"priceModifier"`
+	IsHotDeal     *bool              `json:"isHotDeal"`
+	PickupPoints  json.RawMessage    `json:"pickupPoints"`
+	DropoffPoints json.RawMessage    `json:"dropoffPoints"`
+}
+
+func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error) {
+	row := q.db.QueryRow(ctx, updateTrip,
+		arg.ID,
+		arg.DepartureTime,
+		arg.ArrivalTime,
+		arg.BasePrice,
+		arg.PriceModifier,
+		arg.IsHotDeal,
+		arg.PickupPoints,
+		arg.DropoffPoints,
+	)
+	var i Trip
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderID,
+		&i.BusID,
+		&i.OriginID,
+		&i.DestinationID,
+		&i.DepartureTime,
+		&i.ArrivalTime,
+		&i.BasePrice,
+		&i.PriceModifier,
+		&i.IsHotDeal,
+		&i.PickupPoints,
+		&i.DropoffPoints,
+		&i.BookedSeats,
+		&i.AvailableSeats,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const updateTripSeats = `-- name: UpdateTripSeats :one

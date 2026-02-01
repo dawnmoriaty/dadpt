@@ -25,33 +25,68 @@ api.interceptors.request.use(
     },
 )
 
-// Response interceptor
+interface FailedRequest {
+    resolve: (value: AxiosResponse | Promise<AxiosResponse>) => void
+    reject: (reason: AxiosError) => void
+}
+
+let isRefreshing = false
+let failedQueue: FailedRequest[] = []
+
+const processQueue = (error: AxiosError | null) => {
+    failedQueue.forEach((prom) => {
+        if (error) {
+            prom.reject(error)
+        } else {
+            prom.resolve(null as unknown as AxiosResponse) // We just need to trigger the retry
+        }
+    })
+    failedQueue = []
+}
+
 api.interceptors.response.use(
     (response: AxiosResponse) => {
         console.log("API Response:", response.status, response.config.url)
         return response
     },
     async (error: AxiosError) => {
-        console.error("Response error:", error.response?.status, error.message)
-        
-        const originalRequest = error.config as (InternalAxiosRequestConfig & { _retry?: boolean }) | undefined
+        const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
-        // Handle 401 and prevent infinite loop
-        if (originalRequest && error.response?.status === 401 && !originalRequest._retry) {
+        if (error.response?.status === 401 && !originalRequest._retry) {
+            if (isRefreshing) {
+                return new Promise((resolve, reject) => {
+                    failedQueue.push({ resolve, reject })
+                })
+                    .then(() => {
+                        return api(originalRequest)
+                    })
+                    .catch((err) => {
+                        return Promise.reject(err)
+                    })
+            }
+
             originalRequest._retry = true
+            isRefreshing = true
 
             try {
                 console.log("Attempting token refresh...")
                 await api.post("/auth/refresh")
                 console.log("Token refresh successful, retrying original request")
+                
+                processQueue(null)
                 return api(originalRequest)
             } catch (refreshError) {
                 console.error("Token refresh failed:", refreshError)
+                processQueue(refreshError as AxiosError)
+                
                 localStorage.removeItem("auth-storage")
                 window.location.href = "/login"
                 return Promise.reject(refreshError)
+            } finally {
+                isRefreshing = false
             }
         }
+
         return Promise.reject(error)
     },
 )

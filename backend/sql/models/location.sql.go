@@ -9,6 +9,17 @@ import (
 	"context"
 )
 
+const countLocations = `-- name: CountLocations :one
+SELECT COUNT(*) FROM locations
+`
+
+func (q *Queries) CountLocations(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countLocations)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createLocation = `-- name: CreateLocation :one
 INSERT INTO locations (name, city, address, keywords)
 VALUES ($1, $2, $3, $4)
@@ -40,6 +51,15 @@ func (q *Queries) CreateLocation(ctx context.Context, arg CreateLocationParams) 
 	return i, err
 }
 
+const deleteLocation = `-- name: DeleteLocation :exec
+DELETE FROM locations WHERE id = $1
+`
+
+func (q *Queries) DeleteLocation(ctx context.Context, id int32) error {
+	_, err := q.db.Exec(ctx, deleteLocation, id)
+	return err
+}
+
 const getLocationByID = `-- name: GetLocationByID :one
 SELECT id, name, city, address, keywords FROM locations WHERE id = $1
 `
@@ -55,6 +75,43 @@ func (q *Queries) GetLocationByID(ctx context.Context, id int32) (Location, erro
 		&i.Keywords,
 	)
 	return i, err
+}
+
+const listLocations = `-- name: ListLocations :many
+SELECT id, name, city, address, keywords FROM locations 
+ORDER BY city, name
+LIMIT $1 OFFSET $2
+`
+
+type ListLocationsParams struct {
+	Limit  int32 `json:"limit"`
+	Offset int32 `json:"offset"`
+}
+
+func (q *Queries) ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error) {
+	rows, err := q.db.Query(ctx, listLocations, arg.Limit, arg.Offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Location{}
+	for rows.Next() {
+		var i Location
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.City,
+			&i.Address,
+			&i.Keywords,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listLocationsByCity = `-- name: ListLocationsByCity :many
@@ -120,4 +177,41 @@ func (q *Queries) SearchLocations(ctx context.Context, dollar_1 *string) ([]Loca
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateLocation = `-- name: UpdateLocation :one
+UPDATE locations SET 
+    name = COALESCE($2, name),
+    city = COALESCE($3, city),
+    address = COALESCE($4, address),
+    keywords = COALESCE($5, keywords)
+WHERE id = $1
+RETURNING id, name, city, address, keywords
+`
+
+type UpdateLocationParams struct {
+	ID       int32   `json:"id"`
+	Name     string  `json:"name"`
+	City     string  `json:"city"`
+	Address  *string `json:"address"`
+	Keywords *string `json:"keywords"`
+}
+
+func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error) {
+	row := q.db.QueryRow(ctx, updateLocation,
+		arg.ID,
+		arg.Name,
+		arg.City,
+		arg.Address,
+		arg.Keywords,
+	)
+	var i Location
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.City,
+		&i.Address,
+		&i.Keywords,
+	)
+	return i, err
 }
