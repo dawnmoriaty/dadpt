@@ -3,7 +3,7 @@ import { createFileRoute, redirect } from '@tanstack/react-router'
 import { AdminLayout } from '@/components/layout'
 import { useAuthStore } from '@/stores/use-auth-store'
 
-export const Route = createFileRoute('/_admin')({
+export const Route = createFileRoute('/admin')({
     beforeLoad: () => {
         const { isAuthenticated, isAdmin } = useAuthStore.getState()
         if (!isAuthenticated) {

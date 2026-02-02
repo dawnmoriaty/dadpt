@@ -62,7 +62,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
             onSuccess?.()
 
             // Role-based redirection (new users are usually customers)
-            window.location.href = user.role === 'admin' ? '/dashboard' : '/'
+            window.location.href = user.role === 'admin' ? '/admin/dashboard' : '/'
         } catch (err) {
             const apiError = err as ApiError
             setError(apiError.response?.data?.message || "Registration failed")

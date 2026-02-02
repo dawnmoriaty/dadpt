@@ -10,23 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PublicRouteImport } from './routes/_public'
-import { Route as AdminRouteImport } from './routes/_admin'
 import { Route as TripIndexRouteImport } from './routes/trip/index'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
-import { Route as AdminDashboardRouteImport } from './routes/_admin/dashboard'
+import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
+import { Route as AdminProvidersIndexRouteImport } from './routes/admin/providers/index'
+import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
-const PublicRoute = PublicRouteImport.update({
-  id: '/_public',
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/_admin',
+const PublicRoute = PublicRouteImport.update({
+  id: '/_public',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TripIndexRoute = TripIndexRouteImport.update({
@@ -44,46 +48,91 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminTripsIndexRoute = AdminTripsIndexRouteImport.update({
+  id: '/trips/',
+  path: '/trips/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProvidersIndexRoute = AdminProvidersIndexRouteImport.update({
+  id: '/providers/',
+  path: '/providers/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminLocationsIndexRoute = AdminLocationsIndexRouteImport.update({
+  id: '/locations/',
+  path: '/locations/',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/dashboard': typeof AdminDashboardRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
   '/trip': typeof TripIndexRoute
+  '/admin/locations': typeof AdminLocationsIndexRoute
+  '/admin/providers': typeof AdminProvidersIndexRoute
+  '/admin/trips': typeof AdminTripsIndexRoute
 }
 export interface FileRoutesByTo {
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/dashboard': typeof AdminDashboardRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
   '/trip': typeof TripIndexRoute
+  '/admin/locations': typeof AdminLocationsIndexRoute
+  '/admin/providers': typeof AdminProvidersIndexRoute
+  '/admin/trips': typeof AdminTripsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/_admin': typeof AdminRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
+  '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
-  '/_admin/dashboard': typeof AdminDashboardRoute
+  '/admin/dashboard': typeof AdminDashboardRoute
   '/_public/': typeof PublicIndexRoute
   '/trip/': typeof TripIndexRoute
+  '/admin/locations/': typeof AdminLocationsIndexRoute
+  '/admin/providers/': typeof AdminProvidersIndexRoute
+  '/admin/trips/': typeof AdminTripsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/login' | '/dashboard' | '/' | '/trip'
+  fullPaths:
+    | '/admin'
+    | '/login'
+    | '/admin/dashboard'
+    | '/'
+    | '/trip'
+    | '/admin/locations'
+    | '/admin/providers'
+    | '/admin/trips'
   fileRoutesByTo: FileRoutesByTo
-  to: '/login' | '/dashboard' | '/' | '/trip'
+  to:
+    | '/admin'
+    | '/login'
+    | '/admin/dashboard'
+    | '/'
+    | '/trip'
+    | '/admin/locations'
+    | '/admin/providers'
+    | '/admin/trips'
   id:
     | '__root__'
-    | '/_admin'
     | '/_public'
+    | '/admin'
     | '/login'
-    | '/_admin/dashboard'
+    | '/admin/dashboard'
     | '/_public/'
     | '/trip/'
+    | '/admin/locations/'
+    | '/admin/providers/'
+    | '/admin/trips/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
-  AdminRoute: typeof AdminRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
+  AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
   TripIndexRoute: typeof TripIndexRoute
 }
@@ -97,18 +146,18 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_public': {
       id: '/_public'
       path: ''
       fullPath: ''
       preLoaderRoute: typeof PublicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/_admin': {
-      id: '/_admin'
-      path: ''
-      fullPath: ''
-      preLoaderRoute: typeof AdminRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/trip/': {
@@ -125,25 +174,36 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicIndexRouteImport
       parentRoute: typeof PublicRoute
     }
-    '/_admin/dashboard': {
-      id: '/_admin/dashboard'
+    '/admin/dashboard': {
+      id: '/admin/dashboard'
       path: '/dashboard'
-      fullPath: '/dashboard'
+      fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/trips/': {
+      id: '/admin/trips/'
+      path: '/trips'
+      fullPath: '/admin/trips'
+      preLoaderRoute: typeof AdminTripsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/providers/': {
+      id: '/admin/providers/'
+      path: '/providers'
+      fullPath: '/admin/providers'
+      preLoaderRoute: typeof AdminProvidersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/locations/': {
+      id: '/admin/locations/'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
   }
 }
-
-interface AdminRouteChildren {
-  AdminDashboardRoute: typeof AdminDashboardRoute
-}
-
-const AdminRouteChildren: AdminRouteChildren = {
-  AdminDashboardRoute: AdminDashboardRoute,
-}
-
-const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 interface PublicRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
@@ -156,9 +216,25 @@ const PublicRouteChildren: PublicRouteChildren = {
 const PublicRouteWithChildren =
   PublicRoute._addFileChildren(PublicRouteChildren)
 
+interface AdminRouteChildren {
+  AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminLocationsIndexRoute: typeof AdminLocationsIndexRoute
+  AdminProvidersIndexRoute: typeof AdminProvidersIndexRoute
+  AdminTripsIndexRoute: typeof AdminTripsIndexRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminDashboardRoute: AdminDashboardRoute,
+  AdminLocationsIndexRoute: AdminLocationsIndexRoute,
+  AdminProvidersIndexRoute: AdminProvidersIndexRoute,
+  AdminTripsIndexRoute: AdminTripsIndexRoute,
+}
+
+const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
-  AdminRoute: AdminRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
+  AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
   TripIndexRoute: TripIndexRoute,
 }

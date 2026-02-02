@@ -6,7 +6,7 @@ export const ROUTES = {
     ABOUT: '/about',
     LOGIN: '/login',
     REGISTER: '/register',
-    DASHBOARD: '/dashboard',
+    DASHBOARD: '/admin/dashboard',
 } as const
 
 export const API_CONFIG = {

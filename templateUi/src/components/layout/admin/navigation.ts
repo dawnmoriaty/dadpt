@@ -1,11 +1,9 @@
 import {
     LayoutDashboard,
-    Users,
-    ShoppingCart,
-    Settings,
-    Bus,
     MapPin,
-    BarChart3,
+    Bus,
+    Building2,
+    Settings,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -17,11 +15,9 @@ export interface NavItem {
 }
 
 export const navigationItems: NavItem[] = [
-    { title: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { title: 'Users', href: '/users', icon: Users },
-    { title: 'Routes', href: '/routes', icon: MapPin },
-    { title: 'Buses', href: '/buses', icon: Bus },
-    { title: 'Orders', href: '/orders', icon: ShoppingCart },
-    { title: 'Reports', href: '/reports', icon: BarChart3 },
-    { title: 'Settings', href: '/settings', icon: Settings },
+    { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Locations', href: '/admin/locations', icon: MapPin },
+    { title: 'Trips', href: '/admin/trips', icon: Bus },
+    { title: 'Providers', href: '/admin/providers', icon: Building2 },
+    { title: 'Settings', href: '/admin/settings', icon: Settings },
 ]

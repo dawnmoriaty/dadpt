@@ -1,8 +1,15 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
-import { authService } from '@/services/auth.service'
-import type { User } from '@/types/auth.types'
+import { initApiAuth } from '@/services/api/client'
+
+interface User {
+    id: number
+    phone: string
+    email?: string
+    username?: string
+    role: 'user' | 'admin' | 'operator' | 'customer'
+}
 
 interface AuthState {
     token: string | null
@@ -11,8 +18,8 @@ interface AuthState {
     isAdmin: boolean
 
     setAuth: (token: string, user: User) => void
-    logout: () => Promise<void>
-    updateUser: (user: Partial<User>) => void
+    logout: () => void
+    clearAuth: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -29,34 +36,29 @@ export const useAuthStore = create<AuthState>()(
                         token,
                         user,
                         isAuthenticated: true,
-                        isAdmin: user.role === 'admin',
+                        isAdmin: user.role === 'admin' || user.role === 'operator',
                     }, false, 'setAuth'),
 
-                logout: async () => {
-                    try {
-                        await authService.logout()
-                    } catch (error) {
-                        console.error('Logout API failed:', error)
-                    }
+                logout: () => {
                     localStorage.removeItem('token')
-                    localStorage.removeItem('auth-storage')
                     set({
                         token: null,
                         user: null,
                         isAuthenticated: false,
                         isAdmin: false,
                     }, false, 'logout')
+                    window.location.href = '/login'
                 },
 
-                updateUser: (userData) =>
-                    set(
-                        (state) => ({
-                            user: state.user ? { ...state.user, ...userData } : null,
-                            isAdmin: userData.role ? userData.role === 'admin' : state.isAdmin,
-                        }),
-                        false,
-                        'updateUser'
-                    ),
+                clearAuth: () => {
+                    set({
+                        token: null,
+                        user: null,
+                        isAuthenticated: false,
+                        isAdmin: false,
+                    }, false, 'clearAuth')
+                    window.location.href = '/login'
+                },
             }),
             {
                 name: 'auth-storage',
@@ -66,9 +68,25 @@ export const useAuthStore = create<AuthState>()(
                     isAuthenticated: state.isAuthenticated,
                     isAdmin: state.isAdmin,
                 }),
+                onRehydrateStorage: () => {
+                    return (state) => {
+                        // Initialize API auth after store rehydration
+                        if (state) {
+                            initApiAuth(
+                                () => state.token,
+                                () => state.clearAuth()
+                            )
+                        }
+                    }
+                },
             }
         ),
         { name: 'AuthStore' }
     )
 )
 
+// Initialize API auth on first load
+initApiAuth(
+    () => useAuthStore.getState().token,
+    () => useAuthStore.getState().clearAuth()
+)

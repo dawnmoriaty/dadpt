@@ -7,7 +7,7 @@ export const Route = createFileRoute('/login')({
     beforeLoad: () => {
         const { isAuthenticated, isAdmin } = useAuthStore.getState()
         if (isAuthenticated) {
-            throw redirect({ to: isAdmin ? '/dashboard' : '/' })
+            throw redirect({ to: isAdmin ? '/admin/dashboard' : '/' })
         }
     },
     component: LoginPage,

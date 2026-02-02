@@ -56,7 +56,7 @@ export function LoginForm({ onSuccess }: LoginFormProps) {
             onSuccess?.()
 
             // Role-based redirection
-            window.location.href = user.role === 'admin' ? '/dashboard' : '/'
+            window.location.href = user.role === 'admin' ? '/admin/dashboard' : '/'
         } catch (err) {
             const apiError = err as ApiError
             setError(apiError.response?.data?.message || "Login failed")
