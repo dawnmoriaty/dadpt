@@ -23,7 +23,7 @@ func (q *Queries) CountLocations(ctx context.Context) (int64, error) {
 const createLocation = `-- name: CreateLocation :one
 INSERT INTO locations (name, city, address, keywords)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, city, address, keywords
+RETURNING id, name, city, address, keywords, image_url
 `
 
 type CreateLocationParams struct {
@@ -47,6 +47,7 @@ func (q *Queries) CreateLocation(ctx context.Context, arg CreateLocationParams) 
 		&i.City,
 		&i.Address,
 		&i.Keywords,
+		&i.ImageUrl,
 	)
 	return i, err
 }
@@ -61,7 +62,7 @@ func (q *Queries) DeleteLocation(ctx context.Context, id int32) error {
 }
 
 const getLocationByID = `-- name: GetLocationByID :one
-SELECT id, name, city, address, keywords FROM locations WHERE id = $1
+SELECT id, name, city, address, keywords, image_url FROM locations WHERE id = $1
 `
 
 func (q *Queries) GetLocationByID(ctx context.Context, id int32) (Location, error) {
@@ -73,12 +74,13 @@ func (q *Queries) GetLocationByID(ctx context.Context, id int32) (Location, erro
 		&i.City,
 		&i.Address,
 		&i.Keywords,
+		&i.ImageUrl,
 	)
 	return i, err
 }
 
 const listLocations = `-- name: ListLocations :many
-SELECT id, name, city, address, keywords FROM locations 
+SELECT id, name, city, address, keywords, image_url FROM locations 
 ORDER BY city, name
 LIMIT $1 OFFSET $2
 `
@@ -103,6 +105,7 @@ func (q *Queries) ListLocations(ctx context.Context, arg ListLocationsParams) ([
 			&i.City,
 			&i.Address,
 			&i.Keywords,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -115,7 +118,7 @@ func (q *Queries) ListLocations(ctx context.Context, arg ListLocationsParams) ([
 }
 
 const listLocationsByCity = `-- name: ListLocationsByCity :many
-SELECT id, name, city, address, keywords FROM locations WHERE city = $1 ORDER BY name
+SELECT id, name, city, address, keywords, image_url FROM locations WHERE city = $1 ORDER BY name
 `
 
 func (q *Queries) ListLocationsByCity(ctx context.Context, city string) ([]Location, error) {
@@ -133,6 +136,7 @@ func (q *Queries) ListLocationsByCity(ctx context.Context, city string) ([]Locat
 			&i.City,
 			&i.Address,
 			&i.Keywords,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -145,7 +149,7 @@ func (q *Queries) ListLocationsByCity(ctx context.Context, city string) ([]Locat
 }
 
 const searchLocations = `-- name: SearchLocations :many
-SELECT id, name, city, address, keywords FROM locations 
+SELECT id, name, city, address, keywords, image_url FROM locations 
 WHERE city ILIKE '%' || $1 || '%' 
    OR name ILIKE '%' || $1 || '%'
    OR keywords ILIKE '%' || $1 || '%'
@@ -168,6 +172,7 @@ func (q *Queries) SearchLocations(ctx context.Context, dollar_1 *string) ([]Loca
 			&i.City,
 			&i.Address,
 			&i.Keywords,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -186,7 +191,7 @@ UPDATE locations SET
     address = COALESCE($4, address),
     keywords = COALESCE($5, keywords)
 WHERE id = $1
-RETURNING id, name, city, address, keywords
+RETURNING id, name, city, address, keywords, image_url
 `
 
 type UpdateLocationParams struct {
@@ -212,6 +217,7 @@ func (q *Queries) UpdateLocation(ctx context.Context, arg UpdateLocationParams) 
 		&i.City,
 		&i.Address,
 		&i.Keywords,
+		&i.ImageUrl,
 	)
 	return i, err
 }

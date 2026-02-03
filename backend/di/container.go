@@ -10,6 +10,12 @@ import (
 	authHttp "backend/internals/auth/controller/http"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
+	busHttp "backend/internals/bus/controller/http"
+	busRepo "backend/internals/bus/repository"
+	busUc "backend/internals/bus/usecase"
+	bustypeHttp "backend/internals/bustype/controller/http"
+	bustypeRepo "backend/internals/bustype/repository"
+	bustypeUc "backend/internals/bustype/usecase"
 	locationHttp "backend/internals/locations/controller/http"
 	locationRepo "backend/internals/locations/repository"
 	locationUc "backend/internals/locations/usecase"
@@ -20,6 +26,7 @@ import (
 	tripHttp "backend/internals/trip/controller/http"
 	tripRepo "backend/internals/trip/repository"
 	tripUc "backend/internals/trip/usecase"
+	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/jwt"
 	"backend/pkgs/logger"
 	"backend/pkgs/minio"
@@ -67,6 +74,19 @@ func NewContainer() (*Container, error) {
 		tripRepo.NewTripRepository,
 		tripUc.NewTripUseCase,
 		tripHttp.NewTripHandler,
+
+		// BusType Module
+		bustypeRepo.NewBusTypeRepository,
+		bustypeUc.NewBusTypeUseCase,
+		bustypeHttp.NewBusTypeHandler,
+
+		// Bus Module
+		busRepo.NewBusRepository,
+		busUc.NewBusUseCase,
+		busHttp.NewBusHandler,
+
+		// Upload Module
+		uploadHttp.NewUploadHandler,
 
 		// Server
 		httpServer.NewServer,

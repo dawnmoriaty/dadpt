@@ -1,16 +1,20 @@
 package http
 
 import (
+	"fmt"
+	"net/http"
+
 	"backend/configs"
 	authHttp "backend/internals/auth/controller/http"
+	busHttp "backend/internals/bus/controller/http"
+	bustypeHttp "backend/internals/bustype/controller/http"
 	locationHttp "backend/internals/locations/controller/http"
 	providerHttp "backend/internals/providers/controller/http"
 	tripHttp "backend/internals/trip/controller/http"
+	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/jwt"
 	"backend/pkgs/middlewares"
 	"backend/pkgs/redis"
-	"fmt"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,6 +26,9 @@ type Server struct {
 	tripHandler     *tripHttp.TripHandler
 	locationHandler *locationHttp.LocationHandler
 	providerHandler *providerHttp.ProviderHandler
+	busTypeHandler  *bustypeHttp.BusTypeHandler
+	busHandler      *busHttp.BusHandler
+	uploadHandler   *uploadHttp.UploadHandler
 	jwtProvider     jwt.JWTProvider
 	cache           redis.IRedis
 }
@@ -33,6 +40,9 @@ func NewServer(
 	tripHandler *tripHttp.TripHandler,
 	locationHandler *locationHttp.LocationHandler,
 	providerHandler *providerHttp.ProviderHandler,
+	busTypeHandler *bustypeHttp.BusTypeHandler,
+	busHandler *busHttp.BusHandler,
+	uploadHandler *uploadHttp.UploadHandler,
 	jwtProvider jwt.JWTProvider,
 	cache redis.IRedis,
 ) *Server {
@@ -43,6 +53,9 @@ func NewServer(
 		tripHandler:     tripHandler,
 		locationHandler: locationHandler,
 		providerHandler: providerHandler,
+		busTypeHandler:  busTypeHandler,
+		busHandler:      busHandler,
+		uploadHandler:   uploadHandler,
 		jwtProvider:     jwtProvider,
 		cache:           cache,
 	}
@@ -143,5 +156,14 @@ func (s *Server) MapRoutes() {
 			adminProviders.PATCH("/:id/toggle", s.providerHandler.ToggleActive)
 			adminProviders.DELETE("/:id", s.providerHandler.Delete)
 		}
+
+		// Admin BusType routes
+		bustypeHttp.RegisterRoutes(admin, s.busTypeHandler)
+
+		// Admin Bus routes
+		busHttp.RegisterRoutes(admin, s.busHandler)
+
+		// Upload routes
+		uploadHttp.RegisterRoutes(admin, s.uploadHandler)
 	}
 }

@@ -25,10 +25,13 @@ func (uc *TripUseCase) Create(ctx context.Context, req *dto.CreateTripRequest) (
 	if req.OriginID <= 0 || req.DestinationID <= 0 {
 		return nil, errors.RequiredField("origin_id and destination_id")
 	}
-	if req.DepartureTime.Before(time.Now()) {
+	departureTime := req.GetDepartureTime()
+	arrivalTime := req.GetArrivalTime()
+
+	if departureTime.Before(time.Now()) {
 		return nil, errors.ValidationError("departure time must be in the future")
 	}
-	if req.ArrivalTime.Before(req.DepartureTime) {
+	if arrivalTime.Before(departureTime) {
 		return nil, errors.ValidationError("arrival time must be after departure time")
 	}
 
@@ -37,8 +40,8 @@ func (uc *TripUseCase) Create(ctx context.Context, req *dto.CreateTripRequest) (
 		BusID:          int32(req.BusID),
 		OriginID:       int32(req.OriginID),
 		DestinationID:  int32(req.DestinationID),
-		DepartureTime:  req.DepartureTime,
-		ArrivalTime:    req.ArrivalTime,
+		DepartureTime:  departureTime,
+		ArrivalTime:    arrivalTime,
 		BasePrice:      req.BasePrice,
 		PriceModifier:  1.0,
 		IsHotDeal:      false,
@@ -76,11 +79,11 @@ func (uc *TripUseCase) Update(ctx context.Context, id int64, req *dto.UpdateTrip
 	}
 
 	// Apply partial updates
-	if req.DepartureTime != nil {
-		existing.DepartureTime = *req.DepartureTime
+	if depTime := req.GetDepartureTime(); depTime != nil {
+		existing.DepartureTime = *depTime
 	}
-	if req.ArrivalTime != nil {
-		existing.ArrivalTime = *req.ArrivalTime
+	if arrTime := req.GetArrivalTime(); arrTime != nil {
+		existing.ArrivalTime = *arrTime
 	}
 	if req.BasePrice != nil {
 		existing.BasePrice = *req.BasePrice

@@ -23,7 +23,7 @@ func (q *Queries) CountProviders(ctx context.Context) (int64, error) {
 const createProvider = `-- name: CreateProvider :one
 INSERT INTO providers (name, hotline, slug, policy_refund)
 VALUES ($1, $2, $3, $4)
-RETURNING id, name, hotline, slug, policy_refund, is_active
+RETURNING id, name, hotline, slug, policy_refund, is_active, image_url
 `
 
 type CreateProviderParams struct {
@@ -48,6 +48,7 @@ func (q *Queries) CreateProvider(ctx context.Context, arg CreateProviderParams) 
 		&i.Slug,
 		&i.PolicyRefund,
 		&i.IsActive,
+		&i.ImageUrl,
 	)
 	return i, err
 }
@@ -62,7 +63,7 @@ func (q *Queries) DeleteProvider(ctx context.Context, id int32) error {
 }
 
 const getProviderByID = `-- name: GetProviderByID :one
-SELECT id, name, hotline, slug, policy_refund, is_active FROM providers WHERE id = $1
+SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers WHERE id = $1
 `
 
 func (q *Queries) GetProviderByID(ctx context.Context, id int32) (Provider, error) {
@@ -75,12 +76,13 @@ func (q *Queries) GetProviderByID(ctx context.Context, id int32) (Provider, erro
 		&i.Slug,
 		&i.PolicyRefund,
 		&i.IsActive,
+		&i.ImageUrl,
 	)
 	return i, err
 }
 
 const getProviderBySlug = `-- name: GetProviderBySlug :one
-SELECT id, name, hotline, slug, policy_refund, is_active FROM providers WHERE slug = $1
+SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers WHERE slug = $1
 `
 
 func (q *Queries) GetProviderBySlug(ctx context.Context, slug *string) (Provider, error) {
@@ -93,12 +95,13 @@ func (q *Queries) GetProviderBySlug(ctx context.Context, slug *string) (Provider
 		&i.Slug,
 		&i.PolicyRefund,
 		&i.IsActive,
+		&i.ImageUrl,
 	)
 	return i, err
 }
 
 const listProviders = `-- name: ListProviders :many
-SELECT id, name, hotline, slug, policy_refund, is_active FROM providers WHERE is_active = true ORDER BY name
+SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers WHERE is_active = true ORDER BY name
 `
 
 func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
@@ -117,6 +120,7 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 			&i.Slug,
 			&i.PolicyRefund,
 			&i.IsActive,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -129,7 +133,7 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 }
 
 const listProvidersAdmin = `-- name: ListProvidersAdmin :many
-SELECT id, name, hotline, slug, policy_refund, is_active FROM providers ORDER BY name LIMIT $1 OFFSET $2
+SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers ORDER BY name LIMIT $1 OFFSET $2
 `
 
 type ListProvidersAdminParams struct {
@@ -153,6 +157,7 @@ func (q *Queries) ListProvidersAdmin(ctx context.Context, arg ListProvidersAdmin
 			&i.Slug,
 			&i.PolicyRefund,
 			&i.IsActive,
+			&i.ImageUrl,
 		); err != nil {
 			return nil, err
 		}
@@ -165,7 +170,7 @@ func (q *Queries) ListProvidersAdmin(ctx context.Context, arg ListProvidersAdmin
 }
 
 const toggleProviderActive = `-- name: ToggleProviderActive :one
-UPDATE providers SET is_active = NOT is_active WHERE id = $1 RETURNING id, name, hotline, slug, policy_refund, is_active
+UPDATE providers SET is_active = NOT is_active WHERE id = $1 RETURNING id, name, hotline, slug, policy_refund, is_active, image_url
 `
 
 func (q *Queries) ToggleProviderActive(ctx context.Context, id int32) (Provider, error) {
@@ -178,6 +183,7 @@ func (q *Queries) ToggleProviderActive(ctx context.Context, id int32) (Provider,
 		&i.Slug,
 		&i.PolicyRefund,
 		&i.IsActive,
+		&i.ImageUrl,
 	)
 	return i, err
 }
@@ -189,7 +195,7 @@ UPDATE providers SET
     slug = COALESCE($4, slug),
     policy_refund = COALESCE($5, policy_refund)
 WHERE id = $1
-RETURNING id, name, hotline, slug, policy_refund, is_active
+RETURNING id, name, hotline, slug, policy_refund, is_active, image_url
 `
 
 type UpdateProviderParams struct {
@@ -216,6 +222,7 @@ func (q *Queries) UpdateProvider(ctx context.Context, arg UpdateProviderParams) 
 		&i.Slug,
 		&i.PolicyRefund,
 		&i.IsActive,
+		&i.ImageUrl,
 	)
 	return i, err
 }

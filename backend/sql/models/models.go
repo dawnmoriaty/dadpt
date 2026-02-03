@@ -33,6 +33,7 @@ type Bus struct {
 	BusTypeID    int32   `json:"busTypeId"`
 	LicensePlate string  `json:"licensePlate"`
 	Status       *string `json:"status"`
+	ImageUrl     *string `json:"imageUrl"`
 }
 
 type BusType struct {
@@ -48,6 +49,7 @@ type Location struct {
 	City     string  `json:"city"`
 	Address  *string `json:"address"`
 	Keywords *string `json:"keywords"`
+	ImageUrl *string `json:"imageUrl"`
 }
 
 type OutboxEvent struct {
@@ -67,6 +69,7 @@ type Provider struct {
 	Slug         *string `json:"slug"`
 	PolicyRefund *string `json:"policyRefund"`
 	IsActive     *bool   `json:"isActive"`
+	ImageUrl     *string `json:"imageUrl"`
 }
 
 type Trip struct {
