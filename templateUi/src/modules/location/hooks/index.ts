@@ -1,9 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { toast } from 'sonner'
 
 import type { PagingParams } from '@/modules/shared'
 
 import { locationApi } from '../api'
-import type { CreateLocationRequest, UpdateLocationRequest } from '../types'
+import type { CreateLocationRequest, UpdateLocationRequest, Location } from '../types'
 
 export const LOCATIONS_QUERY_KEY = ['admin-locations']
 
@@ -25,10 +26,15 @@ export function useLocation(id: number) {
 export function useCreateLocation() {
     const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: (data: CreateLocationRequest) => locationApi.create(data),
+    return useMutation<Location, Error, CreateLocationRequest>({
+        mutationFn: (data) => locationApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: LOCATIONS_QUERY_KEY })
+            toast.success('Location created successfully')
+        },
+        onError: (error) => {
+            console.error('Create location failed:', error)
+            toast.error('Failed to create location')
         },
     })
 }
@@ -36,11 +42,15 @@ export function useCreateLocation() {
 export function useUpdateLocation() {
     const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: ({ id, data }: { id: number; data: UpdateLocationRequest }) =>
-            locationApi.update(id, data),
+    return useMutation<Location, Error, { id: number; data: UpdateLocationRequest }>({
+        mutationFn: ({ id, data }) => locationApi.update(id, data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: LOCATIONS_QUERY_KEY })
+            toast.success('Location updated successfully')
+        },
+        onError: (error) => {
+            console.error('Update location failed:', error)
+            toast.error('Failed to update location')
         },
     })
 }
@@ -48,10 +58,15 @@ export function useUpdateLocation() {
 export function useDeleteLocation() {
     const queryClient = useQueryClient()
 
-    return useMutation({
-        mutationFn: (id: number) => locationApi.delete(id),
+    return useMutation<void, Error, number>({
+        mutationFn: (id) => locationApi.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: LOCATIONS_QUERY_KEY })
+            toast.success('Location deleted successfully')
+        },
+        onError: (error) => {
+            console.error('Delete location failed:', error)
+            toast.error('Failed to delete location')
         },
     })
 }

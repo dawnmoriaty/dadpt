@@ -18,6 +18,7 @@ interface AuthState {
     isAdmin: boolean
 
     setAuth: (token: string, user: User) => void
+    setToken: (token: string) => void
     logout: () => void
     clearAuth: () => void
 }
@@ -38,6 +39,12 @@ export const useAuthStore = create<AuthState>()(
                         isAuthenticated: true,
                         isAdmin: user.role === 'admin' || user.role === 'operator',
                     }, false, 'setAuth'),
+
+                setToken: (token) =>
+                    set((state) => ({
+                        ...state,
+                        token,
+                    }), false, 'setToken'),
 
                 logout: () => {
                     localStorage.removeItem('token')
@@ -74,6 +81,7 @@ export const useAuthStore = create<AuthState>()(
                         if (state) {
                             initApiAuth(
                                 () => state.token,
+                                (token) => state.setToken(token),
                                 () => state.clearAuth()
                             )
                         }
@@ -88,5 +96,6 @@ export const useAuthStore = create<AuthState>()(
 // Initialize API auth on first load
 initApiAuth(
     () => useAuthStore.getState().token,
+    (token) => useAuthStore.getState().setToken(token),
     () => useAuthStore.getState().clearAuth()
 )

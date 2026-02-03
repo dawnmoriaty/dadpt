@@ -14,9 +14,10 @@ import {
     TableRow,
 } from '@/components/ui/table'
 
-import { useTrips, useUpdateTripStatus } from '../hooks'
-import type { TripStatus } from '../types'
+import { useTrips, useUpdateTripStatus, useCreateTrip } from '../hooks'
+import type { TripStatus, CreateTripRequest } from '../types'
 
+import { TripForm } from './TripForm'
 import { TripStatusBadge } from './TripStatusBadge'
 
 const statusTabs: { value: TripStatus | ''; label: string; color: string }[] = [
@@ -29,6 +30,7 @@ const statusTabs: { value: TripStatus | ''; label: string; color: string }[] = [
 
 export function TripsPage() {
     const [statusFilter, setStatusFilter] = useState<TripStatus | ''>('')
+    const [isFormOpen, setIsFormOpen] = useState(false)
 
     const { data, isLoading } = useTrips({
         page: 1,
@@ -36,6 +38,13 @@ export function TripsPage() {
         status: statusFilter || undefined,
     })
     const updateStatusMutation = useUpdateTripStatus()
+    const createTripMutation = useCreateTrip()
+
+    const handleCreateTrip = (formData: CreateTripRequest): void => {
+        createTripMutation.mutate(formData, {
+            onSuccess: () => setIsFormOpen(false),
+        })
+    }
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('vi-VN', {
@@ -75,7 +84,10 @@ export function TripsPage() {
                         </p>
                     </div>
                 </div>
-                <Button className="gap-2 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 shadow-lg shadow-emerald-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5">
+                <Button
+                    onClick={() => setIsFormOpen(true)}
+                    className="gap-2 bg-gradient-to-r from-success to-info hover:opacity-90 shadow-lg shadow-success/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                >
                     <Plus className="h-4 w-4" />
                     Create Trip
                 </Button>
@@ -234,6 +246,14 @@ export function TripsPage() {
                     </Table>
                 </Card>
             )}
+
+            {/* Create Trip Form */}
+            <TripForm
+                isOpen={isFormOpen}
+                onClose={() => setIsFormOpen(false)}
+                onSubmit={handleCreateTrip}
+                isLoading={createTripMutation.isPending}
+            />
         </div>
     )
 }

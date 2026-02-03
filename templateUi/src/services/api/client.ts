@@ -10,8 +10,9 @@ export const api = axios.create({
     },
 })
 
-// Token getter - will be set by auth module
+// Token getter/setter - will be set by auth module
 let getToken: (() => string | null) | null = null
+let setToken: ((token: string) => void) | null = null
 let onTokenExpired: (() => void) | null = null
 
 /**
@@ -20,9 +21,11 @@ let onTokenExpired: (() => void) | null = null
  */
 export const initApiAuth = (
     tokenGetter: () => string | null,
+    tokenSetter: (token: string) => void,
     tokenExpiredCallback: () => void
 ) => {
     getToken = tokenGetter
+    setToken = tokenSetter
     onTokenExpired = tokenExpiredCallback
 }
 
@@ -44,6 +47,18 @@ api.interceptors.request.use(
 interface FailedRequest {
     resolve: (value: AxiosResponse | Promise<AxiosResponse>) => void
     reject: (reason: AxiosError) => void
+}
+
+interface RefreshResponse {
+    accessToken: string
+    refreshToken?: string
+    user?: {
+        id: number
+        phone: string
+        email?: string
+        username?: string
+        role: string
+    }
 }
 
 let isRefreshing = false
@@ -79,12 +94,20 @@ api.interceptors.response.use(
 
             try {
                 // Refresh token via HttpOnly cookie
-                await api.post('/auth/refresh')
+                const { data } = await api.post<RefreshResponse>('/auth/refresh')
+                
+                // Update token in store
+                if (data.accessToken && setToken) {
+                    setToken(data.accessToken)
+                    console.log('[Auth] Token refreshed successfully')
+                }
+                
                 processQueue(null)
                 return api(originalRequest)
             } catch (refreshError) {
+                console.error('[Auth] Token refresh failed:', refreshError)
                 processQueue(refreshError as AxiosError)
-                // Notify auth store to clear state
+                // Notify auth store to clear state and redirect to login
                 onTokenExpired?.()
                 return Promise.reject(refreshError)
             } finally {
