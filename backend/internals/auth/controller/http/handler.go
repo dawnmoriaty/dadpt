@@ -1,107 +1,141 @@
 package http
 
 import (
+	"errors"
+	"strings"
+
 	"backend/internals/auth/controller/dto"
+	"backend/internals/auth/domain"
 	"backend/internals/auth/usecase"
-	"backend/pkgs/errors"
+	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/response"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthHandler struct {
-	usecase usecase.IAuthUseCase
+	uc usecase.IAuthUseCase
 }
 
-func NewAuthHandler(usecase usecase.IAuthUseCase) *AuthHandler {
-	return &AuthHandler{usecase: usecase}
+func NewAuthHandler(uc usecase.IAuthUseCase) *AuthHandler {
+	return &AuthHandler{uc: uc}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, errors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
 		return
 	}
 
-	result, err := h.usecase.Register(c.Request.Context(), &req)
+	result, err := h.uc.Register(c.Request.Context(), req.ToRegisterInput())
 	if err != nil {
-		response.HandleError(c, err)
+		response.HandleError(c, mapDomainError(err))
 		return
 	}
 
-	response.Created(c, result)
+	response.Created(c, dto.ToAuthResponse(result))
 }
 
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, errors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
 		return
 	}
 
-	result, err := h.usecase.Login(c.Request.Context(), &req)
+	result, err := h.uc.Login(c.Request.Context(), req.ToLoginInput())
 	if err != nil {
-		response.HandleError(c, err)
+		response.HandleError(c, mapDomainError(err))
 		return
 	}
 
-	// Set Refresh Token as HttpOnly Cookie (7 days)
 	c.SetCookie("refresh_token", result.RefreshToken, 7*24*3600, "/", "", false, true)
-
-	response.Success(c, result)
+	response.Success(c, dto.ToAuthResponse(result))
 }
 
 func (h *AuthHandler) Logout(c *gin.Context) {
-	tokenString := c.GetHeader("Authorization")
-	if tokenString == "" {
-		response.HandleError(c, errors.ErrMissingAuthHeader)
-		return
-	}
-	// Strip "Bearer " prefix if present
-	if len(tokenString) > 7 && tokenString[:7] == "Bearer " {
-		tokenString = tokenString[7:]
-	}
-
-	err := h.usecase.Logout(c.Request.Context(), tokenString)
-	if err != nil {
-		response.HandleError(c, err)
+	token := strings.TrimPrefix(c.GetHeader("Authorization"), "Bearer ")
+	if token == "" {
+		response.HandleError(c, pkgErrors.ErrMissingAuthHeader)
 		return
 	}
 
-	// Clear Refresh Token Cookie
+	if err := h.uc.Logout(c.Request.Context(), token); err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
 	c.SetCookie("refresh_token", "", -1, "/", "", false, true)
-
 	response.Success(c, gin.H{"message": "Logged out successfully"})
 }
 
 func (h *AuthHandler) RefreshToken(c *gin.Context) {
-	// 1. Try get from Cookie
-	refreshToken, err := c.Cookie("refresh_token")
-
-	// 2. Fallback to Body
-	var req dto.RefreshTokenRequest
-	if err != nil || refreshToken == "" {
-		if errBinding := c.ShouldBindJSON(&req); errBinding != nil {
-			response.HandleError(c, errors.RequiredField("refresh_token"))
+	refreshToken, _ := c.Cookie("refresh_token")
+	if refreshToken == "" {
+		var req dto.RefreshRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			response.HandleError(c, pkgErrors.ValidationError("refresh_token is required"))
 			return
 		}
 		refreshToken = req.RefreshToken
-	} else {
-		// Populate req for usecase
-		req.RefreshToken = refreshToken
 	}
 
-	result, err := h.usecase.RefreshToken(c.Request.Context(), &req)
+	result, err := h.uc.RefreshToken(c.Request.Context(), &domain.RefreshInput{
+		RefreshToken: refreshToken,
+	})
 	if err != nil {
-		// Clear cookie if invalid
 		c.SetCookie("refresh_token", "", -1, "/", "", false, true)
-		response.HandleError(c, err)
+		response.HandleError(c, mapDomainError(err))
 		return
 	}
 
-	// Update Cookie with new refresh token
 	c.SetCookie("refresh_token", result.RefreshToken, 7*24*3600, "/", "", false, true)
+	response.Success(c, dto.ToAuthResponse(result))
+}
 
-	response.Success(c, result)
+// =============================================================================
+// ERROR MAPPING - Convert domain errors to pkgs/errors.AppError
+// =============================================================================
+
+func mapDomainError(err error) error {
+	switch {
+	// Validation errors -> 400
+	case errors.Is(err, domain.ErrInvalidPhone):
+		return pkgErrors.ErrInvalidPhone
+	case errors.Is(err, domain.ErrInvalidEmail):
+		return pkgErrors.ErrInvalidEmail
+	case errors.Is(err, domain.ErrInvalidFullName):
+		return pkgErrors.ErrInvalidFullName
+	case errors.Is(err, domain.ErrInvalidUsername):
+		return pkgErrors.ErrInvalidUsername
+	case errors.Is(err, domain.ErrInvalidPassword):
+		return pkgErrors.ErrInvalidPassword
+
+	// Conflict errors -> 409
+	case errors.Is(err, domain.ErrPhoneAlreadyExists):
+		return pkgErrors.ErrPhoneExists
+	case errors.Is(err, domain.ErrEmailAlreadyExists):
+		return pkgErrors.ErrEmailExists
+
+	// Auth errors -> 401
+	case errors.Is(err, domain.ErrInvalidCredentials):
+		return pkgErrors.ErrInvalidCredentials
+	case errors.Is(err, domain.ErrTokenInvalid):
+		return pkgErrors.ErrInvalidToken
+	case errors.Is(err, domain.ErrTokenExpired):
+		return pkgErrors.ErrTokenExpired
+
+	// Forbidden -> 403
+	case errors.Is(err, domain.ErrUserInactive):
+		return pkgErrors.ErrUserInactive
+
+	// Not found -> 404
+	case errors.Is(err, domain.ErrUserNotFound):
+		return pkgErrors.ErrUserNotFound
+
+	// Default -> 500 with wrapped error
+	default:
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+	}
 }

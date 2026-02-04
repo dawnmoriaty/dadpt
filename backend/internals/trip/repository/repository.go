@@ -3,6 +3,7 @@ package repository
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"backend/db"
 	"backend/internals/trip/domain"
@@ -139,8 +140,8 @@ func jsonToPoints(data json.RawMessage) []domain.Point {
 }
 
 func pointsToJSON(points []domain.Point) json.RawMessage {
-	if points == nil {
-		return nil
+	if len(points) == 0 {
+		return json.RawMessage("[]")
 	}
 	data, _ := json.Marshal(points)
 	return data
@@ -148,7 +149,8 @@ func pointsToJSON(points []domain.Point) json.RawMessage {
 
 func floatToNumeric(f float64) pgtype.Numeric {
 	var n pgtype.Numeric
-	n.Scan(f)
+	// Use string representation for precision with Numeric type
+	_ = n.Scan(fmt.Sprintf("%.2f", f))
 	return n
 }
 

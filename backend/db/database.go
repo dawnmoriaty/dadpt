@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/rs/zerolog/log"
 )
@@ -26,6 +28,17 @@ func NewDatabase(uri string) (*Database, error) {
 	config.MinConns = 5
 	config.MaxConnLifetime = time.Hour
 	config.MaxConnIdleTime = 30 * time.Minute
+
+	// Register text[] type for proper scanning to []string
+	config.AfterConnect = func(ctx context.Context, conn *pgx.Conn) error {
+		// Register the text array type so pgx can scan TEXT[] into []string
+		conn.TypeMap().RegisterType(&pgtype.Type{
+			Name:  "_text",
+			OID:   pgtype.TextArrayOID,
+			Codec: &pgtype.ArrayCodec{ElementType: &pgtype.Type{Name: "text", OID: pgtype.TextOID, Codec: pgtype.TextCodec{}}},
+		})
+		return nil
+	}
 
 	pool, err := pgxpool.NewWithConfig(context.Background(), config)
 	if err != nil {

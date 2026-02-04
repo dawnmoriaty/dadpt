@@ -2,6 +2,7 @@ package response
 
 import (
 	"backend/pkgs/errors"
+	"backend/pkgs/logger"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -34,6 +35,13 @@ func Created(c *gin.Context, data interface{}) {
 
 func HandleError(c *gin.Context, err error) {
 	if appErr, ok := err.(*errors.AppError); ok {
+		// Log error with stack trace for 5xx errors or when Raw error exists
+		if appErr.Status >= 500 || appErr.Raw != nil {
+			logger.LogAppError(appErr)
+		} else {
+			logger.ErrorWithCaller(appErr, "Request Error")
+		}
+
 		c.JSON(appErr.Status, Response{
 			Code:    appErr.Status,
 			Status:  string(appErr.Code),
@@ -42,7 +50,8 @@ func HandleError(c *gin.Context, err error) {
 		return
 	}
 
-	// Fallback for unknown errors
+	// Fallback for unknown errors - always log with stack
+	logger.ErrorWithStack(err, "Unhandled Error")
 	c.JSON(http.StatusInternalServerError, Response{
 		Code:    http.StatusInternalServerError,
 		Status:  string(errors.ErrCodeInternal),
@@ -78,6 +87,33 @@ func InternalServerError(c *gin.Context, message string) {
 	c.JSON(http.StatusInternalServerError, Response{
 		Code:    http.StatusInternalServerError,
 		Status:  string(errors.ErrCodeInternal),
+		Message: message,
+	})
+}
+
+// Error sends a generic error response with custom status, code and message
+func Error(c *gin.Context, status int, code string, message string) {
+	c.JSON(status, Response{
+		Code:    status,
+		Status:  code,
+		Message: message,
+	})
+}
+
+// Forbidden sends a 403 Forbidden response
+func Forbidden(c *gin.Context, message string) {
+	c.JSON(http.StatusForbidden, Response{
+		Code:    http.StatusForbidden,
+		Status:  "FORBIDDEN",
+		Message: message,
+	})
+}
+
+// Conflict sends a 409 Conflict response
+func Conflict(c *gin.Context, message string) {
+	c.JSON(http.StatusConflict, Response{
+		Code:    http.StatusConflict,
+		Status:  "CONFLICT",
 		Message: message,
 	})
 }

@@ -1,4 +1,4 @@
-#!/bin/bash
+  #!/bin/bash
 # Location API Test Script
 # Usage: ./location_curl.sh
 

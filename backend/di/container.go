@@ -8,6 +8,7 @@ import (
 	"backend/configs"
 	"backend/db"
 	authHttp "backend/internals/auth/controller/http"
+	authInfra "backend/internals/auth/infrastructure"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
 	busHttp "backend/internals/bus/controller/http"
@@ -56,6 +57,7 @@ func NewContainer() (*Container, error) {
 		provideJWTProvider,
 
 		// Auth Module
+		authInfra.NewBcryptHasher,
 		authRepo.NewAuthRepository,
 		authUc.NewAuthUseCase,
 		authHttp.NewAuthHandler,

@@ -6,191 +6,213 @@ import (
 	"time"
 
 	"backend/configs"
-	"backend/internals/auth/controller/dto"
 	"backend/internals/auth/domain"
-	"backend/internals/auth/repository"
-	"backend/pkgs/errors"
 	"backend/pkgs/jwt"
 	"backend/pkgs/redis"
 
 	"github.com/google/uuid"
-	"golang.org/x/crypto/bcrypt"
 )
 
+// =============================================================================
+// USE CASE INTERFACE - Application service contract
+// =============================================================================
+
+// IAuthUseCase defines the authentication use case operations
+// Input/Output are domain types, NOT HTTP DTOs
 type IAuthUseCase interface {
-	Register(ctx context.Context, req *dto.RegisterRequest) (*dto.AuthResponse, error)
-	Login(ctx context.Context, req *dto.LoginRequest) (*dto.AuthResponse, error)
+	Register(ctx context.Context, input *domain.RegisterInput) (*domain.AuthOutput, error)
+	Login(ctx context.Context, input *domain.LoginInput) (*domain.AuthOutput, error)
 	Logout(ctx context.Context, token string) error
-	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
+	RefreshToken(ctx context.Context, input *domain.RefreshInput) (*domain.AuthOutput, error)
 }
+
+// =============================================================================
+// IMPLEMENTATION
+// =============================================================================
 
 type authUseCase struct {
 	repo    domain.Repository
-	legacy  repository.IAuthRepository // Keep for backward compatibility during transition
+	hasher  domain.PasswordHasher
 	jwtProv jwt.JWTProvider
 	cache   redis.IRedis
 	cfg     *configs.Config
 }
 
+// NewAuthUseCase creates a new auth use case with all dependencies
 func NewAuthUseCase(
 	repo domain.Repository,
+	hasher domain.PasswordHasher,
 	jwtProv jwt.JWTProvider,
 	cache redis.IRedis,
 	cfg *configs.Config,
 ) IAuthUseCase {
 	return &authUseCase{
 		repo:    repo,
+		hasher:  hasher,
 		jwtProv: jwtProv,
 		cache:   cache,
 		cfg:     cfg,
 	}
 }
 
-func (u *authUseCase) Register(ctx context.Context, req *dto.RegisterRequest) (*dto.AuthResponse, error) {
-	// 1. Create domain entity for validation
-	user := &domain.User{
-		Phone:    req.Phone,
-		Username: req.Username,
-		FullName: req.FullName,
-		Email:    req.Email,
-		Role:     domain.RoleCustomer,
-	}
+// =============================================================================
+// REGISTER - Uses domain factory for validation
+// =============================================================================
 
-	// 2. Run domain validation
-	if !user.ValidatePhone() {
-		return nil, errors.ValidationError("invalid phone format")
-	}
-	if !user.ValidateEmail() {
-		return nil, errors.ValidationError("invalid email format")
-	}
-	if !user.ValidateFullName() {
-		return nil, errors.ValidationError("full name must be at least 2 characters")
-	}
-	if !user.ValidateUsername() {
-		return nil, errors.ValidationError("username must be 3-30 alphanumeric characters")
-	}
-	if !user.ValidatePassword(req.Password) {
-		return nil, errors.ValidationError("password must be at least 6 characters")
-	}
-
-	// 3. Check phone uniqueness
-	exists, err := u.repo.PhoneExists(ctx, req.Phone)
+func (u *authUseCase) Register(ctx context.Context, input *domain.RegisterInput) (*domain.AuthOutput, error) {
+	// 1. Create domain entity - validation happens inside factory
+	user, err := domain.NewUser(domain.NewUserParams{
+		Phone:    input.Phone,
+		Username: input.Username,
+		FullName: input.FullName,
+		Email:    input.Email,
+		Password: input.Password,
+	})
 	if err != nil {
+		// Domain validation error - wrap and return
 		return nil, err
+	}
+
+	// 2. Check phone uniqueness (business rule)
+	exists, err := u.repo.PhoneExists(ctx, user.Phone)
+	if err != nil {
+		return nil, fmt.Errorf("checking phone existence: %w", err)
 	}
 	if exists {
-		return nil, errors.ErrPhoneExists
+		return nil, domain.ErrPhoneAlreadyExists
 	}
 
-	// 4. Hash password
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	// 3. Hash password using injected hasher
+	hashedPassword, err := u.hasher.Hash(input.Password)
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to hash password")
+		return nil, fmt.Errorf("hashing password: %w", err)
 	}
-	user.PasswordHash = string(hashedPassword)
+	user.PasswordHash = hashedPassword
 
-	// 5. Create user via domain repository
+	// 4. Persist user
 	created, err := u.repo.Create(ctx, user)
 	if err != nil {
+		return nil, fmt.Errorf("creating user: %w", err)
+	}
+
+	// 5. Generate auth tokens
+	return u.generateAuthOutput(ctx, created)
+}
+
+// =============================================================================
+// LOGIN - Domain entity validates login eligibility
+// =============================================================================
+
+func (u *authUseCase) Login(ctx context.Context, input *domain.LoginInput) (*domain.AuthOutput, error) {
+	// 1. Find user by identifier (phone/email/username)
+	user, err := u.repo.GetByIdentifier(ctx, input.Identifier)
+	if err != nil {
+		// Don't leak whether user exists
+		return nil, domain.ErrInvalidCredentials
+	}
+
+	// 2. Check if user can login (domain business rule)
+	if err := user.CanLogin(); err != nil {
 		return nil, err
 	}
 
-	return u.generateAuthResponse(ctx, created)
-}
-
-func (u *authUseCase) Login(ctx context.Context, req *dto.LoginRequest) (*dto.AuthResponse, error) {
-	// 1. Find user by Identifier (Phone OR Email OR Username)
-	user, err := u.repo.GetByIdentifier(ctx, req.Identifier)
-	if err != nil {
-		return nil, errors.ErrInvalidCredentials
+	// 3. Verify password using hasher
+	if err := u.hasher.Compare(user.PasswordHash, input.Password); err != nil {
+		return nil, domain.ErrInvalidCredentials
 	}
 
-	// 2. Check Password
-	if err := bcrypt.CompareHashAndPassword([]byte(user.PasswordHash), []byte(req.Password)); err != nil {
-		return nil, errors.ErrInvalidCredentials
-	}
-
-	return u.generateAuthResponse(ctx, user)
+	// 4. Generate auth tokens
+	return u.generateAuthOutput(ctx, user)
 }
 
-func (u *authUseCase) RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error) {
-	key := fmt.Sprintf("refresh_token:%s", req.RefreshToken)
+// =============================================================================
+// REFRESH TOKEN
+// =============================================================================
+
+func (u *authUseCase) RefreshToken(ctx context.Context, input *domain.RefreshInput) (*domain.AuthOutput, error) {
+	key := fmt.Sprintf("refresh_token:%s", input.RefreshToken)
+
 	var userID int64
 	err := u.cache.Get(key, &userID)
 	if err != nil {
-		return nil, errors.ErrInvalidToken
+		return nil, domain.ErrTokenInvalid
 	}
 
-	// 2. Get User
+	// Get user from repository
 	user, err := u.repo.GetByID(ctx, userID)
 	if err != nil {
-		return nil, errors.ErrInvalidToken
+		return nil, domain.ErrTokenInvalid
 	}
 
-	// 3. Rotate Token: Delete old, create new
+	// Check if user can still login
+	if err := user.CanLogin(); err != nil {
+		return nil, err
+	}
+
+	// Rotate token: delete old, create new
 	u.cache.Remove(key)
 
-	return u.generateAuthResponse(ctx, user)
+	return u.generateAuthOutput(ctx, user)
 }
 
+// =============================================================================
+// LOGOUT - Blacklist token
+// =============================================================================
+
 func (u *authUseCase) Logout(ctx context.Context, tokenString string) error {
-	// 1. Validate Token format & signature first
+	// 1. Validate token format & signature
 	claims, err := u.jwtProv.ValidateToken(tokenString)
 	if err != nil {
-		return errors.ErrInvalidToken
+		return domain.ErrTokenInvalid
 	}
 
-	// 2. Calculate remaining time for expiration to set key TTL
+	// 2. Calculate remaining TTL for blacklist entry
 	expFloat, ok := (*claims)["exp"].(float64)
 	if !ok {
-		return errors.ErrInvalidToken
+		return domain.ErrTokenInvalid
 	}
 	expTime := time.Unix(int64(expFloat), 0)
 	remainingTime := time.Until(expTime)
 
 	if remainingTime <= 0 {
-		return nil // Already expired, no need to blacklist
+		return nil // Already expired
 	}
 
-	// 3. Add to Redis Blacklist
+	// 3. Add to blacklist
 	if u.cache != nil && u.cache.IsConnected() {
 		blacklistKey := fmt.Sprintf("blacklist:%s", tokenString)
-		err := u.cache.SetWithExpiration(blacklistKey, "revoked", remainingTime)
-		if err != nil {
-			return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to blacklist token")
+		if err := u.cache.SetWithExpiration(blacklistKey, "revoked", remainingTime); err != nil {
+			return fmt.Errorf("blacklisting token: %w", err)
 		}
 	}
 
 	return nil
 }
 
-func (u *authUseCase) generateAuthResponse(ctx context.Context, user *domain.User) (*dto.AuthResponse, error) {
-	// 1. Access Token (HS512) - use role from domain entity
+// =============================================================================
+// HELPER - Generate auth response
+// =============================================================================
+
+func (u *authUseCase) generateAuthOutput(ctx context.Context, user *domain.User) (*domain.AuthOutput, error) {
+	// 1. Generate access token
 	td, err := u.jwtProv.GenerateToken(user.ID, user.Role.String(), u.cfg.AccessTokenDuration)
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to generate token")
+		return nil, fmt.Errorf("generating access token: %w", err)
 	}
 
-	// 2. Refresh Token (Random UUID)
+	// 2. Generate refresh token (random UUID)
 	refreshToken := uuid.New().String()
 
-	// 3. Store Refresh Token in Redis
+	// 3. Store refresh token in Redis
 	if u.cache != nil && u.cache.IsConnected() {
 		key := fmt.Sprintf("refresh_token:%s", refreshToken)
 		_ = u.cache.SetWithExpiration(key, user.ID, u.cfg.RefreshTokenDuration)
 	}
 
-	return &dto.AuthResponse{
+	return &domain.AuthOutput{
 		AccessToken:  td.AccessToken,
 		RefreshToken: refreshToken,
 		ExpiresIn:    int64(u.cfg.AccessTokenDuration.Seconds()),
-		User: dto.UserResponse{
-			ID:       user.ID,
-			Phone:    user.Phone,
-			Username: user.Username,
-			FullName: user.FullName,
-			Email:    user.Email,
-			Role:     user.Role.String(),
-		},
+		User:         user,
 	}, nil
 }
