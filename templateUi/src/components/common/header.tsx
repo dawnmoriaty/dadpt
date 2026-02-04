@@ -1,6 +1,7 @@
-import { User, LogOut, Ticket, Settings } from "lucide-react"
+import { LogOut, Settings, Ticket, User } from 'lucide-react'
+import { useState } from 'react'
 
-import { Button } from "@/components/ui/button"
+import { Button } from '@/components/ui/button'
 import {
     DropdownMenu,
     DropdownMenuContent,
@@ -8,13 +9,13 @@ import {
     DropdownMenuLabel,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { AuthModal } from "@/features/auth/auth-modal"
-import { useAuthStore } from "@/stores/use-auth-store"
-
+} from '@/components/ui/dropdown-menu'
+import { AuthModal } from '@/modules/auth'
+import { useAuthStore } from '@/stores/use-auth-store'
 
 export function Header() {
     const { user, isAuthenticated, logout } = useAuthStore()
+    const [authOpen, setAuthOpen] = useState(false)
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
@@ -59,7 +60,10 @@ export function Header() {
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
-                        <AuthModal trigger={<Button>Login / Register</Button>} />
+                        <>
+                            <Button onClick={() => setAuthOpen(true)}>Login / Register</Button>
+                            <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
+                        </>
                     )}
                 </nav>
             </div>

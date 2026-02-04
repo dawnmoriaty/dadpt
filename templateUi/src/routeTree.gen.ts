@@ -9,22 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PublicRouteImport } from './routes/_public'
+import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
+import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
 import { Route as AdminProvidersIndexRouteImport } from './routes/admin/providers/index'
 import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
 import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
 import { Route as AdminBusTypesIndexRouteImport } from './routes/admin/bus-types/index'
 
-const LoginRoute = LoginRouteImport.update({
-  id: '/login',
-  path: '/login',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -32,6 +29,10 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/_auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
@@ -43,6 +44,16 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
+} as any)
+const AuthRegisterRoute = AuthRegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => AuthRoute,
+} as any)
+const AuthLoginRoute = AuthLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => AuthRoute,
 } as any)
 const AdminTripsIndexRoute = AdminTripsIndexRouteImport.update({
   id: '/trips/',
@@ -72,7 +83,8 @@ const AdminBusTypesIndexRoute = AdminBusTypesIndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
-  '/login': typeof LoginRoute
+  '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
@@ -83,7 +95,8 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
-  '/login': typeof LoginRoute
+  '/login': typeof AuthLoginRoute
+  '/register': typeof AuthRegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
@@ -94,9 +107,11 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/_auth': typeof AuthRouteWithChildren
   '/_public': typeof PublicRouteWithChildren
   '/admin': typeof AdminRouteWithChildren
-  '/login': typeof LoginRoute
+  '/_auth/login': typeof AuthLoginRoute
+  '/_auth/register': typeof AuthRegisterRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/_public/': typeof PublicIndexRoute
   '/admin/bus-types/': typeof AdminBusTypesIndexRoute
@@ -110,6 +125,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/admin'
     | '/login'
+    | '/register'
     | '/admin/dashboard'
     | '/'
     | '/admin/bus-types'
@@ -121,6 +137,7 @@ export interface FileRouteTypes {
   to:
     | '/admin'
     | '/login'
+    | '/register'
     | '/admin/dashboard'
     | '/'
     | '/admin/bus-types'
@@ -130,9 +147,11 @@ export interface FileRouteTypes {
     | '/admin/trips'
   id:
     | '__root__'
+    | '/_auth'
     | '/_public'
     | '/admin'
-    | '/login'
+    | '/_auth/login'
+    | '/_auth/register'
     | '/admin/dashboard'
     | '/_public/'
     | '/admin/bus-types/'
@@ -143,20 +162,13 @@ export interface FileRouteTypes {
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
+  AuthRoute: typeof AuthRouteWithChildren
   PublicRoute: typeof PublicRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
-  LoginRoute: typeof LoginRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/login': {
-      id: '/login'
-      path: '/login'
-      fullPath: '/login'
-      preLoaderRoute: typeof LoginRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -169,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof PublicRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_auth': {
+      id: '/_auth'
+      path: ''
+      fullPath: ''
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public/': {
@@ -184,6 +203,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/dashboard'
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
+    }
+    '/_auth/register': {
+      id: '/_auth/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof AuthRegisterRouteImport
+      parentRoute: typeof AuthRoute
+    }
+    '/_auth/login': {
+      id: '/_auth/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof AuthLoginRouteImport
+      parentRoute: typeof AuthRoute
     }
     '/admin/trips/': {
       id: '/admin/trips/'
@@ -223,6 +256,18 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthRouteChildren {
+  AuthLoginRoute: typeof AuthLoginRoute
+  AuthRegisterRoute: typeof AuthRegisterRoute
+}
+
+const AuthRouteChildren: AuthRouteChildren = {
+  AuthLoginRoute: AuthLoginRoute,
+  AuthRegisterRoute: AuthRegisterRoute,
+}
+
+const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
+
 interface PublicRouteChildren {
   PublicIndexRoute: typeof PublicIndexRoute
 }
@@ -255,9 +300,9 @@ const AdminRouteChildren: AdminRouteChildren = {
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
+  AuthRoute: AuthRouteWithChildren,
   PublicRoute: PublicRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
-  LoginRoute: LoginRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

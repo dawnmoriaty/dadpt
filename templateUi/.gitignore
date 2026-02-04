@@ -27,3 +27,5 @@ dist-ssr
 # Agent Rules
 .agent/
 .gemini/
+.idea/
+

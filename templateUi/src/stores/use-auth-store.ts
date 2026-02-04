@@ -1,23 +1,16 @@
 import { create } from 'zustand'
 import { devtools, persist } from 'zustand/middleware'
 
-import { initApiAuth } from '@/services/api/client'
 
-interface User {
-    id: number
-    phone: string
-    fullName: string
-    email?: string
-    username?: string
-    role: 'user' | 'admin' | 'operator' | 'customer'
-}
+import type { Role, User } from '@/modules/auth'
+import { canAccessAdmin } from '@/modules/auth'
+import { initApiAuth } from '@/services/api/client'
 
 interface AuthState {
     token: string | null
     user: User | null
     isAuthenticated: boolean
     isAdmin: boolean
-
     setAuth: (token: string, user: User) => void
     setToken: (token: string) => void
     logout: () => void
@@ -38,13 +31,11 @@ export const useAuthStore = create<AuthState>()(
                         token,
                         user,
                         isAuthenticated: true,
-                        isAdmin: user.role === 'admin' || user.role === 'operator',
+                        isAdmin: canAccessAdmin(user.role as Role),
                     }, false, 'setAuth'),
 
                 setToken: (token) =>
-                    set({
-                        token,
-                    }, false, 'setToken'),
+                    set({ token }, false, 'setToken'),
 
                 logout: () => {
                     localStorage.removeItem('token')
@@ -81,16 +72,12 @@ export const useAuthStore = create<AuthState>()(
     )
 )
 
-// Initialize API auth AFTER store is created
-// Use getState() to always get the latest state, not a stale closure
 initApiAuth(
     () => useAuthStore.getState().token,
     (token: string) => {
-        // Use getState().setToken to ensure we're updating the current state
         useAuthStore.setState({ token }, false, 'setToken')
     },
     () => {
-        // Clear auth and redirect
         useAuthStore.setState({
             token: null,
             user: null,

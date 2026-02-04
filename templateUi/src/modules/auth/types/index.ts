@@ -1,38 +1,38 @@
-// User type matching backend response
+export type Role = 'admin' | 'operator' | 'customer'
+
 export interface User {
     id: number
     phone: string
     username: string
     fullName: string
     email: string
-    role: 'admin' | 'operator' | 'customer' | 'user'
+    role: Role
 }
 
-// Request DTOs
 export interface LoginRequest {
     identifier: string
     password: string
 }
 
 export interface RegisterRequest {
-    fullName: string
-    username: string
     phone: string
-    email?: string
+    username: string
     password: string
+    fullName: string
+    email?: string
 }
 
-// Response DTOs
+export interface RefreshRequest {
+    refreshToken: string
+}
+
 export interface AuthResponse {
     accessToken: string
+    refreshToken?: string
+    expiresIn: number
     user: User
 }
 
-// Error type for API calls
-export interface ApiError {
-    response?: {
-        data?: {
-            message?: string
-        }
-    }
+export const canAccessAdmin = (role: Role): boolean => {
+    return role === 'admin' || role === 'operator'
 }
