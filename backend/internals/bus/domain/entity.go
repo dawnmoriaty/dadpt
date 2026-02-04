@@ -27,7 +27,7 @@ var (
 	ErrBusProviderIDRequired   = "BUS_PROVIDER_ID_REQUIRED"
 	ErrBusBusTypeIDRequired    = "BUS_BUS_TYPE_ID_REQUIRED"
 	ErrBusLicensePlateRequired = "BUS_LICENSE_PLATE_REQUIRED"
-	ErrBusLicensePlateTooShort = "BUS_LICENSE_PLATE_TOO_SHORT"
+	ErrBusLicensePlateTooShort = "BUS_LICENSE_PLATE_TOO_SHORT(MIN = 5)"
 )
 
 // Validate validates the bus
