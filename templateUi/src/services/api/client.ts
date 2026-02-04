@@ -1,8 +1,21 @@
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
 
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
+
 // Create axios instance
 export const api = axios.create({
-    baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1',
+    baseURL: BASE_URL,
+    timeout: 10000,
+    withCredentials: true, // For HttpOnly cookies (refresh token)
+    headers: {
+        'Content-Type': 'application/json',
+    },
+})
+
+// Separate axios instance for refresh token - NO interceptors attached
+// This prevents infinite loops when refreshing
+const refreshApi = axios.create({
+    baseURL: BASE_URL,
     timeout: 10000,
     withCredentials: true, // For HttpOnly cookies (refresh token)
     headers: {
@@ -49,7 +62,15 @@ interface FailedRequest {
     reject: (reason: AxiosError) => void
 }
 
-interface RefreshResponse {
+// Backend response wrapper
+interface ApiResponse<T> {
+    code: number
+    status: string
+    message: string
+    data: T
+}
+
+interface RefreshData {
     accessToken: string
     refreshToken?: string
     user?: {
@@ -75,15 +96,28 @@ const processQueue = (error: AxiosError | null) => {
     failedQueue = []
 }
 
+
 api.interceptors.response.use(
     (response: AxiosResponse) => response,
     async (error: AxiosError) => {
         const originalRequest = error.config as InternalAxiosRequestConfig & { _retry?: boolean }
 
+        console.log('[Auth Debug] Response error:', error.response?.status, error.config?.url)
+        console.log('[Auth Debug] _retry:', originalRequest._retry, 'isRefreshing:', isRefreshing)
+
         // Handle 401 Unauthorized
         if (error.response?.status === 401 && !originalRequest._retry) {
+            console.log('[Auth Debug] Got 401, attempting refresh...')
+            
+            // Skip refresh for auth endpoints to avoid loops
+            if (originalRequest.url?.includes('/auth/refresh')) {
+                console.log('[Auth Debug] Skip refresh for refresh endpoint')
+                return Promise.reject(error)
+            }
+
             // If already refreshing, queue this request
             if (isRefreshing) {
+                console.log('[Auth Debug] Already refreshing, queuing request')
                 return new Promise((resolve, reject) => {
                     failedQueue.push({ resolve, reject })
                 }).then(() => api(originalRequest))
@@ -93,16 +127,28 @@ api.interceptors.response.use(
             isRefreshing = true
 
             try {
-                // Refresh token via HttpOnly cookie
-                const { data } = await api.post<RefreshResponse>('/auth/refresh')
+                console.log('[Auth Debug] Calling refresh endpoint...')
+                // Use separate axios instance WITHOUT interceptors to avoid infinite loop
+                // refresh_token is sent via HttpOnly cookie (withCredentials: true)
+                const { data } = await refreshApi.post<ApiResponse<RefreshData>>('/auth/refresh')
                 
-                // Update token in store
-                if (data.accessToken && setToken) {
-                    setToken(data.accessToken)
-                    console.log('[Auth] Token refreshed successfully')
+                console.log('[Auth Debug] Refresh response:', data)
+                
+                // Backend returns: { code, status, message, data: { accessToken, ... } }
+                // So accessToken is in data.data
+                const accessToken = data.data?.accessToken
+                
+                if (accessToken && setToken) {
+                    setToken(accessToken)
+                    console.log('[Auth] Token refreshed successfully, new token:', accessToken.substring(0, 20) + '...')
+                } else {
+                    console.error('[Auth] No accessToken in refresh response')
                 }
                 
                 processQueue(null)
+                
+                // Update the original request with new token
+                originalRequest.headers.Authorization = `Bearer ${accessToken}`
                 return api(originalRequest)
             } catch (refreshError) {
                 console.error('[Auth] Token refresh failed:', refreshError)

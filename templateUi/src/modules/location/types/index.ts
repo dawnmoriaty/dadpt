@@ -6,6 +6,7 @@ export interface Location {
     city: string
     address: string
     keywords: string
+    imageUrl?: string
 }
 
 export interface CreateLocationRequest {
@@ -13,6 +14,7 @@ export interface CreateLocationRequest {
     city: string
     address?: string
     keywords?: string
+    imageUrl?: string
 }
 
 export interface UpdateLocationRequest {
@@ -20,4 +22,5 @@ export interface UpdateLocationRequest {
     city?: string
     address?: string
     keywords?: string
+    imageUrl?: string
 }

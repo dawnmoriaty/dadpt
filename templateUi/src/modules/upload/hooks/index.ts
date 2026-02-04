@@ -2,20 +2,26 @@ import { useMutation } from '@tanstack/react-query'
 
 import { uploadApi } from '../api'
 
+interface UploadParams {
+    file: File
+    folder?: string
+}
+
 export function useUploadImage() {
     return useMutation({
-        mutationFn: (file: File) => uploadApi.uploadImage(file),
+        mutationFn: (params: UploadParams) => uploadApi.uploadImage(params),
     })
 }
 
 export function useUploadImages() {
     return useMutation({
-        mutationFn: (files: File[]) => uploadApi.uploadImages(files),
+        mutationFn: ({ files, folder }: { files: File[]; folder?: string }) => 
+            uploadApi.uploadImages(files, folder),
     })
 }
 
 export function useDeleteImage() {
     return useMutation({
-        mutationFn: (filename: string) => uploadApi.deleteImage(filename),
+        mutationFn: (url: string) => uploadApi.deleteImage(url),
     })
 }

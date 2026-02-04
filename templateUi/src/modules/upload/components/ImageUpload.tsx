@@ -39,7 +39,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
         reader.readAsDataURL(file)
 
         try {
-            const response = await uploadMutation.mutateAsync(file)
+            const response = await uploadMutation.mutateAsync({ file })
             onChange?.(response.url)
         } catch {
             setError('Upload failed. Please try again.')
@@ -126,7 +126,7 @@ export function MultiImageUpload({
         const filesToUpload = files.slice(0, remainingSlots)
 
         try {
-            const responses = await uploadMutation.mutateAsync(filesToUpload)
+            const responses = await uploadMutation.mutateAsync({ files: filesToUpload })
             const newUrls = responses.map((r) => r.url)
             onChange?.([...values, ...newUrls])
         } catch (err) {

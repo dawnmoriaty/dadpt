@@ -12,12 +12,13 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as PublicRouteImport } from './routes/_public'
-import { Route as TripIndexRouteImport } from './routes/trip/index'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
 import { Route as AdminProvidersIndexRouteImport } from './routes/admin/providers/index'
 import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
+import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
+import { Route as AdminBusTypesIndexRouteImport } from './routes/admin/bus-types/index'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -31,11 +32,6 @@ const AdminRoute = AdminRouteImport.update({
 } as any)
 const PublicRoute = PublicRouteImport.update({
   id: '/_public',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const TripIndexRoute = TripIndexRouteImport.update({
-  id: '/trip/',
-  path: '/trip/',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PublicIndexRoute = PublicIndexRouteImport.update({
@@ -63,13 +59,24 @@ const AdminLocationsIndexRoute = AdminLocationsIndexRouteImport.update({
   path: '/locations/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBusesIndexRoute = AdminBusesIndexRouteImport.update({
+  id: '/buses/',
+  path: '/buses/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBusTypesIndexRoute = AdminBusTypesIndexRouteImport.update({
+  id: '/bus-types/',
+  path: '/bus-types/',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
-  '/trip': typeof TripIndexRoute
+  '/admin/bus-types': typeof AdminBusTypesIndexRoute
+  '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
   '/admin/providers': typeof AdminProvidersIndexRoute
   '/admin/trips': typeof AdminTripsIndexRoute
@@ -79,7 +86,8 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
-  '/trip': typeof TripIndexRoute
+  '/admin/bus-types': typeof AdminBusTypesIndexRoute
+  '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
   '/admin/providers': typeof AdminProvidersIndexRoute
   '/admin/trips': typeof AdminTripsIndexRoute
@@ -91,7 +99,8 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/_public/': typeof PublicIndexRoute
-  '/trip/': typeof TripIndexRoute
+  '/admin/bus-types/': typeof AdminBusTypesIndexRoute
+  '/admin/buses/': typeof AdminBusesIndexRoute
   '/admin/locations/': typeof AdminLocationsIndexRoute
   '/admin/providers/': typeof AdminProvidersIndexRoute
   '/admin/trips/': typeof AdminTripsIndexRoute
@@ -103,7 +112,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/'
-    | '/trip'
+    | '/admin/bus-types'
+    | '/admin/buses'
     | '/admin/locations'
     | '/admin/providers'
     | '/admin/trips'
@@ -113,7 +123,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/'
-    | '/trip'
+    | '/admin/bus-types'
+    | '/admin/buses'
     | '/admin/locations'
     | '/admin/providers'
     | '/admin/trips'
@@ -124,7 +135,8 @@ export interface FileRouteTypes {
     | '/login'
     | '/admin/dashboard'
     | '/_public/'
-    | '/trip/'
+    | '/admin/bus-types/'
+    | '/admin/buses/'
     | '/admin/locations/'
     | '/admin/providers/'
     | '/admin/trips/'
@@ -134,7 +146,6 @@ export interface RootRouteChildren {
   PublicRoute: typeof PublicRouteWithChildren
   AdminRoute: typeof AdminRouteWithChildren
   LoginRoute: typeof LoginRoute
-  TripIndexRoute: typeof TripIndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -158,13 +169,6 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof PublicRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/trip/': {
-      id: '/trip/'
-      path: '/trip'
-      fullPath: '/trip'
-      preLoaderRoute: typeof TripIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_public/': {
@@ -202,6 +206,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLocationsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/buses/': {
+      id: '/admin/buses/'
+      path: '/buses'
+      fullPath: '/admin/buses'
+      preLoaderRoute: typeof AdminBusesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bus-types/': {
+      id: '/admin/bus-types/'
+      path: '/bus-types'
+      fullPath: '/admin/bus-types'
+      preLoaderRoute: typeof AdminBusTypesIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -218,6 +236,8 @@ const PublicRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminBusTypesIndexRoute: typeof AdminBusTypesIndexRoute
+  AdminBusesIndexRoute: typeof AdminBusesIndexRoute
   AdminLocationsIndexRoute: typeof AdminLocationsIndexRoute
   AdminProvidersIndexRoute: typeof AdminProvidersIndexRoute
   AdminTripsIndexRoute: typeof AdminTripsIndexRoute
@@ -225,6 +245,8 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminBusTypesIndexRoute: AdminBusTypesIndexRoute,
+  AdminBusesIndexRoute: AdminBusesIndexRoute,
   AdminLocationsIndexRoute: AdminLocationsIndexRoute,
   AdminProvidersIndexRoute: AdminProvidersIndexRoute,
   AdminTripsIndexRoute: AdminTripsIndexRoute,
@@ -236,7 +258,6 @@ const rootRouteChildren: RootRouteChildren = {
   PublicRoute: PublicRouteWithChildren,
   AdminRoute: AdminRouteWithChildren,
   LoginRoute: LoginRoute,
-  TripIndexRoute: TripIndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

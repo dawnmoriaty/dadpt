@@ -7,7 +7,7 @@ export interface Provider {
     slug: string
     policyRefund: string
     isActive: boolean
-    logoUrl?: string
+    imageUrl?: string
 }
 
 export interface CreateProviderRequest {
@@ -15,6 +15,7 @@ export interface CreateProviderRequest {
     hotline?: string
     slug?: string
     policyRefund?: string
+    imageUrl?: string
 }
 
 export interface UpdateProviderRequest {
@@ -22,4 +23,6 @@ export interface UpdateProviderRequest {
     hotline?: string
     slug?: string
     policyRefund?: string
+    imageUrl?: string
+    isActive?: boolean
 }

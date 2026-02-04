@@ -6,6 +6,7 @@ import { initApiAuth } from '@/services/api/client'
 interface User {
     id: number
     phone: string
+    fullName: string
     email?: string
     username?: string
     role: 'user' | 'admin' | 'operator' | 'customer'
@@ -41,10 +42,9 @@ export const useAuthStore = create<AuthState>()(
                     }, false, 'setAuth'),
 
                 setToken: (token) =>
-                    set((state) => ({
-                        ...state,
+                    set({
                         token,
-                    }), false, 'setToken'),
+                    }, false, 'setToken'),
 
                 logout: () => {
                     localStorage.removeItem('token')
@@ -75,27 +75,28 @@ export const useAuthStore = create<AuthState>()(
                     isAuthenticated: state.isAuthenticated,
                     isAdmin: state.isAdmin,
                 }),
-                onRehydrateStorage: () => {
-                    return (state) => {
-                        // Initialize API auth after store rehydration
-                        if (state) {
-                            initApiAuth(
-                                () => state.token,
-                                (token) => state.setToken(token),
-                                () => state.clearAuth()
-                            )
-                        }
-                    }
-                },
             }
         ),
         { name: 'AuthStore' }
     )
 )
 
-// Initialize API auth on first load
+// Initialize API auth AFTER store is created
+// Use getState() to always get the latest state, not a stale closure
 initApiAuth(
     () => useAuthStore.getState().token,
-    (token) => useAuthStore.getState().setToken(token),
-    () => useAuthStore.getState().clearAuth()
+    (token: string) => {
+        // Use getState().setToken to ensure we're updating the current state
+        useAuthStore.setState({ token }, false, 'setToken')
+    },
+    () => {
+        // Clear auth and redirect
+        useAuthStore.setState({
+            token: null,
+            user: null,
+            isAuthenticated: false,
+            isAdmin: false,
+        }, false, 'clearAuth')
+        window.location.href = '/login'
+    }
 )
