@@ -137,33 +137,33 @@ var (
 	ErrInsufficientRole  = NewAppError(http.StatusForbidden, ErrCodeInsufficientRole, "Insufficient permissions")
 
 	// Auth errors
-	ErrInvalidCredentials = NewAppError(http.StatusUnauthorized, ErrCodeInvalidCredentials, "Invalid phone or password")
-	ErrInvalidToken       = NewAppError(http.StatusUnauthorized, ErrCodeInvalidToken, "Invalid or expired token")
-	ErrTokenExpired       = NewAppError(http.StatusUnauthorized, ErrCodeTokenExpired, "Token has expired")
-	ErrPhoneExists        = NewAppError(http.StatusConflict, ErrCodePhoneExists, "Phone number already registered")
-	ErrEmailExists        = NewAppError(http.StatusConflict, ErrCodeEmailExists, "Email already registered")
-	ErrUserNotFound       = NewAppError(http.StatusNotFound, ErrCodeUserNotFound, "User not found")
-	ErrUserInactive       = NewAppError(http.StatusForbidden, ErrCodeUserInactive, "User account is inactive")
-	ErrInvalidPhone       = NewAppError(http.StatusBadRequest, ErrCodeInvalidPhone, "Invalid phone format: must be Vietnamese phone number")
-	ErrInvalidEmail       = NewAppError(http.StatusBadRequest, ErrCodeInvalidEmail, "Invalid email format")
-	ErrInvalidPassword    = NewAppError(http.StatusBadRequest, ErrCodeInvalidPassword, "Password must be at least 6 characters")
-	ErrInvalidFullName    = NewAppError(http.StatusBadRequest, ErrCodeInvalidFullName, "Full name must be at least 2 characters")
-	ErrInvalidUsername    = NewAppError(http.StatusBadRequest, ErrCodeInvalidUsername, "Username must be 3-30 alphanumeric characters or underscore")
+	ErrInvalidCredentials = NewAppError(http.StatusUnauthorized, ErrCodeInvalidCredentials, "Số điện thoại hoặc mật khẩu không hợp lệ")
+	ErrInvalidToken       = NewAppError(http.StatusUnauthorized, ErrCodeInvalidToken, "Token không hợp lệ")
+	ErrTokenExpired       = NewAppError(http.StatusUnauthorized, ErrCodeTokenExpired, "Token hết hạn")
+	ErrPhoneExists        = NewAppError(http.StatusConflict, ErrCodePhoneExists, "Số điện thoại đã được đăng ký")
+	ErrEmailExists        = NewAppError(http.StatusConflict, ErrCodeEmailExists, "Email đã được đăng ký")
+	ErrUserNotFound       = NewAppError(http.StatusNotFound, ErrCodeUserNotFound, "Người dùng không tồn tại")
+	ErrUserInactive       = NewAppError(http.StatusForbidden, ErrCodeUserInactive, "Tài khoản người dùng không hoạt động")
+	ErrInvalidPhone       = NewAppError(http.StatusBadRequest, ErrCodeInvalidPhone, "Định dạng số điện thoại không hợp lệ: phải là số điện thoại Việt Nam")
+	ErrInvalidEmail       = NewAppError(http.StatusBadRequest, ErrCodeInvalidEmail, "Định dạng email không hợp lệ")
+	ErrInvalidPassword    = NewAppError(http.StatusBadRequest, ErrCodeInvalidPassword, "Mật khẩu phải có ít nhất 6 ký tự")
+	ErrInvalidFullName    = NewAppError(http.StatusBadRequest, ErrCodeInvalidFullName, "Họ tên phải có ít nhất 2 ký tự")
+	ErrInvalidUsername    = NewAppError(http.StatusBadRequest, ErrCodeInvalidUsername, "Tên người dùng phải có 3-30 ký tự chữ, số hoặc dấu gạch dưới")
 
 	// Location
-	ErrLocationNotFound = NewAppError(http.StatusNotFound, ErrCodeLocationNotFound, "Location not found")
-	ErrLocationInUse    = NewAppError(http.StatusConflict, ErrCodeLocationInUse, "Location is being used by trips")
+	ErrLocationNotFound = NewAppError(http.StatusNotFound, ErrCodeLocationNotFound, "Không tìm thấy địa điểm")
+	ErrLocationInUse    = NewAppError(http.StatusConflict, ErrCodeLocationInUse, "Địa điểm đang được sử dụng bởi các chuyến đi")
 
 	// Trip
-	ErrTripNotFound        = NewAppError(http.StatusNotFound, ErrCodeTripNotFound, "Trip not found")
-	ErrTripAlreadyDeparted = NewAppError(http.StatusBadRequest, ErrCodeTripAlreadyDeparted, "Trip has already departed")
-	ErrTripNoSeats         = NewAppError(http.StatusBadRequest, ErrCodeTripNoSeats, "No seats available")
-	ErrInvalidTripStatus   = NewAppError(http.StatusBadRequest, ErrCodeInvalidTripStatus, "Invalid trip status transition")
+	ErrTripNotFound        = NewAppError(http.StatusNotFound, ErrCodeTripNotFound, "Không tìm thấy chuyến đi")
+	ErrTripAlreadyDeparted = NewAppError(http.StatusBadRequest, ErrCodeTripAlreadyDeparted, "Chuyến đi đã khởi hành")
+	ErrTripNoSeats         = NewAppError(http.StatusBadRequest, ErrCodeTripNoSeats, "Không còn chỗ trống")
+	ErrInvalidTripStatus   = NewAppError(http.StatusBadRequest, ErrCodeInvalidTripStatus, "Chuyển trạng thái chuyến đi không hợp lệ")
 
 	// Provider
-	ErrProviderNotFound = NewAppError(http.StatusNotFound, ErrCodeProviderNotFound, "Provider not found")
-	ErrProviderInactive = NewAppError(http.StatusBadRequest, ErrCodeProviderInactive, "Provider is inactive")
-	ErrDuplicateSlug    = NewAppError(http.StatusConflict, ErrCodeDuplicateSlug, "Slug already exists")
+	ErrProviderNotFound = NewAppError(http.StatusNotFound, ErrCodeProviderNotFound, "Không tìm thấy nhà cung cấp")
+	ErrProviderInactive = NewAppError(http.StatusBadRequest, ErrCodeProviderInactive, "Nhà cung cấp không hoạt động")
+	ErrDuplicateSlug    = NewAppError(http.StatusConflict, ErrCodeDuplicateSlug, "Slug đã tồn tại")
 )
 
 // Validation error factories

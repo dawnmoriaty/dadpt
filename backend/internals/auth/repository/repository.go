@@ -11,27 +11,19 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// =============================================================================
-// REPOSITORY - Infrastructure adapter implementing domain.Repository port
-// =============================================================================
-
-// authRepository implements domain.Repository
+// DI
 type authRepository struct {
 	db      *db.Database
 	queries *models.Queries
 }
 
-// NewAuthRepository creates a new auth repository
+// Implementation of domain.Repository
 func NewAuthRepository(database *db.Database) domain.Repository {
 	return &authRepository{
 		db:      database,
 		queries: models.New(database.GetPool()),
 	}
 }
-
-// =============================================================================
-// MAPPERS - Convert between SQLC models and domain entities
-// =============================================================================
 
 func sqlcToEntity(m *models.User) *domain.User {
 	return &domain.User{
@@ -59,10 +51,6 @@ func stringToPtr(s string) *string {
 	}
 	return &s
 }
-
-// =============================================================================
-// CRUD OPERATIONS
-// =============================================================================
 
 func (r *authRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
 	// Default role if not set
@@ -119,10 +107,6 @@ func (r *authRepository) GetByIdentifier(ctx context.Context, identifier string)
 	return sqlcToEntity(&result), nil
 }
 
-// =============================================================================
-// UNIQUENESS CHECKS
-// =============================================================================
-
 func (r *authRepository) PhoneExists(ctx context.Context, phone domain.Phone) (bool, error) {
 	_, err := r.queries.GetUserByPhone(ctx, phone.String())
 	if err != nil {
@@ -134,9 +118,7 @@ func (r *authRepository) PhoneExists(ctx context.Context, phone domain.Phone) (b
 	return true, nil
 }
 
-// =============================================================================
-// UPDATE OPERATIONS
-// =============================================================================
+// TODO: Implement Update and UpdatePassword methods - before using them
 
 func (r *authRepository) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
 	// TODO: Implement UpdateUser query in SQL

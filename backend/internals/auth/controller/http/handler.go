@@ -49,7 +49,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.HandleError(c, mapDomainError(err))
 		return
 	}
-
+	// đoạn này nhớ sau sửa thời gian refresh thì cắm lại
 	c.SetCookie("refresh_token", result.RefreshToken, 7*24*3600, "/", "", false, true)
 	response.Success(c, dto.ToAuthResponse(result))
 }

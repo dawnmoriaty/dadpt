@@ -11,26 +11,21 @@ import (
 // =============================================================================
 
 var (
-	ErrInvalidPhone       = errors.New("invalid phone format: must be Vietnamese phone number")
-	ErrInvalidEmail       = errors.New("invalid email format")
-	ErrInvalidFullName    = errors.New("full name must be at least 2 characters")
-	ErrInvalidUsername    = errors.New("username must be 3-30 alphanumeric characters or underscore")
-	ErrInvalidPassword    = errors.New("password must be at least 6 characters")
-	ErrInvalidRole        = errors.New("invalid role")
-	ErrPhoneAlreadyExists = errors.New("phone number already registered")
-	ErrEmailAlreadyExists = errors.New("email already registered")
-	ErrUserNotFound       = errors.New("user not found")
-	ErrInvalidCredentials = errors.New("invalid credentials")
-	ErrTokenExpired       = errors.New("token has expired")
-	ErrTokenInvalid       = errors.New("invalid token")
-	ErrUserInactive       = errors.New("user account is inactive")
+	ErrInvalidPhone       = errors.New("Số điện thoại không đúng định dạng Việt Nam")
+	ErrInvalidEmail       = errors.New("Định dạng email không hợp lệ")
+	ErrInvalidFullName    = errors.New("Họ tên phải có ít nhất 2 ký tự")
+	ErrInvalidUsername    = errors.New("Tên người dùng phải có 3-30 ký tự chữ, số hoặc dấu gạch dưới")
+	ErrInvalidPassword    = errors.New("Mật khẩu phải có ít nhất 6 ký tự")
+	ErrInvalidRole        = errors.New("Vai trò không hợp lệ")
+	ErrPhoneAlreadyExists = errors.New("Số điện thoại đã được đăng ký")
+	ErrEmailAlreadyExists = errors.New("Email đã được đăng ký")
+	ErrUserNotFound       = errors.New("Người dùng không tồn tại")
+	ErrInvalidCredentials = errors.New("Số điện thoại hoặc mật khẩu không hợp lệ")
+	ErrTokenExpired       = errors.New("Token hết hạn")
+	ErrTokenInvalid       = errors.New("Token không hợp lệ")
+	ErrUserInactive       = errors.New("Tài khoản người dùng không hoạt động")
 )
 
-// =============================================================================
-// VALUE OBJECTS - Immutable, self-validating types
-// =============================================================================
-
-// Phone represents a validated Vietnamese phone number
 type Phone string
 
 func NewPhone(value string) (Phone, error) {
@@ -49,12 +44,11 @@ func (p Phone) String() string {
 	return string(p)
 }
 
-// Email represents a validated email address
 type Email string
 
 func NewEmail(value string) (Email, error) {
 	if value == "" {
-		return "", nil // Email is optional
+		return "", nil // Optional
 	}
 	e := Email(value)
 	if !e.IsValid() {
@@ -74,12 +68,11 @@ func (e Email) String() string {
 	return string(e)
 }
 
-// Username represents a validated username
 type Username string
 
 func NewUsername(value string) (Username, error) {
 	if value == "" {
-		return "", nil // Username is optional
+		return "", nil // Optional
 	}
 	u := Username(value)
 	if !u.IsValid() {
@@ -99,11 +92,7 @@ func (u Username) String() string {
 	return string(u)
 }
 
-// =============================================================================
-// ROLE - Domain enum with behavior
-// =============================================================================
-
-// Role defines user roles in the system
+// ROLES
 type Role string
 
 const (
@@ -124,16 +113,12 @@ func (r Role) String() string {
 	return string(r)
 }
 
-// CanAccessAdmin checks if role can access admin panel
+// check permission
 func (r Role) CanAccessAdmin() bool {
 	return r == RoleAdmin || r == RoleOperator
 }
 
-// =============================================================================
-// USER ENTITY - Core aggregate root
-// =============================================================================
-
-// User represents the core user entity - pure business logic, no DB dependencies
+// Core Enitty: User
 type User struct {
 	ID           int64
 	Phone        Phone
@@ -156,7 +141,6 @@ var (
 // VALIDATION METHODS - All business rules live here
 // =============================================================================
 
-// ValidateFullName checks if full name is valid
 func ValidateFullName(name string) error {
 	if len(strings.TrimSpace(name)) < 2 {
 		return ErrInvalidFullName
@@ -164,7 +148,6 @@ func ValidateFullName(name string) error {
 	return nil
 }
 
-// ValidatePassword checks password strength - call before hashing
 func ValidatePassword(password string) error {
 	if len(password) < 6 {
 		return ErrInvalidPassword
@@ -172,7 +155,6 @@ func ValidatePassword(password string) error {
 	return nil
 }
 
-// Validate runs all validations on the User entity
 func (u *User) Validate() error {
 	if !u.Phone.IsValid() {
 		return ErrInvalidPhone
@@ -192,7 +174,6 @@ func (u *User) Validate() error {
 	return nil
 }
 
-// CanLogin checks if user can perform login
 func (u *User) CanLogin() error {
 	if !u.IsActive {
 		return ErrUserInactive
@@ -204,22 +185,18 @@ func (u *User) CanLogin() error {
 // ROLE-BASED ACCESS CONTROL - Business logic in domain
 // =============================================================================
 
-// IsCustomer checks if user is a customer
 func (u *User) IsCustomer() bool {
 	return u.Role == RoleCustomer
 }
 
-// IsAdmin checks if user is an admin
 func (u *User) IsAdmin() bool {
 	return u.Role == RoleAdmin
 }
 
-// IsOperator checks if user is an operator
 func (u *User) IsOperator() bool {
 	return u.Role == RoleOperator
 }
 
-// HasAdminAccess checks if user can access admin panel
 func (u *User) HasAdminAccess() bool {
 	return u.Role.CanAccessAdmin()
 }
@@ -228,7 +205,6 @@ func (u *User) HasAdminAccess() bool {
 // FACTORY FUNCTIONS - Ensure valid entity creation
 // =============================================================================
 
-// NewUserParams contains parameters for creating a new user
 type NewUserParams struct {
 	Phone    string
 	Username string
