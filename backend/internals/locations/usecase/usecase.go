@@ -2,85 +2,75 @@ package usecase
 
 import (
 	"context"
-	"strings"
 
-	"backend/internals/locations/controller/dto"
 	"backend/internals/locations/domain"
-	"backend/pkgs/errors"
 	"backend/pkgs/paging"
 )
 
-type LocationUseCase struct {
+// ILocationUseCase defines the interface for location use case
+type ILocationUseCase interface {
+	Create(ctx context.Context, input *domain.CreateLocationInput) (*domain.Location, error)
+	GetByID(ctx context.Context, id int32) (*domain.Location, error)
+	Update(ctx context.Context, id int32, input *domain.UpdateLocationInput) (*domain.Location, error)
+	Delete(ctx context.Context, id int32) error
+	List(ctx context.Context, pg *paging.Paging) ([]*domain.Location, int64, error)
+	Search(ctx context.Context, query string) ([]*domain.Location, error)
+}
+
+type locationUseCase struct {
 	repo domain.Repository
 }
 
-func NewLocationUseCase(repo domain.Repository) *LocationUseCase {
-	return &LocationUseCase{repo: repo}
+func NewLocationUseCase(repo domain.Repository) ILocationUseCase {
+	return &locationUseCase{repo: repo}
 }
 
-func (uc *LocationUseCase) Create(ctx context.Context, req *dto.CreateLocationRequest) (*dto.LocationResponse, error) {
+func (uc *locationUseCase) Create(ctx context.Context, input *domain.CreateLocationInput) (*domain.Location, error) {
 	loc := &domain.Location{
-		Name:     req.Name,
-		City:     req.City,
-		Address:  req.Address,
-		Keywords: req.Keywords,
+		Name:     input.Name,
+		City:     input.City,
+		Address:  input.Address,
+		Keywords: input.Keywords,
 	}
 
-	// Use domain validation - returns error codes
-	if errs := loc.Validate(); len(errs) > 0 {
-		return nil, errors.ValidationError(strings.Join(errs, ", "))
-	}
-
-	created, err := uc.repo.Create(ctx, loc)
-	if err != nil {
+	if err := loc.Validate(); err != nil {
 		return nil, err
 	}
 
-	return entityToResponse(created), nil
+	return uc.repo.Create(ctx, loc)
 }
 
-func (uc *LocationUseCase) GetByID(ctx context.Context, id int32) (*dto.LocationResponse, error) {
-	loc, err := uc.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return entityToResponse(loc), nil
+func (uc *locationUseCase) GetByID(ctx context.Context, id int32) (*domain.Location, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *LocationUseCase) Update(ctx context.Context, id int32, req *dto.UpdateLocationRequest) (*dto.LocationResponse, error) {
+func (uc *locationUseCase) Update(ctx context.Context, id int32, input *domain.UpdateLocationInput) (*domain.Location, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Apply partial updates
-	if req.Name != nil {
-		existing.Name = *req.Name
+	if input.Name != nil {
+		existing.Name = *input.Name
 	}
-	if req.City != nil {
-		existing.City = *req.City
+	if input.City != nil {
+		existing.City = *input.City
 	}
-	if req.Address != nil {
-		existing.Address = *req.Address
+	if input.Address != nil {
+		existing.Address = *input.Address
 	}
-	if req.Keywords != nil {
-		existing.Keywords = *req.Keywords
-	}
-
-	// Re-validate after update
-	if errs := existing.Validate(); len(errs) > 0 {
-		return nil, errors.ValidationError(strings.Join(errs, ", "))
+	if input.Keywords != nil {
+		existing.Keywords = *input.Keywords
 	}
 
-	updated, err := uc.repo.Update(ctx, existing)
-	if err != nil {
+	if err := existing.Validate(); err != nil {
 		return nil, err
 	}
 
-	return entityToResponse(updated), nil
+	return uc.repo.Update(ctx, existing)
 }
 
-func (uc *LocationUseCase) Delete(ctx context.Context, id int32) error {
+func (uc *locationUseCase) Delete(ctx context.Context, id int32) error {
 	_, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -88,47 +78,17 @@ func (uc *LocationUseCase) Delete(ctx context.Context, id int32) error {
 	return uc.repo.Delete(ctx, id)
 }
 
-func (uc *LocationUseCase) List(ctx context.Context, pg *paging.Paging) (*paging.Page[dto.LocationResponse], error) {
-	locations, total, err := uc.repo.List(ctx, &domain.LocationFilter{
+func (uc *locationUseCase) List(ctx context.Context, pg *paging.Paging) ([]*domain.Location, int64, error) {
+	return uc.repo.List(ctx, &domain.LocationFilter{
 		Limit:  int32(pg.PageSize),
 		Offset: int32(pg.Offset()),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]dto.LocationResponse, len(locations))
-	for i, loc := range locations {
-		items[i] = *entityToResponse(loc)
-	}
-
-	return paging.Of(items, total, pg.Page), nil
 }
 
-func (uc *LocationUseCase) Search(ctx context.Context, query string) ([]dto.LocationResponse, error) {
+func (uc *locationUseCase) Search(ctx context.Context, query string) ([]*domain.Location, error) {
 	if query == "" {
-		return nil, errors.ValidationError(domain.ErrLocationNameRequired)
+		return nil, domain.ErrLocationNameRequired
 	}
 
-	locations, err := uc.repo.Search(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]dto.LocationResponse, len(locations))
-	for i, loc := range locations {
-		result[i] = *entityToResponse(loc)
-	}
-
-	return result, nil
-}
-
-func entityToResponse(loc *domain.Location) *dto.LocationResponse {
-	return &dto.LocationResponse{
-		ID:       loc.ID,
-		Name:     loc.Name,
-		City:     loc.City,
-		Address:  loc.Address,
-		Keywords: loc.Keywords,
-	}
+	return uc.repo.Search(ctx, query)
 }

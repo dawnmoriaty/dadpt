@@ -9,11 +9,29 @@ type CreateBusRequest struct {
 	ImageURL     string `json:"imageUrl"`
 }
 
+func (r *CreateBusRequest) ToInput() *domain.CreateBusInput {
+	return &domain.CreateBusInput{
+		ProviderID:   r.ProviderID,
+		BusTypeID:    r.BusTypeID,
+		LicensePlate: r.LicensePlate,
+		ImageURL:     r.ImageURL,
+	}
+}
+
 type UpdateBusRequest struct {
 	BusTypeID    *int32  `json:"busTypeId"`
 	LicensePlate *string `json:"licensePlate"`
 	Status       *string `json:"status"`
 	ImageURL     *string `json:"imageUrl"`
+}
+
+func (r *UpdateBusRequest) ToInput() *domain.UpdateBusInput {
+	return &domain.UpdateBusInput{
+		BusTypeID:    r.BusTypeID,
+		LicensePlate: r.LicensePlate,
+		Status:       r.Status,
+		ImageURL:     r.ImageURL,
+	}
 }
 
 type UpdateBusStatusRequest struct {

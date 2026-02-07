@@ -1,6 +1,10 @@
 package http
 
 import (
+	"fmt"
+	"io"
+	"strconv"
+
 	"backend/pkgs/errors"
 	"backend/pkgs/minio"
 	"backend/pkgs/response"
@@ -16,9 +20,44 @@ func NewUploadHandler(minioClient *minio.MinioClient) *UploadHandler {
 	return &UploadHandler{minioClient: minioClient}
 }
 
+// ServeFile proxies a MinIO object to the browser with proper cache headers.
+// GET /api/v1/files/*filepath
+func (h *UploadHandler) ServeFile(c *gin.Context) {
+	if h.minioClient == nil {
+		response.HandleError(c, errors.NewAppError(500, errors.ErrCodeInternal, "Upload service not available"))
+		return
+	}
+
+	objectName := c.Param("filepath")
+	if objectName == "" || objectName == "/" {
+		response.HandleError(c, errors.ValidationError("File path is required"))
+		return
+	}
+	// Strip leading slash from wildcard param
+	if objectName[0] == '/' {
+		objectName = objectName[1:]
+	}
+
+	reader, contentType, size, err := h.minioClient.GetObject(c.Request.Context(), objectName)
+	if err != nil {
+		response.HandleError(c, errors.NewAppError(404, errors.ErrCodeNotFound, "File not found"))
+		return
+	}
+	defer reader.Close()
+
+	// Immutable cache — object names contain timestamps
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	c.Header("Content-Type", contentType)
+	c.Header("Content-Length", strconv.FormatInt(size, 10))
+
+	if _, err := io.Copy(c.Writer, reader); err != nil {
+		// Client probably disconnected, just log
+		fmt.Printf("serve file stream error: %v\n", err)
+	}
+}
+
 // UploadImage handles file upload to MinIO
 // POST /admin/upload
-// Form fields: file (required), folder (optional, default: "uploads")
 func (h *UploadHandler) UploadImage(c *gin.Context) {
 	if h.minioClient == nil {
 		response.HandleError(c, errors.NewAppError(500, errors.ErrCodeInternal, "Upload service not available"))

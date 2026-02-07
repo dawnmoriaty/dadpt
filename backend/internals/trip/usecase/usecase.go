@@ -2,111 +2,106 @@ package usecase
 
 import (
 	"context"
+	"fmt"
 	"time"
 
-	"backend/internals/trip/controller/dto"
 	"backend/internals/trip/domain"
-	"backend/pkgs/errors"
 	"backend/pkgs/paging"
 )
 
-type TripUseCase struct {
+// ITripUseCase defines the interface for trip use case
+type ITripUseCase interface {
+	Create(ctx context.Context, input *domain.CreateTripInput) (*domain.Trip, error)
+	GetByID(ctx context.Context, id int64) (*domain.Trip, error)
+	Update(ctx context.Context, id int64, input *domain.UpdateTripInput) (*domain.Trip, error)
+	UpdateStatus(ctx context.Context, id int64, newStatus string) (*domain.Trip, error)
+	Delete(ctx context.Context, id int64) error
+	List(ctx context.Context, pg *paging.Paging, input *domain.AdminListInput) ([]*domain.Trip, int64, error)
+	Search(ctx context.Context, input *domain.SearchTripsInput) ([]*domain.Trip, int64, error)
+}
+
+type tripUseCase struct {
 	repo domain.Repository
 }
 
-func NewTripUseCase(repo domain.Repository) *TripUseCase {
-	return &TripUseCase{repo: repo}
+func NewTripUseCase(repo domain.Repository) ITripUseCase {
+	return &tripUseCase{repo: repo}
 }
 
-func (uc *TripUseCase) Create(ctx context.Context, req *dto.CreateTripRequest) (*dto.TripResponse, error) {
-	if req.ProviderID <= 0 {
-		return nil, errors.RequiredField("provider_id")
-	}
-	if req.OriginID <= 0 || req.DestinationID <= 0 {
-		return nil, errors.RequiredField("origin_id and destination_id")
-	}
-	departureTime := req.GetDepartureTime()
-	arrivalTime := req.GetArrivalTime()
-
-	if departureTime.Before(time.Now()) {
-		return nil, errors.ValidationError("departure time must be in the future")
-	}
-	if arrivalTime.Before(departureTime) {
-		return nil, errors.ValidationError("arrival time must be after departure time")
-	}
-
+func (uc *tripUseCase) Create(ctx context.Context, input *domain.CreateTripInput) (*domain.Trip, error) {
 	trip := &domain.Trip{
-		ProviderID:     int32(req.ProviderID),
-		BusID:          int32(req.BusID),
-		OriginID:       int32(req.OriginID),
-		DestinationID:  int32(req.DestinationID),
-		DepartureTime:  departureTime,
-		ArrivalTime:    arrivalTime,
-		BasePrice:      req.BasePrice,
+		ProviderID:     input.ProviderID,
+		BusID:          input.BusID,
+		OriginID:       input.OriginID,
+		DestinationID:  input.DestinationID,
+		DepartureTime:  input.DepartureTime,
+		ArrivalTime:    input.ArrivalTime,
+		BasePrice:      input.BasePrice,
 		PriceModifier:  1.0,
 		IsHotDeal:      false,
-		PickupPoints:   dtoPointsToDomain(req.PickupPoints),
-		DropoffPoints:  dtoPointsToDomain(req.DropoffPoints),
-		AvailableSeats: int32(req.AvailableSeats),
+		PickupPoints:   input.PickupPoints,
+		DropoffPoints:  input.DropoffPoints,
+		AvailableSeats: input.AvailableSeats,
 		Status:         domain.TripStatusScheduled,
+	}
+
+	// Domain validation
+	if err := trip.Validate(); err != nil {
+		return nil, err
 	}
 
 	created, err := uc.repo.Create(ctx, trip)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating trip: %w", err)
 	}
 
-	return entityToResponse(created), nil
+	return created, nil
 }
 
-func (uc *TripUseCase) GetByID(ctx context.Context, id int64) (*dto.TripResponse, error) {
-	trip, err := uc.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return entityToResponse(trip), nil
+func (uc *tripUseCase) GetByID(ctx context.Context, id int64) (*domain.Trip, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *TripUseCase) Update(ctx context.Context, id int64, req *dto.UpdateTripRequest) (*dto.TripResponse, error) {
+func (uc *tripUseCase) Update(ctx context.Context, id int64, input *domain.UpdateTripInput) (*domain.Trip, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	// Use domain validation
-	if canModify, errCode := existing.CanBeModified(); !canModify {
-		return nil, errors.ValidationError(errCode)
+	// Domain validation
+	if err := existing.CanBeModified(); err != nil {
+		return nil, err
 	}
 
 	// Apply partial updates
-	if depTime := req.GetDepartureTime(); depTime != nil {
-		existing.DepartureTime = *depTime
+	if input.DepartureTime != nil {
+		existing.DepartureTime = *input.DepartureTime
 	}
-	if arrTime := req.GetArrivalTime(); arrTime != nil {
-		existing.ArrivalTime = *arrTime
+	if input.ArrivalTime != nil {
+		existing.ArrivalTime = *input.ArrivalTime
 	}
-	if req.BasePrice != nil {
-		existing.BasePrice = *req.BasePrice
+	if input.BasePrice != nil {
+		existing.BasePrice = *input.BasePrice
 	}
-	if req.IsHotDeal != nil {
-		existing.IsHotDeal = *req.IsHotDeal
+	if input.IsHotDeal != nil {
+		existing.IsHotDeal = *input.IsHotDeal
 	}
-	if req.PickupPoints != nil {
-		existing.PickupPoints = dtoPointsToDomain(req.PickupPoints)
+	if input.PickupPoints != nil {
+		existing.PickupPoints = input.PickupPoints
 	}
-	if req.DropoffPoints != nil {
-		existing.DropoffPoints = dtoPointsToDomain(req.DropoffPoints)
+	if input.DropoffPoints != nil {
+		existing.DropoffPoints = input.DropoffPoints
 	}
 
 	updated, err := uc.repo.Update(ctx, existing)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("updating trip: %w", err)
 	}
 
-	return entityToResponse(updated), nil
+	return updated, nil
 }
 
-func (uc *TripUseCase) UpdateStatus(ctx context.Context, id int64, newStatus string) (*dto.TripResponse, error) {
+func (uc *tripUseCase) UpdateStatus(ctx context.Context, id int64, newStatus string) (*domain.Trip, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -114,136 +109,71 @@ func (uc *TripUseCase) UpdateStatus(ctx context.Context, id int64, newStatus str
 
 	status := domain.TripStatus(newStatus)
 	if !status.IsValid() {
-		return nil, errors.ErrInvalidTripStatus
+		return nil, domain.ErrTripStatusInvalid
 	}
 
-	if canTransition, errCode := existing.CanTransitionTo(status); !canTransition {
-		return nil, errors.ValidationError(errCode)
+	if err := existing.CanTransitionTo(status); err != nil {
+		return nil, err
 	}
 
 	updated, err := uc.repo.UpdateStatus(ctx, id, status)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("updating trip status: %w", err)
 	}
 
-	return entityToResponse(updated), nil
+	return updated, nil
 }
 
-func (uc *TripUseCase) Delete(ctx context.Context, id int64) error {
+func (uc *tripUseCase) Delete(ctx context.Context, id int64) error {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	// Use domain validation
-	if canDelete, errCode := existing.CanBeDeleted(); !canDelete {
-		return errors.ValidationError(errCode)
+	if err := existing.CanBeDeleted(); err != nil {
+		return err
 	}
 
 	return uc.repo.Delete(ctx, id)
 }
 
-func (uc *TripUseCase) List(ctx context.Context, pg *paging.Paging, req *dto.AdminTripListRequest) (*paging.Page[dto.TripResponse], error) {
+func (uc *tripUseCase) List(ctx context.Context, pg *paging.Paging, input *domain.AdminListInput) ([]*domain.Trip, int64, error) {
 	filter := &domain.TripFilter{
 		Limit:  int32(pg.PageSize),
 		Offset: int32(pg.Offset()),
 	}
 
-	if req.ProviderID != nil {
-		pid := int32(*req.ProviderID)
+	if input.ProviderID != nil {
+		pid := int32(*input.ProviderID)
 		filter.ProviderID = &pid
 	}
-	if req.Status != nil {
-		s := domain.TripStatus(*req.Status)
+	if input.Status != nil {
+		s := domain.TripStatus(*input.Status)
 		filter.Status = &s
 	}
 
-	trips, total, err := uc.repo.List(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]dto.TripResponse, len(trips))
-	for i, trip := range trips {
-		items[i] = *entityToResponse(trip)
-	}
-
-	return paging.Of(items, total, pg.Page), nil
+	return uc.repo.List(ctx, filter)
 }
 
-func (uc *TripUseCase) Search(ctx context.Context, req *dto.SearchTripsRequest) (*paging.Page[dto.TripResponse], error) {
-	if req.OriginID <= 0 || req.DestinationID <= 0 {
-		return nil, errors.RequiredField("origin_id and destination_id")
-	}
-	if req.DepartureDate == "" {
-		return nil, errors.RequiredField("departure_date")
-	}
-
-	date, err := time.Parse("2006-01-02", req.DepartureDate)
+func (uc *tripUseCase) Search(ctx context.Context, input *domain.SearchTripsInput) ([]*domain.Trip, int64, error) {
+	date, err := time.Parse("2006-01-02", input.DepartureDate)
 	if err != nil {
-		return nil, errors.ValidationError("invalid departure_date format, use YYYY-MM-DD")
+		return nil, 0, domain.ErrTripDepartureInPast // reuse sentinel for bad date
 	}
 
-	pg := &paging.Paging{Page: req.Page, PageSize: req.Limit}
+	pg := &paging.Paging{Page: input.Page, PageSize: input.Limit}
 	pg.Process()
 
-	originID := int32(req.OriginID)
-	destID := int32(req.DestinationID)
+	originID := input.OriginID
+	destID := input.DestinationID
 	filter := &domain.TripFilter{
 		OriginID:      &originID,
 		DestinationID: &destID,
 		DepartureDate: &date,
-		MinSeats:      int32(req.MinSeats),
+		MinSeats:      int32(input.MinSeats),
 		Limit:         int32(pg.PageSize),
 		Offset:        int32(pg.Offset()),
 	}
 
-	trips, total, err := uc.repo.Search(ctx, filter)
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]dto.TripResponse, len(trips))
-	for i, trip := range trips {
-		items[i] = *entityToResponse(trip)
-	}
-
-	return paging.Of(items, total, pg.Page), nil
-}
-
-// Helpers
-
-func dtoPointsToDomain(points []dto.Point) []domain.Point {
-	if points == nil {
-		return nil
-	}
-	result := make([]domain.Point, len(points))
-	for i, p := range points {
-		result[i] = domain.Point{
-			Name:      p.Name,
-			Time:      p.Time,
-			Surcharge: p.Surcharge,
-		}
-	}
-	return result
-}
-
-func entityToResponse(trip *domain.Trip) *dto.TripResponse {
-	finalPrice := trip.BasePrice * trip.PriceModifier
-	return &dto.TripResponse{
-		ID:              trip.ID,
-		ProviderID:      int(trip.ProviderID),
-		ProviderName:    trip.ProviderName,
-		OriginName:      trip.OriginName,
-		OriginCity:      trip.OriginCity,
-		DestinationName: trip.DestinationName,
-		DestinationCity: trip.DestinationCity,
-		DepartureTime:   trip.DepartureTime,
-		ArrivalTime:     trip.ArrivalTime,
-		BasePrice:       trip.BasePrice,
-		FinalPrice:      finalPrice,
-		AvailableSeats:  int(trip.AvailableSeats),
-		IsHotDeal:       trip.IsHotDeal,
-		Status:          string(trip.Status),
-	}
+	return uc.repo.Search(ctx, filter)
 }

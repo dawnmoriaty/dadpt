@@ -1,13 +1,14 @@
 package domain
 
-import "strings"
+import "errors"
 
-// Domain validation errors - defined as constants for consistency
+// Sentinel errors
 var (
-	ErrLocationNameRequired = "LOCATION_NAME_REQUIRED"
-	ErrLocationNameTooShort = "LOCATION_NAME_TOO_SHORT"
-	ErrLocationCityRequired = "LOCATION_CITY_REQUIRED"
-	ErrLocationCityTooShort = "LOCATION_CITY_TOO_SHORT"
+	ErrLocationNotFound     = errors.New("Không tìm thấy địa điểm")
+	ErrLocationNameRequired = errors.New("Tên địa điểm là bắt buộc")
+	ErrLocationNameTooShort = errors.New("Tên địa điểm quá ngắn")
+	ErrLocationCityRequired = errors.New("Thành phố là bắt buộc")
+	ErrLocationCityTooShort = errors.New("Tên thành phố quá ngắn")
 )
 
 // Location is a pure domain entity representing a bus terminal/station
@@ -21,48 +22,39 @@ type Location struct {
 
 // LocationFilter for listing/searching locations
 type LocationFilter struct {
-	City   string
 	Limit  int32
 	Offset int32
 }
 
-// Validation methods - pure Go logic, return error constants
-
-func (l *Location) ValidateName() (bool, string) {
-	name := strings.TrimSpace(l.Name)
-	if name == "" {
-		return false, ErrLocationNameRequired
+// Validate validates the location entity
+func (l *Location) Validate() error {
+	if l.Name == "" {
+		return ErrLocationNameRequired
 	}
-	if len(name) < 2 {
-		return false, ErrLocationNameTooShort
+	if len(l.Name) < 2 {
+		return ErrLocationNameTooShort
 	}
-	return true, ""
+	if l.City == "" {
+		return ErrLocationCityRequired
+	}
+	if len(l.City) < 2 {
+		return ErrLocationCityTooShort
+	}
+	return nil
 }
 
-func (l *Location) ValidateCity() (bool, string) {
-	city := strings.TrimSpace(l.City)
-	if city == "" {
-		return false, ErrLocationCityRequired
-	}
-	if len(city) < 2 {
-		return false, ErrLocationCityTooShort
-	}
-	return true, ""
+// CreateLocationInput is the input for creating a new location
+type CreateLocationInput struct {
+	Name     string
+	City     string
+	Address  string
+	Keywords string
 }
 
-// Validate runs all validations and returns error codes
-func (l *Location) Validate() []string {
-	var errs []string
-	if valid, code := l.ValidateName(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := l.ValidateCity(); !valid {
-		errs = append(errs, code)
-	}
-	return errs
-}
-
-// IsComplete checks if location has all required fields
-func (l *Location) IsComplete() bool {
-	return len(l.Validate()) == 0
+// UpdateLocationInput is the input for updating a location (partial update)
+type UpdateLocationInput struct {
+	Name     *string
+	City     *string
+	Address  *string
+	Keywords *string
 }

@@ -2,10 +2,11 @@ package repository
 
 import (
 	"context"
+	"fmt"
 
 	"backend/db"
 	"backend/internals/providers/domain"
-	"backend/pkgs/errors"
+	"backend/pkgs/typeconv"
 	"backend/sql/models"
 )
 
@@ -27,32 +28,11 @@ func sqlcToEntity(m models.Provider) *domain.Provider {
 	return &domain.Provider{
 		ID:           m.ID,
 		Name:         m.Name,
-		Hotline:      ptrToString(m.Hotline),
-		Slug:         ptrToString(m.Slug),
-		PolicyRefund: ptrToString(m.PolicyRefund),
-		IsActive:     ptrToBool(m.IsActive),
+		Hotline:      typeconv.PtrToString(m.Hotline),
+		Slug:         typeconv.PtrToString(m.Slug),
+		PolicyRefund: typeconv.PtrToString(m.PolicyRefund),
+		IsActive:     typeconv.PtrToBool(m.IsActive),
 	}
-}
-
-func ptrToString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func ptrToBool(b *bool) bool {
-	if b == nil {
-		return false
-	}
-	return *b
-}
-
-func stringToPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
 }
 
 // Repository implementations
@@ -60,12 +40,12 @@ func stringToPtr(s string) *string {
 func (r *providerRepository) Create(ctx context.Context, p *domain.Provider) (*domain.Provider, error) {
 	result, err := r.queries.CreateProvider(ctx, models.CreateProviderParams{
 		Name:         p.Name,
-		Hotline:      stringToPtr(p.Hotline),
-		Slug:         stringToPtr(p.Slug),
-		PolicyRefund: stringToPtr(p.PolicyRefund),
+		Hotline:      typeconv.StringToPtr(p.Hotline),
+		Slug:         typeconv.StringToPtr(p.Slug),
+		PolicyRefund: typeconv.StringToPtr(p.PolicyRefund),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to create provider")
+		return nil, fmt.Errorf("failed to create provider: %w", err)
 	}
 	return sqlcToEntity(result), nil
 }
@@ -73,7 +53,7 @@ func (r *providerRepository) Create(ctx context.Context, p *domain.Provider) (*d
 func (r *providerRepository) GetByID(ctx context.Context, id int32) (*domain.Provider, error) {
 	result, err := r.queries.GetProviderByID(ctx, id)
 	if err != nil {
-		return nil, errors.ErrProviderNotFound
+		return nil, domain.ErrProviderNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -81,7 +61,7 @@ func (r *providerRepository) GetByID(ctx context.Context, id int32) (*domain.Pro
 func (r *providerRepository) GetBySlug(ctx context.Context, slug string) (*domain.Provider, error) {
 	result, err := r.queries.GetProviderBySlug(ctx, &slug)
 	if err != nil {
-		return nil, errors.ErrProviderNotFound
+		return nil, domain.ErrProviderNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -89,13 +69,13 @@ func (r *providerRepository) GetBySlug(ctx context.Context, slug string) (*domai
 func (r *providerRepository) Update(ctx context.Context, p *domain.Provider) (*domain.Provider, error) {
 	result, err := r.queries.UpdateProvider(ctx, models.UpdateProviderParams{
 		ID:           p.ID,
-		Name:         p.Name, // Name is string, not *string
-		Hotline:      stringToPtr(p.Hotline),
-		Slug:         stringToPtr(p.Slug),
-		PolicyRefund: stringToPtr(p.PolicyRefund),
+		Name:         p.Name,
+		Hotline:      typeconv.StringToPtr(p.Hotline),
+		Slug:         typeconv.StringToPtr(p.Slug),
+		PolicyRefund: typeconv.StringToPtr(p.PolicyRefund),
 	})
 	if err != nil {
-		return nil, errors.ErrProviderNotFound
+		return nil, domain.ErrProviderNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -103,7 +83,7 @@ func (r *providerRepository) Update(ctx context.Context, p *domain.Provider) (*d
 func (r *providerRepository) Delete(ctx context.Context, id int32) error {
 	err := r.queries.DeleteProvider(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to delete provider")
+		return fmt.Errorf("failed to delete provider: %w", err)
 	}
 	return nil
 }
@@ -114,12 +94,12 @@ func (r *providerRepository) List(ctx context.Context, filter *domain.ProviderFi
 		Offset: filter.Offset,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list providers")
+		return nil, 0, fmt.Errorf("failed to list providers: %w", err)
 	}
 
 	count, err := r.queries.CountProviders(ctx)
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to count providers")
+		return nil, 0, fmt.Errorf("failed to count providers: %w", err)
 	}
 
 	result := make([]*domain.Provider, len(rows))
@@ -133,7 +113,7 @@ func (r *providerRepository) List(ctx context.Context, filter *domain.ProviderFi
 func (r *providerRepository) ListActive(ctx context.Context) ([]*domain.Provider, error) {
 	rows, err := r.queries.ListProviders(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list active providers")
+		return nil, fmt.Errorf("failed to list active providers: %w", err)
 	}
 
 	result := make([]*domain.Provider, len(rows))
@@ -147,7 +127,7 @@ func (r *providerRepository) ListActive(ctx context.Context) ([]*domain.Provider
 func (r *providerRepository) ToggleActive(ctx context.Context, id int32) (*domain.Provider, error) {
 	result, err := r.queries.ToggleProviderActive(ctx, id)
 	if err != nil {
-		return nil, errors.ErrProviderNotFound
+		return nil, domain.ErrProviderNotFound
 	}
 	return sqlcToEntity(result), nil
 }

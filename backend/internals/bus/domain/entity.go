@@ -1,5 +1,17 @@
 package domain
 
+import "errors"
+
+// Sentinel errors
+var (
+	ErrBusNotFound             = errors.New("Không tìm thấy xe buýt")
+	ErrBusProviderIDRequired   = errors.New("Nhà cung cấp là bắt buộc")
+	ErrBusBusTypeIDRequired    = errors.New("Loại xe là bắt buộc")
+	ErrBusLicensePlateRequired = errors.New("Biển số xe là bắt buộc")
+	ErrBusLicensePlateTooShort = errors.New("Biển số xe quá ngắn (tối thiểu 5 ký tự)")
+	ErrBusStatusInvalid        = errors.New("Trạng thái xe không hợp lệ")
+)
+
 // Bus represents a specific bus vehicle
 type Bus struct {
 	ID           int32
@@ -15,38 +27,19 @@ type Bus struct {
 	ProviderName string
 }
 
-// BusFilter for listing/searching buses
-type BusFilter struct {
-	ProviderID int32
-	Limit      int32
-	Offset     int32
-}
-
-// Validation error constants
-var (
-	ErrBusProviderIDRequired   = "BUS_PROVIDER_ID_REQUIRED"
-	ErrBusBusTypeIDRequired    = "BUS_BUS_TYPE_ID_REQUIRED"
-	ErrBusLicensePlateRequired = "BUS_LICENSE_PLATE_REQUIRED"
-	ErrBusLicensePlateTooShort = "BUS_LICENSE_PLATE_TOO_SHORT(MIN = 5)"
-)
-
-// Validate validates the bus
-func (b *Bus) Validate() []string {
-	var errs []string
-
+// Validate validates the bus entity
+func (b *Bus) Validate() error {
 	if b.ProviderID <= 0 {
-		errs = append(errs, ErrBusProviderIDRequired)
+		return ErrBusProviderIDRequired
 	}
-
 	if b.BusTypeID <= 0 {
-		errs = append(errs, ErrBusBusTypeIDRequired)
+		return ErrBusBusTypeIDRequired
 	}
-
 	if b.LicensePlate == "" {
-		errs = append(errs, ErrBusLicensePlateRequired)
-	} else if len(b.LicensePlate) < 5 {
-		errs = append(errs, ErrBusLicensePlateTooShort)
+		return ErrBusLicensePlateRequired
 	}
-
-	return errs
+	if len(b.LicensePlate) < 5 {
+		return ErrBusLicensePlateTooShort
+	}
+	return nil
 }

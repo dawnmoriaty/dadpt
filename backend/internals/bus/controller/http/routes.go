@@ -1,9 +1,20 @@
 package http
 
-import "github.com/gin-gonic/gin"
+import (
+	"backend/db"
+	"backend/internals/bus/repository"
+	"backend/internals/bus/usecase"
 
-func RegisterRoutes(rg *gin.RouterGroup, handler *BusHandler) {
-	buses := rg.Group("/buses")
+	"github.com/gin-gonic/gin"
+)
+
+// Routes registers bus routes following Hexagonal Architecture
+func Routes(admin *gin.RouterGroup, database *db.Database) {
+	repo := repository.NewBusRepository(database)
+	uc := usecase.NewBusUseCase(repo)
+	handler := NewBusHandler(uc)
+
+	buses := admin.Group("/buses")
 	{
 		buses.POST("", handler.Create)
 		buses.GET("", handler.List)

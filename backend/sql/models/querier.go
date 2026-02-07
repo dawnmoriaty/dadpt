@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error)
 	CountBusTypes(ctx context.Context) (int64, error)
 	CountBuses(ctx context.Context) (int64, error)
 	CountBusesByProvider(ctx context.Context, providerID int32) (int64, error)
@@ -19,6 +20,7 @@ type Querier interface {
 	CountSearchTrips(ctx context.Context, arg CountSearchTripsParams) (int64, error)
 	CountTripsAdmin(ctx context.Context, arg CountTripsAdminParams) (int64, error)
 	CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error)
+	CreateBookingWithExpiry(ctx context.Context, arg CreateBookingWithExpiryParams) (Booking, error)
 	CreateBus(ctx context.Context, arg CreateBusParams) (Bus, error)
 	CreateBusType(ctx context.Context, arg CreateBusTypeParams) (BusType, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
@@ -36,6 +38,8 @@ type Querier interface {
 	GetBusByID(ctx context.Context, id int32) (GetBusByIDRow, error)
 	GetBusTypeByID(ctx context.Context, id int32) (BusType, error)
 	GetBusesByType(ctx context.Context, busTypeID int32) ([]Bus, error)
+	// FOR UPDATE SKIP LOCKED: safe concurrent processing without deadlock
+	GetExpiredPendingBookings(ctx context.Context, limit int32) ([]Booking, error)
 	GetLocationByID(ctx context.Context, id int32) (Location, error)
 	GetPendingOutboxEvents(ctx context.Context, limit int32) ([]OutboxEvent, error)
 	GetProviderByID(ctx context.Context, id int32) (Provider, error)
@@ -56,8 +60,15 @@ type Querier interface {
 	ListProviders(ctx context.Context) ([]Provider, error)
 	ListProvidersAdmin(ctx context.Context, arg ListProvidersAdminParams) ([]Provider, error)
 	ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) ([]ListTripsAdminRow, error)
+	// ============================================================================
+	// BOOKING LOCKING QUERIES - For race condition handling
+	// ============================================================================
+	// Lock trip row for atomic seat update (NOWAIT = fail fast if locked)
+	LockTripForBooking(ctx context.Context, id int64) (Trip, error)
 	MarkOutboxEventFailed(ctx context.Context, id uuid.UUID) error
 	MarkOutboxEventProcessed(ctx context.Context, id uuid.UUID) error
+	// Release seats when booking cancelled/expired (using array subtraction)
+	ReleaseTripSeats(ctx context.Context, arg ReleaseTripSeatsParams) (Trip, error)
 	SearchLocations(ctx context.Context, dollar_1 *string) ([]Location, error)
 	SearchTrips(ctx context.Context, arg SearchTripsParams) ([]SearchTripsRow, error)
 	ToggleProviderActive(ctx context.Context, id int32) (Provider, error)
@@ -69,6 +80,8 @@ type Querier interface {
 	UpdateProvider(ctx context.Context, arg UpdateProviderParams) (Provider, error)
 	UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error)
 	UpdateTripSeats(ctx context.Context, arg UpdateTripSeatsParams) (Trip, error)
+	// Optimistic locking: only update if version matches and seats available
+	UpdateTripSeatsAtomic(ctx context.Context, arg UpdateTripSeatsAtomicParams) (Trip, error)
 	UpdateTripStatus(ctx context.Context, arg UpdateTripStatusParams) (Trip, error)
 	UpdateUser(ctx context.Context, arg UpdateUserParams) (User, error)
 }

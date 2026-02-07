@@ -69,13 +69,13 @@ FROM trips t
 JOIN providers p ON t.provider_id = p.id
 JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
-WHERE ($1::int IS NULL OR t.provider_id = $1)
-  AND ($2::text IS NULL OR t.status = $2)
+WHERE (sqlc.narg('provider_id')::int IS NULL OR t.provider_id = sqlc.narg('provider_id'))
+  AND (sqlc.narg('status')::text IS NULL OR t.status = sqlc.narg('status'))
 ORDER BY t.created_at DESC
-LIMIT $3 OFFSET $4;
+LIMIT $1 OFFSET $2;
 
 -- name: CountTripsAdmin :one
 SELECT COUNT(*) FROM trips
-WHERE ($1::int IS NULL OR provider_id = $1)
-  AND ($2::text IS NULL OR status = $2);
+WHERE (sqlc.narg('provider_id')::int IS NULL OR provider_id = sqlc.narg('provider_id'))
+  AND (sqlc.narg('status')::text IS NULL OR status = sqlc.narg('status'));
 

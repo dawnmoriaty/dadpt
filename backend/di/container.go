@@ -11,22 +11,7 @@ import (
 	authInfra "backend/internals/auth/infrastructure"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
-	busHttp "backend/internals/bus/controller/http"
-	busRepo "backend/internals/bus/repository"
-	busUc "backend/internals/bus/usecase"
-	bustypeHttp "backend/internals/bustype/controller/http"
-	bustypeRepo "backend/internals/bustype/repository"
-	bustypeUc "backend/internals/bustype/usecase"
-	locationHttp "backend/internals/locations/controller/http"
-	locationRepo "backend/internals/locations/repository"
-	locationUc "backend/internals/locations/usecase"
-	providerHttp "backend/internals/providers/controller/http"
-	providerRepo "backend/internals/providers/repository"
-	providerUc "backend/internals/providers/usecase"
 	httpServer "backend/internals/server/http"
-	tripHttp "backend/internals/trip/controller/http"
-	tripRepo "backend/internals/trip/repository"
-	tripUc "backend/internals/trip/usecase"
 	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/jwt"
 	"backend/pkgs/logger"
@@ -61,31 +46,6 @@ func NewContainer() (*Container, error) {
 		authRepo.NewAuthRepository,
 		authUc.NewAuthUseCase,
 		authHttp.NewAuthHandler,
-
-		// Location Module
-		locationRepo.NewLocationRepository,
-		locationUc.NewLocationUseCase,
-		locationHttp.NewLocationHandler,
-
-		// Provider Module
-		providerRepo.NewProviderRepository,
-		providerUc.NewProviderUseCase,
-		providerHttp.NewProviderHandler,
-
-		// Trip Module
-		tripRepo.NewTripRepository,
-		tripUc.NewTripUseCase,
-		tripHttp.NewTripHandler,
-
-		// BusType Module
-		bustypeRepo.NewBusTypeRepository,
-		bustypeUc.NewBusTypeUseCase,
-		bustypeHttp.NewBusTypeHandler,
-
-		// Bus Module
-		busRepo.NewBusRepository,
-		busUc.NewBusUseCase,
-		busHttp.NewBusHandler,
 
 		// Upload Module
 		uploadHttp.NewUploadHandler,

@@ -30,3 +30,50 @@ UPDATE bookings SET
     updated_at = NOW()
 WHERE id = $1
 RETURNING *;
+
+-- ============================================================================
+-- BOOKING LOCKING QUERIES - For race condition handling
+-- ============================================================================
+
+-- name: LockTripForBooking :one
+-- Lock trip row for atomic seat update (NOWAIT = fail fast if locked)
+SELECT * FROM trips WHERE id = $1 FOR UPDATE NOWAIT;
+
+-- name: UpdateTripSeatsAtomic :one
+-- Optimistic locking: only update if version matches and seats available
+UPDATE trips SET
+    booked_seats = array_cat(booked_seats, $2::text[]),
+    available_seats = available_seats - $3,
+    version = version + 1
+WHERE id = $1 
+  AND version = $4
+  AND available_seats >= $3
+RETURNING *;
+
+-- name: ReleaseTripSeats :one
+-- Release seats when booking cancelled/expired (using array subtraction)
+UPDATE trips SET
+    booked_seats = ARRAY(SELECT unnest(booked_seats) EXCEPT SELECT unnest($2::text[])),
+    available_seats = available_seats + $3,
+    version = version + 1
+WHERE id = $1
+RETURNING *;
+
+-- name: CreateBookingWithExpiry :one
+INSERT INTO bookings (
+    code, trip_id, user_id, guest_info,
+    pickup_info, dropoff_info, seat_codes,
+    total_amount, payment_method, expires_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING *;
+
+-- name: GetExpiredPendingBookings :many
+-- FOR UPDATE SKIP LOCKED: safe concurrent processing without deadlock
+SELECT * FROM bookings 
+WHERE status = 'pending' AND expires_at < NOW()
+FOR UPDATE SKIP LOCKED
+LIMIT $1;
+
+-- name: CountBookingsByTrip :one
+SELECT COUNT(*) FROM bookings WHERE trip_id = $1 AND status IN ('pending', 'paid');

@@ -3,100 +3,83 @@ package usecase
 import (
 	"context"
 
-	"backend/internals/bustype/controller/dto"
 	"backend/internals/bustype/domain"
-	"backend/internals/bustype/repository"
-	"backend/pkgs/errors"
 	"backend/pkgs/paging"
 )
 
-type BusTypeUseCase struct {
-	repo *repository.BusTypeRepository
+// IBusTypeUseCase defines the interface for bus type use case
+type IBusTypeUseCase interface {
+	Create(ctx context.Context, input *domain.CreateBusTypeInput) (*domain.BusType, error)
+	GetByID(ctx context.Context, id int32) (*domain.BusType, error)
+	List(ctx context.Context, pg *paging.Paging) ([]*domain.BusType, int64, error)
+	Update(ctx context.Context, id int32, input *domain.UpdateBusTypeInput) (*domain.BusType, error)
+	Delete(ctx context.Context, id int32) error
 }
 
-func NewBusTypeUseCase(repo *repository.BusTypeRepository) *BusTypeUseCase {
-	return &BusTypeUseCase{repo: repo}
+type busTypeUseCase struct {
+	repo domain.Repository
 }
 
-func (uc *BusTypeUseCase) Create(ctx context.Context, req *dto.CreateBusTypeRequest) (*dto.BusTypeResponse, error) {
+func NewBusTypeUseCase(repo domain.Repository) IBusTypeUseCase {
+	return &busTypeUseCase{repo: repo}
+}
+
+func (uc *busTypeUseCase) Create(ctx context.Context, input *domain.CreateBusTypeInput) (*domain.BusType, error) {
 	busType := &domain.BusType{
-		Name:       req.Name,
-		TotalSeats: req.TotalSeats,
-		SeatLayout: req.SeatLayout,
+		Name:       input.Name,
+		TotalSeats: input.TotalSeats,
+		SeatLayout: input.SeatLayout,
 	}
 
-	if errs := busType.Validate(); len(errs) > 0 {
-		return nil, errors.ValidationError(errs[0])
+	if err := busType.Validate(); err != nil {
+		return nil, err
 	}
 
-	result, err := uc.repo.Create(ctx, busType)
-	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to create bus type")
-	}
-
-	return dto.ToBusTypeResponse(result), nil
+	return uc.repo.Create(ctx, busType)
 }
 
-func (uc *BusTypeUseCase) GetByID(ctx context.Context, id int32) (*dto.BusTypeResponse, error) {
-	result, err := uc.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, errors.NewAppError(404, errors.ErrCodeNotFound, "Bus type not found")
-	}
-	return dto.ToBusTypeResponse(result), nil
+func (uc *busTypeUseCase) GetByID(ctx context.Context, id int32) (*domain.BusType, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *BusTypeUseCase) List(ctx context.Context, pg *paging.Paging) (*paging.Page[dto.BusTypeResponse], error) {
+func (uc *busTypeUseCase) List(ctx context.Context, pg *paging.Paging) ([]*domain.BusType, int64, error) {
 	items, err := uc.repo.List(ctx, int32(pg.PageSize), int32(pg.Offset()))
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list bus types")
+		return nil, 0, err
 	}
 
 	total, err := uc.repo.Count(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to count bus types")
+		return nil, 0, err
 	}
 
-	responses := make([]dto.BusTypeResponse, len(items))
-	for i, item := range items {
-		responses[i] = *dto.ToBusTypeResponse(item)
-	}
-
-	return paging.Of(responses, total, pg.Page), nil
+	return items, total, nil
 }
 
-func (uc *BusTypeUseCase) Update(ctx context.Context, id int32, req *dto.UpdateBusTypeRequest) (*dto.BusTypeResponse, error) {
+func (uc *busTypeUseCase) Update(ctx context.Context, id int32, input *domain.UpdateBusTypeInput) (*domain.BusType, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
-		return nil, errors.NewAppError(404, errors.ErrCodeNotFound, "Bus type not found")
+		return nil, err
 	}
 
-	if req.Name != nil {
-		existing.Name = *req.Name
+	if input.Name != nil {
+		existing.Name = *input.Name
 	}
-	if req.TotalSeats != nil {
-		existing.TotalSeats = *req.TotalSeats
+	if input.TotalSeats != nil {
+		existing.TotalSeats = *input.TotalSeats
 	}
-	if req.SeatLayout != nil {
-		existing.SeatLayout = req.SeatLayout
-	}
-
-	result, err := uc.repo.Update(ctx, id, existing)
-	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to update bus type")
+	if input.SeatLayout != nil {
+		existing.SeatLayout = input.SeatLayout
 	}
 
-	return dto.ToBusTypeResponse(result), nil
+	return uc.repo.Update(ctx, id, existing)
 }
 
-func (uc *BusTypeUseCase) Delete(ctx context.Context, id int32) error {
+func (uc *busTypeUseCase) Delete(ctx context.Context, id int32) error {
 	_, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
-		return errors.NewAppError(404, errors.ErrCodeNotFound, "Bus type not found")
+		return err
 	}
 
-	if err := uc.repo.Delete(ctx, id); err != nil {
-		return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to delete bus type")
-	}
-
-	return nil
+	return uc.repo.Delete(ctx, id)
 }

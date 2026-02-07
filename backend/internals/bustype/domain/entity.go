@@ -1,6 +1,18 @@
 package domain
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"errors"
+)
+
+// Sentinel errors
+var (
+	ErrBusTypeNotFound           = errors.New("Không tìm thấy loại xe")
+	ErrBusTypeNameRequired       = errors.New("Tên loại xe là bắt buộc")
+	ErrBusTypeNameTooShort       = errors.New("Tên loại xe quá ngắn")
+	ErrBusTypeTotalSeatsRequired = errors.New("Số ghế là bắt buộc")
+	ErrBusTypeSeatLayoutRequired = errors.New("Sơ đồ ghế là bắt buộc")
+)
 
 // BusType represents a type of bus with seat layout configuration
 type BusType struct {
@@ -10,37 +22,33 @@ type BusType struct {
 	SeatLayout json.RawMessage
 }
 
-// BusTypeFilter for listing/searching bus types
-type BusTypeFilter struct {
-	Limit  int32
-	Offset int32
+// Validate validates the bus type entity
+func (bt *BusType) Validate() error {
+	if bt.Name == "" {
+		return ErrBusTypeNameRequired
+	}
+	if len(bt.Name) < 2 {
+		return ErrBusTypeNameTooShort
+	}
+	if bt.TotalSeats <= 0 {
+		return ErrBusTypeTotalSeatsRequired
+	}
+	if len(bt.SeatLayout) == 0 {
+		return ErrBusTypeSeatLayoutRequired
+	}
+	return nil
 }
 
-// Validation error constants
-var (
-	ErrBusTypeNameRequired       = "BUS_TYPE_NAME_REQUIRED"
-	ErrBusTypeNameTooShort       = "BUS_TYPE_NAME_TOO_SHORT"
-	ErrBusTypeTotalSeatsRequired = "BUS_TYPE_TOTAL_SEATS_REQUIRED"
-	ErrBusTypeSeatLayoutRequired = "BUS_TYPE_SEAT_LAYOUT_REQUIRED"
-)
+// CreateBusTypeInput is the input for creating a new bus type
+type CreateBusTypeInput struct {
+	Name       string
+	TotalSeats int32
+	SeatLayout json.RawMessage
+}
 
-// Validate validates the bus type
-func (bt *BusType) Validate() []string {
-	var errs []string
-
-	if bt.Name == "" {
-		errs = append(errs, ErrBusTypeNameRequired)
-	} else if len(bt.Name) < 2 {
-		errs = append(errs, ErrBusTypeNameTooShort)
-	}
-
-	if bt.TotalSeats <= 0 {
-		errs = append(errs, ErrBusTypeTotalSeatsRequired)
-	}
-
-	if len(bt.SeatLayout) == 0 {
-		errs = append(errs, ErrBusTypeSeatLayoutRequired)
-	}
-
-	return errs
+// UpdateBusTypeInput is the input for updating a bus type (partial update)
+type UpdateBusTypeInput struct {
+	Name       *string
+	TotalSeats *int32
+	SeatLayout json.RawMessage
 }

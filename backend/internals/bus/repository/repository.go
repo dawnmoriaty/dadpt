@@ -5,29 +5,26 @@ import (
 
 	"backend/db"
 	"backend/internals/bus/domain"
+	"backend/pkgs/typeconv"
 	"backend/sql/models"
 )
 
-type BusRepository struct {
+type busRepository struct {
 	db      *db.Database
 	queries *models.Queries
 }
 
-func NewBusRepository(database *db.Database) *BusRepository {
-	return &BusRepository{
+func NewBusRepository(database *db.Database) domain.Repository {
+	return &busRepository{
 		db:      database,
 		queries: models.New(database.GetPool()),
 	}
 }
 
-func (r *BusRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bus, error) {
+func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bus, error) {
 	status := bus.Status
 	if status == "" {
 		status = "active"
-	}
-	var imageURL *string
-	if bus.ImageURL != "" {
-		imageURL = &bus.ImageURL
 	}
 
 	row, err := r.queries.CreateBus(ctx, models.CreateBusParams{
@@ -35,7 +32,7 @@ func (r *BusRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 		BusTypeID:    bus.BusTypeID,
 		LicensePlate: bus.LicensePlate,
 		Status:       &status,
-		ImageUrl:     imageURL,
+		ImageUrl:     typeconv.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
 		return nil, err
@@ -43,15 +40,15 @@ func (r *BusRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 	return r.basicToDomain(&row), nil
 }
 
-func (r *BusRepository) GetByID(ctx context.Context, id int32) (*domain.Bus, error) {
+func (r *busRepository) GetByID(ctx context.Context, id int32) (*domain.Bus, error) {
 	row, err := r.queries.GetBusByID(ctx, id)
 	if err != nil {
-		return nil, err
+		return nil, domain.ErrBusNotFound
 	}
 	return r.joinedToDomain(&row), nil
 }
 
-func (r *BusRepository) List(ctx context.Context, limit, offset int32) ([]*domain.Bus, error) {
+func (r *busRepository) List(ctx context.Context, limit, offset int32) ([]*domain.Bus, error) {
 	rows, err := r.queries.ListBuses(ctx, models.ListBusesParams{
 		Limit:  limit,
 		Offset: offset,
@@ -67,7 +64,7 @@ func (r *BusRepository) List(ctx context.Context, limit, offset int32) ([]*domai
 	return result, nil
 }
 
-func (r *BusRepository) ListByProvider(ctx context.Context, providerID int32, limit, offset int32) ([]*domain.Bus, error) {
+func (r *busRepository) ListByProvider(ctx context.Context, providerID int32, limit, offset int32) ([]*domain.Bus, error) {
 	rows, err := r.queries.ListBusesByProvider(ctx, models.ListBusesByProviderParams{
 		ProviderID: providerID,
 		Limit:      limit,
@@ -84,26 +81,21 @@ func (r *BusRepository) ListByProvider(ctx context.Context, providerID int32, li
 	return result, nil
 }
 
-func (r *BusRepository) Count(ctx context.Context) (int64, error) {
+func (r *busRepository) Count(ctx context.Context) (int64, error) {
 	return r.queries.CountBuses(ctx)
 }
 
-func (r *BusRepository) CountByProvider(ctx context.Context, providerID int32) (int64, error) {
+func (r *busRepository) CountByProvider(ctx context.Context, providerID int32) (int64, error) {
 	return r.queries.CountBusesByProvider(ctx, providerID)
 }
 
-func (r *BusRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (*domain.Bus, error) {
-	var imageURL *string
-	if bus.ImageURL != "" {
-		imageURL = &bus.ImageURL
-	}
-
+func (r *busRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (*domain.Bus, error) {
 	row, err := r.queries.UpdateBus(ctx, models.UpdateBusParams{
 		ID:           id,
 		BusTypeID:    bus.BusTypeID,
 		LicensePlate: bus.LicensePlate,
 		Status:       &bus.Status,
-		ImageUrl:     imageURL,
+		ImageUrl:     typeconv.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
 		return nil, err
@@ -111,7 +103,7 @@ func (r *BusRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (
 	return r.basicToDomain(&row), nil
 }
 
-func (r *BusRepository) UpdateStatus(ctx context.Context, id int32, status string) (*domain.Bus, error) {
+func (r *busRepository) UpdateStatus(ctx context.Context, id int32, status string) (*domain.Bus, error) {
 	row, err := r.queries.UpdateBusStatus(ctx, models.UpdateBusStatusParams{
 		ID:     id,
 		Status: &status,
@@ -122,89 +114,57 @@ func (r *BusRepository) UpdateStatus(ctx context.Context, id int32, status strin
 	return r.basicToDomain(&row), nil
 }
 
-func (r *BusRepository) Delete(ctx context.Context, id int32) error {
+func (r *busRepository) Delete(ctx context.Context, id int32) error {
 	return r.queries.DeleteBus(ctx, id)
 }
 
-func (r *BusRepository) basicToDomain(m *models.Bus) *domain.Bus {
-	status := ""
-	if m.Status != nil {
-		status = *m.Status
-	}
-	imageURL := ""
-	if m.ImageUrl != nil {
-		imageURL = *m.ImageUrl
-	}
+func (r *busRepository) basicToDomain(m *models.Bus) *domain.Bus {
 	return &domain.Bus{
 		ID:           m.ID,
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       status,
-		ImageURL:     imageURL,
+		Status:       typeconv.PtrToString(m.Status),
+		ImageURL:     typeconv.PtrToString(m.ImageUrl),
 	}
 }
 
-func (r *BusRepository) joinedToDomain(m *models.GetBusByIDRow) *domain.Bus {
-	status := ""
-	if m.Status != nil {
-		status = *m.Status
-	}
-	imageURL := ""
-	if m.ImageUrl != nil {
-		imageURL = *m.ImageUrl
-	}
+func (r *busRepository) joinedToDomain(m *models.GetBusByIDRow) *domain.Bus {
 	return &domain.Bus{
 		ID:           m.ID,
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       status,
-		ImageURL:     imageURL,
+		Status:       typeconv.PtrToString(m.Status),
+		ImageURL:     typeconv.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,
 	}
 }
 
-func (r *BusRepository) listRowToDomain(m *models.ListBusesRow) *domain.Bus {
-	status := ""
-	if m.Status != nil {
-		status = *m.Status
-	}
-	imageURL := ""
-	if m.ImageUrl != nil {
-		imageURL = *m.ImageUrl
-	}
+func (r *busRepository) listRowToDomain(m *models.ListBusesRow) *domain.Bus {
 	return &domain.Bus{
 		ID:           m.ID,
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       status,
-		ImageURL:     imageURL,
+		Status:       typeconv.PtrToString(m.Status),
+		ImageURL:     typeconv.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,
 	}
 }
 
-func (r *BusRepository) providerRowToDomain(m *models.ListBusesByProviderRow) *domain.Bus {
-	status := ""
-	if m.Status != nil {
-		status = *m.Status
-	}
-	imageURL := ""
-	if m.ImageUrl != nil {
-		imageURL = *m.ImageUrl
-	}
+func (r *busRepository) providerRowToDomain(m *models.ListBusesByProviderRow) *domain.Bus {
 	return &domain.Bus{
 		ID:           m.ID,
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       status,
-		ImageURL:     imageURL,
+		Status:       typeconv.PtrToString(m.Status),
+		ImageURL:     typeconv.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,

@@ -7,10 +7,8 @@ import (
 
 	"backend/db"
 	"backend/internals/trip/domain"
-	"backend/pkgs/errors"
+	"backend/pkgs/typeconv"
 	"backend/sql/models"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type tripRepository struct {
@@ -36,14 +34,14 @@ func sqlcToEntity(m models.Trip) *domain.Trip {
 		DestinationID:  m.DestinationID,
 		DepartureTime:  m.DepartureTime.Time,
 		ArrivalTime:    m.ArrivalTime.Time,
-		BasePrice:      numericToFloat(m.BasePrice),
-		PriceModifier:  numericToFloat(m.PriceModifier),
-		IsHotDeal:      ptrToBool(m.IsHotDeal),
+		BasePrice:      typeconv.NumericToFloat64(m.BasePrice),
+		PriceModifier:  typeconv.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:      typeconv.PtrToBool(m.IsHotDeal),
 		PickupPoints:   jsonToPoints(m.PickupPoints),
 		DropoffPoints:  jsonToPoints(m.DropoffPoints),
 		BookedSeats:    m.BookedSeats,
 		AvailableSeats: m.AvailableSeats,
-		Status:         domain.TripStatus(ptrToString(m.Status)),
+		Status:         domain.TripStatus(typeconv.PtrToString(m.Status)),
 		CreatedAt:      m.CreatedAt.Time,
 	}
 }
@@ -57,14 +55,14 @@ func searchRowToEntity(m models.SearchTripsRow) *domain.Trip {
 		DestinationID:   m.DestinationID,
 		DepartureTime:   m.DepartureTime.Time,
 		ArrivalTime:     m.ArrivalTime.Time,
-		BasePrice:       numericToFloat(m.BasePrice),
-		PriceModifier:   numericToFloat(m.PriceModifier),
-		IsHotDeal:       ptrToBool(m.IsHotDeal),
+		BasePrice:       typeconv.NumericToFloat64(m.BasePrice),
+		PriceModifier:   typeconv.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       typeconv.PtrToBool(m.IsHotDeal),
 		PickupPoints:    jsonToPoints(m.PickupPoints),
 		DropoffPoints:   jsonToPoints(m.DropoffPoints),
 		BookedSeats:     m.BookedSeats,
 		AvailableSeats:  m.AvailableSeats,
-		Status:          domain.TripStatus(ptrToString(m.Status)),
+		Status:          domain.TripStatus(typeconv.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
 		OriginName:      m.OriginName,
@@ -83,14 +81,14 @@ func listAdminRowToEntity(m models.ListTripsAdminRow) *domain.Trip {
 		DestinationID:   m.DestinationID,
 		DepartureTime:   m.DepartureTime.Time,
 		ArrivalTime:     m.ArrivalTime.Time,
-		BasePrice:       numericToFloat(m.BasePrice),
-		PriceModifier:   numericToFloat(m.PriceModifier),
-		IsHotDeal:       ptrToBool(m.IsHotDeal),
+		BasePrice:       typeconv.NumericToFloat64(m.BasePrice),
+		PriceModifier:   typeconv.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       typeconv.PtrToBool(m.IsHotDeal),
 		PickupPoints:    jsonToPoints(m.PickupPoints),
 		DropoffPoints:   jsonToPoints(m.DropoffPoints),
 		BookedSeats:     m.BookedSeats,
 		AvailableSeats:  m.AvailableSeats,
-		Status:          domain.TripStatus(ptrToString(m.Status)),
+		Status:          domain.TripStatus(typeconv.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
 		OriginName:      m.OriginName,
@@ -100,36 +98,7 @@ func listAdminRowToEntity(m models.ListTripsAdminRow) *domain.Trip {
 	}
 }
 
-func numericToFloat(n pgtype.Numeric) float64 {
-	f, _ := n.Float64Value()
-	return f.Float64
-}
-
-func ptrToBool(b *bool) bool {
-	if b == nil {
-		return false
-	}
-	return *b
-}
-
-func ptrToString(s *string) string {
-	if s == nil {
-		return ""
-	}
-	return *s
-}
-
-func stringToPtr(s string) *string {
-	if s == "" {
-		return nil
-	}
-	return &s
-}
-
-func boolToPtr(b bool) *bool {
-	return &b
-}
-
+// Domain-specific JSON converters (keep local - depends on domain.Point)
 func jsonToPoints(data json.RawMessage) []domain.Point {
 	if data == nil {
 		return nil
@@ -147,19 +116,6 @@ func pointsToJSON(points []domain.Point) json.RawMessage {
 	return data
 }
 
-func floatToNumeric(f float64) pgtype.Numeric {
-	var n pgtype.Numeric
-	// Use string representation for precision with Numeric type
-	_ = n.Scan(fmt.Sprintf("%.2f", f))
-	return n
-}
-
-func timeToTimestamptz(t interface{}) pgtype.Timestamptz {
-	var ts pgtype.Timestamptz
-	ts.Scan(t)
-	return ts
-}
-
 // Repository implementations
 
 func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) (*domain.Trip, error) {
@@ -168,17 +124,17 @@ func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) (*domain
 		BusID:          trip.BusID,
 		OriginID:       trip.OriginID,
 		DestinationID:  trip.DestinationID,
-		DepartureTime:  timeToTimestamptz(trip.DepartureTime),
-		ArrivalTime:    timeToTimestamptz(trip.ArrivalTime),
-		BasePrice:      floatToNumeric(trip.BasePrice),
-		PriceModifier:  floatToNumeric(trip.PriceModifier),
-		IsHotDeal:      boolToPtr(trip.IsHotDeal),
+		DepartureTime:  typeconv.TimeToTimestamptz(trip.DepartureTime),
+		ArrivalTime:    typeconv.TimeToTimestamptz(trip.ArrivalTime),
+		BasePrice:      typeconv.Float64ToNumeric(trip.BasePrice),
+		PriceModifier:  typeconv.Float64ToNumeric(trip.PriceModifier),
+		IsHotDeal:      typeconv.BoolToPtr(trip.IsHotDeal),
 		PickupPoints:   pointsToJSON(trip.PickupPoints),
 		DropoffPoints:  pointsToJSON(trip.DropoffPoints),
 		AvailableSeats: trip.AvailableSeats,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to create trip")
+		return nil, fmt.Errorf("failed to create trip: %w", err)
 	}
 	return sqlcToEntity(result), nil
 }
@@ -186,7 +142,7 @@ func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) (*domain
 func (r *tripRepository) GetByID(ctx context.Context, id int64) (*domain.Trip, error) {
 	result, err := r.queries.GetTripByID(ctx, id)
 	if err != nil {
-		return nil, errors.ErrTripNotFound
+		return nil, domain.ErrTripNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -194,16 +150,16 @@ func (r *tripRepository) GetByID(ctx context.Context, id int64) (*domain.Trip, e
 func (r *tripRepository) Update(ctx context.Context, trip *domain.Trip) (*domain.Trip, error) {
 	result, err := r.queries.UpdateTrip(ctx, models.UpdateTripParams{
 		ID:            trip.ID,
-		DepartureTime: timeToTimestamptz(trip.DepartureTime),
-		ArrivalTime:   timeToTimestamptz(trip.ArrivalTime),
-		BasePrice:     floatToNumeric(trip.BasePrice),
-		PriceModifier: floatToNumeric(trip.PriceModifier),
-		IsHotDeal:     boolToPtr(trip.IsHotDeal),
+		DepartureTime: typeconv.TimeToTimestamptz(trip.DepartureTime),
+		ArrivalTime:   typeconv.TimeToTimestamptz(trip.ArrivalTime),
+		BasePrice:     typeconv.Float64ToNumeric(trip.BasePrice),
+		PriceModifier: typeconv.Float64ToNumeric(trip.PriceModifier),
+		IsHotDeal:     typeconv.BoolToPtr(trip.IsHotDeal),
 		PickupPoints:  pointsToJSON(trip.PickupPoints),
 		DropoffPoints: pointsToJSON(trip.DropoffPoints),
 	})
 	if err != nil {
-		return nil, errors.ErrTripNotFound
+		return nil, domain.ErrTripNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -215,7 +171,7 @@ func (r *tripRepository) UpdateStatus(ctx context.Context, id int64, status doma
 		Status: &s,
 	})
 	if err != nil {
-		return nil, errors.ErrTripNotFound
+		return nil, domain.ErrTripNotFound
 	}
 	return sqlcToEntity(result), nil
 }
@@ -223,38 +179,35 @@ func (r *tripRepository) UpdateStatus(ctx context.Context, id int64, status doma
 func (r *tripRepository) Delete(ctx context.Context, id int64) error {
 	err := r.queries.DeleteTrip(ctx, id)
 	if err != nil {
-		return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to delete trip")
+		return fmt.Errorf("failed to delete trip: %w", err)
 	}
 	return nil
 }
 
 func (r *tripRepository) List(ctx context.Context, filter *domain.TripFilter) ([]*domain.Trip, int64, error) {
-	// Default values for optional filters (SQLC uses non-pointer types)
-	var providerID int32 = 0
-	var status string = ""
-	if filter.ProviderID != nil {
-		providerID = *filter.ProviderID
-	}
+	// Convert domain TripStatus pointer to *string for sqlc
+	var status *string
 	if filter.Status != nil {
-		status = string(*filter.Status)
+		s := string(*filter.Status)
+		status = &s
 	}
 
 	rows, err := r.queries.ListTripsAdmin(ctx, models.ListTripsAdminParams{
-		Column1: providerID,
-		Column2: status,
-		Limit:   filter.Limit,
-		Offset:  filter.Offset,
+		Limit:      filter.Limit,
+		Offset:     filter.Offset,
+		ProviderID: filter.ProviderID,
+		Status:     status,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list trips")
+		return nil, 0, fmt.Errorf("failed to list trips: %w", err)
 	}
 
 	count, err := r.queries.CountTripsAdmin(ctx, models.CountTripsAdminParams{
-		Column1: providerID,
-		Column2: status,
+		ProviderID: filter.ProviderID,
+		Status:     status,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to count trips")
+		return nil, 0, fmt.Errorf("failed to count trips: %w", err)
 	}
 
 	result := make([]*domain.Trip, len(rows))
@@ -267,29 +220,29 @@ func (r *tripRepository) List(ctx context.Context, filter *domain.TripFilter) ([
 
 func (r *tripRepository) Search(ctx context.Context, filter *domain.TripFilter) ([]*domain.Trip, int64, error) {
 	if filter.OriginID == nil || filter.DestinationID == nil || filter.DepartureDate == nil {
-		return nil, 0, errors.ValidationError("origin, destination and departure date are required")
+		return nil, 0, domain.ErrInvalidInput
 	}
 
 	rows, err := r.queries.SearchTrips(ctx, models.SearchTripsParams{
 		OriginID:       *filter.OriginID,
 		DestinationID:  *filter.DestinationID,
-		DepartureTime:  timeToTimestamptz(*filter.DepartureDate),
+		DepartureTime:  typeconv.TimeToTimestamptz(*filter.DepartureDate),
 		AvailableSeats: filter.MinSeats,
 		Limit:          filter.Limit,
 		Offset:         filter.Offset,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to search trips")
+		return nil, 0, fmt.Errorf("failed to search trips: %w", err)
 	}
 
 	count, err := r.queries.CountSearchTrips(ctx, models.CountSearchTripsParams{
 		OriginID:       *filter.OriginID,
 		DestinationID:  *filter.DestinationID,
-		DepartureTime:  timeToTimestamptz(*filter.DepartureDate),
+		DepartureTime:  typeconv.TimeToTimestamptz(*filter.DepartureDate),
 		AvailableSeats: filter.MinSeats,
 	})
 	if err != nil {
-		return nil, 0, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to count search trips")
+		return nil, 0, fmt.Errorf("failed to count search trips: %w", err)
 	}
 
 	result := make([]*domain.Trip, len(rows))

@@ -3,93 +3,92 @@ package usecase
 import (
 	"context"
 
-	"backend/internals/providers/controller/dto"
 	"backend/internals/providers/domain"
-	"backend/pkgs/errors"
 	"backend/pkgs/paging"
 )
 
-type ProviderUseCase struct {
+// IProviderUseCase defines the interface for provider use case
+type IProviderUseCase interface {
+	Create(ctx context.Context, input *domain.CreateProviderInput) (*domain.Provider, error)
+	GetByID(ctx context.Context, id int32) (*domain.Provider, error)
+	Update(ctx context.Context, id int32, input *domain.UpdateProviderInput) (*domain.Provider, error)
+	Delete(ctx context.Context, id int32) error
+	List(ctx context.Context, pg *paging.Paging) ([]*domain.Provider, int64, error)
+	ListActive(ctx context.Context) ([]*domain.Provider, error)
+	ToggleActive(ctx context.Context, id int32) (*domain.Provider, error)
+}
+
+type providerUseCase struct {
 	repo domain.Repository
 }
 
-func NewProviderUseCase(repo domain.Repository) *ProviderUseCase {
-	return &ProviderUseCase{repo: repo}
+func NewProviderUseCase(repo domain.Repository) IProviderUseCase {
+	return &providerUseCase{repo: repo}
 }
 
-func (uc *ProviderUseCase) Create(ctx context.Context, req *dto.CreateProviderRequest) (*dto.ProviderResponse, error) {
-	if req.Name == "" {
-		return nil, errors.RequiredField("name")
-	}
-
+func (uc *providerUseCase) Create(ctx context.Context, input *domain.CreateProviderInput) (*domain.Provider, error) {
 	// Check slug uniqueness if provided
-	if req.Slug != "" {
-		existing, _ := uc.repo.GetBySlug(ctx, req.Slug)
+	if input.Slug != "" {
+		existing, _ := uc.repo.GetBySlug(ctx, input.Slug)
 		if existing != nil {
-			return nil, errors.ErrDuplicateSlug
+			return nil, domain.ErrDuplicateSlug
 		}
 	}
 
 	provider := &domain.Provider{
-		Name:         req.Name,
-		Hotline:      req.Hotline,
-		Slug:         req.Slug,
-		PolicyRefund: req.PolicyRefund,
+		Name:         input.Name,
+		Hotline:      input.Hotline,
+		Slug:         input.Slug,
+		PolicyRefund: input.PolicyRefund,
 		IsActive:     true,
 	}
 
-	created, err := uc.repo.Create(ctx, provider)
-	if err != nil {
+	if err := provider.Validate(); err != nil {
 		return nil, err
 	}
 
-	return entityToResponse(created), nil
+	return uc.repo.Create(ctx, provider)
 }
 
-func (uc *ProviderUseCase) GetByID(ctx context.Context, id int32) (*dto.ProviderResponse, error) {
-	provider, err := uc.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return entityToResponse(provider), nil
+func (uc *providerUseCase) GetByID(ctx context.Context, id int32) (*domain.Provider, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *ProviderUseCase) Update(ctx context.Context, id int32, req *dto.UpdateProviderRequest) (*dto.ProviderResponse, error) {
+func (uc *providerUseCase) Update(ctx context.Context, id int32, input *domain.UpdateProviderInput) (*domain.Provider, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// Check slug uniqueness if changing
-	if req.Slug != nil && *req.Slug != existing.Slug {
-		other, _ := uc.repo.GetBySlug(ctx, *req.Slug)
+	if input.Slug != nil && *input.Slug != existing.Slug {
+		other, _ := uc.repo.GetBySlug(ctx, *input.Slug)
 		if other != nil && other.ID != id {
-			return nil, errors.ErrDuplicateSlug
+			return nil, domain.ErrDuplicateSlug
 		}
 	}
 
-	if req.Name != nil {
-		existing.Name = *req.Name
+	if input.Name != nil {
+		existing.Name = *input.Name
 	}
-	if req.Hotline != nil {
-		existing.Hotline = *req.Hotline
+	if input.Hotline != nil {
+		existing.Hotline = *input.Hotline
 	}
-	if req.Slug != nil {
-		existing.Slug = *req.Slug
+	if input.Slug != nil {
+		existing.Slug = *input.Slug
 	}
-	if req.PolicyRefund != nil {
-		existing.PolicyRefund = *req.PolicyRefund
+	if input.PolicyRefund != nil {
+		existing.PolicyRefund = *input.PolicyRefund
 	}
 
-	updated, err := uc.repo.Update(ctx, existing)
-	if err != nil {
+	if err := existing.Validate(); err != nil {
 		return nil, err
 	}
 
-	return entityToResponse(updated), nil
+	return uc.repo.Update(ctx, existing)
 }
 
-func (uc *ProviderUseCase) Delete(ctx context.Context, id int32) error {
+func (uc *providerUseCase) Delete(ctx context.Context, id int32) error {
 	_, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
 		return err
@@ -97,52 +96,17 @@ func (uc *ProviderUseCase) Delete(ctx context.Context, id int32) error {
 	return uc.repo.Delete(ctx, id)
 }
 
-func (uc *ProviderUseCase) List(ctx context.Context, pg *paging.Paging) (*paging.Page[dto.ProviderResponse], error) {
-	providers, total, err := uc.repo.List(ctx, &domain.ProviderFilter{
+func (uc *providerUseCase) List(ctx context.Context, pg *paging.Paging) ([]*domain.Provider, int64, error) {
+	return uc.repo.List(ctx, &domain.ProviderFilter{
 		Limit:  int32(pg.PageSize),
 		Offset: int32(pg.Offset()),
 	})
-	if err != nil {
-		return nil, err
-	}
-
-	items := make([]dto.ProviderResponse, len(providers))
-	for i, p := range providers {
-		items[i] = *entityToResponse(p)
-	}
-
-	return paging.Of(items, total, pg.Page), nil
 }
 
-func (uc *ProviderUseCase) ListActive(ctx context.Context) ([]dto.ProviderResponse, error) {
-	providers, err := uc.repo.ListActive(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	result := make([]dto.ProviderResponse, len(providers))
-	for i, p := range providers {
-		result[i] = *entityToResponse(p)
-	}
-
-	return result, nil
+func (uc *providerUseCase) ListActive(ctx context.Context) ([]*domain.Provider, error) {
+	return uc.repo.ListActive(ctx)
 }
 
-func (uc *ProviderUseCase) ToggleActive(ctx context.Context, id int32) (*dto.ProviderResponse, error) {
-	updated, err := uc.repo.ToggleActive(ctx, id)
-	if err != nil {
-		return nil, err
-	}
-	return entityToResponse(updated), nil
-}
-
-func entityToResponse(p *domain.Provider) *dto.ProviderResponse {
-	return &dto.ProviderResponse{
-		ID:           p.ID,
-		Name:         p.Name,
-		Hotline:      p.Hotline,
-		Slug:         p.Slug,
-		PolicyRefund: p.PolicyRefund,
-		IsActive:     p.IsActive,
-	}
+func (uc *providerUseCase) ToggleActive(ctx context.Context, id int32) (*domain.Provider, error) {
+	return uc.repo.ToggleActive(ctx, id)
 }

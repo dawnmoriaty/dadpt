@@ -17,6 +17,7 @@ type IRedis interface {
 	Get(key string, value interface{}) error
 	Set(key string, value interface{}) error
 	SetWithExpiration(key string, value interface{}, expiration time.Duration) error
+	SetNX(key string, value interface{}, expiration time.Duration) (bool, error)
 	Remove(keys ...string) error
 	Keys(pattern string) ([]string, error)
 	RemovePattern(pattern string) error
@@ -91,6 +92,14 @@ func (r *redis) SetWithExpiration(key string, value interface{}, expiration time
 
 	bData, _ := json.Marshal(value)
 	return r.cmd.Set(ctx, key, bData, expiration).Err()
+}
+
+func (r *redis) SetNX(key string, value interface{}, expiration time.Duration) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), Timeout)
+	defer cancel()
+
+	bData, _ := json.Marshal(value)
+	return r.cmd.SetNX(ctx, key, bData, expiration).Result()
 }
 
 func (r *redis) Remove(keys ...string) error {

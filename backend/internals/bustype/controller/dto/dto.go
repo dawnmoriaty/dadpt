@@ -12,10 +12,26 @@ type CreateBusTypeRequest struct {
 	SeatLayout json.RawMessage `json:"seatLayout" binding:"required"`
 }
 
+func (r *CreateBusTypeRequest) ToInput() *domain.CreateBusTypeInput {
+	return &domain.CreateBusTypeInput{
+		Name:       r.Name,
+		TotalSeats: r.TotalSeats,
+		SeatLayout: r.SeatLayout,
+	}
+}
+
 type UpdateBusTypeRequest struct {
 	Name       *string         `json:"name"`
 	TotalSeats *int32          `json:"totalSeats"`
 	SeatLayout json.RawMessage `json:"seatLayout"`
+}
+
+func (r *UpdateBusTypeRequest) ToInput() *domain.UpdateBusTypeInput {
+	return &domain.UpdateBusTypeInput{
+		Name:       r.Name,
+		TotalSeats: r.TotalSeats,
+		SeatLayout: r.SeatLayout,
+	}
 }
 
 type BusTypeResponse struct {

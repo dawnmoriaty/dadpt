@@ -1,19 +1,21 @@
 package domain
 
 import (
+	"errors"
 	"regexp"
-	"strings"
 )
 
-// Domain validation errors - defined as constants for consistency
+// Sentinel errors
 var (
-	ErrProviderNameRequired   = "PROVIDER_NAME_REQUIRED"
-	ErrProviderNameTooShort   = "PROVIDER_NAME_TOO_SHORT"
-	ErrProviderHotlineInvalid = "PROVIDER_HOTLINE_INVALID"
-	ErrProviderSlugInvalid    = "PROVIDER_SLUG_INVALID"
-	ErrProviderSlugTooShort   = "PROVIDER_SLUG_TOO_SHORT"
-	ErrProviderSlugTooLong    = "PROVIDER_SLUG_TOO_LONG"
-	ErrProviderCannotDelete   = "PROVIDER_CANNOT_DELETE_ACTIVE"
+	ErrProviderNotFound       = errors.New("Không tìm thấy nhà cung cấp")
+	ErrProviderNameRequired   = errors.New("Tên nhà cung cấp là bắt buộc")
+	ErrProviderNameTooShort   = errors.New("Tên nhà cung cấp quá ngắn")
+	ErrProviderHotlineInvalid = errors.New("Số hotline không hợp lệ")
+	ErrProviderSlugInvalid    = errors.New("Slug không hợp lệ")
+	ErrProviderSlugTooShort   = errors.New("Slug quá ngắn")
+	ErrProviderSlugTooLong    = errors.New("Slug quá dài")
+	ErrDuplicateSlug          = errors.New("Slug đã tồn tại")
+	ErrProviderCannotDelete   = errors.New("Chỉ có thể xóa nhà cung cấp không hoạt động")
 )
 
 // Provider is a pure domain entity for bus service providers
@@ -38,70 +40,57 @@ var (
 	slugRegex    = regexp.MustCompile(`^[a-z0-9\-]+$`)
 )
 
-func (p *Provider) ValidateName() (bool, string) {
-	name := strings.TrimSpace(p.Name)
-	if name == "" {
-		return false, ErrProviderNameRequired
+// Validate validates the provider entity
+func (p *Provider) Validate() error {
+	if p.Name == "" {
+		return ErrProviderNameRequired
 	}
-	if len(name) < 2 {
-		return false, ErrProviderNameTooShort
+	if len(p.Name) < 2 {
+		return ErrProviderNameTooShort
 	}
-	return true, ""
-}
-
-func (p *Provider) ValidateHotline() (bool, string) {
-	if p.Hotline == "" {
-		return true, "" // Optional
+	if p.Hotline != "" && !hotlineRegex.MatchString(p.Hotline) {
+		return ErrProviderHotlineInvalid
 	}
-	if !hotlineRegex.MatchString(p.Hotline) {
-		return false, ErrProviderHotlineInvalid
+	if p.Slug != "" {
+		if !slugRegex.MatchString(p.Slug) {
+			return ErrProviderSlugInvalid
+		}
+		if len(p.Slug) < 3 {
+			return ErrProviderSlugTooShort
+		}
+		if len(p.Slug) > 50 {
+			return ErrProviderSlugTooLong
+		}
 	}
-	return true, ""
-}
-
-func (p *Provider) ValidateSlug() (bool, string) {
-	if p.Slug == "" {
-		return true, "" // Optional
-	}
-	if !slugRegex.MatchString(p.Slug) {
-		return false, ErrProviderSlugInvalid
-	}
-	if len(p.Slug) < 3 {
-		return false, ErrProviderSlugTooShort
-	}
-	if len(p.Slug) > 50 {
-		return false, ErrProviderSlugTooLong
-	}
-	return true, ""
-}
-
-// Validate runs all validations and returns error codes
-func (p *Provider) Validate() []string {
-	var errs []string
-	if valid, code := p.ValidateName(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := p.ValidateHotline(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := p.ValidateSlug(); !valid {
-		errs = append(errs, code)
-	}
-	return errs
+	return nil
 }
 
 // GenerateSlug creates a URL-friendly slug from name
 func (p *Provider) GenerateSlug() string {
-	slug := strings.ToLower(p.Name)
-	slug = strings.ReplaceAll(slug, " ", "-")
-	slug = regexp.MustCompile(`[^a-z0-9\-]`).ReplaceAllString(slug, "")
+	slug := regexp.MustCompile(`[^a-z0-9\-]`).ReplaceAllString(p.Name, "")
 	return slug
 }
 
+// CreateProviderInput is the input for creating a new provider
+type CreateProviderInput struct {
+	Name         string
+	Hotline      string
+	Slug         string
+	PolicyRefund string
+}
+
+// UpdateProviderInput is the input for updating a provider (partial update)
+type UpdateProviderInput struct {
+	Name         *string
+	Hotline      *string
+	Slug         *string
+	PolicyRefund *string
+}
+
 // CanBeDeleted checks if provider can be deleted
-func (p *Provider) CanBeDeleted() (bool, string) {
+func (p *Provider) CanBeDeleted() error {
 	if p.IsActive {
-		return false, ErrProviderCannotDelete
+		return ErrProviderCannotDelete
 	}
-	return true, ""
+	return nil
 }

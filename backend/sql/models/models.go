@@ -25,6 +25,7 @@ type Booking struct {
 	PaymentMethod *string            `json:"paymentMethod"`
 	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
 	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
+	ExpiresAt     pgtype.Timestamptz `json:"expiresAt"`
 }
 
 type Bus struct {
@@ -89,6 +90,7 @@ type Trip struct {
 	AvailableSeats int32              `json:"availableSeats"`
 	Status         *string            `json:"status"`
 	CreatedAt      pgtype.Timestamptz `json:"createdAt"`
+	Version        *int32             `json:"version"`
 }
 
 type User struct {

@@ -8,25 +8,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func Routes(r *gin.RouterGroup, database *db.Database) {
+// Routes registers trip routes following Hexagonal Architecture
+// Dependencies are injected from outside (Dependency Inversion)
+func Routes(public *gin.RouterGroup, admin *gin.RouterGroup, database *db.Database) {
+	// Infrastructure layer - adapters
 	repo := repository.NewTripRepository(database)
+
+	// Application layer - use case with all dependencies injected
 	uc := usecase.NewTripUseCase(repo)
+
+	// Interface layer - HTTP handler
 	handler := NewTripHandler(uc)
 
 	// Public routes
-	trips := r.Group("/trips")
+	trips := public.Group("/trips")
 	{
 		trips.GET("", handler.Search)
 		trips.GET("/:id", handler.GetByID)
 	}
 
 	// Admin routes
-	admin := r.Group("/admin/trips")
+	adminTrips := admin.Group("/trips")
 	{
-		admin.POST("", handler.Create)
-		admin.GET("", handler.List)
-		admin.PUT("/:id", handler.Update)
-		admin.PATCH("/:id/status", handler.UpdateStatus)
-		admin.DELETE("/:id", handler.Delete)
+		adminTrips.POST("", handler.Create)
+		adminTrips.GET("", handler.List)
+		adminTrips.PUT("/:id", handler.Update)
+		adminTrips.PATCH("/:id/status", handler.UpdateStatus)
+		adminTrips.DELETE("/:id", handler.Delete)
 	}
 }

@@ -2,22 +2,32 @@ package domain
 
 import (
 	"encoding/json"
+	"errors"
 	"time"
 )
 
-// Domain validation errors - defined as constants for consistency
+// =============================================================================
+// SENTINEL ERRORS - Định nghĩa tại domain, cho phép errors.Is() hoạt động
+// =============================================================================
+
 var (
-	ErrTripStatusInvalid          = "TRIP_STATUS_INVALID"
-	ErrTripTransitionInvalid      = "TRIP_TRANSITION_INVALID"
-	ErrTripDepartureInPast        = "TRIP_DEPARTURE_IN_PAST"
-	ErrTripArrivalBeforeDeparture = "TRIP_ARRIVAL_BEFORE_DEPARTURE"
-	ErrTripProviderRequired       = "TRIP_PROVIDER_REQUIRED"
-	ErrTripOriginRequired         = "TRIP_ORIGIN_REQUIRED"
-	ErrTripDestinationRequired    = "TRIP_DESTINATION_REQUIRED"
-	ErrTripPriceInvalid           = "TRIP_PRICE_INVALID"
-	ErrTripCannotModify           = "TRIP_CANNOT_MODIFY_NON_SCHEDULED"
-	ErrTripCannotDelete           = "TRIP_CANNOT_DELETE_NON_SCHEDULED"
+	ErrTripNotFound            = errors.New("Không tìm thấy chuyến đi")
+	ErrInvalidInput            = errors.New("Dữ liệu đầu vào không hợp lệ")
+	ErrTripStatusInvalid       = errors.New("Trạng thái chuyến đi không hợp lệ")
+	ErrTripTransitionInvalid   = errors.New("Chuyển trạng thái chuyến đi không hợp lệ")
+	ErrTripDepartureInPast     = errors.New("Thời gian khởi hành phải ở tương lai")
+	ErrArrivalBeforeDeparture  = errors.New("Thời gian đến phải sau thời gian khởi hành")
+	ErrTripProviderRequired    = errors.New("Nhà cung cấp là bắt buộc")
+	ErrTripOriginRequired      = errors.New("Điểm đi là bắt buộc")
+	ErrTripDestinationRequired = errors.New("Điểm đến là bắt buộc")
+	ErrTripPriceInvalid        = errors.New("Giá vé phải lớn hơn 0")
+	ErrTripCannotModify        = errors.New("Chỉ có thể sửa chuyến đi ở trạng thái scheduled")
+	ErrTripCannotDelete        = errors.New("Chỉ có thể xóa chuyến đi ở trạng thái scheduled")
 )
+
+// =============================================================================
+// VALUE OBJECTS
+// =============================================================================
 
 type TripStatus string
 
@@ -36,7 +46,25 @@ func (s TripStatus) IsValid() bool {
 	return false
 }
 
-// Trip is a pure domain entity
+func (s TripStatus) String() string {
+	return string(s)
+}
+
+type Point struct {
+	Name      string  `json:"name"`
+	Time      string  `json:"time"`
+	Surcharge float64 `json:"surcharge"`
+}
+
+func (p Point) ToJSON() json.RawMessage {
+	data, _ := json.Marshal(p)
+	return data
+}
+
+// =============================================================================
+// CORE ENTITY
+// =============================================================================
+
 type Trip struct {
 	ID             int64
 	ProviderID     int32
@@ -63,132 +91,66 @@ type Trip struct {
 	DestinationCity string
 }
 
-type Point struct {
-	Name      string  `json:"name"`
-	Time      string  `json:"time"`
-	Surcharge float64 `json:"surcharge"`
-}
+// =============================================================================
+// VALIDATION METHODS - All business rules live here
+// =============================================================================
 
-func (p Point) ToJSON() json.RawMessage {
-	data, _ := json.Marshal(p)
-	return data
-}
-
-type TripFilter struct {
-	OriginID      *int32
-	DestinationID *int32
-	DepartureDate *time.Time
-	MinSeats      int32
-	ProviderID    *int32
-	Status        *TripStatus
-	Limit         int32
-	Offset        int32
-}
-
-// Validation methods - return error code constants
-
-func (t *Trip) ValidateProvider() (bool, string) {
+func (t *Trip) Validate() error {
 	if t.ProviderID <= 0 {
-		return false, ErrTripProviderRequired
+		return ErrTripProviderRequired
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidateOrigin() (bool, string) {
 	if t.OriginID <= 0 {
-		return false, ErrTripOriginRequired
+		return ErrTripOriginRequired
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidateDestination() (bool, string) {
 	if t.DestinationID <= 0 {
-		return false, ErrTripDestinationRequired
+		return ErrTripDestinationRequired
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidateDepartureTime() (bool, string) {
 	if t.DepartureTime.Before(time.Now()) {
-		return false, ErrTripDepartureInPast
+		return ErrTripDepartureInPast
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidateArrivalTime() (bool, string) {
 	if t.ArrivalTime.Before(t.DepartureTime) {
-		return false, ErrTripArrivalBeforeDeparture
+		return ErrArrivalBeforeDeparture
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidatePrice() (bool, string) {
 	if t.BasePrice <= 0 {
-		return false, ErrTripPriceInvalid
+		return ErrTripPriceInvalid
 	}
-	return true, ""
-}
-
-func (t *Trip) ValidateStatus() (bool, string) {
-	if !t.Status.IsValid() {
-		return false, ErrTripStatusInvalid
-	}
-	return true, ""
-}
-
-// Validate runs all validations and returns error codes
-func (t *Trip) Validate() []string {
-	var errs []string
-	if valid, code := t.ValidateProvider(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := t.ValidateOrigin(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := t.ValidateDestination(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := t.ValidateDepartureTime(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := t.ValidateArrivalTime(); !valid {
-		errs = append(errs, code)
-	}
-	if valid, code := t.ValidatePrice(); !valid {
-		errs = append(errs, code)
-	}
-	return errs
+	return nil
 }
 
 // CanTransitionTo checks if status transition is valid
-func (t *Trip) CanTransitionTo(newStatus TripStatus) (bool, string) {
+func (t *Trip) CanTransitionTo(newStatus TripStatus) error {
 	switch t.Status {
 	case TripStatusScheduled:
 		if newStatus == TripStatusDeparted || newStatus == TripStatusCancelled {
-			return true, ""
+			return nil
 		}
 	case TripStatusDeparted:
 		if newStatus == TripStatusCompleted {
-			return true, ""
+			return nil
 		}
 	case TripStatusCompleted, TripStatusCancelled:
 		// Terminal states
 	}
-	return false, ErrTripTransitionInvalid
+	return ErrTripTransitionInvalid
 }
 
 // CanBeModified checks if trip can be updated
-func (t *Trip) CanBeModified() (bool, string) {
+func (t *Trip) CanBeModified() error {
 	if t.Status != TripStatusScheduled {
-		return false, ErrTripCannotModify
+		return ErrTripCannotModify
 	}
-	return true, ""
+	return nil
 }
 
 // CanBeDeleted checks if trip can be deleted
-func (t *Trip) CanBeDeleted() (bool, string) {
+func (t *Trip) CanBeDeleted() error {
 	if t.Status != TripStatusScheduled {
-		return false, ErrTripCannotDelete
+		return ErrTripCannotDelete
 	}
-	return true, ""
+	return nil
+}
+
+// FinalPrice calculates the final price with modifier
+func (t *Trip) FinalPrice() float64 {
+	return t.BasePrice * t.PriceModifier
 }

@@ -1,45 +1,17 @@
 package domain
 
+// CreateBusInput is the input for creating a new bus
 type CreateBusInput struct {
 	ProviderID   int32
 	BusTypeID    int32
 	LicensePlate string
 	ImageURL     string
 }
+
+// UpdateBusInput is the input for updating a bus (partial update)
 type UpdateBusInput struct {
-	ID           int32
 	BusTypeID    *int32
 	LicensePlate *string
 	Status       *string
 	ImageURL     *string
-}
-type UpdateBusStatusInput struct {
-	ID     int32
-	Status string
-}
-type BusOutput struct {
-	ID           int32
-	ProviderID   int32
-	BusTypeID    int32
-	LicensePlate string
-	Status       string
-	ImageURL     string
-	BusTypeName  string
-	TotalSeats   int32
-	ProviderName string
-}
-
-type ListBusesInput struct {
-	Page       int32
-	Limit      int32
-	ProviderID *int32
-	Status     *string
-}
-
-type ListBusesOutput struct {
-	Buses      []*BusOutput
-	Total      int64
-	Page       int32
-	Limit      int32
-	TotalPages int32
 }

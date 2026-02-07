@@ -3,51 +3,49 @@ package usecase
 import (
 	"context"
 
-	"backend/internals/bus/controller/dto"
 	"backend/internals/bus/domain"
-	"backend/internals/bus/repository"
-	"backend/pkgs/errors"
 	"backend/pkgs/paging"
 )
 
-type BusUseCase struct {
-	repo *repository.BusRepository
+// IBusUseCase defines the interface for bus use case
+type IBusUseCase interface {
+	Create(ctx context.Context, input *domain.CreateBusInput) (*domain.Bus, error)
+	GetByID(ctx context.Context, id int32) (*domain.Bus, error)
+	List(ctx context.Context, pg *paging.Paging, providerID int32) ([]*domain.Bus, int64, error)
+	Update(ctx context.Context, id int32, input *domain.UpdateBusInput) (*domain.Bus, error)
+	UpdateStatus(ctx context.Context, id int32, status string) (*domain.Bus, error)
+	Delete(ctx context.Context, id int32) error
 }
 
-func NewBusUseCase(repo *repository.BusRepository) *BusUseCase {
-	return &BusUseCase{repo: repo}
+type busUseCase struct {
+	repo domain.Repository
 }
 
-func (uc *BusUseCase) Create(ctx context.Context, req *dto.CreateBusRequest) (*dto.BusResponse, error) {
+func NewBusUseCase(repo domain.Repository) IBusUseCase {
+	return &busUseCase{repo: repo}
+}
+
+func (uc *busUseCase) Create(ctx context.Context, input *domain.CreateBusInput) (*domain.Bus, error) {
 	bus := &domain.Bus{
-		ProviderID:   req.ProviderID,
-		BusTypeID:    req.BusTypeID,
-		LicensePlate: req.LicensePlate,
+		ProviderID:   input.ProviderID,
+		BusTypeID:    input.BusTypeID,
+		LicensePlate: input.LicensePlate,
 		Status:       "active",
-		ImageURL:     req.ImageURL,
+		ImageURL:     input.ImageURL,
 	}
 
-	if errs := bus.Validate(); len(errs) > 0 {
-		return nil, errors.ValidationError(errs[0])
+	if err := bus.Validate(); err != nil {
+		return nil, err
 	}
 
-	result, err := uc.repo.Create(ctx, bus)
-	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to create bus")
-	}
-
-	return dto.ToBusResponse(result), nil
+	return uc.repo.Create(ctx, bus)
 }
 
-func (uc *BusUseCase) GetByID(ctx context.Context, id int32) (*dto.BusResponse, error) {
-	result, err := uc.repo.GetByID(ctx, id)
-	if err != nil {
-		return nil, errors.NewAppError(404, errors.ErrCodeNotFound, "Bus not found")
-	}
-	return dto.ToBusResponse(result), nil
+func (uc *busUseCase) GetByID(ctx context.Context, id int32) (*domain.Bus, error) {
+	return uc.repo.GetByID(ctx, id)
 }
 
-func (uc *BusUseCase) List(ctx context.Context, pg *paging.Paging, providerID int32) (*paging.Page[dto.BusResponse], error) {
+func (uc *busUseCase) List(ctx context.Context, pg *paging.Paging, providerID int32) ([]*domain.Bus, int64, error) {
 	var items []*domain.Bus
 	var total int64
 	var err error
@@ -55,79 +53,60 @@ func (uc *BusUseCase) List(ctx context.Context, pg *paging.Paging, providerID in
 	if providerID > 0 {
 		items, err = uc.repo.ListByProvider(ctx, providerID, int32(pg.PageSize), int32(pg.Offset()))
 		if err != nil {
-			return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list buses")
+			return nil, 0, err
 		}
 		total, err = uc.repo.CountByProvider(ctx, providerID)
 	} else {
 		items, err = uc.repo.List(ctx, int32(pg.PageSize), int32(pg.Offset()))
 		if err != nil {
-			return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to list buses")
+			return nil, 0, err
 		}
 		total, err = uc.repo.Count(ctx)
 	}
 
 	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to count buses")
+		return nil, 0, err
 	}
 
-	responses := make([]dto.BusResponse, len(items))
-	for i, item := range items {
-		responses[i] = *dto.ToBusResponse(item)
-	}
-
-	return paging.Of(responses, total, pg.Page), nil
+	return items, total, nil
 }
 
-func (uc *BusUseCase) Update(ctx context.Context, id int32, req *dto.UpdateBusRequest) (*dto.BusResponse, error) {
+func (uc *busUseCase) Update(ctx context.Context, id int32, input *domain.UpdateBusInput) (*domain.Bus, error) {
 	existing, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
-		return nil, errors.NewAppError(404, errors.ErrCodeNotFound, "Bus not found")
+		return nil, err
 	}
 
-	if req.BusTypeID != nil {
-		existing.BusTypeID = *req.BusTypeID
+	if input.BusTypeID != nil {
+		existing.BusTypeID = *input.BusTypeID
 	}
-	if req.LicensePlate != nil {
-		existing.LicensePlate = *req.LicensePlate
+	if input.LicensePlate != nil {
+		existing.LicensePlate = *input.LicensePlate
 	}
-	if req.Status != nil {
-		existing.Status = *req.Status
+	if input.Status != nil {
+		existing.Status = *input.Status
 	}
-	if req.ImageURL != nil {
-		existing.ImageURL = *req.ImageURL
-	}
-
-	result, err := uc.repo.Update(ctx, id, existing)
-	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to update bus")
+	if input.ImageURL != nil {
+		existing.ImageURL = *input.ImageURL
 	}
 
-	return dto.ToBusResponse(result), nil
+	return uc.repo.Update(ctx, id, existing)
 }
 
-func (uc *BusUseCase) UpdateStatus(ctx context.Context, id int32, status string) (*dto.BusResponse, error) {
+func (uc *busUseCase) UpdateStatus(ctx context.Context, id int32, status string) (*domain.Bus, error) {
 	_, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
-		return nil, errors.NewAppError(404, errors.ErrCodeNotFound, "Bus not found")
+		return nil, err
 	}
 
-	result, err := uc.repo.UpdateStatus(ctx, id, status)
-	if err != nil {
-		return nil, errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to update bus status")
-	}
-
-	return dto.ToBusResponse(result), nil
+	return uc.repo.UpdateStatus(ctx, id, status)
 }
 
-func (uc *BusUseCase) Delete(ctx context.Context, id int32) error {
+func (uc *busUseCase) Delete(ctx context.Context, id int32) error {
 	_, err := uc.repo.GetByID(ctx, id)
 	if err != nil {
-		return errors.NewAppError(404, errors.ErrCodeNotFound, "Bus not found")
+		return err
 	}
 
-	if err := uc.repo.Delete(ctx, id); err != nil {
-		return errors.Wrap(err, 500, errors.ErrCodeInternal, "failed to delete bus")
-	}
-
-	return nil
+	return uc.repo.Delete(ctx, id)
 }

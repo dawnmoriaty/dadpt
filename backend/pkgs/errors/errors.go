@@ -161,9 +161,10 @@ var (
 	ErrInvalidTripStatus   = NewAppError(http.StatusBadRequest, ErrCodeInvalidTripStatus, "Chuyển trạng thái chuyến đi không hợp lệ")
 
 	// Provider
-	ErrProviderNotFound = NewAppError(http.StatusNotFound, ErrCodeProviderNotFound, "Không tìm thấy nhà cung cấp")
-	ErrProviderInactive = NewAppError(http.StatusBadRequest, ErrCodeProviderInactive, "Nhà cung cấp không hoạt động")
-	ErrDuplicateSlug    = NewAppError(http.StatusConflict, ErrCodeDuplicateSlug, "Slug đã tồn tại")
+	ErrProviderNotFound     = NewAppError(http.StatusNotFound, ErrCodeProviderNotFound, "Không tìm thấy nhà cung cấp")
+	ErrProviderInactive     = NewAppError(http.StatusBadRequest, ErrCodeProviderInactive, "Nhà cung cấp không hoạt động")
+	ErrDuplicateSlug        = NewAppError(http.StatusConflict, ErrCodeDuplicateSlug, "Slug đã tồn tại")
+	ErrProviderCannotDelete = NewAppError(http.StatusBadRequest, ErrCodeConflict, "Chỉ có thể xóa nhà cung cấp không hoạt động")
 )
 
 // Validation error factories

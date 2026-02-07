@@ -12,6 +12,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countBookingsByTrip = `-- name: CountBookingsByTrip :one
+SELECT COUNT(*) FROM bookings WHERE trip_id = $1 AND status IN ('pending', 'paid')
+`
+
+func (q *Queries) CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countBookingsByTrip, tripID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBooking = `-- name: CreateBooking :one
 INSERT INTO bookings (
     code, trip_id, user_id, guest_info,
@@ -19,7 +30,7 @@ INSERT INTO bookings (
     total_amount, payment_method
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at
 `
 
 type CreateBookingParams struct {
@@ -61,12 +72,69 @@ func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (B
 		&i.PaymentMethod,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const createBookingWithExpiry = `-- name: CreateBookingWithExpiry :one
+INSERT INTO bookings (
+    code, trip_id, user_id, guest_info,
+    pickup_info, dropoff_info, seat_codes,
+    total_amount, payment_method, expires_at
+)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at
+`
+
+type CreateBookingWithExpiryParams struct {
+	Code          string             `json:"code"`
+	TripID        int64              `json:"tripId"`
+	UserID        *int64             `json:"userId"`
+	GuestInfo     json.RawMessage    `json:"guestInfo"`
+	PickupInfo    json.RawMessage    `json:"pickupInfo"`
+	DropoffInfo   json.RawMessage    `json:"dropoffInfo"`
+	SeatCodes     []string           `json:"seatCodes"`
+	TotalAmount   pgtype.Numeric     `json:"totalAmount"`
+	PaymentMethod *string            `json:"paymentMethod"`
+	ExpiresAt     pgtype.Timestamptz `json:"expiresAt"`
+}
+
+func (q *Queries) CreateBookingWithExpiry(ctx context.Context, arg CreateBookingWithExpiryParams) (Booking, error) {
+	row := q.db.QueryRow(ctx, createBookingWithExpiry,
+		arg.Code,
+		arg.TripID,
+		arg.UserID,
+		arg.GuestInfo,
+		arg.PickupInfo,
+		arg.DropoffInfo,
+		arg.SeatCodes,
+		arg.TotalAmount,
+		arg.PaymentMethod,
+		arg.ExpiresAt,
+	)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.TripID,
+		&i.UserID,
+		&i.GuestInfo,
+		&i.PickupInfo,
+		&i.DropoffInfo,
+		&i.SeatCodes,
+		&i.TotalAmount,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
 const getBookingByCode = `-- name: GetBookingByCode :one
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at FROM bookings WHERE code = $1
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at FROM bookings WHERE code = $1
 `
 
 func (q *Queries) GetBookingByCode(ctx context.Context, code string) (Booking, error) {
@@ -86,12 +154,13 @@ func (q *Queries) GetBookingByCode(ctx context.Context, code string) (Booking, e
 		&i.PaymentMethod,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
 const getBookingByID = `-- name: GetBookingByID :one
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at FROM bookings WHERE id = $1
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at FROM bookings WHERE id = $1
 `
 
 func (q *Queries) GetBookingByID(ctx context.Context, id int64) (Booking, error) {
@@ -111,12 +180,56 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int64) (Booking, error)
 		&i.PaymentMethod,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ExpiresAt,
 	)
 	return i, err
 }
 
+const getExpiredPendingBookings = `-- name: GetExpiredPendingBookings :many
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at FROM bookings 
+WHERE status = 'pending' AND expires_at < NOW()
+FOR UPDATE SKIP LOCKED
+LIMIT $1
+`
+
+// FOR UPDATE SKIP LOCKED: safe concurrent processing without deadlock
+func (q *Queries) GetExpiredPendingBookings(ctx context.Context, limit int32) ([]Booking, error) {
+	rows, err := q.db.Query(ctx, getExpiredPendingBookings, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Booking{}
+	for rows.Next() {
+		var i Booking
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.TripID,
+			&i.UserID,
+			&i.GuestInfo,
+			&i.PickupInfo,
+			&i.DropoffInfo,
+			&i.SeatCodes,
+			&i.TotalAmount,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ExpiresAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBookingsByUser = `-- name: ListBookingsByUser :many
-SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, t.departure_time, t.arrival_time,
+SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, t.departure_time, t.arrival_time,
        o.name as origin_name, d.name as destination_name
 FROM bookings b
 JOIN trips t ON b.trip_id = t.id
@@ -147,6 +260,7 @@ type ListBookingsByUserRow struct {
 	PaymentMethod   *string            `json:"paymentMethod"`
 	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
 	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
+	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
 	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
 	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
 	OriginName      string             `json:"originName"`
@@ -176,6 +290,7 @@ func (q *Queries) ListBookingsByUser(ctx context.Context, arg ListBookingsByUser
 			&i.PaymentMethod,
 			&i.CreatedAt,
 			&i.UpdatedAt,
+			&i.ExpiresAt,
 			&i.DepartureTime,
 			&i.ArrivalTime,
 			&i.OriginName,
@@ -191,12 +306,87 @@ func (q *Queries) ListBookingsByUser(ctx context.Context, arg ListBookingsByUser
 	return items, nil
 }
 
+const lockTripForBooking = `-- name: LockTripForBooking :one
+
+SELECT id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version FROM trips WHERE id = $1 FOR UPDATE NOWAIT
+`
+
+// ============================================================================
+// BOOKING LOCKING QUERIES - For race condition handling
+// ============================================================================
+// Lock trip row for atomic seat update (NOWAIT = fail fast if locked)
+func (q *Queries) LockTripForBooking(ctx context.Context, id int64) (Trip, error) {
+	row := q.db.QueryRow(ctx, lockTripForBooking, id)
+	var i Trip
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderID,
+		&i.BusID,
+		&i.OriginID,
+		&i.DestinationID,
+		&i.DepartureTime,
+		&i.ArrivalTime,
+		&i.BasePrice,
+		&i.PriceModifier,
+		&i.IsHotDeal,
+		&i.PickupPoints,
+		&i.DropoffPoints,
+		&i.BookedSeats,
+		&i.AvailableSeats,
+		&i.Status,
+		&i.CreatedAt,
+		&i.Version,
+	)
+	return i, err
+}
+
+const releaseTripSeats = `-- name: ReleaseTripSeats :one
+UPDATE trips SET
+    booked_seats = ARRAY(SELECT unnest(booked_seats) EXCEPT SELECT unnest($2::text[])),
+    available_seats = available_seats + $3,
+    version = version + 1
+WHERE id = $1
+RETURNING id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version
+`
+
+type ReleaseTripSeatsParams struct {
+	ID             int64    `json:"id"`
+	Column2        []string `json:"column2"`
+	AvailableSeats int32    `json:"availableSeats"`
+}
+
+// Release seats when booking cancelled/expired (using array subtraction)
+func (q *Queries) ReleaseTripSeats(ctx context.Context, arg ReleaseTripSeatsParams) (Trip, error) {
+	row := q.db.QueryRow(ctx, releaseTripSeats, arg.ID, arg.Column2, arg.AvailableSeats)
+	var i Trip
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderID,
+		&i.BusID,
+		&i.OriginID,
+		&i.DestinationID,
+		&i.DepartureTime,
+		&i.ArrivalTime,
+		&i.BasePrice,
+		&i.PriceModifier,
+		&i.IsHotDeal,
+		&i.PickupPoints,
+		&i.DropoffPoints,
+		&i.BookedSeats,
+		&i.AvailableSeats,
+		&i.Status,
+		&i.CreatedAt,
+		&i.Version,
+	)
+	return i, err
+}
+
 const updateBookingStatus = `-- name: UpdateBookingStatus :one
 UPDATE bookings SET 
     status = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at
 `
 
 type UpdateBookingStatusParams struct {
@@ -221,6 +411,56 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 		&i.PaymentMethod,
 		&i.CreatedAt,
 		&i.UpdatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const updateTripSeatsAtomic = `-- name: UpdateTripSeatsAtomic :one
+UPDATE trips SET
+    booked_seats = array_cat(booked_seats, $2::text[]),
+    available_seats = available_seats - $3,
+    version = version + 1
+WHERE id = $1 
+  AND version = $4
+  AND available_seats >= $3
+RETURNING id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version
+`
+
+type UpdateTripSeatsAtomicParams struct {
+	ID             int64    `json:"id"`
+	Column2        []string `json:"column2"`
+	AvailableSeats int32    `json:"availableSeats"`
+	Version        *int32   `json:"version"`
+}
+
+// Optimistic locking: only update if version matches and seats available
+func (q *Queries) UpdateTripSeatsAtomic(ctx context.Context, arg UpdateTripSeatsAtomicParams) (Trip, error) {
+	row := q.db.QueryRow(ctx, updateTripSeatsAtomic,
+		arg.ID,
+		arg.Column2,
+		arg.AvailableSeats,
+		arg.Version,
+	)
+	var i Trip
+	err := row.Scan(
+		&i.ID,
+		&i.ProviderID,
+		&i.BusID,
+		&i.OriginID,
+		&i.DestinationID,
+		&i.DepartureTime,
+		&i.ArrivalTime,
+		&i.BasePrice,
+		&i.PriceModifier,
+		&i.IsHotDeal,
+		&i.PickupPoints,
+		&i.DropoffPoints,
+		&i.BookedSeats,
+		&i.AvailableSeats,
+		&i.Status,
+		&i.CreatedAt,
+		&i.Version,
 	)
 	return i, err
 }
