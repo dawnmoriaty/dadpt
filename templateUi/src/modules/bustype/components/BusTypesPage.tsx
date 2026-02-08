@@ -1,7 +1,7 @@
 import { PlusCircle, Pencil, Trash2 } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
 import { Button } from '@/components/ui/button'
 import {
     Table,
@@ -22,6 +22,7 @@ export function BusTypesPage(): React.ReactElement {
     const [page] = useState(1)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBusType, setEditingBusType] = useState<BusType | null>(null)
+    const [deletingId, setDeletingId] = useState<number | null>(null)
     
     const { data, isLoading, error } = useBusTypes(page, 20)
     const deleteMutation = useDeleteBusType()
@@ -38,14 +39,10 @@ export function BusTypesPage(): React.ReactElement {
         setIsFormOpen(true)
     }
 
-    const handleDelete = (id: number): void => {
-        if (confirm('Are you sure you want to delete this bus type?')) {
-            deleteMutation.mutate(id, {
-                onSuccess: () => toast.success('Bus type deleted'),
-                onError: (err) => {
-                    toast.error('Failed to delete bus type')
-                    console.error(err)
-                },
+    const handleConfirmDelete = (): void => {
+        if (deletingId !== null) {
+            deleteMutation.mutate(deletingId, {
+                onSettled: () => setDeletingId(null),
             })
         }
     }
@@ -54,27 +51,11 @@ export function BusTypesPage(): React.ReactElement {
         if (editingBusType) {
             updateMutation.mutate(
                 { id: editingBusType.id, data: data as UpdateBusTypeRequest },
-                {
-                    onSuccess: () => {
-                        toast.success('Bus type updated')
-                        setIsFormOpen(false)
-                    },
-                    onError: (err) => {
-                        toast.error('Failed to update bus type')
-                        console.error(err)
-                    },
-                }
+                { onSuccess: () => setIsFormOpen(false) },
             )
         } else {
             createMutation.mutate(data as CreateBusTypeRequest, {
-                onSuccess: () => {
-                    toast.success('Bus type created')
-                    setIsFormOpen(false)
-                },
-                onError: (err) => {
-                    toast.error('Failed to create bus type')
-                    console.error(err)
-                },
+                onSuccess: () => setIsFormOpen(false),
             })
         }
     }
@@ -139,7 +120,7 @@ export function BusTypesPage(): React.ReactElement {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDelete(bt.id)}
+                                                onClick={() => setDeletingId(bt.id)}
                                                 disabled={deleteMutation.isPending}
                                             >
                                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -159,6 +140,16 @@ export function BusTypesPage(): React.ReactElement {
                 onSubmit={handleSubmit}
                 busType={editingBusType}
                 isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+
+            <ConfirmDialog
+                open={deletingId !== null}
+                onOpenChange={() => setDeletingId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Bus Type"
+                description="Are you sure you want to delete this bus type? This action cannot be undone."
+                variant="destructive"
+                loading={deleteMutation.isPending}
             />
         </div>
     )

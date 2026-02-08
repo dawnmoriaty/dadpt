@@ -14,6 +14,8 @@ import { Route as PublicRouteImport } from './routes/_public'
 import { Route as AuthRouteImport } from './routes/_auth'
 import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
+import { Route as PublicSearchRouteImport } from './routes/_public/search'
+import { Route as PublicMyBookingsRouteImport } from './routes/_public/my-bookings'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
@@ -21,6 +23,7 @@ import { Route as AdminProvidersIndexRouteImport } from './routes/admin/provider
 import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
 import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
 import { Route as AdminBusTypesIndexRouteImport } from './routes/admin/bus-types/index'
+import { Route as PublicTripsTripIdRouteImport } from './routes/_public/trips.$tripId'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -44,6 +47,16 @@ const AdminDashboardRoute = AdminDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AdminRoute,
+} as any)
+const PublicSearchRoute = PublicSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicMyBookingsRoute = PublicMyBookingsRouteImport.update({
+  id: '/my-bookings',
+  path: '/my-bookings',
+  getParentRoute: () => PublicRoute,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
   id: '/register',
@@ -80,13 +93,21 @@ const AdminBusTypesIndexRoute = AdminBusTypesIndexRouteImport.update({
   path: '/bus-types/',
   getParentRoute: () => AdminRoute,
 } as any)
+const PublicTripsTripIdRoute = PublicTripsTripIdRouteImport.update({
+  id: '/trips/$tripId',
+  path: '/trips/$tripId',
+  getParentRoute: () => PublicRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/my-bookings': typeof PublicMyBookingsRoute
+  '/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
+  '/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
@@ -97,8 +118,11 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/my-bookings': typeof PublicMyBookingsRoute
+  '/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
+  '/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
@@ -112,8 +136,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_public/my-bookings': typeof PublicMyBookingsRoute
+  '/_public/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/_public/': typeof PublicIndexRoute
+  '/_public/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types/': typeof AdminBusTypesIndexRoute
   '/admin/buses/': typeof AdminBusesIndexRoute
   '/admin/locations/': typeof AdminLocationsIndexRoute
@@ -126,8 +153,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/register'
+    | '/my-bookings'
+    | '/search'
     | '/admin/dashboard'
     | '/'
+    | '/trips/$tripId'
     | '/admin/bus-types'
     | '/admin/buses'
     | '/admin/locations'
@@ -138,8 +168,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/register'
+    | '/my-bookings'
+    | '/search'
     | '/admin/dashboard'
     | '/'
+    | '/trips/$tripId'
     | '/admin/bus-types'
     | '/admin/buses'
     | '/admin/locations'
@@ -152,8 +185,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_public/my-bookings'
+    | '/_public/search'
     | '/admin/dashboard'
     | '/_public/'
+    | '/_public/trips/$tripId'
     | '/admin/bus-types/'
     | '/admin/buses/'
     | '/admin/locations/'
@@ -204,6 +240,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminDashboardRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_public/search': {
+      id: '/_public/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof PublicSearchRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/my-bookings': {
+      id: '/_public/my-bookings'
+      path: '/my-bookings'
+      fullPath: '/my-bookings'
+      preLoaderRoute: typeof PublicMyBookingsRouteImport
+      parentRoute: typeof PublicRoute
+    }
     '/_auth/register': {
       id: '/_auth/register'
       path: '/register'
@@ -253,6 +303,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusTypesIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/_public/trips/$tripId': {
+      id: '/_public/trips/$tripId'
+      path: '/trips/$tripId'
+      fullPath: '/trips/$tripId'
+      preLoaderRoute: typeof PublicTripsTripIdRouteImport
+      parentRoute: typeof PublicRoute
+    }
   }
 }
 
@@ -269,11 +326,17 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface PublicRouteChildren {
+  PublicMyBookingsRoute: typeof PublicMyBookingsRoute
+  PublicSearchRoute: typeof PublicSearchRoute
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicTripsTripIdRoute: typeof PublicTripsTripIdRoute
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
+  PublicMyBookingsRoute: PublicMyBookingsRoute,
+  PublicSearchRoute: PublicSearchRoute,
   PublicIndexRoute: PublicIndexRoute,
+  PublicTripsTripIdRoute: PublicTripsTripIdRoute,
 }
 
 const PublicRouteWithChildren =

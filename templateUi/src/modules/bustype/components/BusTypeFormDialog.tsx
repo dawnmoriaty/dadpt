@@ -1,4 +1,7 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -7,9 +10,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
+import { createBusTypeSchema, updateBusTypeSchema, type CreateBusTypeFormData, type UpdateBusTypeFormData } from '../schemas'
 import type { BusType, CreateBusTypeRequest, UpdateBusTypeRequest } from '../types'
 
 interface BusTypeFormDialogProps {
@@ -29,28 +40,34 @@ export function BusTypeFormDialog({
 }: BusTypeFormDialogProps): React.ReactElement {
     const isEditing = !!busType
 
+    const form = useForm<CreateBusTypeFormData | UpdateBusTypeFormData>({
+        resolver: zodResolver(isEditing ? updateBusTypeSchema : createBusTypeSchema),
+        defaultValues: {
+            name: busType?.name ?? '',
+            totalSeats: busType?.totalSeats ?? 40,
+        },
+    })
+
     useEffect(() => {
-        // Reset form when dialog opens/closes
-    }, [isOpen, busType])
+        if (isOpen) {
+            form.reset({
+                name: busType?.name ?? '',
+                totalSeats: busType?.totalSeats ?? 40,
+            })
+        }
+    }, [isOpen, busType, form])
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
-
+    const handleFormSubmit = (values: CreateBusTypeFormData | UpdateBusTypeFormData): void => {
         if (isEditing && busType) {
-            const data: UpdateBusTypeRequest = {
-                name: formData.get('name') as string,
-                totalSeats: Number(formData.get('totalSeats')),
-                seatLayout: busType.seatLayout, // Preserve existing layout
-            }
-            onSubmit(data)
+            onSubmit({
+                ...values,
+                seatLayout: busType.seatLayout,
+            } as UpdateBusTypeRequest)
         } else {
-            const data: CreateBusTypeRequest = {
-                name: formData.get('name') as string,
-                totalSeats: Number(formData.get('totalSeats')),
-                seatLayout: {}, // Default empty layout for new
-            }
-            onSubmit(data)
+            onSubmit({
+                ...values,
+                seatLayout: {},
+            } as CreateBusTypeRequest)
         }
     }
 
@@ -62,40 +79,52 @@ export function BusTypeFormDialog({
                         {isEditing ? 'Edit Bus Type' : 'Create Bus Type'}
                     </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
                             name="name"
-                            placeholder="e.g. Giường nằm 40 chỗ"
-                            defaultValue={busType?.name ?? ''}
-                            required
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="e.g. Giường nằm 40 chỗ" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
 
-                    <div>
-                        <Label htmlFor="totalSeats">Total Seats</Label>
-                        <Input
-                            id="totalSeats"
+                        <FormField
+                            control={form.control}
                             name="totalSeats"
-                            type="number"
-                            min={1}
-                            max={100}
-                            defaultValue={busType?.totalSeats ?? 40}
-                            required
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Total Seats</FormLabel>
+                                    <FormControl>
+                                        <Input
+                                            type="number"
+                                            min={1}
+                                            max={100}
+                                            {...field}
+                                        />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
 
-                    <div className="flex gap-2 justify-end">
-                        <Button type="button" variant="outline" onClick={onClose}>
-                            Cancel
-                        </Button>
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? 'Saving...' : isEditing ? 'Update' : 'Create'}
-                        </Button>
-                    </div>
-                </form>
+                        <div className="flex gap-2 justify-end">
+                            <Button type="button" variant="outline" onClick={onClose}>
+                                Cancel
+                            </Button>
+                            <Button type="submit" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {isEditing ? 'Update' : 'Create'}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )

@@ -1,4 +1,5 @@
 import axios, { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios'
+import i18n from '@/lib/i18n'
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
@@ -42,13 +43,15 @@ export const initApiAuth = (
     onTokenExpired = tokenExpiredCallback
 }
 
-// Request interceptor - attach token from Zustand store
+// Request interceptor - attach token and Accept-Language
 api.interceptors.request.use(
     (config: InternalAxiosRequestConfig) => {
         const token = getToken?.()
         if (token) {
             config.headers.Authorization = `Bearer ${token}`
         }
+        // Send current UI language so backend returns localized error messages
+        config.headers['Accept-Language'] = i18n.language || 'vi'
         return config
     },
     (error: AxiosError) => {
@@ -164,3 +167,20 @@ api.interceptors.response.use(
         return Promise.reject(error)
     }
 )
+
+// ---------------------------------------------------------------------------
+// Error extraction helper
+// ---------------------------------------------------------------------------
+
+/**
+ * Extracts a user-facing error message from an API error.
+ * The backend already returns a localised `message` via the i18n system,
+ * so we prefer that.  Falls back to `fallback` or a generic i18n key.
+ */
+export function getApiErrorMessage(error: unknown, fallback?: string): string {
+    if (axios.isAxiosError(error)) {
+        const msg = (error.response?.data as Record<string, unknown>)?.message
+        if (typeof msg === 'string' && msg.length > 0) return msg
+    }
+    return fallback ?? i18n.t('common.error')
+}

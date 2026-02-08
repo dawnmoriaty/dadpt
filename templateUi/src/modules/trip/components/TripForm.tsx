@@ -1,4 +1,6 @@
+import { Loader2 } from 'lucide-react'
 import { useState } from 'react'
+import { useForm } from 'react-hook-form'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -7,57 +9,64 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select'
+import { formResolver } from '@/lib/form/resolver'
 import { useSearchLocations } from '@/modules/location'
 import { useProviders } from '@/modules/provider/hooks'
 
-import type { CreateTripRequest } from '../types'
+import { createTripSchema, type CreateTripFormData } from '../schemas'
 
 interface TripFormProps {
     isOpen: boolean
     onClose: () => void
-    onSubmit: (data: CreateTripRequest) => void
+    onSubmit: (data: CreateTripFormData) => void
     isLoading?: boolean
-}
-
-interface LocationItem {
-    id: number
-    name: string
-    city: string
-}
-
-interface ProviderItem {
-    id: number
-    name: string
 }
 
 export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps): React.ReactElement {
     const [originSearch, setOriginSearch] = useState('')
     const [destSearch, setDestSearch] = useState('')
-    
+
     const { data: providers } = useProviders({ page: 1, pageSize: 100 })
     const { data: originLocations } = useSearchLocations(originSearch)
     const { data: destLocations } = useSearchLocations(destSearch)
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>): void => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
-        onSubmit({
-            providerId: Number(formData.get('providerId')),
-            busId: 1, // TODO: Add bus selection when bus module is available
-            originId: Number(formData.get('originId')),
-            destinationId: Number(formData.get('destinationId')),
-            departureTime: formData.get('departureTime') as string,
-            arrivalTime: formData.get('arrivalTime') as string,
-            basePrice: Number(formData.get('basePrice')),
-            availableSeats: Number(formData.get('availableSeats')),
-        })
+    const form = useForm<CreateTripFormData>({
+        resolver: formResolver(createTripSchema),
+        defaultValues: {
+            providerId: 0,
+            busId: 1, // TODO: add bus selection
+            originId: 0,
+            destinationId: 0,
+            departureTime: '',
+            arrivalTime: '',
+            basePrice: 0,
+            availableSeats: 40,
+        },
+    })
+
+    const handleFormSubmit = (values: CreateTripFormData): void => {
+        onSubmit(values)
     }
 
-    const providerItems = (providers?.items ?? []) as ProviderItem[]
-    const originItems = (originLocations ?? []) as LocationItem[]
-    const destItems = (destLocations ?? []) as LocationItem[]
+    const providerItems = providers?.items ?? []
+    const originItems = originLocations ?? []
+    const destItems = destLocations ?? []
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -65,121 +74,179 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                 <DialogHeader>
                     <DialogTitle>Create New Trip</DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {/* Provider */}
-                    <div>
-                        <Label htmlFor="providerId">Provider</Label>
-                        <select
-                            id="providerId"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                        {/* Provider */}
+                        <FormField
+                            control={form.control}
                             name="providerId"
-                            required
-                            className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
-                        >
-                            <option value="">Select provider...</option>
-                            {providerItems.map((p) => (
-                                <option key={p.id} value={p.id}>{p.name}</option>
-                            ))}
-                        </select>
-                    </div>
-
-                    {/* Origin */}
-                    <div>
-                        <Label htmlFor="originSearch">Origin</Label>
-                        <Input
-                            id="originSearch"
-                            placeholder="Search origin location..."
-                            value={originSearch}
-                            onChange={(e) => setOriginSearch(e.target.value)}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Provider</FormLabel>
+                                    <Select
+                                        onValueChange={(val) => field.onChange(Number(val))}
+                                        value={field.value ? field.value.toString() : ''}
+                                    >
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select provider..." />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {providerItems.map((p) => (
+                                                <SelectItem key={p.id} value={p.id.toString()}>
+                                                    {p.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                        {originItems.length > 0 && (
-                            <select
+
+                        {/* Origin */}
+                        <div className="space-y-2">
+                            <FormField
+                                control={form.control}
                                 name="originId"
-                                required
-                                className="w-full h-10 px-3 mt-1 rounded-md border border-input bg-background text-sm"
-                            >
-                                <option value="">Select origin...</option>
-                                {originItems.map((loc) => (
-                                    <option key={loc.id} value={loc.id}>{loc.name} - {loc.city}</option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Origin</FormLabel>
+                                        <Input
+                                            placeholder="Search origin location..."
+                                            value={originSearch}
+                                            onChange={(e) => setOriginSearch(e.target.value)}
+                                        />
+                                        {originItems.length > 0 && (
+                                            <Select
+                                                onValueChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ? field.value.toString() : ''}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select origin..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {originItems.map((loc) => (
+                                                        <SelectItem key={loc.id} value={loc.id.toString()}>
+                                                            {loc.name} - {loc.city}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                    {/* Destination */}
-                    <div>
-                        <Label htmlFor="destSearch">Destination</Label>
-                        <Input
-                            id="destSearch"
-                            placeholder="Search destination location..."
-                            value={destSearch}
-                            onChange={(e) => setDestSearch(e.target.value)}
-                        />
-                        {destItems.length > 0 && (
-                            <select
+                        {/* Destination */}
+                        <div className="space-y-2">
+                            <FormField
+                                control={form.control}
                                 name="destinationId"
-                                required
-                                className="w-full h-10 px-3 mt-1 rounded-md border border-input bg-background text-sm"
-                            >
-                                <option value="">Select destination...</option>
-                                {destItems.map((loc) => (
-                                    <option key={loc.id} value={loc.id}>{loc.name} - {loc.city}</option>
-                                ))}
-                            </select>
-                        )}
-                    </div>
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Destination</FormLabel>
+                                        <Input
+                                            placeholder="Search destination location..."
+                                            value={destSearch}
+                                            onChange={(e) => setDestSearch(e.target.value)}
+                                        />
+                                        {destItems.length > 0 && (
+                                            <Select
+                                                onValueChange={(val) => field.onChange(Number(val))}
+                                                value={field.value ? field.value.toString() : ''}
+                                            >
+                                                <FormControl>
+                                                    <SelectTrigger>
+                                                        <SelectValue placeholder="Select destination..." />
+                                                    </SelectTrigger>
+                                                </FormControl>
+                                                <SelectContent>
+                                                    {destItems.map((loc) => (
+                                                        <SelectItem key={loc.id} value={loc.id.toString()}>
+                                                            {loc.name} - {loc.city}
+                                                        </SelectItem>
+                                                    ))}
+                                                </SelectContent>
+                                            </Select>
+                                        )}
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
 
-                    {/* Times */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="departureTime">Departure Time</Label>
-                            <Input
-                                id="departureTime"
+                        {/* Times */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
                                 name="departureTime"
-                                type="datetime-local"
-                                required
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Departure Time</FormLabel>
+                                        <FormControl>
+                                            <Input type="datetime-local" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        </div>
-                        <div>
-                            <Label htmlFor="arrivalTime">Arrival Time</Label>
-                            <Input
-                                id="arrivalTime"
+                            <FormField
+                                control={form.control}
                                 name="arrivalTime"
-                                type="datetime-local"
-                                required
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Arrival Time</FormLabel>
+                                        <FormControl>
+                                            <Input type="datetime-local" {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                         </div>
-                    </div>
 
-                    {/* Price & Seats */}
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <Label htmlFor="basePrice">Base Price (VND)</Label>
-                            <Input
-                                id="basePrice"
+                        {/* Price & Seats */}
+                        <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                                control={form.control}
                                 name="basePrice"
-                                type="number"
-                                min={0}
-                                step={1000}
-                                required
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Base Price (VND)</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min={0} step={1000} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        </div>
-                        <div>
-                            <Label htmlFor="availableSeats">Available Seats</Label>
-                            <Input
-                                id="availableSeats"
+                            <FormField
+                                control={form.control}
                                 name="availableSeats"
-                                type="number"
-                                min={1}
-                                max={100}
-                                required
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Available Seats</FormLabel>
+                                        <FormControl>
+                                            <Input type="number" min={1} max={100} {...field} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                         </div>
-                    </div>
 
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        Create Trip
-                    </Button>
-                </form>
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Create Trip
+                        </Button>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )

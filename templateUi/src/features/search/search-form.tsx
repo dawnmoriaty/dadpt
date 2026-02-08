@@ -22,7 +22,7 @@ export function SearchForm() {
     }
 
     return (
-        <Card className="w-full max-w-4xl shadow-xl bg-white/95 backdrop-blur supports-[backdrop-filter]:bg-white/60">
+        <Card className="w-full max-w-4xl shadow-xl bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60">
             <CardContent className="p-6">
                 <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6 md:grid-cols-4 items-end">
                     <div className="space-y-2">

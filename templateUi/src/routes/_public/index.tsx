@@ -1,8 +1,22 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 
-import { SearchForm } from '@/features/search/search-form'
+import { SearchForm, type SearchTripsFormData } from '@/modules/booking'
 
 function HomePage() {
+    const navigate = useNavigate()
+
+    const handleSearch = (data: SearchTripsFormData) => {
+        navigate({
+            to: '/search',
+            search: {
+                originId: data.originId,
+                destinationId: data.destinationId,
+                departureDate: data.departureDate,
+                passengers: data.passengers,
+            },
+        })
+    }
+
     return (
         <div className="relative min-h-[calc(100vh-4rem)] flex flex-col">
             {/* Hero Section Background */}
@@ -23,7 +37,7 @@ function HomePage() {
                     Seamless travel across the country. Book your tickets instantly with Antigravity Bus.
                 </p>
 
-                <SearchForm />
+                <SearchForm onSearch={handleSearch} />
 
                 <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8 text-white">
                     <div className="p-6 bg-white/10 backdrop-blur-sm rounded-xl">

@@ -74,7 +74,7 @@ export function TripsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-emerald-500 via-emerald-600 to-teal-500 shadow-lg shadow-emerald-500/30">
+                    <div className="p-3 rounded-2xl bg-linear-to-br from-emerald-500 via-emerald-600 to-teal-500 shadow-lg shadow-emerald-500/30">
                         <Bus className="h-7 w-7 text-white" />
                     </div>
                     <div>
@@ -86,7 +86,7 @@ export function TripsPage() {
                 </div>
                 <Button
                     onClick={() => setIsFormOpen(true)}
-                    className="gap-2 bg-gradient-to-r from-success to-info hover:opacity-90 shadow-lg shadow-success/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                    className="gap-2 bg-linear-to-r from-success to-info hover:opacity-90 shadow-lg shadow-success/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus className="h-4 w-4" />
                     Create Trip

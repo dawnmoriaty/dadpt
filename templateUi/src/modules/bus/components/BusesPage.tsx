@@ -1,7 +1,8 @@
 import { PlusCircle, Pencil, Trash2, Image } from 'lucide-react'
 import { useState } from 'react'
-import { toast } from 'sonner'
 
+import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { OptimizedImage } from '@/components/common/optimized-image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
@@ -29,6 +30,7 @@ export function BusesPage(): React.ReactElement {
     const [page] = useState(1)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBus, setEditingBus] = useState<Bus | null>(null)
+    const [deletingBusId, setDeletingBusId] = useState<number | null>(null)
     
     const { data, isLoading, error } = useBuses(page, 20)
     const deleteMutation = useDeleteBus()
@@ -45,14 +47,10 @@ export function BusesPage(): React.ReactElement {
         setIsFormOpen(true)
     }
 
-    const handleDelete = (id: number): void => {
-        if (confirm('Are you sure you want to delete this bus?')) {
-            deleteMutation.mutate(id, {
-                onSuccess: () => toast.success('Bus deleted'),
-                onError: (err) => {
-                    toast.error('Failed to delete bus')
-                    console.error(err)
-                },
+    const handleConfirmDelete = (): void => {
+        if (deletingBusId !== null) {
+            deleteMutation.mutate(deletingBusId, {
+                onSettled: () => setDeletingBusId(null),
             })
         }
     }
@@ -61,27 +59,11 @@ export function BusesPage(): React.ReactElement {
         if (editingBus) {
             updateMutation.mutate(
                 { id: editingBus.id, data: data as UpdateBusRequest },
-                {
-                    onSuccess: () => {
-                        toast.success('Bus updated')
-                        setIsFormOpen(false)
-                    },
-                    onError: (err) => {
-                        toast.error('Failed to update bus')
-                        console.error(err)
-                    },
-                }
+                { onSuccess: () => setIsFormOpen(false) },
             )
         } else {
             createMutation.mutate(data as CreateBusRequest, {
-                onSuccess: () => {
-                    toast.success('Bus created')
-                    setIsFormOpen(false)
-                },
-                onError: (err) => {
-                    toast.error('Failed to create bus')
-                    console.error(err)
-                },
+                onSuccess: () => setIsFormOpen(false),
             })
         }
     }
@@ -136,10 +118,13 @@ export function BusesPage(): React.ReactElement {
                                 <TableRow key={bus.id}>
                                     <TableCell>
                                         {bus.imageUrl ? (
-                                            <img
+                                            <OptimizedImage
                                                 src={bus.imageUrl}
                                                 alt={bus.licensePlate}
-                                                className="w-12 h-12 object-cover rounded"
+                                                width={48}
+                                                height={48}
+                                                className="rounded"
+                                                objectFit="cover"
                                             />
                                         ) : (
                                             <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
@@ -168,7 +153,7 @@ export function BusesPage(): React.ReactElement {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                onClick={() => handleDelete(bus.id)}
+                                                onClick={() => setDeletingBusId(bus.id)}
                                                 disabled={deleteMutation.isPending}
                                             >
                                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -188,6 +173,16 @@ export function BusesPage(): React.ReactElement {
                 onSubmit={handleSubmit}
                 bus={editingBus}
                 isLoading={createMutation.isPending || updateMutation.isPending}
+            />
+
+            <ConfirmDialog
+                open={deletingBusId !== null}
+                onOpenChange={() => setDeletingBusId(null)}
+                onConfirm={handleConfirmDelete}
+                title="Delete Bus"
+                description="Are you sure you want to delete this bus? This action cannot be undone."
+                variant="destructive"
+                loading={deleteMutation.isPending}
             />
         </div>
     )

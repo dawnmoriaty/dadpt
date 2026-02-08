@@ -1,3 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -5,9 +10,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
+import { createLocationSchema, type CreateLocationFormData } from '../schemas'
 import type { Location } from '../types'
 
 interface LocationFormProps {
@@ -19,14 +32,33 @@ interface LocationFormProps {
 }
 
 export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }: LocationFormProps) {
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
+    const form = useForm<CreateLocationFormData>({
+        resolver: zodResolver(createLocationSchema),
+        defaultValues: {
+            name: location?.name ?? '',
+            city: location?.city ?? '',
+            address: location?.address ?? '',
+            keywords: location?.keywords ?? '',
+        },
+    })
+
+    useEffect(() => {
+        if (isOpen) {
+            form.reset({
+                name: location?.name ?? '',
+                city: location?.city ?? '',
+                address: location?.address ?? '',
+                keywords: location?.keywords ?? '',
+            })
+        }
+    }, [isOpen, location, form])
+
+    const handleFormSubmit = (values: CreateLocationFormData): void => {
         onSubmit({
-            name: formData.get('name') as string,
-            city: formData.get('city') as string,
-            address: formData.get('address') as string,
-            keywords: formData.get('keywords') as string,
+            name: values.name,
+            city: values.city,
+            address: values.address ?? '',
+            keywords: values.keywords ?? '',
         })
     }
 
@@ -38,46 +70,70 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                         {location ? 'Edit Location' : 'Add New Location'}
                     </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
                             name="name"
-                            defaultValue={location?.name}
-                            required
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="city">City</Label>
-                        <Input
-                            id="city"
+
+                        <FormField
+                            control={form.control}
                             name="city"
-                            defaultValue={location?.city}
-                            required
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>City</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="address">Address</Label>
-                        <Input
-                            id="address"
+
+                        <FormField
+                            control={form.control}
                             name="address"
-                            defaultValue={location?.address}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Address</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="keywords">Keywords</Label>
-                        <Input
-                            id="keywords"
+
+                        <FormField
+                            control={form.control}
                             name="keywords"
-                            defaultValue={location?.keywords}
-                            placeholder="comma-separated"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Keywords</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="comma-separated" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {location ? 'Update' : 'Create'} Location
-                    </Button>
-                </form>
+
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {location ? 'Update' : 'Create'} Location
+                        </Button>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )

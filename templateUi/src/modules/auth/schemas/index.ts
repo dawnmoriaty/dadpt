@@ -1,27 +1,29 @@
 import * as z from 'zod'
 
+import { V } from '@/lib/validation/messages'
+
 const phoneRegex = /^(0|\+84)[0-9]{9,10}$/
 const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/
 
 export const loginSchema = z.object({
-    identifier: z.string().min(3, 'Phone, email or username is required'),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+    identifier: z.string().min(3, V.required('Phone, email or username')),
+    password: z.string().min(6, V.min('field.password', 6)),
 })
 
 export const registerSchema = z.object({
     phone: z.string()
-        .min(10, 'Phone number must be at least 10 characters')
-        .max(15, 'Phone number must be at most 15 characters')
-        .regex(phoneRegex, 'Invalid Vietnamese phone number format'),
+        .min(10, V.min('field.phone', 10))
+        .max(15, V.max('field.phone', 15))
+        .regex(phoneRegex, V.phone),
     username: z.string()
-        .min(3, 'Username must be at least 3 characters')
-        .max(30, 'Username must be at most 30 characters')
+        .min(3, V.min('field.username', 3))
+        .max(30, V.max('field.username', 30))
         .regex(usernameRegex, 'Username can only contain letters, numbers and underscore'),
     fullName: z.string()
-        .min(2, 'Full name must be at least 2 characters')
-        .max(100, 'Full name must be at most 100 characters'),
-    email: z.string().email('Invalid email format').optional().or(z.literal('')),
-    password: z.string().min(6, 'Password must be at least 6 characters'),
+        .min(2, V.min('field.name', 2))
+        .max(100, V.max('field.name', 100)),
+    email: z.string().email(V.email).optional().or(z.literal('')),
+    password: z.string().min(6, V.min('field.password', 6)),
 })
 
 export type LoginFormData = z.infer<typeof loginSchema>

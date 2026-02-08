@@ -10,7 +10,7 @@ function validateEnv() {
     try {
         return envSchema.parse(import.meta.env)
     } catch (error) {
-        console.error('❌ Invalid environment variables:', error)
+        console.error('Invalid environment variables:', error)
         throw new Error('Invalid environment variables')
     }
 }

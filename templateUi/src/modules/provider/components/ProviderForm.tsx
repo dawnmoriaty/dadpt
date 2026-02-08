@@ -1,3 +1,8 @@
+import { zodResolver } from '@hookform/resolvers/zod'
+import { Loader2 } from 'lucide-react'
+import { useEffect } from 'react'
+import { useForm } from 'react-hook-form'
+
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -5,9 +10,17 @@ import {
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 
+import { createProviderSchema, type CreateProviderFormData } from '../schemas'
 import type { Provider } from '../types'
 
 interface ProviderFormProps {
@@ -19,14 +32,33 @@ interface ProviderFormProps {
 }
 
 export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }: ProviderFormProps) {
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault()
-        const formData = new FormData(e.currentTarget)
+    const form = useForm<CreateProviderFormData>({
+        resolver: zodResolver(createProviderSchema),
+        defaultValues: {
+            name: provider?.name ?? '',
+            hotline: provider?.hotline ?? '',
+            slug: provider?.slug ?? '',
+            policyRefund: provider?.policyRefund ?? '',
+        },
+    })
+
+    useEffect(() => {
+        if (isOpen) {
+            form.reset({
+                name: provider?.name ?? '',
+                hotline: provider?.hotline ?? '',
+                slug: provider?.slug ?? '',
+                policyRefund: provider?.policyRefund ?? '',
+            })
+        }
+    }, [isOpen, provider, form])
+
+    const handleFormSubmit = (values: CreateProviderFormData): void => {
         onSubmit({
-            name: formData.get('name') as string,
-            hotline: formData.get('hotline') as string,
-            slug: formData.get('slug') as string,
-            policyRefund: formData.get('policyRefund') as string,
+            name: values.name,
+            hotline: values.hotline ?? '',
+            slug: values.slug ?? '',
+            policyRefund: values.policyRefund ?? '',
         })
     }
 
@@ -38,45 +70,70 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                         {provider ? 'Edit Provider' : 'Add New Provider'}
                     </DialogTitle>
                 </DialogHeader>
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <Label htmlFor="name">Name</Label>
-                        <Input
-                            id="name"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                        <FormField
+                            control={form.control}
                             name="name"
-                            defaultValue={provider?.name}
-                            required
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Name</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="hotline">Hotline</Label>
-                        <Input
-                            id="hotline"
+
+                        <FormField
+                            control={form.control}
                             name="hotline"
-                            defaultValue={provider?.hotline}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Hotline</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="slug">Slug</Label>
-                        <Input
-                            id="slug"
+
+                        <FormField
+                            control={form.control}
                             name="slug"
-                            defaultValue={provider?.slug}
-                            placeholder="auto-generated if empty"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Slug</FormLabel>
+                                    <FormControl>
+                                        <Input placeholder="auto-generated if empty" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <div>
-                        <Label htmlFor="policyRefund">Refund Policy</Label>
-                        <Input
-                            id="policyRefund"
+
+                        <FormField
+                            control={form.control}
                             name="policyRefund"
-                            defaultValue={provider?.policyRefund}
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Refund Policy</FormLabel>
+                                    <FormControl>
+                                        <Input {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
                         />
-                    </div>
-                    <Button type="submit" className="w-full" disabled={isLoading}>
-                        {provider ? 'Update' : 'Create'} Provider
-                    </Button>
-                </form>
+
+                        <Button type="submit" className="w-full" disabled={isLoading}>
+                            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {provider ? 'Update' : 'Create'} Provider
+                        </Button>
+                    </form>
+                </Form>
             </DialogContent>
         </Dialog>
     )

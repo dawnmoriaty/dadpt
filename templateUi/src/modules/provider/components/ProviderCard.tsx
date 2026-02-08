@@ -15,11 +15,11 @@ interface ProviderCardProps {
 export function ProviderCard({ provider, onEdit, onToggleActive, onDelete }: ProviderCardProps) {
     return (
         <Card className={`group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1 ${!provider.isActive ? 'opacity-60' : ''}`}>
-            <div className={`absolute inset-0 bg-gradient-to-br ${provider.isActive ? 'from-violet-500/5 to-purple-500/5 group-hover:from-violet-500/10 group-hover:to-purple-500/10' : 'from-gray-500/5 to-gray-500/5'} transition-all`} />
+            <div className={`absolute inset-0 bg-linear-to-br ${provider.isActive ? 'from-violet-500/5 to-purple-500/5 group-hover:from-violet-500/10 group-hover:to-purple-500/10' : 'from-gray-500/5 to-gray-500/5'} transition-all`} />
             <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className={`p-2.5 rounded-xl shadow-lg ${provider.isActive ? 'bg-gradient-to-br from-violet-500 to-purple-500 shadow-violet-500/20' : 'bg-gray-400'}`}>
+                        <div className={`p-2.5 rounded-xl shadow-lg ${provider.isActive ? 'bg-linear-to-br from-violet-500 to-purple-500 shadow-violet-500/20' : 'bg-gray-400'}`}>
                             <Building2 className="h-5 w-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">

@@ -3,6 +3,10 @@ import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import ReactDOM from "react-dom/client";
+
+// Initialize i18n before any component renders
+import "./lib/i18n";
+
 import "./index.css";
 
 // Import the generated route tree
