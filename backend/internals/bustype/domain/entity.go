@@ -5,13 +5,14 @@ import (
 	"errors"
 )
 
-// Sentinel errors
+// Sentinel errors — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
-	ErrBusTypeNotFound           = errors.New("Không tìm thấy loại xe")
-	ErrBusTypeNameRequired       = errors.New("Tên loại xe là bắt buộc")
-	ErrBusTypeNameTooShort       = errors.New("Tên loại xe quá ngắn")
-	ErrBusTypeTotalSeatsRequired = errors.New("Số ghế là bắt buộc")
-	ErrBusTypeSeatLayoutRequired = errors.New("Sơ đồ ghế là bắt buộc")
+	ErrBusTypeNotFound           = errors.New("bus type not found")
+	ErrBusTypeNameRequired       = errors.New("bus type name required")
+	ErrBusTypeNameTooShort       = errors.New("bus type name too short")
+	ErrBusTypeTotalSeatsRequired = errors.New("total seats required")
+	ErrBusTypeSeatLayoutRequired = errors.New("seat layout required")
 )
 
 // BusType represents a type of bus with seat layout configuration

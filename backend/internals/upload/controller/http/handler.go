@@ -24,13 +24,13 @@ func NewUploadHandler(minioClient *minio.MinioClient) *UploadHandler {
 // GET /api/v1/files/*filepath
 func (h *UploadHandler) ServeFile(c *gin.Context) {
 	if h.minioClient == nil {
-		response.HandleError(c, errors.NewAppError(500, errors.ErrCodeInternal, "Upload service not available"))
+		response.HandleError(c, errors.ErrUploadUnavailable)
 		return
 	}
 
 	objectName := c.Param("filepath")
 	if objectName == "" || objectName == "/" {
-		response.HandleError(c, errors.ValidationError("File path is required"))
+		response.HandleError(c, errors.ValidationError(errors.ErrCodeRequiredField))
 		return
 	}
 	// Strip leading slash from wildcard param
@@ -40,7 +40,7 @@ func (h *UploadHandler) ServeFile(c *gin.Context) {
 
 	reader, contentType, size, err := h.minioClient.GetObject(c.Request.Context(), objectName)
 	if err != nil {
-		response.HandleError(c, errors.NewAppError(404, errors.ErrCodeNotFound, "File not found"))
+		response.HandleError(c, errors.ErrNotFound)
 		return
 	}
 	defer reader.Close()
@@ -60,20 +60,20 @@ func (h *UploadHandler) ServeFile(c *gin.Context) {
 // POST /admin/upload
 func (h *UploadHandler) UploadImage(c *gin.Context) {
 	if h.minioClient == nil {
-		response.HandleError(c, errors.NewAppError(500, errors.ErrCodeInternal, "Upload service not available"))
+		response.HandleError(c, errors.ErrUploadUnavailable)
 		return
 	}
 
 	file, err := c.FormFile("file")
 	if err != nil {
-		response.HandleError(c, errors.ValidationError("File is required"))
+		response.HandleError(c, errors.ValidationError(errors.ErrCodeRequiredField))
 		return
 	}
 
 	// Validate file type
 	contentType := file.Header.Get("Content-Type")
 	if !isValidImageType(contentType) {
-		response.HandleError(c, errors.ValidationError("Only image files are allowed (jpeg, png, gif, webp)"))
+		response.HandleError(c, errors.ErrInvalidFile)
 		return
 	}
 
@@ -86,7 +86,7 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 	// Upload to MinIO
 	url, err := h.minioClient.UploadFile(c.Request.Context(), file, folder)
 	if err != nil {
-		response.HandleError(c, errors.Wrap(err, 500, errors.ErrCodeInternal, "Failed to upload file"))
+		response.HandleError(c, errors.Wrap(err, 500, errors.ErrCodeUploadFailed))
 		return
 	}
 
@@ -101,18 +101,18 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 // DELETE /admin/upload?url=<file_url>
 func (h *UploadHandler) DeleteImage(c *gin.Context) {
 	if h.minioClient == nil {
-		response.HandleError(c, errors.NewAppError(500, errors.ErrCodeInternal, "Upload service not available"))
+		response.HandleError(c, errors.ErrUploadUnavailable)
 		return
 	}
 
 	fileURL := c.Query("url")
 	if fileURL == "" {
-		response.HandleError(c, errors.ValidationError("URL is required"))
+		response.HandleError(c, errors.ValidationError(errors.ErrCodeRequiredField))
 		return
 	}
 
 	if err := h.minioClient.DeleteFile(c.Request.Context(), fileURL); err != nil {
-		response.HandleError(c, errors.Wrap(err, 500, errors.ErrCodeInternal, "Failed to delete file"))
+		response.HandleError(c, errors.Wrap(err, 500, errors.ErrCodeDeleteFailed))
 		return
 	}
 

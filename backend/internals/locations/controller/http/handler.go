@@ -25,7 +25,7 @@ func NewLocationHandler(uc usecase.ILocationUseCase) *LocationHandler {
 func (h *LocationHandler) Create(c *gin.Context) {
 	var req dto.CreateLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -63,7 +63,7 @@ func (h *LocationHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateLocationRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *LocationHandler) Delete(c *gin.Context) {
 func (h *LocationHandler) List(c *gin.Context) {
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 	pg.Process()
@@ -137,13 +137,16 @@ func (h *LocationHandler) Search(c *gin.Context) {
 func mapDomainError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrLocationNotFound):
-		return pkgErrors.Wrap(err, 404, "LOCATION_NOT_FOUND", err.Error())
-	case errors.Is(err, domain.ErrLocationNameRequired),
-		errors.Is(err, domain.ErrLocationNameTooShort),
-		errors.Is(err, domain.ErrLocationCityRequired),
-		errors.Is(err, domain.ErrLocationCityTooShort):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrLocationNotFound
+	case errors.Is(err, domain.ErrLocationNameRequired):
+		return pkgErrors.ErrLocationNameRequired
+	case errors.Is(err, domain.ErrLocationNameTooShort):
+		return pkgErrors.ErrLocationNameTooShort
+	case errors.Is(err, domain.ErrLocationCityRequired):
+		return pkgErrors.ErrLocationCityRequired
+	case errors.Is(err, domain.ErrLocationCityTooShort):
+		return pkgErrors.ErrLocationCityTooShort
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

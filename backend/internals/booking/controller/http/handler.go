@@ -26,7 +26,7 @@ func NewBookingHandler(uc usecase.IBookingUseCase) *BookingHandler {
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	var req dto.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -84,7 +84,7 @@ func (h *BookingHandler) GetBookingByCode(c *gin.Context) {
 func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 	var req dto.ListBookingsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -166,36 +166,27 @@ func parseIntParam(s string, v *int64) (bool, error) {
 
 func mapDomainError(err error) error {
 	switch {
-	// Conflict errors -> 409
 	case errors.Is(err, domain.ErrSeatsNotAvailable):
-		return pkgErrors.Wrap(err, 409, "SEATS_NOT_AVAILABLE", err.Error())
+		return pkgErrors.ErrSeatsNotAvailable
 	case errors.Is(err, domain.ErrSeatsBeingBooked):
-		return pkgErrors.Wrap(err, 409, "SEATS_BEING_BOOKED", err.Error())
+		return pkgErrors.ErrSeatsBeingBooked
 	case errors.Is(err, domain.ErrConcurrentModification):
-		return pkgErrors.Wrap(err, 409, "CONCURRENT_MODIFICATION", err.Error())
-
-	// Locked -> 423
+		return pkgErrors.ErrConcurrentModification
 	case errors.Is(err, domain.ErrTripLocked):
-		return pkgErrors.Wrap(err, 423, "TRIP_LOCKED", err.Error())
-
-	// Bad request -> 400
+		return pkgErrors.ErrTripLocked
 	case errors.Is(err, domain.ErrInvalidSeatCode):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrInvalidSeatCode
 	case errors.Is(err, domain.ErrInvalidGuestInfo):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrInvalidGuestInfo
 	case errors.Is(err, domain.ErrTripNotBookable):
-		return pkgErrors.Wrap(err, 400, "TRIP_NOT_BOOKABLE", err.Error())
+		return pkgErrors.ErrTripNotBookable
 	case errors.Is(err, domain.ErrBookingCannotCancel):
-		return pkgErrors.Wrap(err, 400, "BOOKING_CANNOT_CANCEL", err.Error())
+		return pkgErrors.ErrBookingCannotCancel
 	case errors.Is(err, domain.ErrBookingExpired):
-		return pkgErrors.Wrap(err, 400, "BOOKING_EXPIRED", err.Error())
-
-	// Not found -> 404
+		return pkgErrors.ErrBookingExpired
 	case errors.Is(err, domain.ErrBookingNotFound):
-		return pkgErrors.Wrap(err, 404, "BOOKING_NOT_FOUND", err.Error())
-
-	// Default -> 500
+		return pkgErrors.ErrBookingNotFound
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

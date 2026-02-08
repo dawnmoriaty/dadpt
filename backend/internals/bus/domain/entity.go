@@ -1,15 +1,18 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+)
 
-// Sentinel errors
+// Sentinel errors — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
-	ErrBusNotFound             = errors.New("Không tìm thấy xe buýt")
-	ErrBusProviderIDRequired   = errors.New("Nhà cung cấp là bắt buộc")
-	ErrBusBusTypeIDRequired    = errors.New("Loại xe là bắt buộc")
-	ErrBusLicensePlateRequired = errors.New("Biển số xe là bắt buộc")
-	ErrBusLicensePlateTooShort = errors.New("Biển số xe quá ngắn (tối thiểu 5 ký tự)")
-	ErrBusStatusInvalid        = errors.New("Trạng thái xe không hợp lệ")
+	ErrBusNotFound             = errors.New("bus not found")
+	ErrBusProviderIDRequired   = errors.New("bus provider required")
+	ErrBusBusTypeIDRequired    = errors.New("bus type required")
+	ErrBusLicensePlateRequired = errors.New("license plate required")
+	ErrBusLicensePlateTooShort = errors.New("license plate too short")
+	ErrBusStatusInvalid        = errors.New("invalid bus status")
 )
 
 // Bus represents a specific bus vehicle

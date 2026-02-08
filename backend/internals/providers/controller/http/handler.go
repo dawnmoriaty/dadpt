@@ -25,7 +25,7 @@ func NewProviderHandler(uc usecase.IProviderUseCase) *ProviderHandler {
 func (h *ProviderHandler) Create(c *gin.Context) {
 	var req dto.CreateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -63,7 +63,7 @@ func (h *ProviderHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateProviderRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -94,7 +94,7 @@ func (h *ProviderHandler) Delete(c *gin.Context) {
 func (h *ProviderHandler) List(c *gin.Context) {
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 	pg.Process()
@@ -147,17 +147,24 @@ func (h *ProviderHandler) ToggleActive(c *gin.Context) {
 func mapDomainError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrProviderNotFound):
-		return pkgErrors.Wrap(err, 404, "PROVIDER_NOT_FOUND", err.Error())
+		return pkgErrors.ErrProviderNotFound
 	case errors.Is(err, domain.ErrDuplicateSlug):
-		return pkgErrors.Wrap(err, 409, "DUPLICATE_SLUG", err.Error())
-	case errors.Is(err, domain.ErrProviderNameRequired),
-		errors.Is(err, domain.ErrProviderNameTooShort),
-		errors.Is(err, domain.ErrProviderHotlineInvalid),
-		errors.Is(err, domain.ErrProviderSlugInvalid),
-		errors.Is(err, domain.ErrProviderSlugTooShort),
-		errors.Is(err, domain.ErrProviderSlugTooLong):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrDuplicateSlug
+	case errors.Is(err, domain.ErrProviderCannotDelete):
+		return pkgErrors.ErrProviderCannotDelete
+	case errors.Is(err, domain.ErrProviderNameRequired):
+		return pkgErrors.ErrProviderNameRequired
+	case errors.Is(err, domain.ErrProviderNameTooShort):
+		return pkgErrors.ErrProviderNameTooShort
+	case errors.Is(err, domain.ErrProviderHotlineInvalid):
+		return pkgErrors.ErrProviderHotlineInvalid
+	case errors.Is(err, domain.ErrProviderSlugInvalid):
+		return pkgErrors.ErrProviderSlugInvalid
+	case errors.Is(err, domain.ErrProviderSlugTooShort):
+		return pkgErrors.ErrProviderSlugTooShort
+	case errors.Is(err, domain.ErrProviderSlugTooLong):
+		return pkgErrors.ErrProviderSlugTooLong
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

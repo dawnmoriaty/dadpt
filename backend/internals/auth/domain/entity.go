@@ -7,23 +7,24 @@ import (
 )
 
 // =============================================================================
-// SENTINEL ERRORS - Định nghĩa tại domain, cho phép errors.Is() hoạt động
+// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 // =============================================================================
 
 var (
-	ErrInvalidPhone       = errors.New("Số điện thoại không đúng định dạng Việt Nam")
-	ErrInvalidEmail       = errors.New("Định dạng email không hợp lệ")
-	ErrInvalidFullName    = errors.New("Họ tên phải có ít nhất 2 ký tự")
-	ErrInvalidUsername    = errors.New("Tên người dùng phải có 3-30 ký tự chữ, số hoặc dấu gạch dưới")
-	ErrInvalidPassword    = errors.New("Mật khẩu phải có ít nhất 6 ký tự")
-	ErrInvalidRole        = errors.New("Vai trò không hợp lệ")
-	ErrPhoneAlreadyExists = errors.New("Số điện thoại đã được đăng ký")
-	ErrEmailAlreadyExists = errors.New("Email đã được đăng ký")
-	ErrUserNotFound       = errors.New("Người dùng không tồn tại")
-	ErrInvalidCredentials = errors.New("Số điện thoại hoặc mật khẩu không hợp lệ")
-	ErrTokenExpired       = errors.New("Token hết hạn")
-	ErrTokenInvalid       = errors.New("Token không hợp lệ")
-	ErrUserInactive       = errors.New("Tài khoản người dùng không hoạt động")
+	ErrInvalidPhone       = errors.New("invalid phone format")
+	ErrInvalidEmail       = errors.New("invalid email format")
+	ErrInvalidFullName    = errors.New("invalid full name")
+	ErrInvalidUsername    = errors.New("invalid username")
+	ErrInvalidPassword    = errors.New("invalid password")
+	ErrInvalidRole        = errors.New("invalid role")
+	ErrPhoneAlreadyExists = errors.New("phone already exists")
+	ErrEmailAlreadyExists = errors.New("email already exists")
+	ErrUserNotFound       = errors.New("user not found")
+	ErrInvalidCredentials = errors.New("invalid credentials")
+	ErrTokenExpired       = errors.New("token expired")
+	ErrTokenInvalid       = errors.New("token invalid")
+	ErrUserInactive       = errors.New("user inactive")
 )
 
 type Phone string

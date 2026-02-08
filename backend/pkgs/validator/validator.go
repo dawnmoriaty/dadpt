@@ -1,6 +1,7 @@
 package validator
 
 import (
+	"backend/pkgs/i18n"
 	"fmt"
 
 	"github.com/go-playground/validator/v10"
@@ -15,7 +16,14 @@ type ValidationError struct {
 	Message string `json:"message"`
 }
 
+// Validate checks the struct with go-playground/validator.
+// The returned messages are resolved via i18n using the provided language.
 func Validate(s interface{}) []ValidationError {
+	return ValidateWithLang(s, "vi")
+}
+
+// ValidateWithLang checks the struct and resolves messages for the given language.
+func ValidateWithLang(s interface{}, lang string) []ValidationError {
 	err := validate.Struct(s)
 	if err == nil {
 		return nil
@@ -27,24 +35,24 @@ func Validate(s interface{}) []ValidationError {
 			Field:   err.Field(),
 			Tag:     err.Tag(),
 			Value:   fmt.Sprintf("%v", err.Value()),
-			Message: formatMessage(err),
+			Message: formatMessage(err, lang),
 		})
 	}
 
 	return errors
 }
 
-func formatMessage(err validator.FieldError) string {
+func formatMessage(err validator.FieldError, lang string) string {
 	switch err.Tag() {
 	case "required":
-		return fmt.Sprintf("Field '%s' is required", err.Field())
+		return i18n.T(lang, "VALIDATION_REQUIRED", map[string]string{"field": err.Field()})
 	case "email":
-		return fmt.Sprintf("Field '%s' must be a valid email", err.Field())
+		return i18n.T(lang, "VALIDATION_EMAIL", map[string]string{"field": err.Field()})
 	case "min":
-		return fmt.Sprintf("Field '%s' must be at least %s characters", err.Field(), err.Param())
+		return i18n.T(lang, "VALIDATION_MIN", map[string]string{"field": err.Field(), "param": err.Param()})
 	case "max":
-		return fmt.Sprintf("Field '%s' must be at most %s characters", err.Field(), err.Param())
+		return i18n.T(lang, "VALIDATION_MAX", map[string]string{"field": err.Field(), "param": err.Param()})
 	default:
-		return fmt.Sprintf("Field '%s' failed on the '%s' tag", err.Field(), err.Tag())
+		return i18n.T(lang, "VALIDATION_INVALID_TAG", map[string]string{"field": err.Field(), "tag": err.Tag()})
 	}
 }

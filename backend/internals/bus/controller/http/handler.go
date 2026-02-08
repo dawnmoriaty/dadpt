@@ -25,7 +25,7 @@ func NewBusHandler(uc usecase.IBusUseCase) *BusHandler {
 func (h *BusHandler) Create(c *gin.Context) {
 	var req dto.CreateBusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -57,7 +57,7 @@ func (h *BusHandler) GetByID(c *gin.Context) {
 func (h *BusHandler) List(c *gin.Context) {
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 	pg.Process()
@@ -92,7 +92,7 @@ func (h *BusHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateBusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -114,7 +114,7 @@ func (h *BusHandler) UpdateStatus(c *gin.Context) {
 
 	var req dto.UpdateBusStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -145,14 +145,18 @@ func (h *BusHandler) Delete(c *gin.Context) {
 func mapDomainError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrBusNotFound):
-		return pkgErrors.Wrap(err, 404, "BUS_NOT_FOUND", err.Error())
-	case errors.Is(err, domain.ErrBusProviderIDRequired),
-		errors.Is(err, domain.ErrBusBusTypeIDRequired),
-		errors.Is(err, domain.ErrBusLicensePlateRequired),
-		errors.Is(err, domain.ErrBusLicensePlateTooShort),
-		errors.Is(err, domain.ErrBusStatusInvalid):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrBusNotFound
+	case errors.Is(err, domain.ErrBusProviderIDRequired):
+		return pkgErrors.ErrBusProviderRequired
+	case errors.Is(err, domain.ErrBusBusTypeIDRequired):
+		return pkgErrors.ErrBusTypeRequired
+	case errors.Is(err, domain.ErrBusLicensePlateRequired):
+		return pkgErrors.ErrBusLicensePlateRequired
+	case errors.Is(err, domain.ErrBusLicensePlateTooShort):
+		return pkgErrors.ErrBusLicensePlateTooShort
+	case errors.Is(err, domain.ErrBusStatusInvalid):
+		return pkgErrors.ErrBusStatusInvalid
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

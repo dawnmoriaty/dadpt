@@ -7,22 +7,23 @@ import (
 )
 
 // =============================================================================
-// SENTINEL ERRORS - Định nghĩa tại domain, cho phép errors.Is() hoạt động
+// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 // =============================================================================
 
 var (
-	ErrTripNotFound            = errors.New("Không tìm thấy chuyến đi")
-	ErrInvalidInput            = errors.New("Dữ liệu đầu vào không hợp lệ")
-	ErrTripStatusInvalid       = errors.New("Trạng thái chuyến đi không hợp lệ")
-	ErrTripTransitionInvalid   = errors.New("Chuyển trạng thái chuyến đi không hợp lệ")
-	ErrTripDepartureInPast     = errors.New("Thời gian khởi hành phải ở tương lai")
-	ErrArrivalBeforeDeparture  = errors.New("Thời gian đến phải sau thời gian khởi hành")
-	ErrTripProviderRequired    = errors.New("Nhà cung cấp là bắt buộc")
-	ErrTripOriginRequired      = errors.New("Điểm đi là bắt buộc")
-	ErrTripDestinationRequired = errors.New("Điểm đến là bắt buộc")
-	ErrTripPriceInvalid        = errors.New("Giá vé phải lớn hơn 0")
-	ErrTripCannotModify        = errors.New("Chỉ có thể sửa chuyến đi ở trạng thái scheduled")
-	ErrTripCannotDelete        = errors.New("Chỉ có thể xóa chuyến đi ở trạng thái scheduled")
+	ErrTripNotFound            = errors.New("trip not found")
+	ErrInvalidInput            = errors.New("invalid input")
+	ErrTripStatusInvalid       = errors.New("invalid trip status")
+	ErrTripTransitionInvalid   = errors.New("invalid trip status transition")
+	ErrTripDepartureInPast     = errors.New("departure time in past")
+	ErrArrivalBeforeDeparture  = errors.New("arrival before departure")
+	ErrTripProviderRequired    = errors.New("trip provider required")
+	ErrTripOriginRequired      = errors.New("trip origin required")
+	ErrTripDestinationRequired = errors.New("trip destination required")
+	ErrTripPriceInvalid        = errors.New("trip price invalid")
+	ErrTripCannotModify        = errors.New("trip cannot modify")
+	ErrTripCannotDelete        = errors.New("trip cannot delete")
 )
 
 // =============================================================================

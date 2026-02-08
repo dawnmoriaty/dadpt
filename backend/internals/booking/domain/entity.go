@@ -6,20 +6,21 @@ import (
 )
 
 // =============================================================================
-// SENTINEL ERRORS - Cho phép errors.Is() hoạt động
+// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 // =============================================================================
 
 var (
-	ErrSeatsNotAvailable      = errors.New("Ghế đã được đặt")
-	ErrSeatsBeingBooked       = errors.New("Ghế đang được người khác đặt")
-	ErrTripLocked             = errors.New("Chuyến xe đang bận, vui lòng thử lại")
-	ErrConcurrentModification = errors.New("Dữ liệu đã thay đổi, vui lòng thử lại")
-	ErrBookingNotFound        = errors.New("Không tìm thấy đơn đặt vé")
-	ErrBookingExpired         = errors.New("Đơn đặt vé đã hết hạn")
-	ErrInvalidSeatCode        = errors.New("Mã ghế không hợp lệ")
-	ErrTripNotBookable        = errors.New("Chuyến xe không thể đặt vé")
-	ErrInvalidGuestInfo       = errors.New("Thông tin khách hàng không hợp lệ")
-	ErrBookingCannotCancel    = errors.New("Không thể hủy đơn đặt vé này")
+	ErrSeatsNotAvailable      = errors.New("seats not available")
+	ErrSeatsBeingBooked       = errors.New("seats being booked")
+	ErrTripLocked             = errors.New("trip locked")
+	ErrConcurrentModification = errors.New("concurrent modification")
+	ErrBookingNotFound        = errors.New("booking not found")
+	ErrBookingExpired         = errors.New("booking expired")
+	ErrInvalidSeatCode        = errors.New("invalid seat code")
+	ErrTripNotBookable        = errors.New("trip not bookable")
+	ErrInvalidGuestInfo       = errors.New("invalid guest info")
+	ErrBookingCannotCancel    = errors.New("booking cannot cancel")
 )
 
 // =============================================================================

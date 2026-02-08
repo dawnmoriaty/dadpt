@@ -14,6 +14,7 @@ import (
 	providerHttp "backend/internals/providers/controller/http"
 	tripHttp "backend/internals/trip/controller/http"
 	uploadHttp "backend/internals/upload/controller/http"
+	"backend/pkgs/i18n"
 	"backend/pkgs/jwt"
 	"backend/pkgs/middlewares"
 	"backend/pkgs/redis"
@@ -53,6 +54,9 @@ func NewServer(
 
 func (s *Server) Run() error {
 	_ = s.engine.SetTrustedProxies(nil)
+
+	// Initialize i18n translator (must be called before any handler)
+	i18n.Init()
 
 	// Disable debug logs
 	gin.SetMode(gin.ReleaseMode)

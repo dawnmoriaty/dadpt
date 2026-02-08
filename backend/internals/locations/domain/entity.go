@@ -1,14 +1,17 @@
 package domain
 
-import "errors"
+import (
+	"errors"
+)
 
-// Sentinel errors
+// Sentinel errors — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
-	ErrLocationNotFound     = errors.New("Không tìm thấy địa điểm")
-	ErrLocationNameRequired = errors.New("Tên địa điểm là bắt buộc")
-	ErrLocationNameTooShort = errors.New("Tên địa điểm quá ngắn")
-	ErrLocationCityRequired = errors.New("Thành phố là bắt buộc")
-	ErrLocationCityTooShort = errors.New("Tên thành phố quá ngắn")
+	ErrLocationNotFound     = errors.New("location not found")
+	ErrLocationNameRequired = errors.New("location name required")
+	ErrLocationNameTooShort = errors.New("location name too short")
+	ErrLocationCityRequired = errors.New("location city required")
+	ErrLocationCityTooShort = errors.New("location city too short")
 )
 
 // Location is a pure domain entity representing a bus terminal/station

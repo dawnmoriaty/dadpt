@@ -24,7 +24,7 @@ func NewAuthHandler(uc usecase.IAuthUseCase) *AuthHandler {
 func (h *AuthHandler) Register(c *gin.Context) {
 	var req dto.RegisterRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -40,7 +40,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 func (h *AuthHandler) Login(c *gin.Context) {
 	var req dto.LoginRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -112,6 +112,10 @@ func mapDomainError(err error) error {
 	case errors.Is(err, domain.ErrInvalidPassword):
 		return pkgErrors.ErrInvalidPassword
 
+	// Role -> 400
+	case errors.Is(err, domain.ErrInvalidRole):
+		return pkgErrors.ErrInvalidRole
+
 	// Conflict errors -> 409
 	case errors.Is(err, domain.ErrPhoneAlreadyExists):
 		return pkgErrors.ErrPhoneExists
@@ -136,6 +140,6 @@ func mapDomainError(err error) error {
 
 	// Default -> 500 with wrapped error
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

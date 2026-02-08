@@ -25,7 +25,7 @@ func NewTripHandler(uc usecase.ITripUseCase) *TripHandler {
 func (h *TripHandler) Search(c *gin.Context) {
 	var req dto.SearchTripsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -60,7 +60,7 @@ func (h *TripHandler) GetByID(c *gin.Context) {
 func (h *TripHandler) Create(c *gin.Context) {
 	var req dto.CreateTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *TripHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateTripRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -104,7 +104,7 @@ func (h *TripHandler) UpdateStatus(c *gin.Context) {
 
 	var req dto.UpdateTripStatusRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -135,7 +135,7 @@ func (h *TripHandler) Delete(c *gin.Context) {
 func (h *TripHandler) List(c *gin.Context) {
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 	pg.Process()
@@ -158,34 +158,31 @@ func (h *TripHandler) List(c *gin.Context) {
 
 func mapDomainError(err error) error {
 	switch {
-	// Validation errors -> 400
 	case errors.Is(err, domain.ErrTripStatusInvalid):
-		return pkgErrors.Wrap(err, 400, pkgErrors.ErrCodeInvalidTripStatus, err.Error())
+		return pkgErrors.ErrInvalidTripStatus
 	case errors.Is(err, domain.ErrTripTransitionInvalid):
-		return pkgErrors.Wrap(err, 400, pkgErrors.ErrCodeInvalidTripStatus, err.Error())
+		return pkgErrors.ErrTripTransitionInvalid
 	case errors.Is(err, domain.ErrTripDepartureInPast):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrTripDepartureInPast
 	case errors.Is(err, domain.ErrArrivalBeforeDeparture):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrArrivalBeforeDeparture
 	case errors.Is(err, domain.ErrTripProviderRequired):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrTripProviderRequired
 	case errors.Is(err, domain.ErrTripOriginRequired):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrTripOriginRequired
 	case errors.Is(err, domain.ErrTripDestinationRequired):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrTripDestRequired
 	case errors.Is(err, domain.ErrTripPriceInvalid):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrTripPriceInvalid
 	case errors.Is(err, domain.ErrTripCannotModify):
-		return pkgErrors.Wrap(err, 400, "TRIP_CANNOT_MODIFY", err.Error())
+		return pkgErrors.ErrTripCannotModify
 	case errors.Is(err, domain.ErrTripCannotDelete):
-		return pkgErrors.Wrap(err, 400, "TRIP_CANNOT_DELETE", err.Error())
-
-	// Not found -> 404
+		return pkgErrors.ErrTripCannotDelete
+	case errors.Is(err, domain.ErrInvalidInput):
+		return pkgErrors.ErrInvalidInput
 	case errors.Is(err, domain.ErrTripNotFound):
 		return pkgErrors.ErrTripNotFound
-
-	// Default -> 500
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

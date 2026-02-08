@@ -25,7 +25,7 @@ func NewBusTypeHandler(uc usecase.IBusTypeUseCase) *BusTypeHandler {
 func (h *BusTypeHandler) Create(c *gin.Context) {
 	var req dto.CreateBusTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -57,7 +57,7 @@ func (h *BusTypeHandler) GetByID(c *gin.Context) {
 func (h *BusTypeHandler) List(c *gin.Context) {
 	var pg paging.Paging
 	if err := c.ShouldBindQuery(&pg); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 	pg.Process()
@@ -85,7 +85,7 @@ func (h *BusTypeHandler) Update(c *gin.Context) {
 
 	var req dto.UpdateBusTypeRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
-		response.HandleError(c, pkgErrors.ValidationError(err.Error()))
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
@@ -116,13 +116,16 @@ func (h *BusTypeHandler) Delete(c *gin.Context) {
 func mapDomainError(err error) error {
 	switch {
 	case errors.Is(err, domain.ErrBusTypeNotFound):
-		return pkgErrors.Wrap(err, 404, "BUS_TYPE_NOT_FOUND", err.Error())
-	case errors.Is(err, domain.ErrBusTypeNameRequired),
-		errors.Is(err, domain.ErrBusTypeNameTooShort),
-		errors.Is(err, domain.ErrBusTypeTotalSeatsRequired),
-		errors.Is(err, domain.ErrBusTypeSeatLayoutRequired):
-		return pkgErrors.ValidationError(err.Error())
+		return pkgErrors.ErrBusTypeNotFound
+	case errors.Is(err, domain.ErrBusTypeNameRequired):
+		return pkgErrors.ErrBusTypeNameRequired
+	case errors.Is(err, domain.ErrBusTypeNameTooShort):
+		return pkgErrors.ErrBusTypeNameTooShort
+	case errors.Is(err, domain.ErrBusTypeTotalSeatsRequired):
+		return pkgErrors.ErrBusTypeTotalSeatsRequired
+	case errors.Is(err, domain.ErrBusTypeSeatLayoutRequired):
+		return pkgErrors.ErrBusTypeSeatLayoutRequired
 	default:
-		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal, "An unexpected error occurred")
+		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
 }

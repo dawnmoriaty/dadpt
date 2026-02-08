@@ -5,17 +5,18 @@ import (
 	"regexp"
 )
 
-// Sentinel errors
+// Sentinel errors — stable English identifiers for errors.Is() matching.
+// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
-	ErrProviderNotFound       = errors.New("Không tìm thấy nhà cung cấp")
-	ErrProviderNameRequired   = errors.New("Tên nhà cung cấp là bắt buộc")
-	ErrProviderNameTooShort   = errors.New("Tên nhà cung cấp quá ngắn")
-	ErrProviderHotlineInvalid = errors.New("Số hotline không hợp lệ")
-	ErrProviderSlugInvalid    = errors.New("Slug không hợp lệ")
-	ErrProviderSlugTooShort   = errors.New("Slug quá ngắn")
-	ErrProviderSlugTooLong    = errors.New("Slug quá dài")
-	ErrDuplicateSlug          = errors.New("Slug đã tồn tại")
-	ErrProviderCannotDelete   = errors.New("Chỉ có thể xóa nhà cung cấp không hoạt động")
+	ErrProviderNotFound       = errors.New("provider not found")
+	ErrProviderNameRequired   = errors.New("provider name required")
+	ErrProviderNameTooShort   = errors.New("provider name too short")
+	ErrProviderHotlineInvalid = errors.New("invalid hotline")
+	ErrProviderSlugInvalid    = errors.New("invalid slug")
+	ErrProviderSlugTooShort   = errors.New("slug too short")
+	ErrProviderSlugTooLong    = errors.New("slug too long")
+	ErrDuplicateSlug          = errors.New("duplicate slug")
+	ErrProviderCannotDelete   = errors.New("provider cannot delete")
 )
 
 // Provider is a pure domain entity for bus service providers

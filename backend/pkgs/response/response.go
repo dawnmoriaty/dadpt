@@ -2,6 +2,7 @@ package response
 
 import (
 	"backend/pkgs/errors"
+	"backend/pkgs/i18n"
 	"backend/pkgs/logger"
 	"net/http"
 
@@ -33,7 +34,11 @@ func Created(c *gin.Context, data interface{}) {
 	})
 }
 
+// HandleError resolves the localized message from the error code using Accept-Language,
+// then sends the JSON error response. Domain errors → AppError codes → i18n messages.
 func HandleError(c *gin.Context, err error) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
+
 	if appErr, ok := err.(*errors.AppError); ok {
 		// Log error with stack trace for 5xx errors or when Raw error exists
 		if appErr.Status >= 500 || appErr.Raw != nil {
@@ -42,10 +47,13 @@ func HandleError(c *gin.Context, err error) {
 			logger.ErrorWithCaller(appErr, "Request Error")
 		}
 
+		// Resolve localized message from error code
+		message := i18n.T(lang, appErr.Code)
+
 		c.JSON(appErr.Status, Response{
 			Code:    appErr.Status,
-			Status:  string(appErr.Code),
-			Message: appErr.Message,
+			Status:  appErr.Code,
+			Message: message,
 		})
 		return
 	}
@@ -54,66 +62,84 @@ func HandleError(c *gin.Context, err error) {
 	logger.ErrorWithStack(err, "Unhandled Error")
 	c.JSON(http.StatusInternalServerError, Response{
 		Code:    http.StatusInternalServerError,
-		Status:  string(errors.ErrCodeInternal),
-		Message: err.Error(),
+		Status:  errors.ErrCodeInternal,
+		Message: i18n.T(lang, errors.ErrCodeInternal),
 	})
 }
 
-func BadRequest(c *gin.Context, message string) {
+func BadRequest(c *gin.Context, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusBadRequest, Response{
 		Code:    http.StatusBadRequest,
-		Status:  string(errors.ErrCodeBadRequest),
-		Message: message,
+		Status:  code,
+		Message: i18n.T(lang, code),
 	})
 }
 
-func Unauthorized(c *gin.Context, message string) {
+func Unauthorized(c *gin.Context, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusUnauthorized, Response{
 		Code:    http.StatusUnauthorized,
-		Status:  string(errors.ErrCodeUnauthorized),
-		Message: message,
+		Status:  code,
+		Message: i18n.T(lang, code),
 	})
 }
 
-func NotFound(c *gin.Context, message string) {
+func NotFound(c *gin.Context, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusNotFound, Response{
 		Code:    http.StatusNotFound,
-		Status:  string(errors.ErrCodeNotFound),
-		Message: message,
+		Status:  code,
+		Message: i18n.T(lang, code),
 	})
 }
 
-func InternalServerError(c *gin.Context, message string) {
+func InternalServerError(c *gin.Context) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusInternalServerError, Response{
 		Code:    http.StatusInternalServerError,
-		Status:  string(errors.ErrCodeInternal),
-		Message: message,
+		Status:  errors.ErrCodeInternal,
+		Message: i18n.T(lang, errors.ErrCodeInternal),
 	})
 }
 
-// Error sends a generic error response with custom status, code and message
-func Error(c *gin.Context, status int, code string, message string) {
+// Error sends a generic error response with custom status, code and i18n message.
+func Error(c *gin.Context, status int, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(status, Response{
 		Code:    status,
 		Status:  code,
-		Message: message,
+		Message: i18n.T(lang, code),
 	})
 }
 
-// Forbidden sends a 403 Forbidden response
-func Forbidden(c *gin.Context, message string) {
+// Forbidden sends a 403 Forbidden response.
+func Forbidden(c *gin.Context, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusForbidden, Response{
 		Code:    http.StatusForbidden,
-		Status:  "FORBIDDEN",
-		Message: message,
+		Status:  code,
+		Message: i18n.T(lang, code),
 	})
 }
 
-// Conflict sends a 409 Conflict response
-func Conflict(c *gin.Context, message string) {
+// Conflict sends a 409 Conflict response.
+func Conflict(c *gin.Context, code string) {
+	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusConflict, Response{
 		Code:    http.StatusConflict,
-		Status:  "CONFLICT",
-		Message: message,
+		Status:  code,
+		Message: i18n.T(lang, code),
+	})
+}
+
+// SuccessWithPagination sends a 200 response with data and pagination metadata.
+func SuccessWithPagination(c *gin.Context, data interface{}, meta interface{}) {
+	c.JSON(http.StatusOK, gin.H{
+		"code":    http.StatusOK,
+		"status":  "success",
+		"message": "Success",
+		"data":    data,
+		"meta":    meta,
 	})
 }
