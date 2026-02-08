@@ -83,6 +83,7 @@ const (
 	ErrCodeBusLicensePlateRequired ErrorCode = "BUS_LICENSE_PLATE_REQUIRED"
 	ErrCodeBusLicensePlateTooShort ErrorCode = "BUS_LICENSE_PLATE_TOO_SHORT"
 	ErrCodeBusStatusInvalid        ErrorCode = "BUS_STATUS_INVALID"
+	ErrCodeBusLicensePlateExists   ErrorCode = "BUS_LICENSE_PLATE_EXISTS"
 
 	// BusType
 	ErrCodeBusTypeNotFound           ErrorCode = "BUS_TYPE_NOT_FOUND"
@@ -239,6 +240,7 @@ var (
 	ErrBusLicensePlateRequired = NewAppError(http.StatusBadRequest, ErrCodeBusLicensePlateRequired)
 	ErrBusLicensePlateTooShort = NewAppError(http.StatusBadRequest, ErrCodeBusLicensePlateTooShort)
 	ErrBusStatusInvalid        = NewAppError(http.StatusBadRequest, ErrCodeBusStatusInvalid)
+	ErrBusLicensePlateExists   = NewAppError(http.StatusConflict, ErrCodeBusLicensePlateExists)
 
 	// BusType
 	ErrBusTypeNotFound           = NewAppError(http.StatusNotFound, ErrCodeBusTypeNotFound)

@@ -1,11 +1,12 @@
 package http
 
 import (
-	"fmt"
 	"io"
+	"net/http"
 	"strconv"
 
 	"backend/pkgs/errors"
+	"backend/pkgs/logger"
 	"backend/pkgs/minio"
 	"backend/pkgs/response"
 
@@ -20,7 +21,8 @@ func NewUploadHandler(minioClient *minio.MinioClient) *UploadHandler {
 	return &UploadHandler{minioClient: minioClient}
 }
 
-// ServeFile proxies a MinIO object to the browser with proper cache headers.
+// ServeFile proxies a MinIO object to the browser with proper cache +
+// ETag headers. Object names contain timestamps → immutable cache is safe.
 // GET /api/v1/files/*filepath
 func (h *UploadHandler) ServeFile(c *gin.Context) {
 	if h.minioClient == nil {
@@ -45,19 +47,30 @@ func (h *UploadHandler) ServeFile(c *gin.Context) {
 	}
 	defer reader.Close()
 
-	// Immutable cache — object names contain timestamps
-	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	// -- Response headers --
 	c.Header("Content-Type", contentType)
 	c.Header("Content-Length", strconv.FormatInt(size, 10))
 
+	// Immutable cache — object names embed nanosecond timestamps so they
+	// never collide. 1 year + immutable lets browsers & CDNs cache forever.
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+
+	// ETag from object name — cheap but unique enough for cache validation.
+	c.Header("ETag", `"`+objectName+`"`)
+
+	// Accept-Ranges not needed — we always stream the full object.
+	// Content-Disposition is omitted so images render inline by default.
+
+	c.Status(http.StatusOK)
+
 	if _, err := io.Copy(c.Writer, reader); err != nil {
-		// Client probably disconnected, just log
-		fmt.Printf("serve file stream error: %v\n", err)
+		// Client probably disconnected mid-stream; just log, don't error.
+		logger.Warn("serve file stream interrupted: %v", err)
 	}
 }
 
-// UploadImage handles file upload to MinIO
-// POST /admin/upload
+// UploadImage handles file upload to MinIO.
+// POST /admin/upload   form-data: file + folder
 func (h *UploadHandler) UploadImage(c *gin.Context) {
 	if h.minioClient == nil {
 		response.HandleError(c, errors.ErrUploadUnavailable)
@@ -70,20 +83,18 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 		return
 	}
 
-	// Validate file type
+	// Validate MIME type
 	contentType := file.Header.Get("Content-Type")
 	if !isValidImageType(contentType) {
 		response.HandleError(c, errors.ErrInvalidFile)
 		return
 	}
 
-	// Get folder from form or use default
 	folder := c.PostForm("folder")
 	if folder == "" {
 		folder = "uploads"
 	}
 
-	// Upload to MinIO
 	url, err := h.minioClient.UploadFile(c.Request.Context(), file, folder)
 	if err != nil {
 		response.HandleError(c, errors.Wrap(err, 500, errors.ErrCodeUploadFailed))
@@ -97,7 +108,7 @@ func (h *UploadHandler) UploadImage(c *gin.Context) {
 	})
 }
 
-// DeleteImage removes a file from MinIO
+// DeleteImage removes a file from MinIO.
 // DELETE /admin/upload?url=<file_url>
 func (h *UploadHandler) DeleteImage(c *gin.Context) {
 	if h.minioClient == nil {
@@ -120,11 +131,10 @@ func (h *UploadHandler) DeleteImage(c *gin.Context) {
 }
 
 func isValidImageType(contentType string) bool {
-	validTypes := map[string]bool{
-		"image/jpeg": true,
-		"image/png":  true,
-		"image/gif":  true,
-		"image/webp": true,
+	switch contentType {
+	case "image/jpeg", "image/png", "image/gif", "image/webp":
+		return true
+	default:
+		return false
 	}
-	return validTypes[contentType]
 }

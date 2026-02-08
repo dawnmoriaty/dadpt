@@ -7,12 +7,13 @@ import (
 // Sentinel errors — stable English identifiers for errors.Is() matching.
 // User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
-	ErrBusNotFound             = errors.New("bus not found")
-	ErrBusProviderIDRequired   = errors.New("bus provider required")
-	ErrBusBusTypeIDRequired    = errors.New("bus type required")
-	ErrBusLicensePlateRequired = errors.New("license plate required")
-	ErrBusLicensePlateTooShort = errors.New("license plate too short")
-	ErrBusStatusInvalid        = errors.New("invalid bus status")
+	ErrBusNotFound                  = errors.New("bus not found")
+	ErrBusProviderIDRequired        = errors.New("bus provider required")
+	ErrBusBusTypeIDRequired         = errors.New("bus type required")
+	ErrBusLicensePlateRequired      = errors.New("license plate required")
+	ErrBusLicensePlateTooShort      = errors.New("license plate too short")
+	ErrBusStatusInvalid             = errors.New("invalid bus status")
+	ErrBusLicensePlateAlreadyExists = errors.New("license plate already exists")
 )
 
 // Bus represents a specific bus vehicle

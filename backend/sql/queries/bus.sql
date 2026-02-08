@@ -50,3 +50,11 @@ DELETE FROM buses WHERE id = $1;
 
 -- name: GetBusesByType :many
 SELECT * FROM buses WHERE bus_type_id = $1 AND status = 'active';
+
+-- name: BusExistsByLicensePlate :one
+SELECT EXISTS (
+    SELECT 1
+    FROM buses
+    WHERE license_plate = $1
+);
+

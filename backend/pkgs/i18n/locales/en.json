@@ -42,6 +42,7 @@
   "BUS_LICENSE_PLATE_REQUIRED": "License plate is required",
   "BUS_LICENSE_PLATE_TOO_SHORT": "License plate too short (min 5 characters)",
   "BUS_STATUS_INVALID": "Invalid bus status",
+  "BUS_LICENSE_PLATE_EXISTS": "License plate already exists",
 
   "BUS_TYPE_NOT_FOUND": "Bus type not found",
   "BUS_TYPE_NAME_REQUIRED": "Bus type name is required",

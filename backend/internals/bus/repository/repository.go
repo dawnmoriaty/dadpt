@@ -27,6 +27,13 @@ func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 		status = "active"
 	}
 
+	existLicensePlate, err := r.queries.BusExistsByLicensePlate(ctx, bus.LicensePlate)
+	if err != nil {
+		return nil, err
+	}
+	if existLicensePlate {
+		return nil, domain.ErrBusLicensePlateAlreadyExists
+	}
 	row, err := r.queries.CreateBus(ctx, models.CreateBusParams{
 		ProviderID:   bus.ProviderID,
 		BusTypeID:    bus.BusTypeID,

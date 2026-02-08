@@ -42,6 +42,8 @@
   "BUS_LICENSE_PLATE_REQUIRED": "Biển số xe là bắt buộc",
   "BUS_LICENSE_PLATE_TOO_SHORT": "Biển số xe quá ngắn (tối thiểu 5 ký tự)",
   "BUS_STATUS_INVALID": "Trạng thái xe không hợp lệ",
+  "BUS_LICENSE_PLATE_EXISTS": "Biển số xe đã tồn tại",
+
 
   "BUS_TYPE_NOT_FOUND": "Không tìm thấy loại xe",
   "BUS_TYPE_NAME_REQUIRED": "Tên loại xe là bắt buộc",

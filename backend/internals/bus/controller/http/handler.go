@@ -156,6 +156,8 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrBusLicensePlateTooShort
 	case errors.Is(err, domain.ErrBusStatusInvalid):
 		return pkgErrors.ErrBusStatusInvalid
+	case errors.Is(err, domain.ErrBusLicensePlateAlreadyExists):
+		return pkgErrors.ErrBusLicensePlateExists
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}

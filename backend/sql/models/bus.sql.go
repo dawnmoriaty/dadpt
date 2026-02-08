@@ -9,6 +9,21 @@ import (
 	"context"
 )
 
+const busExistsByLicensePlate = `-- name: BusExistsByLicensePlate :one
+SELECT EXISTS (
+    SELECT 1
+    FROM buses
+    WHERE license_plate = $1
+)
+`
+
+func (q *Queries) BusExistsByLicensePlate(ctx context.Context, licensePlate string) (bool, error) {
+	row := q.db.QueryRow(ctx, busExistsByLicensePlate, licensePlate)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const countBuses = `-- name: CountBuses :one
 SELECT COUNT(*) FROM buses
 `

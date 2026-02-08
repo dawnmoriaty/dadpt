@@ -11,6 +11,7 @@ import (
 )
 
 type Querier interface {
+	BusExistsByLicensePlate(ctx context.Context, licensePlate string) (bool, error)
 	CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error)
 	CountBusTypes(ctx context.Context) (int64, error)
 	CountBuses(ctx context.Context) (int64, error)
