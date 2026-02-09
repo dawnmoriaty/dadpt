@@ -7,6 +7,7 @@ import {
     Ticket,
     Users,
 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -51,7 +52,7 @@ function getDuration(departure: string, arrival: string) {
     return `${hours}h${minutes > 0 ? `${minutes}m` : ''}`
 }
 
-function TripResultCard({ trip, passengers, onSelect }: { trip: Trip; passengers: number; onSelect: () => void }) {
+function TripResultCard({ trip, passengers, onSelect, t }: { trip: Trip; passengers: number; onSelect: () => void; t: (key: string, opts?: Record<string, unknown>) => string }) {
     const hasEnoughSeats = trip.availableSeats >= passengers
 
     return (
@@ -69,7 +70,7 @@ function TripResultCard({ trip, passengers, onSelect }: { trip: Trip; passengers
                                 {trip.isHotDeal && (
                                     <Badge variant="destructive" className="gap-1">
                                         <Flame className="h-3 w-3" />
-                                        Hot Deal
+                                        {t('searchPage.hotDeal')}
                                     </Badge>
                                 )}
                             </div>
@@ -132,14 +133,14 @@ function TripResultCard({ trip, passengers, onSelect }: { trip: Trip; passengers
                             <p className="text-2xl font-bold text-primary">
                                 {formatCurrency(trip.finalPrice)}
                             </p>
-                            <p className="text-xs text-muted-foreground">/passenger</p>
+                            <p className="text-xs text-muted-foreground">{t('searchPage.perSeat')}</p>
                         </div>
 
                         <div className="flex flex-col items-center gap-2">
                             <div className="flex items-center gap-1 text-sm">
                                 <Users className="h-3.5 w-3.5" />
                                 <span className={`font-medium ${trip.availableSeats <= 5 ? 'text-amber-600' : 'text-green-600'}`}>
-                                    {trip.availableSeats} seats left
+                                    {t('searchPage.seatsLeft', { count: trip.availableSeats })}
                                 </span>
                             </div>
                             <Button
@@ -147,7 +148,7 @@ function TripResultCard({ trip, passengers, onSelect }: { trip: Trip; passengers
                                 disabled={!hasEnoughSeats}
                                 className="w-full"
                             >
-                                {hasEnoughSeats ? 'Book Now' : 'Full'}
+                                {hasEnoughSeats ? t('searchPage.bookNow') : t('searchPage.full')}
                             </Button>
                         </div>
                     </div>
@@ -158,6 +159,8 @@ function TripResultCard({ trip, passengers, onSelect }: { trip: Trip; passengers
 }
 
 export function TripSearchResults({ trips, isLoading, passengers, onSelect }: TripSearchResultsProps) {
+    const { t } = useTranslation()
+
     if (isLoading) {
         return (
             <div className="space-y-4">
@@ -177,9 +180,9 @@ export function TripSearchResults({ trips, isLoading, passengers, onSelect }: Tr
             <Card>
                 <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                     <MapPin className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                    <h3 className="text-lg font-semibold mb-1">No trips found</h3>
+                    <h3 className="text-lg font-semibold mb-1">{t('searchPage.noResults')}</h3>
                     <p className="text-muted-foreground max-w-md">
-                        No trips match your search criteria. Try adjusting the date or route.
+                        {t('searchPage.noResultsHint')}
                     </p>
                 </CardContent>
             </Card>
@@ -188,15 +191,14 @@ export function TripSearchResults({ trips, isLoading, passengers, onSelect }: Tr
 
     return (
         <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-                Found <strong>{trips.length}</strong> trip{trips.length > 1 ? 's' : ''}
-            </p>
+            <p className="text-sm text-muted-foreground" dangerouslySetInnerHTML={{ __html: t('searchPage.found', { count: trips.length }) }} />
             {trips.map((trip) => (
                 <TripResultCard
                     key={trip.id}
                     trip={trip}
                     passengers={passengers}
                     onSelect={() => onSelect(trip)}
+                    t={t}
                 />
             ))}
         </div>

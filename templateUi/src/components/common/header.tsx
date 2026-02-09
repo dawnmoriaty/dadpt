@@ -1,6 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import { LogOut, Settings, Ticket, User } from 'lucide-react'
+import { Bus, LogOut, Settings, Ticket, User } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -17,13 +18,30 @@ import { useAuthStore } from '@/stores/use-auth-store'
 export function Header() {
     const { user, isAuthenticated, logout } = useAuthStore()
     const [authOpen, setAuthOpen] = useState(false)
+    const { t } = useTranslation()
 
     return (
         <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
             <div className="container flex h-16 items-center justify-between">
-                <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-                    Đặt Xe Khách 
-                </Link>
+                <div className="flex items-center gap-6">
+                    <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
+                        <Bus className="h-6 w-6" />
+                        {t('nav.brand')}
+                    </Link>
+                    <nav className="hidden md:flex items-center gap-1">
+                        <Link to="/" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
+                            {t('nav.home')}
+                        </Link>
+                        <Link to="/search" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
+                            {t('nav.search')}
+                        </Link>
+                        {isAuthenticated && (
+                            <Link to="/my-bookings" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
+                                {t('nav.myBookings')}
+                            </Link>
+                        )}
+                    </nav>
+                </div>
 
                 <nav className="flex items-center gap-4">
                     {isAuthenticated && user ? (
@@ -48,23 +66,23 @@ export function Header() {
                                 <DropdownMenuItem asChild>
                                     <Link to="/my-bookings">
                                         <Ticket className="mr-2 h-4 w-4" />
-                                        <span>My Bookings</span>
+                                        <span>{t('nav.myBookings')}</span>
                                     </Link>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem>
                                     <Settings className="mr-2 h-4 w-4" />
-                                    <span>Settings</span>
+                                    <span>{t('auth.settings')}</span>
                                 </DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem onClick={logout} className="text-red-600">
                                     <LogOut className="mr-2 h-4 w-4" />
-                                    <span>Log out</span>
+                                    <span>{t('auth.logout')}</span>
                                 </DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
                     ) : (
                         <>
-                            <Button onClick={() => setAuthOpen(true)}>Login / Register</Button>
+                            <Button onClick={() => setAuthOpen(true)}>{t('auth.loginOrRegister')}</Button>
                             <AuthModal open={authOpen} onOpenChange={setAuthOpen} />
                         </>
                     )}

@@ -17,6 +17,9 @@ export interface Trip {
     availableSeats: number
     isHotDeal: boolean
     status: TripStatus
+    pickupPoints: Point[]
+    dropoffPoints: Point[]
+    bookedSeats: string[]
 }
 
 export interface Point {

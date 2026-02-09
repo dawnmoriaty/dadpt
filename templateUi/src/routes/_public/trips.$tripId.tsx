@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { ArrowLeft, CheckCircle } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { Button } from '@/components/ui/button'
@@ -23,6 +24,7 @@ function TripBookingPage() {
     const search = useSearch({ from: '/_public/trips/$tripId' })
     const navigate = useNavigate()
     const [bookingCode, setBookingCode] = useState<string | null>(null)
+    const { t } = useTranslation()
 
     const { data: trip, isLoading, error } = useQuery({
         queryKey: ['trip-detail', tripId],
@@ -47,9 +49,9 @@ function TripBookingPage() {
             <div className="container max-w-3xl mx-auto py-12 px-4">
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-                        <h3 className="text-lg font-semibold mb-2">Trip not found</h3>
-                        <p className="text-muted-foreground mb-4">The trip you're looking for doesn't exist or has been removed.</p>
-                        <Button onClick={() => navigate({ to: '/search' })}>Back to Search</Button>
+                        <h3 className="text-lg font-semibold mb-2">{t('booking.tripNotFound')}</h3>
+                        <p className="text-muted-foreground mb-4">{t('booking.tripNotFoundHint')}</p>
+                        <Button onClick={() => navigate({ to: '/search' })}>{t('booking.backToSearch')}</Button>
                     </CardContent>
                 </Card>
             </div>
@@ -63,25 +65,25 @@ function TripBookingPage() {
                 <Card className="border-green-200 bg-green-50/50">
                     <CardContent className="flex flex-col items-center justify-center py-12 text-center">
                         <CheckCircle className="h-16 w-16 text-green-600 mb-4" />
-                        <h2 className="text-2xl font-bold mb-2">Booking Confirmed!</h2>
+                        <h2 className="text-2xl font-bold mb-2">{t('booking.confirmed')}</h2>
                         <p className="text-muted-foreground mb-4">
-                            Your booking has been created successfully.
+                            {t('booking.confirmedHint')}
                         </p>
                         <div className="bg-white border rounded-lg px-6 py-3 mb-6">
-                            <p className="text-sm text-muted-foreground">Booking Code</p>
+                            <p className="text-sm text-muted-foreground">{t('booking.bookingCode')}</p>
                             <p className="text-3xl font-mono font-bold text-primary tracking-wider">
                                 {bookingCode}
                             </p>
                         </div>
                         <p className="text-sm text-muted-foreground mb-6">
-                            Save this code to look up your booking later.
+                            {t('booking.saveCodeHint')}
                         </p>
                         <div className="flex gap-3">
                             <Button variant="outline" onClick={() => navigate({ to: '/' })}>
-                                Back to Home
+                                {t('booking.backToHome')}
                             </Button>
                             <Button onClick={() => navigate({ to: '/my-bookings' })}>
-                                View My Bookings
+                                {t('booking.viewMyBookings')}
                             </Button>
                         </div>
                     </CardContent>
@@ -98,10 +100,10 @@ function TripBookingPage() {
                 onClick={() => navigate({ to: '/search' })}
             >
                 <ArrowLeft className="h-4 w-4" />
-                Back to results
+                {t('booking.backToResults')}
             </Button>
 
-            <h1 className="text-2xl font-bold mb-6">Complete Your Booking</h1>
+            <h1 className="text-2xl font-bold mb-6">{t('booking.completeBooking')}</h1>
 
             <BookingForm
                 trip={trip}

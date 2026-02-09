@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { SearchForm, TripSearchResults, useSearchTrips } from '@/modules/booking'
@@ -20,6 +21,7 @@ export const Route = createFileRoute('/_public/search')({
 function SearchPage() {
     const navigate = useNavigate()
     const search = useSearch({ from: '/_public/search' })
+    const { t } = useTranslation()
 
     const hasSearchParams = search.originId > 0 && search.destinationId > 0 && search.departureDate.length > 0
 
@@ -53,8 +55,8 @@ function SearchPage() {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Search Trips</h1>
-                <p className="text-muted-foreground">Find the best bus trips for your journey</p>
+                <h1 className="text-3xl font-bold mb-2">{t('searchPage.title')}</h1>
+                <p className="text-muted-foreground">{t('searchPage.subtitle')}</p>
             </div>
 
             <div className="mb-8">

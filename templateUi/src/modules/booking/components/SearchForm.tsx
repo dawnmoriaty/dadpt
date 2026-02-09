@@ -1,6 +1,7 @@
 import { ArrowRightLeft, CalendarDays, Search, Users } from 'lucide-react'
 import { useState } from 'react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -34,6 +35,7 @@ interface SearchFormProps {
 export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps) {
     const [originSearch, setOriginSearch] = useState('')
     const [destSearch, setDestSearch] = useState('')
+    const { t } = useTranslation()
 
     const { data: originLocations } = useSearchLocations(originSearch)
     const { data: destLocations } = useSearchLocations(destSearch)
@@ -67,10 +69,10 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium flex items-center gap-1.5">
                                         <div className="h-3 w-3 rounded-full border-2 border-primary/60" />
-                                        From
+                                        {t('searchPage.from')}
                                     </FormLabel>
                                     <Input
-                                        placeholder="Search origin..."
+                                        placeholder={t('searchPage.searchOrigin')}
                                         value={originSearch}
                                         onChange={(e) => setOriginSearch(e.target.value)}
                                         className="mb-1"
@@ -82,7 +84,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select origin..." />
+                                                    <SelectValue placeholder={t('searchPage.selectOrigin')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -130,10 +132,10 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium flex items-center gap-1.5">
                                         <div className="h-3 w-3 rounded-full bg-primary/60" />
-                                        To
+                                        {t('searchPage.to')}
                                     </FormLabel>
                                     <Input
-                                        placeholder="Search destination..."
+                                        placeholder={t('searchPage.searchDest')}
                                         value={destSearch}
                                         onChange={(e) => setDestSearch(e.target.value)}
                                         className="mb-1"
@@ -145,7 +147,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select destination..." />
+                                                    <SelectValue placeholder={t('searchPage.selectDest')} />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -170,7 +172,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium flex items-center gap-1.5">
                                         <CalendarDays className="h-3.5 w-3.5" />
-                                        Date
+                                        {t('searchPage.date')}
                                     </FormLabel>
                                     <FormControl>
                                         <Input
@@ -192,7 +194,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                     <FormItem>
                                         <FormLabel className="text-sm font-medium flex items-center gap-1.5">
                                             <Users className="h-3.5 w-3.5" />
-                                            Passengers
+                                            {t('field.passengers')}
                                         </FormLabel>
                                         <FormControl>
                                             <Input type="number" min={1} max={10} {...field} />
@@ -205,7 +207,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
 
                         <Button type="submit" size="lg" className="gap-2">
                             <Search className="h-4 w-4" />
-                            Search
+                            {t('searchPage.searchBtn')}
                         </Button>
                     </form>
                 </Form>

@@ -1,6 +1,7 @@
 import { Loader2, Ticket } from 'lucide-react'
 import { useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -35,19 +36,19 @@ interface BookingFormProps {
     onSuccess: (bookingCode: string) => void
 }
 
-function generateSeatCodes(totalAvailable: number): string[] {
+function generateSeatCodes(totalAvailable: number, bookedSeats: string[]): string[] {
     const seats: string[] = []
-    const rows = Math.ceil(totalAvailable / 4)
+    const rows = Math.ceil((totalAvailable + bookedSeats.length) / 4)
     const cols = ['A', 'B', 'C', 'D']
-    let count = 0
-    for (let r = 1; r <= rows && count < totalAvailable; r++) {
+    for (let r = 1; r <= rows; r++) {
         for (const c of cols) {
-            if (count >= totalAvailable) break
-            seats.push(`${r}${c}`)
-            count++
+            const code = `${r}${c}`
+            if (!bookedSeats.includes(code)) {
+                seats.push(code)
+            }
         }
     }
-    return seats
+    return seats.slice(0, totalAvailable)
 }
 
 function formatCurrency(amount: number) {
@@ -59,7 +60,11 @@ function formatCurrency(amount: number) {
 
 export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const createBooking = useCreateBooking()
-    const availableSeats = useMemo(() => generateSeatCodes(trip.availableSeats), [trip.availableSeats])
+    const { t } = useTranslation()
+    const availableSeats = useMemo(
+        () => generateSeatCodes(trip.availableSeats, trip.bookedSeats ?? []),
+        [trip.availableSeats, trip.bookedSeats],
+    )
 
     const form = useForm<CreateBookingFormData>({
         resolver: formResolver(createBookingSchema),
@@ -84,6 +89,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
         })
     }
 
+    const pickupPoints = trip.pickupPoints ?? []
+    const dropoffPoints = trip.dropoffPoints ?? []
+
     return (
         <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -92,37 +100,37 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex items-center gap-2">
                             <Ticket className="h-5 w-5" />
-                            Trip Summary
+                            {t('booking.tripSummary')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                             <div>
-                                <p className="text-muted-foreground">Route</p>
+                                <p className="text-muted-foreground">{t('booking.route')}</p>
                                 <p className="font-medium">{trip.originName} → {trip.destinationName}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Provider</p>
+                                <p className="text-muted-foreground">{t('booking.provider')}</p>
                                 <p className="font-medium">{trip.providerName}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Departure</p>
+                                <p className="text-muted-foreground">{t('booking.departure')}</p>
                                 <p className="font-medium">
                                     {new Date(trip.departureTime).toLocaleString('vi-VN')}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Arrival</p>
+                                <p className="text-muted-foreground">{t('booking.arrival')}</p>
                                 <p className="font-medium">
                                     {new Date(trip.arrivalTime).toLocaleString('vi-VN')}
                                 </p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Price/seat</p>
+                                <p className="text-muted-foreground">{t('booking.pricePerSeat')}</p>
                                 <p className="font-bold text-primary">{formatCurrency(trip.finalPrice)}</p>
                             </div>
                             <div>
-                                <p className="text-muted-foreground">Available seats</p>
+                                <p className="text-muted-foreground">{t('booking.availableSeats')}</p>
                                 <p className="font-medium">{trip.availableSeats}</p>
                             </div>
                         </div>
@@ -132,9 +140,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                 {/* Seat Selection */}
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Select Seats</CardTitle>
+                        <CardTitle className="text-lg">{t('booking.selectSeats')}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                            Choose {passengers} seat{passengers > 1 ? 's' : ''} for your trip
+                            {t('booking.selectSeatsHint', { count: passengers })}
                         </p>
                     </CardHeader>
                     <CardContent>
@@ -167,7 +175,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                         })}
                                     </div>
                                     <FormDescription>
-                                        Selected: {selectedSeats.length}/{passengers}
+                                        {t('booking.selected', { current: selectedSeats.length, total: passengers })}
                                         {selectedSeats.length > 0 && (
                                             <span className="ml-2">
                                                 ({selectedSeats.map((s) => (
@@ -188,7 +196,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                 {/* Guest Info */}
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Contact Information</CardTitle>
+                        <CardTitle className="text-lg">{t('booking.contactInfo')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <FormField
@@ -196,9 +204,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             name="guestInfo.name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Full Name *</FormLabel>
+                                    <FormLabel>{t('booking.fullName')}</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="Nguyen Van A" {...field} />
+                                        <Input placeholder={t('booking.namePlaceholder')} {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -210,9 +218,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 name="guestInfo.phone"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Phone *</FormLabel>
+                                        <FormLabel>{t('booking.phone')}</FormLabel>
                                         <FormControl>
-                                            <Input placeholder="0901234567" {...field} />
+                                            <Input placeholder={t('booking.phonePlaceholder')} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -223,9 +231,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 name="guestInfo.email"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Email</FormLabel>
+                                        <FormLabel>{t('booking.email')}</FormLabel>
                                         <FormControl>
-                                            <Input type="email" placeholder="email@example.com" {...field} />
+                                            <Input type="email" placeholder={t('booking.emailPlaceholder')} {...field} />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -238,7 +246,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                 {/* Pickup & Dropoff */}
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Pickup & Dropoff</CardTitle>
+                        <CardTitle className="text-lg">{t('booking.pickupDropoff')}</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <FormField
@@ -246,10 +254,27 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             name="pickupInfo.name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Pickup Point *</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g. Ben Xe Mien Dong" {...field} />
-                                    </FormControl>
+                                    <FormLabel>{t('booking.pickupPoint')}</FormLabel>
+                                    {pickupPoints.length > 0 ? (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={t('booking.pickupPlaceholder')} />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {pickupPoints.map((p) => (
+                                                    <SelectItem key={p.name} value={p.name}>
+                                                        {p.name} {p.time ? `(${p.time})` : ''} {p.surcharge > 0 ? `+${formatCurrency(p.surcharge)}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <FormControl>
+                                            <Input placeholder={t('booking.pickupPlaceholder')} {...field} />
+                                        </FormControl>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -259,10 +284,27 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             name="dropoffInfo.name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Dropoff Point *</FormLabel>
-                                    <FormControl>
-                                        <Input placeholder="e.g. Ben Xe Da Lat" {...field} />
-                                    </FormControl>
+                                    <FormLabel>{t('booking.dropoffPoint')}</FormLabel>
+                                    {dropoffPoints.length > 0 ? (
+                                        <Select onValueChange={field.onChange} value={field.value}>
+                                            <FormControl>
+                                                <SelectTrigger>
+                                                    <SelectValue placeholder={t('booking.dropoffPlaceholder')} />
+                                                </SelectTrigger>
+                                            </FormControl>
+                                            <SelectContent>
+                                                {dropoffPoints.map((p) => (
+                                                    <SelectItem key={p.name} value={p.name}>
+                                                        {p.name} {p.time ? `(${p.time})` : ''} {p.surcharge > 0 ? `+${formatCurrency(p.surcharge)}` : ''}
+                                                    </SelectItem>
+                                                ))}
+                                            </SelectContent>
+                                        </Select>
+                                    ) : (
+                                        <FormControl>
+                                            <Input placeholder={t('booking.dropoffPlaceholder')} {...field} />
+                                        </FormControl>
+                                    )}
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -273,7 +315,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                 {/* Payment Method */}
                 <Card>
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-lg">Payment Method</CardTitle>
+                        <CardTitle className="text-lg">{t('booking.paymentMethod')}</CardTitle>
                     </CardHeader>
                     <CardContent>
                         <FormField
@@ -284,13 +326,13 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select payment method..." />
+                                                <SelectValue placeholder={t('booking.selectPayment')} />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="cod">Cash on Delivery (COD)</SelectItem>
-                                            <SelectItem value="vnpay">VNPay</SelectItem>
-                                            <SelectItem value="momo">MoMo</SelectItem>
+                                            <SelectItem value="cod">{t('booking.cod')}</SelectItem>
+                                            <SelectItem value="vnpay">{t('booking.vnpay')}</SelectItem>
+                                            <SelectItem value="momo">{t('booking.momo')}</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -307,12 +349,12 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                     <CardContent className="p-5">
                         <div className="flex items-center justify-between mb-4">
                             <div>
-                                <p className="text-sm text-muted-foreground">Total Amount</p>
+                                <p className="text-sm text-muted-foreground">{t('booking.totalAmount')}</p>
                                 <p className="text-3xl font-bold text-primary">
                                     {formatCurrency(totalAmount)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {selectedSeats.length} seat{selectedSeats.length !== 1 ? 's' : ''} × {formatCurrency(trip.finalPrice)}
+                                    {selectedSeats.length} {t('field.seats').toLowerCase()} × {formatCurrency(trip.finalPrice)}
                                 </p>
                             </div>
                             <Button
@@ -324,10 +366,10 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 {createBooking.isPending ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Booking...
+                                        {t('booking.booking')}
                                     </>
                                 ) : (
-                                    'Confirm Booking'
+                                    t('booking.confirmBooking')
                                 )}
                             </Button>
                         </div>

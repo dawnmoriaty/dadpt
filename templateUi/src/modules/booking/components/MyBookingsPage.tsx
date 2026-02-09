@@ -7,6 +7,7 @@ import {
     Ticket,
 } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
@@ -17,13 +18,6 @@ import { Card, CardContent } from '@/components/ui/card'
 import { useCancelBooking, useMyBookings } from '../hooks'
 import type { Booking, BookingStatus } from '../types'
 
-const statusConfig: Record<BookingStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
-    pending: { label: 'Pending Payment', variant: 'outline' },
-    paid: { label: 'Paid', variant: 'default' },
-    cancelled: { label: 'Cancelled', variant: 'destructive' },
-    expired: { label: 'Expired', variant: 'secondary' },
-}
-
 function formatCurrency(amount: number) {
     return new Intl.NumberFormat('vi-VN', {
         style: 'currency',
@@ -32,17 +26,25 @@ function formatCurrency(amount: number) {
 }
 
 function BookingStatusBadge({ status }: { status: BookingStatus }) {
+    const { t } = useTranslation()
+    const statusConfig: Record<BookingStatus, { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline' }> = {
+        pending: { label: t('myBookings.status.pending'), variant: 'outline' },
+        paid: { label: t('myBookings.status.paid'), variant: 'default' },
+        cancelled: { label: t('myBookings.status.cancelled'), variant: 'destructive' },
+        expired: { label: t('myBookings.status.expired'), variant: 'secondary' },
+    }
     const config = statusConfig[status] ?? { label: status, variant: 'secondary' as const }
     return <Badge variant={config.variant}>{config.label}</Badge>
 }
 
 function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: number) => void }) {
     const [showCancel, setShowCancel] = useState(false)
+    const { t } = useTranslation()
     const canCancel = booking.status === 'pending'
 
     const copyCode = () => {
         navigator.clipboard.writeText(booking.code)
-        toast.success('Booking code copied!')
+        toast.success(t('myBookings.codeCopied'))
     }
 
     return (
@@ -57,7 +59,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
                                 <button
                                     onClick={copyCode}
                                     className="flex items-center gap-1.5 font-mono font-bold text-base hover:text-primary transition-colors"
-                                    title="Click to copy"
+                                    title={t('myBookings.clickToCopy')}
                                 >
                                     <Ticket className="h-4 w-4" />
                                     {booking.code}
@@ -86,7 +88,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
 
                             {/* Seats */}
                             <div className="flex items-center gap-2 flex-wrap">
-                                <span className="text-sm text-muted-foreground">Seats:</span>
+                                <span className="text-sm text-muted-foreground">{t('myBookings.seats')}:</span>
                                 {booking.seatCodes.map((seat) => (
                                     <Badge key={seat} variant="secondary" className="text-xs">
                                         {seat}
@@ -120,7 +122,7 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
                                     className="text-destructive hover:text-destructive"
                                     onClick={() => setShowCancel(true)}
                                 >
-                                    Cancel
+                                    {t('myBookings.cancelBooking')}
                                 </Button>
                             )}
                         </div>
@@ -131,9 +133,9 @@ function BookingCard({ booking, onCancel }: { booking: Booking; onCancel: (id: n
             <ConfirmDialog
                 open={showCancel}
                 onOpenChange={setShowCancel}
-                title="Cancel Booking"
-                description={`Are you sure you want to cancel booking ${booking.code}? This action cannot be undone.`}
-                confirmLabel="Cancel Booking"
+                title={t('myBookings.cancelBooking')}
+                description={t('myBookings.cancelConfirm', { code: booking.code })}
+                confirmLabel={t('myBookings.cancelBooking')}
                 onConfirm={() => {
                     onCancel(booking.id)
                     setShowCancel(false)
@@ -147,6 +149,7 @@ export function MyBookingsPage() {
     const [page, setPage] = useState(1)
     const { data, isLoading } = useMyBookings(page)
     const cancelBooking = useCancelBooking()
+    const { t } = useTranslation()
 
     const bookings = data?.items ?? []
     const total = data?.total ?? 0
@@ -155,9 +158,9 @@ export function MyBookingsPage() {
         <div className="container max-w-4xl mx-auto py-8 px-4">
             <div className="flex items-center justify-between mb-6">
                 <div>
-                    <h1 className="text-2xl font-bold">My Bookings</h1>
+                    <h1 className="text-2xl font-bold">{t('myBookings.title')}</h1>
                     <p className="text-muted-foreground">
-                        {total > 0 ? `${total} booking${total > 1 ? 's' : ''} found` : 'No bookings yet'}
+                        {total > 0 ? t('myBookings.found', { count: total }) : t('myBookings.noBookings')}
                     </p>
                 </div>
             </div>
@@ -176,9 +179,9 @@ export function MyBookingsPage() {
                 <Card>
                     <CardContent className="flex flex-col items-center justify-center py-16 text-center">
                         <Ticket className="h-12 w-12 text-muted-foreground/50 mb-4" />
-                        <h3 className="text-lg font-semibold mb-1">No bookings yet</h3>
+                        <h3 className="text-lg font-semibold mb-1">{t('myBookings.noBookings')}</h3>
                         <p className="text-muted-foreground">
-                            Search for trips and book your first ride!
+                            {t('myBookings.noBookingsHint')}
                         </p>
                     </CardContent>
                 </Card>
@@ -201,10 +204,10 @@ export function MyBookingsPage() {
                                 disabled={page <= 1}
                                 onClick={() => setPage((p) => p - 1)}
                             >
-                                Previous
+                                {t('myBookings.previous')}
                             </Button>
                             <span className="flex items-center px-3 text-sm text-muted-foreground">
-                                Page {page}
+                                {t('myBookings.page', { page })}
                             </span>
                             <Button
                                 variant="outline"
@@ -212,7 +215,7 @@ export function MyBookingsPage() {
                                 disabled={bookings.length < 20}
                                 onClick={() => setPage((p) => p + 1)}
                             >
-                                Next
+                                {t('myBookings.next')}
                             </Button>
                         </div>
                     )}
