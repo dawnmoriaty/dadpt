@@ -5,7 +5,7 @@ import (
 
 	"backend/db"
 	"backend/internals/bus/domain"
-	"backend/pkgs/typeconv"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 )
 
@@ -39,7 +39,7 @@ func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 		BusTypeID:    bus.BusTypeID,
 		LicensePlate: bus.LicensePlate,
 		Status:       &status,
-		ImageUrl:     typeconv.StringToPtr(bus.ImageURL),
+		ImageUrl:     utils.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
 		return nil, err
@@ -102,7 +102,7 @@ func (r *busRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (
 		BusTypeID:    bus.BusTypeID,
 		LicensePlate: bus.LicensePlate,
 		Status:       &bus.Status,
-		ImageUrl:     typeconv.StringToPtr(bus.ImageURL),
+		ImageUrl:     utils.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
 		return nil, err
@@ -131,8 +131,8 @@ func (r *busRepository) basicToDomain(m *models.Bus) *domain.Bus {
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       typeconv.PtrToString(m.Status),
-		ImageURL:     typeconv.PtrToString(m.ImageUrl),
+		Status:       utils.PtrToString(m.Status),
+		ImageURL:     utils.PtrToString(m.ImageUrl),
 	}
 }
 
@@ -142,8 +142,8 @@ func (r *busRepository) joinedToDomain(m *models.GetBusByIDRow) *domain.Bus {
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       typeconv.PtrToString(m.Status),
-		ImageURL:     typeconv.PtrToString(m.ImageUrl),
+		Status:       utils.PtrToString(m.Status),
+		ImageURL:     utils.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,
@@ -156,8 +156,8 @@ func (r *busRepository) listRowToDomain(m *models.ListBusesRow) *domain.Bus {
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       typeconv.PtrToString(m.Status),
-		ImageURL:     typeconv.PtrToString(m.ImageUrl),
+		Status:       utils.PtrToString(m.Status),
+		ImageURL:     utils.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,
@@ -170,8 +170,8 @@ func (r *busRepository) providerRowToDomain(m *models.ListBusesByProviderRow) *d
 		ProviderID:   m.ProviderID,
 		BusTypeID:    m.BusTypeID,
 		LicensePlate: m.LicensePlate,
-		Status:       typeconv.PtrToString(m.Status),
-		ImageURL:     typeconv.PtrToString(m.ImageUrl),
+		Status:       utils.PtrToString(m.Status),
+		ImageURL:     utils.PtrToString(m.ImageUrl),
 		BusTypeName:  m.BusTypeName,
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,

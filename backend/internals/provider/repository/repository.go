@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"backend/db"
-	"backend/internals/providers/domain"
-	"backend/pkgs/typeconv"
+	"backend/internals/provider/domain"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 )
 
@@ -28,21 +28,19 @@ func sqlcToEntity(m models.Provider) *domain.Provider {
 	return &domain.Provider{
 		ID:           m.ID,
 		Name:         m.Name,
-		Hotline:      typeconv.PtrToString(m.Hotline),
-		Slug:         typeconv.PtrToString(m.Slug),
-		PolicyRefund: typeconv.PtrToString(m.PolicyRefund),
-		IsActive:     typeconv.PtrToBool(m.IsActive),
+		Hotline:      utils.PtrToString(m.Hotline),
+		Slug:         utils.PtrToString(m.Slug),
+		PolicyRefund: utils.PtrToString(m.PolicyRefund),
+		IsActive:     utils.PtrToBool(m.IsActive),
 	}
 }
-
-// Repository implementations
 
 func (r *providerRepository) Create(ctx context.Context, p *domain.Provider) (*domain.Provider, error) {
 	result, err := r.queries.CreateProvider(ctx, models.CreateProviderParams{
 		Name:         p.Name,
-		Hotline:      typeconv.StringToPtr(p.Hotline),
-		Slug:         typeconv.StringToPtr(p.Slug),
-		PolicyRefund: typeconv.StringToPtr(p.PolicyRefund),
+		Hotline:      utils.StringToPtr(p.Hotline),
+		Slug:         utils.StringToPtr(p.Slug),
+		PolicyRefund: utils.StringToPtr(p.PolicyRefund),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create provider: %w", err)
@@ -70,9 +68,9 @@ func (r *providerRepository) Update(ctx context.Context, p *domain.Provider) (*d
 	result, err := r.queries.UpdateProvider(ctx, models.UpdateProviderParams{
 		ID:           p.ID,
 		Name:         p.Name,
-		Hotline:      typeconv.StringToPtr(p.Hotline),
-		Slug:         typeconv.StringToPtr(p.Slug),
-		PolicyRefund: typeconv.StringToPtr(p.PolicyRefund),
+		Hotline:      utils.StringToPtr(p.Hotline),
+		Slug:         utils.StringToPtr(p.Slug),
+		PolicyRefund: utils.StringToPtr(p.PolicyRefund),
 	})
 	if err != nil {
 		return nil, domain.ErrProviderNotFound

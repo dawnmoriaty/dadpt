@@ -24,6 +24,7 @@ var (
 	ErrTripPriceInvalid        = errors.New("trip price invalid")
 	ErrTripCannotModify        = errors.New("trip cannot modify")
 	ErrTripCannotDelete        = errors.New("trip cannot delete")
+	ErrTripHasActiveBookings   = errors.New("trip has active bookings")
 )
 
 // =============================================================================

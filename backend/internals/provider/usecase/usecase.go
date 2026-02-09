@@ -3,11 +3,10 @@ package usecase
 import (
 	"context"
 
-	"backend/internals/providers/domain"
+	"backend/internals/provider/domain"
 	"backend/pkgs/paging"
 )
 
-// IProviderUseCase defines the interface for provider use case
 type IProviderUseCase interface {
 	Create(ctx context.Context, input *domain.CreateProviderInput) (*domain.Provider, error)
 	GetByID(ctx context.Context, id int32) (*domain.Provider, error)

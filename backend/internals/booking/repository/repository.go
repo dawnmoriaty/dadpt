@@ -8,7 +8,7 @@ import (
 
 	"backend/db"
 	"backend/internals/booking/domain"
-	"backend/pkgs/typeconv"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 
 	"github.com/jackc/pgx/v5"
@@ -41,9 +41,9 @@ func sqlcToEntity(m models.Booking) *domain.Booking {
 		PickupInfo:    jsonToPointInfo(m.PickupInfo),
 		DropoffInfo:   jsonToPointInfo(m.DropoffInfo),
 		SeatCodes:     m.SeatCodes,
-		TotalAmount:   typeconv.NumericToFloat64(m.TotalAmount),
-		Status:        domain.BookingStatus(typeconv.PtrToString(m.Status)),
-		PaymentMethod: typeconv.PtrToString(m.PaymentMethod),
+		TotalAmount:   utils.NumericToFloat64(m.TotalAmount),
+		Status:        domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod: utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:     m.ExpiresAt.Time,
 		CreatedAt:     m.CreatedAt.Time,
 		UpdatedAt:     m.UpdatedAt.Time,
@@ -60,9 +60,9 @@ func listRowToEntity(m models.ListBookingsByUserRow) *domain.Booking {
 		PickupInfo:      jsonToPointInfo(m.PickupInfo),
 		DropoffInfo:     jsonToPointInfo(m.DropoffInfo),
 		SeatCodes:       m.SeatCodes,
-		TotalAmount:     typeconv.NumericToFloat64(m.TotalAmount),
-		Status:          domain.BookingStatus(typeconv.PtrToString(m.Status)),
-		PaymentMethod:   typeconv.PtrToString(m.PaymentMethod),
+		TotalAmount:     utils.NumericToFloat64(m.TotalAmount),
+		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:       m.ExpiresAt.Time,
 		CreatedAt:       m.CreatedAt.Time,
 		UpdatedAt:       m.UpdatedAt.Time,
@@ -108,9 +108,9 @@ func (r *bookingRepository) Create(ctx context.Context, booking *domain.Booking)
 		PickupInfo:    pointInfoToJSON(booking.PickupInfo),
 		DropoffInfo:   pointInfoToJSON(booking.DropoffInfo),
 		SeatCodes:     booking.SeatCodes,
-		TotalAmount:   typeconv.Float64ToNumeric(booking.TotalAmount),
-		PaymentMethod: typeconv.StringToPtr(booking.PaymentMethod),
-		ExpiresAt:     typeconv.TimeToTimestamptz(booking.ExpiresAt),
+		TotalAmount:   utils.Float64ToNumeric(booking.TotalAmount),
+		PaymentMethod: utils.StringToPtr(booking.PaymentMethod),
+		ExpiresAt:     utils.TimeToTimestamptz(booking.ExpiresAt),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating booking: %w", err)

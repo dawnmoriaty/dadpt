@@ -7,7 +7,7 @@ import (
 
 	"backend/db"
 	"backend/internals/booking/domain"
-	"backend/pkgs/typeconv"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 )
 
@@ -39,7 +39,7 @@ func (t *tripLocker) LockTrip(ctx context.Context, tripID int64) (*domain.TripSn
 	}
 
 	// Check if trip is bookable
-	if typeconv.PtrToString(trip.Status) != "scheduled" {
+	if utils.PtrToString(trip.Status) != "scheduled" {
 		return nil, domain.ErrTripNotBookable
 	}
 
@@ -48,10 +48,10 @@ func (t *tripLocker) LockTrip(ctx context.Context, tripID int64) (*domain.TripSn
 		ProviderID:     trip.ProviderID,
 		BookedSeats:    trip.BookedSeats,
 		AvailableSeats: trip.AvailableSeats,
-		BasePrice:      typeconv.NumericToFloat64(trip.BasePrice),
-		PriceModifier:  typeconv.NumericToFloat64(trip.PriceModifier),
-		Version:        typeconv.PtrToInt32(trip.Version),
-		Status:         typeconv.PtrToString(trip.Status),
+		BasePrice:      utils.NumericToFloat64(trip.BasePrice),
+		PriceModifier:  utils.NumericToFloat64(trip.PriceModifier),
+		Version:        utils.PtrToInt32(trip.Version),
+		Status:         utils.PtrToString(trip.Status),
 	}, nil
 }
 

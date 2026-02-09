@@ -5,8 +5,8 @@ import (
 	"fmt"
 
 	"backend/db"
-	"backend/internals/locations/domain"
-	"backend/pkgs/typeconv"
+	"backend/internals/location/domain"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 )
 
@@ -30,8 +30,8 @@ func sqlcToEntity(m models.Location) *domain.Location {
 		ID:       m.ID,
 		Name:     m.Name,
 		City:     m.City,
-		Address:  typeconv.PtrToString(m.Address),
-		Keywords: typeconv.PtrToString(m.Keywords),
+		Address:  utils.PtrToString(m.Address),
+		Keywords: utils.PtrToString(m.Keywords),
 	}
 }
 
@@ -41,8 +41,8 @@ func (r *locationRepository) Create(ctx context.Context, loc *domain.Location) (
 	result, err := r.queries.CreateLocation(ctx, models.CreateLocationParams{
 		Name:     loc.Name,
 		City:     loc.City,
-		Address:  typeconv.StringToPtr(loc.Address),
-		Keywords: typeconv.StringToPtr(loc.Keywords),
+		Address:  utils.StringToPtr(loc.Address),
+		Keywords: utils.StringToPtr(loc.Keywords),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create location: %w", err)
@@ -63,8 +63,8 @@ func (r *locationRepository) Update(ctx context.Context, loc *domain.Location) (
 		ID:       loc.ID,
 		Name:     loc.Name,
 		City:     loc.City,
-		Address:  typeconv.StringToPtr(loc.Address),
-		Keywords: typeconv.StringToPtr(loc.Keywords),
+		Address:  utils.StringToPtr(loc.Address),
+		Keywords: utils.StringToPtr(loc.Keywords),
 	})
 	if err != nil {
 		return nil, domain.ErrLocationNotFound

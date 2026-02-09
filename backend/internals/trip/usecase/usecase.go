@@ -134,6 +134,15 @@ func (uc *tripUseCase) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
+	// Safety check: refuse if trip has pending/paid bookings
+	activeCount, err := uc.repo.CountActiveBookings(ctx, id)
+	if err != nil {
+		return fmt.Errorf("checking active bookings: %w", err)
+	}
+	if activeCount > 0 {
+		return domain.ErrTripHasActiveBookings
+	}
+
 	return uc.repo.Delete(ctx, id)
 }
 

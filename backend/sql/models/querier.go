@@ -12,6 +12,7 @@ import (
 
 type Querier interface {
 	BusExistsByLicensePlate(ctx context.Context, licensePlate string) (bool, error)
+	CountActiveBookingsByTripID(ctx context.Context, tripID int64) (int64, error)
 	CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error)
 	CountBusTypes(ctx context.Context) (int64, error)
 	CountBuses(ctx context.Context) (int64, error)
@@ -45,7 +46,7 @@ type Querier interface {
 	GetPendingOutboxEvents(ctx context.Context, limit int32) ([]OutboxEvent, error)
 	GetProviderByID(ctx context.Context, id int32) (Provider, error)
 	GetProviderBySlug(ctx context.Context, slug *string) (Provider, error)
-	GetTripByID(ctx context.Context, id int64) (Trip, error)
+	GetTripByID(ctx context.Context, id int64) (GetTripByIDRow, error)
 	GetUserByEmail(ctx context.Context, email *string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
 	GetUserByIdentifier(ctx context.Context, phone string) (User, error)

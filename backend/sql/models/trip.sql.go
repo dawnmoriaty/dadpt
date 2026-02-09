@@ -12,27 +12,40 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countActiveBookingsByTripID = `-- name: CountActiveBookingsByTripID :one
+SELECT COUNT(*) FROM bookings
+WHERE trip_id = $1
+  AND status IN ('pending', 'paid')
+`
+
+func (q *Queries) CountActiveBookingsByTripID(ctx context.Context, tripID int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countActiveBookingsByTripID, tripID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countSearchTrips = `-- name: CountSearchTrips :one
 SELECT COUNT(*) FROM trips
 WHERE origin_id = $1
   AND destination_id = $2
-  AND DATE(departure_time) = $3
+  AND DATE(departure_time) = $3::date
   AND available_seats >= $4
   AND status = 'scheduled'
 `
 
 type CountSearchTripsParams struct {
-	OriginID       int32              `json:"originId"`
-	DestinationID  int32              `json:"destinationId"`
-	DepartureTime  pgtype.Timestamptz `json:"departureTime"`
-	AvailableSeats int32              `json:"availableSeats"`
+	OriginID       int32       `json:"originId"`
+	DestinationID  int32       `json:"destinationId"`
+	Column3        pgtype.Date `json:"column3"`
+	AvailableSeats int32       `json:"availableSeats"`
 }
 
 func (q *Queries) CountSearchTrips(ctx context.Context, arg CountSearchTripsParams) (int64, error) {
 	row := q.db.QueryRow(ctx, countSearchTrips,
 		arg.OriginID,
 		arg.DestinationID,
-		arg.DepartureTime,
+		arg.Column3,
 		arg.AvailableSeats,
 	)
 	var count int64
@@ -131,12 +144,45 @@ func (q *Queries) DeleteTrip(ctx context.Context, id int64) error {
 }
 
 const getTripByID = `-- name: GetTripByID :one
-SELECT id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version FROM trips WHERE id = $1
+SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, t.version,
+       p.name as provider_name,
+       o.name as origin_name, o.city as origin_city,
+       d.name as destination_name, d.city as destination_city
+FROM trips t
+JOIN providers p ON t.provider_id = p.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE t.id = $1
 `
 
-func (q *Queries) GetTripByID(ctx context.Context, id int64) (Trip, error) {
+type GetTripByIDRow struct {
+	ID              int64              `json:"id"`
+	ProviderID      int32              `json:"providerId"`
+	BusID           int32              `json:"busId"`
+	OriginID        int32              `json:"originId"`
+	DestinationID   int32              `json:"destinationId"`
+	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
+	BasePrice       pgtype.Numeric     `json:"basePrice"`
+	PriceModifier   pgtype.Numeric     `json:"priceModifier"`
+	IsHotDeal       *bool              `json:"isHotDeal"`
+	PickupPoints    json.RawMessage    `json:"pickupPoints"`
+	DropoffPoints   json.RawMessage    `json:"dropoffPoints"`
+	BookedSeats     []string           `json:"bookedSeats"`
+	AvailableSeats  int32              `json:"availableSeats"`
+	Status          *string            `json:"status"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	Version         *int32             `json:"version"`
+	ProviderName    string             `json:"providerName"`
+	OriginName      string             `json:"originName"`
+	OriginCity      string             `json:"originCity"`
+	DestinationName string             `json:"destinationName"`
+	DestinationCity string             `json:"destinationCity"`
+}
+
+func (q *Queries) GetTripByID(ctx context.Context, id int64) (GetTripByIDRow, error) {
 	row := q.db.QueryRow(ctx, getTripByID, id)
-	var i Trip
+	var i GetTripByIDRow
 	err := row.Scan(
 		&i.ID,
 		&i.ProviderID,
@@ -155,6 +201,11 @@ func (q *Queries) GetTripByID(ctx context.Context, id int64) (Trip, error) {
 		&i.Status,
 		&i.CreatedAt,
 		&i.Version,
+		&i.ProviderName,
+		&i.OriginName,
+		&i.OriginCity,
+		&i.DestinationName,
+		&i.DestinationCity,
 	)
 	return i, err
 }
@@ -265,7 +316,7 @@ JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
 WHERE t.origin_id = $1
   AND t.destination_id = $2
-  AND DATE(t.departure_time) = $3
+  AND DATE(t.departure_time) = $3::date
   AND t.available_seats >= $4
   AND t.status = 'scheduled'
 ORDER BY t.departure_time
@@ -273,12 +324,12 @@ LIMIT $5 OFFSET $6
 `
 
 type SearchTripsParams struct {
-	OriginID       int32              `json:"originId"`
-	DestinationID  int32              `json:"destinationId"`
-	DepartureTime  pgtype.Timestamptz `json:"departureTime"`
-	AvailableSeats int32              `json:"availableSeats"`
-	Limit          int32              `json:"limit"`
-	Offset         int32              `json:"offset"`
+	OriginID       int32       `json:"originId"`
+	DestinationID  int32       `json:"destinationId"`
+	Column3        pgtype.Date `json:"column3"`
+	AvailableSeats int32       `json:"availableSeats"`
+	Limit          int32       `json:"limit"`
+	Offset         int32       `json:"offset"`
 }
 
 type SearchTripsRow struct {
@@ -310,7 +361,7 @@ func (q *Queries) SearchTrips(ctx context.Context, arg SearchTripsParams) ([]Sea
 	rows, err := q.db.Query(ctx, searchTrips,
 		arg.OriginID,
 		arg.DestinationID,
-		arg.DepartureTime,
+		arg.Column3,
 		arg.AvailableSeats,
 		arg.Limit,
 		arg.Offset,
@@ -364,20 +415,22 @@ UPDATE trips SET
     price_modifier = COALESCE($5, price_modifier),
     is_hot_deal = COALESCE($6, is_hot_deal),
     pickup_points = COALESCE($7, pickup_points),
-    dropoff_points = COALESCE($8, dropoff_points)
+    dropoff_points = COALESCE($8, dropoff_points),
+    available_seats = COALESCE($9, available_seats)
 WHERE id = $1
 RETURNING id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version
 `
 
 type UpdateTripParams struct {
-	ID            int64              `json:"id"`
-	DepartureTime pgtype.Timestamptz `json:"departureTime"`
-	ArrivalTime   pgtype.Timestamptz `json:"arrivalTime"`
-	BasePrice     pgtype.Numeric     `json:"basePrice"`
-	PriceModifier pgtype.Numeric     `json:"priceModifier"`
-	IsHotDeal     *bool              `json:"isHotDeal"`
-	PickupPoints  json.RawMessage    `json:"pickupPoints"`
-	DropoffPoints json.RawMessage    `json:"dropoffPoints"`
+	ID             int64              `json:"id"`
+	DepartureTime  pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime    pgtype.Timestamptz `json:"arrivalTime"`
+	BasePrice      pgtype.Numeric     `json:"basePrice"`
+	PriceModifier  pgtype.Numeric     `json:"priceModifier"`
+	IsHotDeal      *bool              `json:"isHotDeal"`
+	PickupPoints   json.RawMessage    `json:"pickupPoints"`
+	DropoffPoints  json.RawMessage    `json:"dropoffPoints"`
+	AvailableSeats int32              `json:"availableSeats"`
 }
 
 func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error) {
@@ -390,6 +443,7 @@ func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, e
 		arg.IsHotDeal,
 		arg.PickupPoints,
 		arg.DropoffPoints,
+		arg.AvailableSeats,
 	)
 	var i Trip
 	err := row.Scan(

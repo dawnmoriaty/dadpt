@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internals/providers/domain"
+import "backend/internals/provider/domain"
 
 type CreateProviderRequest struct {
 	Name         string `json:"name" binding:"required"`

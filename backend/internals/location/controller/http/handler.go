@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strconv"
 
-	"backend/internals/locations/controller/dto"
-	"backend/internals/locations/domain"
-	"backend/internals/locations/usecase"
+	"backend/internals/location/controller/dto"
+	"backend/internals/location/domain"
+	"backend/internals/location/usecase"
 	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/paging"
 	"backend/pkgs/response"

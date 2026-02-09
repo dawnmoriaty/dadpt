@@ -2,8 +2,8 @@ package http
 
 import (
 	"backend/db"
-	"backend/internals/providers/repository"
-	"backend/internals/providers/usecase"
+	"backend/internals/provider/repository"
+	"backend/internals/provider/usecase"
 
 	"github.com/gin-gonic/gin"
 )

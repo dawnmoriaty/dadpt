@@ -1,16 +1,12 @@
-package datetime
+package utils
 
 import (
 	"strings"
 	"time"
 )
 
-// FlexibleTime is a custom type that can parse multiple datetime formats
-// It supports formats like:
-// - RFC3339: "2006-01-02T15:04:05Z07:00"
-// - Without timezone: "2006-01-02T15:04:05"
-// - Without seconds: "2006-01-02T15:04"
-// - Date only: "2006-01-02"
+// FlexibleTime is a custom JSON time type that parses multiple datetime
+// formats (RFC3339, ISO-8601, date-only, etc.).
 type FlexibleTime struct {
 	time.Time
 }
@@ -27,38 +23,34 @@ var supportedFormats = []string{
 }
 
 func (ft *FlexibleTime) UnmarshalJSON(data []byte) error {
-	// Remove quotes
 	s := strings.Trim(string(data), "\"")
 	if s == "" || s == "null" {
 		return nil
 	}
 
-	var parseErr error
+	var lastErr error
 	for _, format := range supportedFormats {
 		t, err := time.Parse(format, s)
 		if err == nil {
 			ft.Time = t
 			return nil
 		}
-		parseErr = err
+		lastErr = err
 	}
-
-	return parseErr
+	return lastErr
 }
 
 func (ft FlexibleTime) MarshalJSON() ([]byte, error) {
 	if ft.Time.IsZero() {
 		return []byte("null"), nil
 	}
-	return []byte("\"" + ft.Time.Format(time.RFC3339) + "\""), nil
+	return []byte(`"` + ft.Time.Format(time.RFC3339) + `"`), nil
 }
 
-// ToTime converts FlexibleTime to standard time.Time
-func (ft FlexibleTime) ToTime() time.Time {
-	return ft.Time
-}
+// ToTime returns the underlying time.Time.
+func (ft FlexibleTime) ToTime() time.Time { return ft.Time }
 
-// ToTimePtr converts FlexibleTime to *time.Time
+// ToTimePtr returns a *time.Time, or nil when zero.
 func (ft *FlexibleTime) ToTimePtr() *time.Time {
 	if ft == nil || ft.Time.IsZero() {
 		return nil

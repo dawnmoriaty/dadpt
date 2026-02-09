@@ -1,6 +1,6 @@
 package dto
 
-import "backend/internals/locations/domain"
+import "backend/internals/location/domain"
 
 type CreateLocationRequest struct {
 	Name     string `json:"name" binding:"required"`

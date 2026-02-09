@@ -4,12 +4,8 @@ import (
 	"time"
 
 	"backend/internals/trip/domain"
-	"backend/pkgs/datetime"
+	"backend/pkgs/utils"
 )
-
-// =============================================================================
-// REQUESTS
-// =============================================================================
 
 type SearchTripsRequest struct {
 	OriginID      int    `form:"originId" binding:"required"`
@@ -21,25 +17,25 @@ type SearchTripsRequest struct {
 }
 
 type CreateTripRequest struct {
-	ProviderID     int                   `json:"providerId" binding:"required"`
-	BusID          int                   `json:"busId" binding:"required"`
-	OriginID       int                   `json:"originId" binding:"required"`
-	DestinationID  int                   `json:"destinationId" binding:"required"`
-	DepartureTime  datetime.FlexibleTime `json:"departureTime" binding:"required"`
-	ArrivalTime    datetime.FlexibleTime `json:"arrivalTime" binding:"required"`
-	BasePrice      float64               `json:"basePrice" binding:"required"`
-	AvailableSeats int                   `json:"availableSeats" binding:"required"`
-	PickupPoints   []PointDTO            `json:"pickupPoints"`
-	DropoffPoints  []PointDTO            `json:"dropoffPoints"`
+	ProviderID     int                `json:"providerId" binding:"required"`
+	BusID          int                `json:"busId" binding:"required"`
+	OriginID       int                `json:"originId" binding:"required"`
+	DestinationID  int                `json:"destinationId" binding:"required"`
+	DepartureTime  utils.FlexibleTime `json:"departureTime" binding:"required"`
+	ArrivalTime    utils.FlexibleTime `json:"arrivalTime" binding:"required"`
+	BasePrice      float64            `json:"basePrice" binding:"required"`
+	AvailableSeats int                `json:"availableSeats" binding:"required"`
+	PickupPoints   []PointDTO         `json:"pickupPoints"`
+	DropoffPoints  []PointDTO         `json:"dropoffPoints"`
 }
 
 type UpdateTripRequest struct {
-	DepartureTime *datetime.FlexibleTime `json:"departureTime"`
-	ArrivalTime   *datetime.FlexibleTime `json:"arrivalTime"`
-	BasePrice     *float64               `json:"basePrice"`
-	IsHotDeal     *bool                  `json:"isHotDeal"`
-	PickupPoints  []PointDTO             `json:"pickupPoints"`
-	DropoffPoints []PointDTO             `json:"dropoffPoints"`
+	DepartureTime *utils.FlexibleTime `json:"departureTime"`
+	ArrivalTime   *utils.FlexibleTime `json:"arrivalTime"`
+	BasePrice     *float64            `json:"basePrice"`
+	IsHotDeal     *bool               `json:"isHotDeal"`
+	PickupPoints  []PointDTO          `json:"pickupPoints"`
+	DropoffPoints []PointDTO          `json:"dropoffPoints"`
 }
 
 type UpdateTripStatusRequest struct {
@@ -57,30 +53,25 @@ type PointDTO struct {
 	Surcharge float64 `json:"surcharge"`
 }
 
-// =============================================================================
-// RESPONSES
-// =============================================================================
-
 type TripResponse struct {
-	ID              int64     `json:"id"`
-	ProviderID      int       `json:"providerId"`
-	ProviderName    string    `json:"providerName,omitempty"`
-	OriginName      string    `json:"originName,omitempty"`
-	OriginCity      string    `json:"originCity,omitempty"`
-	DestinationName string    `json:"destinationName,omitempty"`
-	DestinationCity string    `json:"destinationCity,omitempty"`
-	DepartureTime   time.Time `json:"departureTime"`
-	ArrivalTime     time.Time `json:"arrivalTime"`
-	BasePrice       float64   `json:"basePrice"`
-	FinalPrice      float64   `json:"finalPrice"`
-	AvailableSeats  int       `json:"availableSeats"`
-	IsHotDeal       bool      `json:"isHotDeal"`
-	Status          string    `json:"status"`
+	ID              int64      `json:"id"`
+	ProviderID      int        `json:"providerId"`
+	ProviderName    string     `json:"providerName,omitempty"`
+	OriginName      string     `json:"originName,omitempty"`
+	OriginCity      string     `json:"originCity,omitempty"`
+	DestinationName string     `json:"destinationName,omitempty"`
+	DestinationCity string     `json:"destinationCity,omitempty"`
+	DepartureTime   time.Time  `json:"departureTime"`
+	ArrivalTime     time.Time  `json:"arrivalTime"`
+	BasePrice       float64    `json:"basePrice"`
+	FinalPrice      float64    `json:"finalPrice"`
+	AvailableSeats  int        `json:"availableSeats"`
+	IsHotDeal       bool       `json:"isHotDeal"`
+	Status          string     `json:"status"`
+	PickupPoints    []PointDTO `json:"pickupPoints"`
+	DropoffPoints   []PointDTO `json:"dropoffPoints"`
+	BookedSeats     []string   `json:"bookedSeats"`
 }
-
-// =============================================================================
-// MAPPERS - Request to Domain
-// =============================================================================
 
 func (r *CreateTripRequest) ToInput() *domain.CreateTripInput {
 	return &domain.CreateTripInput{
@@ -131,10 +122,6 @@ func (r *AdminTripListRequest) ToInput() *domain.AdminListInput {
 	}
 }
 
-// =============================================================================
-// MAPPERS - Domain to Response
-// =============================================================================
-
 func ToTripResponse(trip *domain.Trip) *TripResponse {
 	return &TripResponse{
 		ID:              trip.ID,
@@ -151,6 +138,9 @@ func ToTripResponse(trip *domain.Trip) *TripResponse {
 		AvailableSeats:  int(trip.AvailableSeats),
 		IsHotDeal:       trip.IsHotDeal,
 		Status:          trip.Status.String(),
+		PickupPoints:    pointsDomainToDTO(trip.PickupPoints),
+		DropoffPoints:   pointsDomainToDTO(trip.DropoffPoints),
+		BookedSeats:     trip.BookedSeats,
 	}
 }
 
@@ -162,10 +152,6 @@ func ToTripResponseList(trips []*domain.Trip) []TripResponse {
 	return items
 }
 
-// =============================================================================
-// HELPERS
-// =============================================================================
-
 func pointsDTOToDomain(points []PointDTO) []domain.Point {
 	if points == nil {
 		return nil
@@ -173,6 +159,21 @@ func pointsDTOToDomain(points []PointDTO) []domain.Point {
 	result := make([]domain.Point, len(points))
 	for i, p := range points {
 		result[i] = domain.Point{
+			Name:      p.Name,
+			Time:      p.Time,
+			Surcharge: p.Surcharge,
+		}
+	}
+	return result
+}
+
+func pointsDomainToDTO(points []domain.Point) []PointDTO {
+	if points == nil {
+		return []PointDTO{}
+	}
+	result := make([]PointDTO, len(points))
+	for i, p := range points {
+		result[i] = PointDTO{
 			Name:      p.Name,
 			Time:      p.Time,
 			Surcharge: p.Surcharge,

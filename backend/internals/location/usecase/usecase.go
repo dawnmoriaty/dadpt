@@ -3,11 +3,10 @@ package usecase
 import (
 	"context"
 
-	"backend/internals/locations/domain"
+	"backend/internals/location/domain"
 	"backend/pkgs/paging"
 )
 
-// ILocationUseCase defines the interface for location use case
 type ILocationUseCase interface {
 	Create(ctx context.Context, input *domain.CreateLocationInput) (*domain.Location, error)
 	GetByID(ctx context.Context, id int32) (*domain.Location, error)

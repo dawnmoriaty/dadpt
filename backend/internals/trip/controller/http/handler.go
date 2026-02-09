@@ -178,6 +178,8 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrTripCannotModify
 	case errors.Is(err, domain.ErrTripCannotDelete):
 		return pkgErrors.ErrTripCannotDelete
+	case errors.Is(err, domain.ErrTripHasActiveBookings):
+		return pkgErrors.ErrTripHasActiveBookings
 	case errors.Is(err, domain.ErrInvalidInput):
 		return pkgErrors.ErrInvalidInput
 	case errors.Is(err, domain.ErrTripNotFound):

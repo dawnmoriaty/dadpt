@@ -62,6 +62,7 @@ const (
 	ErrCodeTripPriceInvalid       ErrorCode = "TRIP_PRICE_INVALID"
 	ErrCodeTripCannotModify       ErrorCode = "TRIP_CANNOT_MODIFY"
 	ErrCodeTripCannotDelete       ErrorCode = "TRIP_CANNOT_DELETE"
+	ErrCodeTripHasActiveBookings  ErrorCode = "TRIP_HAS_ACTIVE_BOOKINGS"
 	ErrCodeInvalidInput           ErrorCode = "INVALID_INPUT"
 
 	// Provider
@@ -219,6 +220,7 @@ var (
 	ErrTripPriceInvalid       = NewAppError(http.StatusBadRequest, ErrCodeTripPriceInvalid)
 	ErrTripCannotModify       = NewAppError(http.StatusBadRequest, ErrCodeTripCannotModify)
 	ErrTripCannotDelete       = NewAppError(http.StatusBadRequest, ErrCodeTripCannotDelete)
+	ErrTripHasActiveBookings  = NewAppError(http.StatusConflict, ErrCodeTripHasActiveBookings)
 	ErrInvalidInput           = NewAppError(http.StatusBadRequest, ErrCodeInvalidInput)
 
 	// Provider

@@ -7,7 +7,7 @@ import (
 
 	"backend/db"
 	"backend/internals/trip/domain"
-	"backend/pkgs/typeconv"
+	"backend/pkgs/utils"
 	"backend/sql/models"
 )
 
@@ -34,15 +34,41 @@ func sqlcToEntity(m models.Trip) *domain.Trip {
 		DestinationID:  m.DestinationID,
 		DepartureTime:  m.DepartureTime.Time,
 		ArrivalTime:    m.ArrivalTime.Time,
-		BasePrice:      typeconv.NumericToFloat64(m.BasePrice),
-		PriceModifier:  typeconv.NumericToFloat64(m.PriceModifier),
-		IsHotDeal:      typeconv.PtrToBool(m.IsHotDeal),
+		BasePrice:      utils.NumericToFloat64(m.BasePrice),
+		PriceModifier:  utils.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:      utils.PtrToBool(m.IsHotDeal),
 		PickupPoints:   jsonToPoints(m.PickupPoints),
 		DropoffPoints:  jsonToPoints(m.DropoffPoints),
 		BookedSeats:    m.BookedSeats,
 		AvailableSeats: m.AvailableSeats,
-		Status:         domain.TripStatus(typeconv.PtrToString(m.Status)),
+		Status:         domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:      m.CreatedAt.Time,
+	}
+}
+
+func getByIDRowToEntity(m models.GetTripByIDRow) *domain.Trip {
+	return &domain.Trip{
+		ID:              m.ID,
+		ProviderID:      m.ProviderID,
+		BusID:           m.BusID,
+		OriginID:        m.OriginID,
+		DestinationID:   m.DestinationID,
+		DepartureTime:   m.DepartureTime.Time,
+		ArrivalTime:     m.ArrivalTime.Time,
+		BasePrice:       utils.NumericToFloat64(m.BasePrice),
+		PriceModifier:   utils.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       utils.PtrToBool(m.IsHotDeal),
+		PickupPoints:    jsonToPoints(m.PickupPoints),
+		DropoffPoints:   jsonToPoints(m.DropoffPoints),
+		BookedSeats:     m.BookedSeats,
+		AvailableSeats:  m.AvailableSeats,
+		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
+		CreatedAt:       m.CreatedAt.Time,
+		ProviderName:    m.ProviderName,
+		OriginName:      m.OriginName,
+		OriginCity:      m.OriginCity,
+		DestinationName: m.DestinationName,
+		DestinationCity: m.DestinationCity,
 	}
 }
 
@@ -55,14 +81,14 @@ func searchRowToEntity(m models.SearchTripsRow) *domain.Trip {
 		DestinationID:   m.DestinationID,
 		DepartureTime:   m.DepartureTime.Time,
 		ArrivalTime:     m.ArrivalTime.Time,
-		BasePrice:       typeconv.NumericToFloat64(m.BasePrice),
-		PriceModifier:   typeconv.NumericToFloat64(m.PriceModifier),
-		IsHotDeal:       typeconv.PtrToBool(m.IsHotDeal),
+		BasePrice:       utils.NumericToFloat64(m.BasePrice),
+		PriceModifier:   utils.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       utils.PtrToBool(m.IsHotDeal),
 		PickupPoints:    jsonToPoints(m.PickupPoints),
 		DropoffPoints:   jsonToPoints(m.DropoffPoints),
 		BookedSeats:     m.BookedSeats,
 		AvailableSeats:  m.AvailableSeats,
-		Status:          domain.TripStatus(typeconv.PtrToString(m.Status)),
+		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
 		OriginName:      m.OriginName,
@@ -81,14 +107,14 @@ func listAdminRowToEntity(m models.ListTripsAdminRow) *domain.Trip {
 		DestinationID:   m.DestinationID,
 		DepartureTime:   m.DepartureTime.Time,
 		ArrivalTime:     m.ArrivalTime.Time,
-		BasePrice:       typeconv.NumericToFloat64(m.BasePrice),
-		PriceModifier:   typeconv.NumericToFloat64(m.PriceModifier),
-		IsHotDeal:       typeconv.PtrToBool(m.IsHotDeal),
+		BasePrice:       utils.NumericToFloat64(m.BasePrice),
+		PriceModifier:   utils.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       utils.PtrToBool(m.IsHotDeal),
 		PickupPoints:    jsonToPoints(m.PickupPoints),
 		DropoffPoints:   jsonToPoints(m.DropoffPoints),
 		BookedSeats:     m.BookedSeats,
 		AvailableSeats:  m.AvailableSeats,
-		Status:          domain.TripStatus(typeconv.PtrToString(m.Status)),
+		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
 		OriginName:      m.OriginName,
@@ -124,11 +150,11 @@ func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) (*domain
 		BusID:          trip.BusID,
 		OriginID:       trip.OriginID,
 		DestinationID:  trip.DestinationID,
-		DepartureTime:  typeconv.TimeToTimestamptz(trip.DepartureTime),
-		ArrivalTime:    typeconv.TimeToTimestamptz(trip.ArrivalTime),
-		BasePrice:      typeconv.Float64ToNumeric(trip.BasePrice),
-		PriceModifier:  typeconv.Float64ToNumeric(trip.PriceModifier),
-		IsHotDeal:      typeconv.BoolToPtr(trip.IsHotDeal),
+		DepartureTime:  utils.TimeToTimestamptz(trip.DepartureTime),
+		ArrivalTime:    utils.TimeToTimestamptz(trip.ArrivalTime),
+		BasePrice:      utils.Float64ToNumeric(trip.BasePrice),
+		PriceModifier:  utils.Float64ToNumeric(trip.PriceModifier),
+		IsHotDeal:      utils.BoolToPtr(trip.IsHotDeal),
 		PickupPoints:   pointsToJSON(trip.PickupPoints),
 		DropoffPoints:  pointsToJSON(trip.DropoffPoints),
 		AvailableSeats: trip.AvailableSeats,
@@ -144,19 +170,20 @@ func (r *tripRepository) GetByID(ctx context.Context, id int64) (*domain.Trip, e
 	if err != nil {
 		return nil, domain.ErrTripNotFound
 	}
-	return sqlcToEntity(result), nil
+	return getByIDRowToEntity(result), nil
 }
 
 func (r *tripRepository) Update(ctx context.Context, trip *domain.Trip) (*domain.Trip, error) {
 	result, err := r.queries.UpdateTrip(ctx, models.UpdateTripParams{
-		ID:            trip.ID,
-		DepartureTime: typeconv.TimeToTimestamptz(trip.DepartureTime),
-		ArrivalTime:   typeconv.TimeToTimestamptz(trip.ArrivalTime),
-		BasePrice:     typeconv.Float64ToNumeric(trip.BasePrice),
-		PriceModifier: typeconv.Float64ToNumeric(trip.PriceModifier),
-		IsHotDeal:     typeconv.BoolToPtr(trip.IsHotDeal),
-		PickupPoints:  pointsToJSON(trip.PickupPoints),
-		DropoffPoints: pointsToJSON(trip.DropoffPoints),
+		ID:             trip.ID,
+		DepartureTime:  utils.TimeToTimestamptz(trip.DepartureTime),
+		ArrivalTime:    utils.TimeToTimestamptz(trip.ArrivalTime),
+		BasePrice:      utils.Float64ToNumeric(trip.BasePrice),
+		PriceModifier:  utils.Float64ToNumeric(trip.PriceModifier),
+		IsHotDeal:      utils.BoolToPtr(trip.IsHotDeal),
+		PickupPoints:   pointsToJSON(trip.PickupPoints),
+		DropoffPoints:  pointsToJSON(trip.DropoffPoints),
+		AvailableSeats: trip.AvailableSeats,
 	})
 	if err != nil {
 		return nil, domain.ErrTripNotFound
@@ -226,7 +253,7 @@ func (r *tripRepository) Search(ctx context.Context, filter *domain.TripFilter) 
 	rows, err := r.queries.SearchTrips(ctx, models.SearchTripsParams{
 		OriginID:       *filter.OriginID,
 		DestinationID:  *filter.DestinationID,
-		DepartureTime:  typeconv.TimeToTimestamptz(*filter.DepartureDate),
+		Column3:        utils.TimeToDate(*filter.DepartureDate),
 		AvailableSeats: filter.MinSeats,
 		Limit:          filter.Limit,
 		Offset:         filter.Offset,
@@ -238,7 +265,7 @@ func (r *tripRepository) Search(ctx context.Context, filter *domain.TripFilter) 
 	count, err := r.queries.CountSearchTrips(ctx, models.CountSearchTripsParams{
 		OriginID:       *filter.OriginID,
 		DestinationID:  *filter.DestinationID,
-		DepartureTime:  typeconv.TimeToTimestamptz(*filter.DepartureDate),
+		Column3:        utils.TimeToDate(*filter.DepartureDate),
 		AvailableSeats: filter.MinSeats,
 	})
 	if err != nil {
@@ -251,4 +278,8 @@ func (r *tripRepository) Search(ctx context.Context, filter *domain.TripFilter) 
 	}
 
 	return result, count, nil
+}
+
+func (r *tripRepository) CountActiveBookings(ctx context.Context, tripID int64) (int64, error) {
+	return r.queries.CountActiveBookingsByTripID(ctx, tripID)
 }
