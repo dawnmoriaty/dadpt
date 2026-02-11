@@ -1,13 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { createFileRoute, useNavigate, useParams, useSearch } from '@tanstack/react-router'
-import { ArrowLeft, CheckCircle } from 'lucide-react'
+import { ArrowLeft } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { BookingForm } from '@/modules/booking'
+import { BookingForm, BookingSuccess, type CreateBookingResponse } from '@/modules/booking'
 import { tripApi } from '@/modules/trip/api'
 
 const tripSearchSchema = z.object({
@@ -23,7 +23,7 @@ function TripBookingPage() {
     const { tripId } = useParams({ from: '/_public/trips/$tripId' })
     const search = useSearch({ from: '/_public/trips/$tripId' })
     const navigate = useNavigate()
-    const [bookingCode, setBookingCode] = useState<string | null>(null)
+    const [bookingData, setBookingData] = useState<CreateBookingResponse | null>(null)
     const { t } = useTranslation()
 
     const { data: trip, isLoading, error } = useQuery({
@@ -59,41 +59,16 @@ function TripBookingPage() {
     }
 
     // Booking success state
-    if (bookingCode) {
+    if (bookingData) {
         return (
-            <div className="container max-w-lg mx-auto py-16 px-4">
-                <Card className="border-green-200 bg-green-50/50">
-                    <CardContent className="flex flex-col items-center justify-center py-12 text-center">
-                        <CheckCircle className="h-16 w-16 text-green-600 mb-4" />
-                        <h2 className="text-2xl font-bold mb-2">{t('booking.confirmed')}</h2>
-                        <p className="text-muted-foreground mb-4">
-                            {t('booking.confirmedHint')}
-                        </p>
-                        <div className="bg-white border rounded-lg px-6 py-3 mb-6">
-                            <p className="text-sm text-muted-foreground">{t('booking.bookingCode')}</p>
-                            <p className="text-3xl font-mono font-bold text-primary tracking-wider">
-                                {bookingCode}
-                            </p>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-6">
-                            {t('booking.saveCodeHint')}
-                        </p>
-                        <div className="flex gap-3">
-                            <Button variant="outline" onClick={() => navigate({ to: '/' })}>
-                                {t('booking.backToHome')}
-                            </Button>
-                            <Button onClick={() => navigate({ to: '/my-bookings' })}>
-                                {t('booking.viewMyBookings')}
-                            </Button>
-                        </div>
-                    </CardContent>
-                </Card>
+            <div className="container max-w-2xl mx-auto py-8 px-4">
+                <BookingSuccess data={bookingData} />
             </div>
         )
     }
 
     return (
-        <div className="container max-w-3xl mx-auto py-8 px-4">
+        <div className="container max-w-3xl mx-auto py-8 px-4 pb-24">
             <Button
                 variant="ghost"
                 className="mb-6 gap-2"
@@ -108,7 +83,7 @@ function TripBookingPage() {
             <BookingForm
                 trip={trip}
                 passengers={search.passengers}
-                onSuccess={setBookingCode}
+                onSuccess={setBookingData}
             />
         </div>
     )

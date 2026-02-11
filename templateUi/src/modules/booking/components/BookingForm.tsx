@@ -2,6 +2,7 @@ import { Loader2, Ticket } from 'lucide-react'
 import { useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
+import { toast } from 'sonner'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -29,11 +30,12 @@ import type { Trip } from '@/modules/trip'
 
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
+import type { CreateBookingResponse } from '../types'
 
 interface BookingFormProps {
     trip: Trip
     passengers: number
-    onSuccess: (bookingCode: string) => void
+    onSuccess: (data: CreateBookingResponse) => void
 }
 
 function generateSeatCodes(totalAvailable: number, bookedSeats: string[]): string[] {
@@ -83,8 +85,8 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
 
     const onSubmit = (data: CreateBookingFormData) => {
         createBooking.mutate(data, {
-            onSuccess: (booking) => {
-                onSuccess(booking.code)
+            onSuccess: (response) => {
+                onSuccess(response)
             },
         })
     }
@@ -164,8 +166,44 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                                     onClick={() => {
                                                         if (isSelected) {
                                                             field.onChange(field.value.filter((s: string) => s !== seat))
-                                                        } else if (field.value.length < passengers) {
-                                                            field.onChange([...field.value, seat])
+                                                        } else {
+                                                            const currentSeats = [...field.value, seat]
+                                                            if (currentSeats.length > 4) {
+                                                                toast.error(t('booking.errorTooManySeats', { max: 4 }))
+                                                                return
+                                                            }
+
+                                                            // Validation logic for consecutive seats
+                                                            if (currentSeats.length > 1) {
+                                                                const row = seat.substring(0, seat.length - 1)
+                                                                
+                                                                // Check if all selected seats are in the same row
+                                                                const allInSameRow = currentSeats.every(s => s.startsWith(row))
+                                                                if (!allInSameRow) {
+                                                                    toast.error(t('booking.errorNotSameRow'))
+                                                                    return
+                                                                }
+
+                                                                // Check if they are consecutive
+                                                                // Extract columns and sort them
+                                                                const cols = currentSeats.map(s => s.substring(s.length - 1)).sort()
+                                                                const charCodes = cols.map(c => c.charCodeAt(0))
+                                                                
+                                                                let isConsecutive = true
+                                                                for (let i = 0; i < charCodes.length - 1; i++) {
+                                                                    if (charCodes[i+1] - charCodes[i] !== 1) {
+                                                                        isConsecutive = false
+                                                                        break
+                                                                    }
+                                                                }
+
+                                                                if (!isConsecutive) {
+                                                                    toast.error(t('booking.errorNotConsecutive'))
+                                                                    return
+                                                                }
+                                                            }
+                                                            
+                                                            field.onChange(currentSeats)
                                                         }
                                                     }}
                                                 >
@@ -176,9 +214,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                     </div>
                                     <FormDescription>
                                         {t('booking.selected', { current: selectedSeats.length, total: passengers })}
-                                        {selectedSeats.length > 0 && (
+                                                {selectedSeats.length > 0 && (
                                             <span className="ml-2">
-                                                ({selectedSeats.map((s) => (
+                                                ({selectedSeats.map((s: string) => (
                                                     <Badge key={s} variant="secondary" className="ml-1 text-xs">
                                                         {s}
                                                     </Badge>

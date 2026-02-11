@@ -1,4 +1,4 @@
-import { Pencil, Trash2, MapPin } from 'lucide-react'
+import { Pencil, Trash2, MapPin, Navigation } from 'lucide-react'
 
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -25,9 +25,12 @@ export function LocationCard({ location, onEdit, onDelete }: LocationCardProps) 
                             <h3 className="font-semibold text-foreground truncate">
                                 {location.name}
                             </h3>
-                            <p className="text-sm text-muted-foreground mt-0.5">
-                                {location.city}
-                            </p>
+                            <div className="flex items-center gap-1 mt-0.5">
+                                <Navigation className="h-3 w-3 text-muted-foreground" />
+                                <p className="text-sm text-muted-foreground">
+                                    {location.city}
+                                </p>
+                            </div>
                             {location.address && (
                                 <p className="text-xs text-muted-foreground/70 mt-1 line-clamp-2">
                                     {location.address}

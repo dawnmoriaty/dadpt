@@ -2,8 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { getApiErrorMessage } from '@/services/api/client'
 import type { PagingParams } from '@/modules/shared'
+import { getApiErrorMessage } from '@/services/api/client'
 
 import { providerApi } from '../api'
 import type { CreateProviderRequest, UpdateProviderRequest } from '../types'

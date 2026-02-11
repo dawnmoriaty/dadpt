@@ -2,10 +2,10 @@ import type { PaginatedResponse } from '@/modules/shared'
 import type { Trip } from '@/modules/trip'
 import { api } from '@/services/api/client'
 
-import type { Booking, CreateBookingRequest } from '../types'
+import type { Booking, CreateBookingRequest, CreateBookingResponse } from '../types'
 
 export const bookingApi = {
-    create: async (data: CreateBookingRequest): Promise<Booking> => {
+    create: async (data: CreateBookingRequest): Promise<CreateBookingResponse> => {
         const response = await api.post('/bookings', data)
         return response.data.data
     },

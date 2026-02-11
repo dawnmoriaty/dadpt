@@ -185,7 +185,20 @@
     "confirmedHint": "Vé của bạn đã được đặt thành công.",
     "backToHome": "Về trang chủ",
     "viewMyBookings": "Xem vé của tôi",
-    "completeBooking": "Hoàn tất đặt vé"
+    "completeBooking": "Hoàn tất đặt vé",
+    "orderCode": "Mã đơn hàng",
+    "paymentInstructions": "Hướng dẫn thanh toán",
+    "paymentRedirect": "Chuyển hướng thanh toán",
+    "paymentRedirectHint": "Bạn sẽ được chuyển hướng đến cổng thanh toán an toàn.",
+    "payNow": "Thanh toán ngay",
+    "bankTransfer": "Chuyển khoản ngân hàng",
+    "devTestingOnly": "Dành cho mục đích thử nghiệm (Development Only)",
+    "simulatePaymentSuccess": "Giả lập thanh toán thành công",
+    "paymentSimulated": "Đã gửi yêu cầu giả lập thanh toán!",
+    "simulationFailed": "Giả lập thanh toán thất bại",
+    "errorTooManySeats": "Bạn chỉ có thể chọn tối đa {{max}} ghế",
+    "errorNotSameRow": "Vui lòng chọn các ghế trong cùng một hàng",
+    "errorNotConsecutive": "Vui lòng chọn các ghế kế nhau"
   },
   "myBookings": {
     "title": "Vé của tôi",

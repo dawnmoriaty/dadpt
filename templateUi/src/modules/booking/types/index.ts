@@ -46,6 +46,12 @@ export interface CreateBookingRequest {
     paymentMethod: string
 }
 
+export interface CreateBookingResponse {
+    booking: Booking
+    orderCode: string
+    paymentUrl?: string
+}
+
 export interface BookingListParams {
     page?: number
     pageSize?: number

@@ -5,7 +5,7 @@ import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/services/api/client'
 
 import { bookingApi } from '../api'
-import type { CreateBookingRequest } from '../types'
+import type { CreateBookingRequest, CreateBookingResponse } from '../types'
 
 export const bookingKeys = {
     all: ['bookings'] as const,
@@ -42,7 +42,7 @@ export function useCreateBooking() {
     const queryClient = useQueryClient()
     const { t } = useTranslation()
 
-    return useMutation({
+    return useMutation<CreateBookingResponse, Error, CreateBookingRequest>({
         mutationFn: (data: CreateBookingRequest) => bookingApi.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: bookingKeys.all })
