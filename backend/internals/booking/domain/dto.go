@@ -28,6 +28,13 @@ type ListBookingsInput struct {
 	Offset int32
 }
 
+// ConfirmPaymentInput is the input from the payment webhook
+type ConfirmPaymentInput struct {
+	OrderCode   string
+	Status      string // "success" or "failed"
+	WebhookData []byte // Raw webhook payload for audit
+}
+
 // =============================================================================
 // OUTPUT DTOs - Returned by UseCase layer
 // =============================================================================
@@ -36,6 +43,7 @@ type ListBookingsInput struct {
 type BookingOutput struct {
 	Booking    *Booking
 	TripInfo   *TripSnapshot
+	OrderCode  string // For payment gateway
 	PaymentURL string // For redirect to payment gateway
 }
 
@@ -43,4 +51,10 @@ type BookingOutput struct {
 type BookingListOutput struct {
 	Bookings []*Booking
 	Total    int64
+}
+
+// PaymentConfirmOutput is the output from payment confirmation
+type PaymentConfirmOutput struct {
+	Booking *Booking
+	Payment *PaymentTransaction
 }

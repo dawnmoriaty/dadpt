@@ -104,6 +104,13 @@ const (
 	ErrCodeBookingNotFound        ErrorCode = "BOOKING_NOT_FOUND"
 	ErrCodeInvalidSeatCode        ErrorCode = "INVALID_SEAT_CODE"
 	ErrCodeInvalidGuestInfo       ErrorCode = "INVALID_GUEST_INFO"
+	ErrCodeTooManySeats           ErrorCode = "TOO_MANY_SEATS"
+	ErrCodeSeatsNotConsecutive    ErrorCode = "SEATS_NOT_CONSECUTIVE"
+	ErrCodeBookingNotPending      ErrorCode = "BOOKING_NOT_PENDING"
+
+	// Payment
+	ErrCodePaymentNotFound         ErrorCode = "PAYMENT_NOT_FOUND"
+	ErrCodePaymentAlreadyProcessed ErrorCode = "PAYMENT_ALREADY_PROCESSED"
 
 	// Upload
 	ErrCodeUploadUnavailable ErrorCode = "UPLOAD_UNAVAILABLE"
@@ -262,6 +269,13 @@ var (
 	ErrBookingNotFound        = NewAppError(http.StatusNotFound, ErrCodeBookingNotFound)
 	ErrInvalidSeatCode        = NewAppError(http.StatusBadRequest, ErrCodeInvalidSeatCode)
 	ErrInvalidGuestInfo       = NewAppError(http.StatusBadRequest, ErrCodeInvalidGuestInfo)
+	ErrTooManySeats           = NewAppError(http.StatusBadRequest, ErrCodeTooManySeats)
+	ErrSeatsNotConsecutive    = NewAppError(http.StatusBadRequest, ErrCodeSeatsNotConsecutive)
+	ErrBookingNotPending      = NewAppError(http.StatusBadRequest, ErrCodeBookingNotPending)
+
+	// Payment
+	ErrPaymentNotFound         = NewAppError(http.StatusNotFound, ErrCodePaymentNotFound)
+	ErrPaymentAlreadyProcessed = NewAppError(http.StatusConflict, ErrCodePaymentAlreadyProcessed)
 
 	// Upload
 	ErrUploadUnavailable = NewAppError(http.StatusInternalServerError, ErrCodeUploadUnavailable)

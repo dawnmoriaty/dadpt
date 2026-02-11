@@ -186,3 +186,25 @@ func (r *bookingRepository) GetExpiredPending(ctx context.Context, limit int32) 
 	}
 	return result, nil
 }
+
+func (r *bookingRepository) MarkPaid(ctx context.Context, id int64) (*domain.Booking, error) {
+	result, err := r.queries.MarkBookingPaid(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotPending
+		}
+		return nil, fmt.Errorf("marking booking paid: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}
+
+func (r *bookingRepository) MarkExpired(ctx context.Context, id int64) (*domain.Booking, error) {
+	result, err := r.queries.MarkBookingExpired(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotPending
+		}
+		return nil, fmt.Errorf("marking booking expired: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}

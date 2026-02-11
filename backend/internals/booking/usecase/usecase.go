@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -19,6 +20,13 @@ const (
 	bookingCodeLen = 8                // Length of booking code
 )
 
+// Outbox event topics
+const (
+	TopicBookingCreated = "booking.created"
+	TopicBookingPaid    = "booking.paid"
+	TopicBookingExpired = "booking.expired"
+)
+
 // IBookingUseCase defines the interface for booking use case
 type IBookingUseCase interface {
 	CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error)
@@ -26,32 +34,44 @@ type IBookingUseCase interface {
 	GetBookingByCode(ctx context.Context, code string) (*domain.Booking, error)
 	ListUserBookings(ctx context.Context, input *domain.ListBookingsInput) (*domain.BookingListOutput, error)
 	CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error)
+	ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error)
 }
 
 type bookingUseCase struct {
-	repo       domain.Repository
-	tripLocker domain.TripLocker
-	lock       domain.DistributedLock
-	cfg        *configs.Config
+	repo        domain.Repository
+	tripLocker  domain.TripLocker
+	outboxRepo  domain.OutboxRepository
+	paymentRepo domain.PaymentRepository
+	lock        domain.DistributedLock
+	cfg         *configs.Config
 }
 
 // NewBookingUseCase creates a new booking use case
 func NewBookingUseCase(
 	repo domain.Repository,
 	tripLocker domain.TripLocker,
+	outboxRepo domain.OutboxRepository,
+	paymentRepo domain.PaymentRepository,
 	lock domain.DistributedLock,
 	cfg *configs.Config,
 ) IBookingUseCase {
 	return &bookingUseCase{
-		repo:       repo,
-		tripLocker: tripLocker,
-		lock:       lock,
-		cfg:        cfg,
+		repo:        repo,
+		tripLocker:  tripLocker,
+		outboxRepo:  outboxRepo,
+		paymentRepo: paymentRepo,
+		lock:        lock,
+		cfg:         cfg,
 	}
 }
 
 // CreateBooking creates a new booking with race condition protection
 func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error) {
+	// 0. Validate consecutive seats (max 4, same row, sequential numbers)
+	if err := domain.ValidateConsecutiveSeats(input.SeatCodes); err != nil {
+		return nil, err
+	}
+
 	// 1. Acquire Redis distributed lock - prevent thundering herd
 	lockKey := fmt.Sprintf("booking:trip:%d:seats:%s", input.TripID, strings.Join(input.SeatCodes, ","))
 	acquired, err := u.lock.Acquire(ctx, lockKey, lockTTL)
@@ -94,10 +114,11 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 	// 6. Calculate total price
 	totalAmount := domain.CalculatePrice(trip.BasePrice, trip.PriceModifier, int(seatCount))
 
-	// 7. Generate booking code
+	// 7. Generate booking code and order code
 	bookingCode := generateBookingCode()
+	orderCode := generateOrderCode()
 
-	// 8. Create booking record
+	// 8. Create booking record with expiry
 	booking := &domain.Booking{
 		Code:          domain.BookingCode(bookingCode),
 		TripID:        input.TripID,
@@ -126,11 +147,39 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		return nil, fmt.Errorf("creating booking: %w", err)
 	}
 
-	logger.Info("Booking created: code=%s, trip=%d, seats=%v", bookingCode, input.TripID, input.SeatCodes)
+	// 9. Create payment transaction
+	_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
+		BookingID:     created.ID,
+		OrderCode:     orderCode,
+		Amount:        totalAmount,
+		PaymentMethod: input.PaymentMethod,
+	})
+	if err != nil {
+		logger.Error("Failed to create payment transaction: %v", err)
+		// Don't rollback booking — payment can be retried
+	}
+
+	// 10. Create outbox event (transactional outbox pattern)
+	eventPayload, _ := json.Marshal(map[string]interface{}{
+		"eventType": TopicBookingCreated,
+		"bookingId": created.ID,
+		"code":      string(created.Code),
+		"tripId":    created.TripID,
+		"seatCodes": created.SeatCodes,
+		"amount":    created.TotalAmount,
+		"status":    string(created.Status),
+		"orderCode": orderCode,
+	})
+	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingCreated, eventPayload); err != nil {
+		logger.Error("Failed to create outbox event: %v", err)
+	}
+
+	logger.Info("Booking created: code=%s, trip=%d, seats=%v, orderCode=%s", bookingCode, input.TripID, input.SeatCodes, orderCode)
 
 	return &domain.BookingOutput{
-		Booking:  created,
-		TripInfo: trip,
+		Booking:   created,
+		TripInfo:  trip,
+		OrderCode: orderCode,
 	}, nil
 }
 
@@ -187,6 +236,88 @@ func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.Cancel
 	return cancelled, nil
 }
 
+// ConfirmPayment processes a payment webhook callback
+func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error) {
+	// 1. Find payment transaction
+	payment, err := u.paymentRepo.GetByOrderCode(ctx, input.OrderCode)
+	if err != nil {
+		return nil, err
+	}
+
+	// 2. Process based on webhook status
+	switch input.Status {
+	case "success":
+		// Update payment → success
+		updatedPayment, err := u.paymentRepo.MarkSuccess(ctx, input.OrderCode, input.WebhookData)
+		if err != nil {
+			return nil, err
+		}
+
+		// Update booking → paid
+		updatedBooking, err := u.repo.MarkPaid(ctx, payment.BookingID)
+		if err != nil {
+			return nil, fmt.Errorf("marking booking paid: %w", err)
+		}
+
+		// Create outbox event for booking.paid
+		eventPayload, _ := json.Marshal(map[string]interface{}{
+			"eventType": TopicBookingPaid,
+			"bookingId": updatedBooking.ID,
+			"code":      string(updatedBooking.Code),
+			"tripId":    updatedBooking.TripID,
+			"seatCodes": updatedBooking.SeatCodes,
+			"amount":    updatedBooking.TotalAmount,
+			"status":    string(updatedBooking.Status),
+			"orderCode": input.OrderCode,
+		})
+		if err := u.outboxRepo.CreateEvent(ctx, TopicBookingPaid, eventPayload); err != nil {
+			logger.Error("Failed to create outbox event for payment: %v", err)
+		}
+
+		logger.Info("Payment confirmed: orderCode=%s, bookingId=%d", input.OrderCode, updatedBooking.ID)
+
+		return &domain.PaymentConfirmOutput{
+			Booking: updatedBooking,
+			Payment: updatedPayment,
+		}, nil
+
+	case "failed", "cancelled":
+		// Update payment → failed
+		updatedPayment, err := u.paymentRepo.MarkFailed(ctx, input.OrderCode, input.WebhookData)
+		if err != nil {
+			return nil, err
+		}
+
+		// Release seats and expire booking
+		booking, err := u.repo.GetByID(ctx, payment.BookingID)
+		if err != nil {
+			return nil, err
+		}
+
+		seatCount := int32(len(booking.SeatCodes))
+		_ = u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount)
+
+		expiredBooking, err := u.repo.MarkExpired(ctx, booking.ID)
+		if err != nil {
+			logger.Warn("Failed to expire booking after failed payment: %v", err)
+			return &domain.PaymentConfirmOutput{
+				Booking: booking,
+				Payment: updatedPayment,
+			}, nil
+		}
+
+		logger.Info("Payment failed: orderCode=%s, bookingId=%d", input.OrderCode, booking.ID)
+
+		return &domain.PaymentConfirmOutput{
+			Booking: expiredBooking,
+			Payment: updatedPayment,
+		}, nil
+
+	default:
+		return nil, fmt.Errorf("unsupported payment status: %s", input.Status)
+	}
+}
+
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -195,4 +326,10 @@ func generateBookingCode() string {
 	bytes := make([]byte, bookingCodeLen/2)
 	rand.Read(bytes)
 	return "VX" + strings.ToUpper(hex.EncodeToString(bytes))
+}
+
+func generateOrderCode() string {
+	bytes := make([]byte, 8)
+	rand.Read(bytes)
+	return "PAY" + strings.ToUpper(hex.EncodeToString(bytes))
 }

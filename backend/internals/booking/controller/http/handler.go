@@ -186,6 +186,12 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrBookingExpired
 	case errors.Is(err, domain.ErrBookingNotFound):
 		return pkgErrors.ErrBookingNotFound
+	case errors.Is(err, domain.ErrTooManySeats):
+		return pkgErrors.ErrTooManySeats
+	case errors.Is(err, domain.ErrSeatsNotConsecutive):
+		return pkgErrors.ErrSeatsNotConsecutive
+	case errors.Is(err, domain.ErrBookingNotPending):
+		return pkgErrors.ErrBookingNotPending
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}

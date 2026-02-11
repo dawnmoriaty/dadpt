@@ -63,6 +63,18 @@ type OutboxEvent struct {
 	ProcessedAt pgtype.Timestamptz `json:"processedAt"`
 }
 
+type PaymentTransaction struct {
+	ID            uuid.UUID          `json:"id"`
+	BookingID     int64              `json:"bookingId"`
+	OrderCode     string             `json:"orderCode"`
+	Amount        pgtype.Numeric     `json:"amount"`
+	Status        *string            `json:"status"`
+	PaymentMethod *string            `json:"paymentMethod"`
+	WebhookData   []byte             `json:"webhookData"`
+	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
+	PaidAt        pgtype.Timestamptz `json:"paidAt"`
+}
+
 type Provider struct {
 	ID           int32   `json:"id"`
 	Name         string  `json:"name"`

@@ -90,7 +90,7 @@ func provideRedis(cfg *configs.Config) redis.IRedis {
 	return client
 }
 
-func provideRabbitMQ(cfg *configs.Config) *rabbitmq.RabbitMQ {
+func provideRabbitMQ(cfg *configs.Config) rabbitmq.IRabbitMQ {
 	if cfg.RabbitMQURI == "" {
 		return nil
 	}

@@ -185,6 +185,37 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int64) (Booking, error)
 	return i, err
 }
 
+const getBookingForPayment = `-- name: GetBookingForPayment :one
+
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at FROM bookings WHERE id = $1 FOR UPDATE NOWAIT
+`
+
+// ============================================================================
+// PAYMENT FLOW QUERIES
+// ============================================================================
+// Lock booking row for payment processing (prevent double-pay)
+func (q *Queries) GetBookingForPayment(ctx context.Context, id int64) (Booking, error) {
+	row := q.db.QueryRow(ctx, getBookingForPayment, id)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.TripID,
+		&i.UserID,
+		&i.GuestInfo,
+		&i.PickupInfo,
+		&i.DropoffInfo,
+		&i.SeatCodes,
+		&i.TotalAmount,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
 const getExpiredPendingBookings = `-- name: GetExpiredPendingBookings :many
 SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at FROM bookings 
 WHERE status = 'pending' AND expires_at < NOW()
@@ -336,6 +367,67 @@ func (q *Queries) LockTripForBooking(ctx context.Context, id int64) (Trip, error
 		&i.Status,
 		&i.CreatedAt,
 		&i.Version,
+	)
+	return i, err
+}
+
+const markBookingExpired = `-- name: MarkBookingExpired :one
+UPDATE bookings SET
+    status = 'expired',
+    updated_at = NOW()
+WHERE id = $1 AND status = 'pending'
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at
+`
+
+func (q *Queries) MarkBookingExpired(ctx context.Context, id int64) (Booking, error) {
+	row := q.db.QueryRow(ctx, markBookingExpired, id)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.TripID,
+		&i.UserID,
+		&i.GuestInfo,
+		&i.PickupInfo,
+		&i.DropoffInfo,
+		&i.SeatCodes,
+		&i.TotalAmount,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
+	)
+	return i, err
+}
+
+const markBookingPaid = `-- name: MarkBookingPaid :one
+UPDATE bookings SET
+    status = 'paid',
+    expires_at = NULL,
+    updated_at = NOW()
+WHERE id = $1 AND status = 'pending'
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at
+`
+
+func (q *Queries) MarkBookingPaid(ctx context.Context, id int64) (Booking, error) {
+	row := q.db.QueryRow(ctx, markBookingPaid, id)
+	var i Booking
+	err := row.Scan(
+		&i.ID,
+		&i.Code,
+		&i.TripID,
+		&i.UserID,
+		&i.GuestInfo,
+		&i.PickupInfo,
+		&i.DropoffInfo,
+		&i.SeatCodes,
+		&i.TotalAmount,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.ExpiresAt,
 	)
 	return i, err
 }

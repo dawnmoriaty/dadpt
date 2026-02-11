@@ -27,6 +27,7 @@ type Querier interface {
 	CreateBusType(ctx context.Context, arg CreateBusTypeParams) (BusType, error)
 	CreateLocation(ctx context.Context, arg CreateLocationParams) (Location, error)
 	CreateOutboxEvent(ctx context.Context, arg CreateOutboxEventParams) (OutboxEvent, error)
+	CreatePaymentTransaction(ctx context.Context, arg CreatePaymentTransactionParams) (PaymentTransaction, error)
 	CreateProvider(ctx context.Context, arg CreateProviderParams) (Provider, error)
 	CreateTrip(ctx context.Context, arg CreateTripParams) (Trip, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
@@ -37,12 +38,19 @@ type Querier interface {
 	DeleteTrip(ctx context.Context, id int64) error
 	GetBookingByCode(ctx context.Context, code string) (Booking, error)
 	GetBookingByID(ctx context.Context, id int64) (Booking, error)
+	// ============================================================================
+	// PAYMENT FLOW QUERIES
+	// ============================================================================
+	// Lock booking row for payment processing (prevent double-pay)
+	GetBookingForPayment(ctx context.Context, id int64) (Booking, error)
 	GetBusByID(ctx context.Context, id int32) (GetBusByIDRow, error)
 	GetBusTypeByID(ctx context.Context, id int32) (BusType, error)
 	GetBusesByType(ctx context.Context, busTypeID int32) ([]Bus, error)
 	// FOR UPDATE SKIP LOCKED: safe concurrent processing without deadlock
 	GetExpiredPendingBookings(ctx context.Context, limit int32) ([]Booking, error)
 	GetLocationByID(ctx context.Context, id int32) (Location, error)
+	GetPaymentByOrderCode(ctx context.Context, orderCode string) (PaymentTransaction, error)
+	GetPaymentsByBookingID(ctx context.Context, bookingID int64) ([]PaymentTransaction, error)
 	GetPendingOutboxEvents(ctx context.Context, limit int32) ([]OutboxEvent, error)
 	GetProviderByID(ctx context.Context, id int32) (Provider, error)
 	GetProviderBySlug(ctx context.Context, slug *string) (Provider, error)
@@ -67,6 +75,8 @@ type Querier interface {
 	// ============================================================================
 	// Lock trip row for atomic seat update (NOWAIT = fail fast if locked)
 	LockTripForBooking(ctx context.Context, id int64) (Trip, error)
+	MarkBookingExpired(ctx context.Context, id int64) (Booking, error)
+	MarkBookingPaid(ctx context.Context, id int64) (Booking, error)
 	MarkOutboxEventFailed(ctx context.Context, id uuid.UUID) error
 	MarkOutboxEventProcessed(ctx context.Context, id uuid.UUID) error
 	// Release seats when booking cancelled/expired (using array subtraction)
@@ -79,6 +89,8 @@ type Querier interface {
 	UpdateBusStatus(ctx context.Context, arg UpdateBusStatusParams) (Bus, error)
 	UpdateBusType(ctx context.Context, arg UpdateBusTypeParams) (BusType, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
+	UpdatePaymentFailed(ctx context.Context, arg UpdatePaymentFailedParams) (PaymentTransaction, error)
+	UpdatePaymentSuccess(ctx context.Context, arg UpdatePaymentSuccessParams) (PaymentTransaction, error)
 	UpdateProvider(ctx context.Context, arg UpdateProviderParams) (Provider, error)
 	UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error)
 	UpdateTripSeats(ctx context.Context, arg UpdateTripSeatsParams) (Trip, error)

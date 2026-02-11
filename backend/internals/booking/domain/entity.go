@@ -2,6 +2,10 @@ package domain
 
 import (
 	"errors"
+	"fmt"
+	"regexp"
+	"sort"
+	"strconv"
 	"time"
 )
 
@@ -21,6 +25,11 @@ var (
 	ErrTripNotBookable        = errors.New("trip not bookable")
 	ErrInvalidGuestInfo       = errors.New("invalid guest info")
 	ErrBookingCannotCancel    = errors.New("booking cannot cancel")
+	ErrTooManySeats           = errors.New("too many seats")
+	ErrSeatsNotConsecutive    = errors.New("seats not consecutive")
+	ErrPaymentNotFound        = errors.New("payment not found")
+	ErrPaymentAlreadyDone     = errors.New("payment already processed")
+	ErrBookingNotPending      = errors.New("booking not pending")
 )
 
 // =============================================================================
@@ -93,6 +102,19 @@ type PointInfo struct {
 	Surcharge float64 `json:"surcharge,omitempty"`
 }
 
+// PaymentTransaction tracks payment lifecycle
+type PaymentTransaction struct {
+	ID            string
+	BookingID     int64
+	OrderCode     string
+	Amount        float64
+	Status        string
+	PaymentMethod string
+	WebhookData   []byte
+	CreatedAt     time.Time
+	PaidAt        time.Time
+}
+
 // TripSnapshot - read-only trip data for booking validation
 type TripSnapshot struct {
 	ID             int64
@@ -108,6 +130,8 @@ type TripSnapshot struct {
 // =============================================================================
 // VALIDATION METHODS
 // =============================================================================
+
+const MaxSeatsPerBooking = 4
 
 func (b *Booking) Validate() error {
 	if len(b.SeatCodes) == 0 {
@@ -125,6 +149,63 @@ func (b *Booking) CanBeCancelled() bool {
 
 func (b *Booking) IsExpired() bool {
 	return b.Status == StatusPending && time.Now().After(b.ExpiresAt)
+}
+
+// =============================================================================
+// SEAT VALIDATION
+// =============================================================================
+
+// seatPattern matches seat codes like "A01", "B12", "C3".
+// Prefix = letters, Suffix = digits.
+var seatPattern = regexp.MustCompile(`^([A-Za-z]+)(\d+)$`)
+
+// ValidateConsecutiveSeats validates:
+// 1. Max 4 seats per booking
+// 2. All seats share the same row prefix (e.g. all "A")
+// 3. Seat numbers are consecutive (e.g. 1,2,3)
+// Single seat bookings always pass the consecutive check.
+func ValidateConsecutiveSeats(seatCodes []string) error {
+	if len(seatCodes) > MaxSeatsPerBooking {
+		return fmt.Errorf("%w: maximum %d seats allowed, got %d", ErrTooManySeats, MaxSeatsPerBooking, len(seatCodes))
+	}
+
+	// Single seat is always valid
+	if len(seatCodes) <= 1 {
+		return nil
+	}
+
+	type parsed struct {
+		prefix string
+		number int
+	}
+
+	seats := make([]parsed, 0, len(seatCodes))
+	for _, code := range seatCodes {
+		matches := seatPattern.FindStringSubmatch(code)
+		if matches == nil {
+			return fmt.Errorf("%w: %s", ErrInvalidSeatCode, code)
+		}
+		num, _ := strconv.Atoi(matches[2])
+		seats = append(seats, parsed{prefix: matches[1], number: num})
+	}
+
+	// All seats must share the same row prefix
+	basePrefix := seats[0].prefix
+	for _, s := range seats[1:] {
+		if s.prefix != basePrefix {
+			return fmt.Errorf("%w: seats must be in the same row", ErrSeatsNotConsecutive)
+		}
+	}
+
+	// Sort by number and check consecutive
+	sort.Slice(seats, func(i, j int) bool { return seats[i].number < seats[j].number })
+	for i := 1; i < len(seats); i++ {
+		if seats[i].number != seats[i-1].number+1 {
+			return fmt.Errorf("%w: seat numbers must be consecutive", ErrSeatsNotConsecutive)
+		}
+	}
+
+	return nil
 }
 
 // =============================================================================

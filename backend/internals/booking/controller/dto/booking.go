@@ -68,6 +68,7 @@ type BookingListResponse struct {
 
 type CreateBookingResponse struct {
 	Booking    *BookingResponse `json:"booking"`
+	OrderCode  string           `json:"orderCode"`
 	PaymentURL string           `json:"paymentUrl,omitempty"`
 }
 
@@ -156,6 +157,7 @@ func ToBookingListResponse(output *domain.BookingListOutput) *BookingListRespons
 func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingResponse {
 	return &CreateBookingResponse{
 		Booking:    ToBookingResponse(output.Booking),
+		OrderCode:  output.OrderCode,
 		PaymentURL: output.PaymentURL,
 	}
 }

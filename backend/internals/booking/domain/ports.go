@@ -13,6 +13,8 @@ type Repository interface {
 	ListByUser(ctx context.Context, userID int64, limit, offset int32) ([]*Booking, int64, error)
 	UpdateStatus(ctx context.Context, id int64, status BookingStatus) (*Booking, error)
 	GetExpiredPending(ctx context.Context, limit int32) ([]*Booking, error)
+	MarkPaid(ctx context.Context, id int64) (*Booking, error)
+	MarkExpired(ctx context.Context, id int64) (*Booking, error)
 }
 
 // TripLocker defines the interface for trip seat locking operations
@@ -31,6 +33,21 @@ type OutboxRepository interface {
 	GetPendingEvents(ctx context.Context, limit int32) ([]*OutboxEvent, error)
 	MarkProcessed(ctx context.Context, eventID string) error
 	MarkFailed(ctx context.Context, eventID string) error
+}
+
+// PaymentRepository defines the interface for payment transaction persistence
+type PaymentRepository interface {
+	CreateTransaction(ctx context.Context, tx *PaymentTransaction) (*PaymentTransaction, error)
+	GetByOrderCode(ctx context.Context, orderCode string) (*PaymentTransaction, error)
+	MarkSuccess(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)
+	MarkFailed(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)
+}
+
+// BookingEventPublisher defines the interface for publishing booking events to message broker
+type BookingEventPublisher interface {
+	PublishBookingCreated(ctx context.Context, booking *Booking) error
+	PublishBookingPaid(ctx context.Context, booking *Booking) error
+	PublishBookingExpired(ctx context.Context, booking *Booking) error
 }
 
 // DistributedLock defines the interface for distributed locking

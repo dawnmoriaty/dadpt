@@ -11,25 +11,22 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Routes registers booking routes following Hexagonal Architecture.
-// Dependencies are created internally — no DIG container needed.
 func Routes(public *gin.RouterGroup, authenticated *gin.RouterGroup, database *db.Database, cfg *configs.Config, cache redis.IRedis) {
-	// Infrastructure layer
 	repo := repository.NewBookingRepository(database)
 	tripLocker := repository.NewTripLocker(database)
+	outboxRepo := repository.NewOutboxRepository(database)
+	paymentRepo := repository.NewPaymentRepository(database)
 	distributedLock := infrastructure.NewDistributedLock(cache)
 
-	// Application layer
-	uc := usecase.NewBookingUseCase(repo, tripLocker, distributedLock, cfg)
+	uc := usecase.NewBookingUseCase(repo, tripLocker, outboxRepo, paymentRepo, distributedLock, cfg)
 
-	// Interface layer
 	handler := NewBookingHandler(uc)
+	paymentHandler := NewPaymentHandler(uc)
 
-	// Public routes (guest allowed)
 	public.POST("", handler.CreateBooking)
 	public.GET("/code/:code", handler.GetBookingByCode)
+	public.POST("/payments/webhook", paymentHandler.HandleWebhook)
 
-	// Authenticated routes
 	authenticated.GET("/my", handler.ListUserBookings)
 	authenticated.GET("/:id", handler.GetBooking)
 	authenticated.POST("/:id/cancel", handler.CancelBooking)

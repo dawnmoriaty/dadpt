@@ -77,3 +77,26 @@ LIMIT $1;
 
 -- name: CountBookingsByTrip :one
 SELECT COUNT(*) FROM bookings WHERE trip_id = $1 AND status IN ('pending', 'paid');
+
+-- ============================================================================
+-- PAYMENT FLOW QUERIES
+-- ============================================================================
+
+-- name: GetBookingForPayment :one
+-- Lock booking row for payment processing (prevent double-pay)
+SELECT * FROM bookings WHERE id = $1 FOR UPDATE NOWAIT;
+
+-- name: MarkBookingPaid :one
+UPDATE bookings SET
+    status = 'paid',
+    expires_at = NULL,
+    updated_at = NOW()
+WHERE id = $1 AND status = 'pending'
+RETURNING *;
+
+-- name: MarkBookingExpired :one
+UPDATE bookings SET
+    status = 'expired',
+    updated_at = NOW()
+WHERE id = $1 AND status = 'pending'
+RETURNING *;
