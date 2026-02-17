@@ -46,7 +46,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     name="identifier"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Phone or Username</FormLabel>
+                            <FormLabel>Số điện thoại hoặc tên đăng nhập</FormLabel>
                             <FormControl>
                                 <Input 
                                     placeholder="0987..." 
@@ -63,7 +63,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Mật khẩu</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="password" 
@@ -90,7 +90,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     {loginMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Login
+                    Đăng nhập
                 </Button>
             </form>
         </Form>

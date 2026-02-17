@@ -48,10 +48,10 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="fullName"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Full Name</FormLabel>
+                            <FormLabel>Họ và tên</FormLabel>
                             <FormControl>
                                 <Input 
-                                    placeholder="Nguyen Van A" 
+                                    placeholder="Nguyễn Văn A" 
                                     autoComplete="name"
                                     {...field} 
                                 />
@@ -66,7 +66,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Phone</FormLabel>
+                                <FormLabel>Số điện thoại</FormLabel>
                                 <FormControl>
                                     <Input 
                                         placeholder="0912345678" 
@@ -83,7 +83,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                         name="username"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Username</FormLabel>
+                                <FormLabel>Tên đăng nhập</FormLabel>
                                 <FormControl>
                                     <Input 
                                         placeholder="nguyenvana" 
@@ -101,7 +101,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Email (Optional)</FormLabel>
+                            <FormLabel>Email (Tùy chọn)</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="email" 
@@ -119,7 +119,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Password</FormLabel>
+                            <FormLabel>Mật khẩu</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="password" 
@@ -146,7 +146,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     {registerMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Register Account
+                    Đăng ký tài khoản
                 </Button>
             </form>
         </Form>

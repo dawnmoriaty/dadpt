@@ -11,14 +11,14 @@ export const loginSchema = z.object({
 })
 
 export const registerSchema = z.object({
-    phone: z.string()
+    phone: z.string()   
         .min(10, V.min('field.phone', 10))
         .max(15, V.max('field.phone', 15))
         .regex(phoneRegex, V.phone),
     username: z.string()
         .min(3, V.min('field.username', 3))
         .max(30, V.max('field.username', 30))
-        .regex(usernameRegex, 'Username can only contain letters, numbers and underscore'),
+        .regex(usernameRegex, 'Tên đăng nhập chỉ chứa chữ cái, số và dấu gạch dưới'),
     fullName: z.string()
         .min(2, V.min('field.name', 2))
         .max(100, V.max('field.name', 100)),

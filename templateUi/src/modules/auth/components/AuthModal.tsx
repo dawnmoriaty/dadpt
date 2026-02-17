@@ -24,13 +24,13 @@ export function AuthModal({ open, onOpenChange, defaultTab = 'login' }: AuthModa
             <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
                     <DialogTitle>
-                        {tab === 'login' ? 'Login' : 'Create Account'}
+                        {tab === 'login' ? 'Đăng nhập' : 'Đăng ký'}
                     </DialogTitle>
                 </DialogHeader>
                 <Tabs value={tab} onValueChange={(v) => setTab(v as 'login' | 'register')}>
                     <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="login">Login</TabsTrigger>
-                        <TabsTrigger value="register">Register</TabsTrigger>
+                        <TabsTrigger value="login">Đăng nhập</TabsTrigger>
+                        <TabsTrigger value="register">Đăng ký</TabsTrigger>
                     </TabsList>
                     <TabsContent value="login">
                         <LoginForm onSuccess={handleSuccess} />
