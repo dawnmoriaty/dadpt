@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Venv
+.venv/
+venv/
+env/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Env
+.env
+
+# Data
+data/
+*.db
+
+# Generated
+src/grpc_server/generated/ai_agent_pb2*.py
+src/grpc_server/generated/ai_agent_pb2*.pyi

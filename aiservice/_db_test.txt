@@ -1,0 +1,3 @@
+TASK_TYPES: ['condition', 'grpc_call', 'human_input', 'llm_call', 'parallel', 'rag_query', 'transform']
+TABLES: ['model_providers', 'sqlite_autoindex_model_providers_1', 'tenants', 'sqlite_autoindex_tenants_1', 'model_instances', 'sqlite_autoindex_model_instances_1', 'tool_definitions', 'workflows', 'sqlite_autoindex_workflows_1']
+DB_TEST_PASS

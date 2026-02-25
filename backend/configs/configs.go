@@ -41,6 +41,9 @@ type Config struct {
 	AuthSecret           string        `mapstructure:"AUTH_SECRET"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
+
+	// AI Agent
+	AIAgentGRPCAddr string `mapstructure:"AI_AGENT_GRPC_ADDR"`
 }
 
 var cfg Config
@@ -73,11 +76,15 @@ func LoadConfig() *Config {
 		AuthSecret:           viper.GetString("AUTH_SECRET"),
 		AccessTokenDuration:  viper.GetDuration("ACCESS_TOKEN_DURATION"),
 		RefreshTokenDuration: viper.GetDuration("REFRESH_TOKEN_DURATION"),
+		AIAgentGRPCAddr:      viper.GetString("AI_AGENT_GRPC_ADDR"),
 	}
 
 	// Defaults
 	if cfg.HTTPPort == 0 {
 		cfg.HTTPPort = 8080
+	}
+	if cfg.AIAgentGRPCAddr == "" {
+		cfg.AIAgentGRPCAddr = "localhost:50051"
 	}
 	if cfg.Environment == "" {
 		cfg.Environment = EnvironmentDev

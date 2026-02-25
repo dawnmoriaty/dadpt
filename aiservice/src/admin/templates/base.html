@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Agent Platform{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .json-editor { font-family: 'Courier New', monospace; font-size: 13px; tab-size: 2; }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Navbar -->
+    <nav class="bg-indigo-700 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
+            <a href="/admin" class="text-xl font-bold">🤖 AI Agent Platform</a>
+            <div class="flex gap-4 text-sm">
+                <a href="/admin" class="hover:text-indigo-200">Dashboard</a>
+                <a href="/docs" class="hover:text-indigo-200" target="_blank">API Docs</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Toast notification -->
+    <div id="toast" class="hidden fixed bottom-4 right-4 bg-green-600 text-white px-6 py-3 rounded-lg shadow-lg z-50"></div>
+
+    <script>
+        // ── API Helper ──
+        async function apiCall(method, url, body = null) {
+            const opts = { method, headers: { 'Content-Type': 'application/json' } };
+            if (body) opts.body = JSON.stringify(body);
+            const res = await fetch(url, opts);
+            if (!res.ok) {
+                const err = await res.json().catch(() => ({ detail: res.statusText }));
+                throw new Error(err.detail || 'Request failed');
+            }
+            return res.json();
+        }
+
+        function showToast(msg, isError = false) {
+            const t = document.getElementById('toast');
+            t.textContent = msg;
+            t.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg z-50 ${isError ? 'bg-red-600' : 'bg-green-600'} text-white`;
+            setTimeout(() => t.className = 'hidden', 3000);
+        }
+
+        async function reloadAll() {
+            try {
+                await apiCall('POST', '/api/admin/reload');
+                showToast('✅ All registries reloaded!');
+            } catch (e) { showToast('❌ ' + e.message, true); }
+        }
+
+        async function deleteItem(url) {
+            if (!confirm('Bạn có chắc chắn muốn xoá?')) return;
+            try {
+                await apiCall('DELETE', url);
+                showToast('✅ Deleted!');
+                location.reload();
+            } catch (e) { showToast('❌ ' + e.message, true); }
+        }
+    </script>
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

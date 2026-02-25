@@ -90,6 +90,55 @@ services:
       - bus.postgres
     restart: unless-stopped
 
+  # Qdrant Vector Database (AI Agent)
+  bus.qdrant:
+    image: qdrant/qdrant:latest
+    container_name: bus.qdrant
+    ports:
+      - "6333:6333"   # REST API
+      - "6334:6334"   # gRPC API
+    volumes:
+      - bus_qdrant_data:/qdrant/storage
+    environment:
+      QDRANT__SERVICE__GRPC_PORT: 6334
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:6333/healthz"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # AI Agent Service (FastAPI + gRPC)
+  bus.aiservice:
+    build:
+      context: ../aiservice
+      dockerfile: Dockerfile
+    container_name: bus.aiservice
+    ports:
+      - "8100:8100"   # FastAPI HTTP (Admin UI + REST API)
+      - "50051:50051" # gRPC (Go backend → AI Agent)
+    volumes:
+      - bus_ai_data:/app/data
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      AI_SERVICE_PORT: 8100
+      GRPC_PORT: 50051
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_API_KEY: ${GOOGLE_API_KEY:-}
+      QDRANT_HOST: bus.qdrant
+      QDRANT_PORT: 6333
+      REDIS_URI: redis://bus.redis:6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-redis123}
+      REDIS_DB: 1
+      ADMIN_DB_PATH: /app/data/admin.db
+      DEFAULT_GRPC_TARGET: bus.backend:50052
+    depends_on:
+      bus.qdrant:
+        condition: service_healthy
+      bus.redis:
+        condition: service_healthy
+    restart: unless-stopped
+
 volumes:
   bus_postgres_data:
     name: bus_postgres_data
@@ -101,3 +150,7 @@ volumes:
     name: bus_minio_data
   bus_pgadmin_data:
     name: bus_pgadmin_data
+  bus_qdrant_data:
+    name: bus_qdrant_data
+  bus_ai_data:
+    name: bus_ai_data

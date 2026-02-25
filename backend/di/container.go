@@ -7,12 +7,15 @@ import (
 
 	"backend/configs"
 	"backend/db"
+	aiagentHttp "backend/internals/aiagent/controller/http"
 	authHttp "backend/internals/auth/controller/http"
 	authInfra "backend/internals/auth/infrastructure"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
 	httpServer "backend/internals/server/http"
 	uploadHttp "backend/internals/upload/controller/http"
+	"backend/pkgs/aiagent"
+	grpcpkg "backend/pkgs/grpc"
 	"backend/pkgs/jwt"
 	"backend/pkgs/logger"
 	"backend/pkgs/minio"
@@ -40,12 +43,17 @@ func NewContainer() (*Container, error) {
 		provideRabbitMQ,
 		provideMinio,
 		provideJWTProvider,
+		provideGRPCConn,
 
 		// Auth Module
 		authInfra.NewBcryptHasher,
 		authRepo.NewAuthRepository,
 		authUc.NewAuthUseCase,
 		authHttp.NewAuthHandler,
+
+		// AI Agent Module
+		provideAIAgentClient,
+		aiagentHttp.NewChatHandler,
 
 		// Upload Module
 		uploadHttp.NewUploadHandler,
@@ -119,6 +127,26 @@ func provideMinio(cfg *configs.Config) *minio.MinioClient {
 		return nil
 	}
 	return client
+}
+
+func provideGRPCConn(cfg *configs.Config) *grpcpkg.Conn {
+	conn, err := grpcpkg.Dial(grpcpkg.Config{
+		Target:   cfg.AIAgentGRPCAddr,
+		Insecure: true,
+	})
+	if err != nil {
+		logger.Warn("gRPC connection failed: %v", err)
+		return nil
+	}
+	return conn
+}
+
+func provideAIAgentClient(conn *grpcpkg.Conn) aiagent.Client {
+	if conn == nil {
+		logger.Warn("AI Agent not available: no gRPC connection")
+		return nil
+	}
+	return aiagent.NewGRPCClient(conn)
 }
 
 func provideJWTProvider(cfg *configs.Config) jwt.JWTProvider {

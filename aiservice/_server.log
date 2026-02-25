@@ -1,0 +1,30 @@
+D:\feature\dadpt\aiservice\.venv\Lib\site-packages\langchain_core\_api\deprecation.py:25: UserWarning: Core Pydantic V1 functionality isn't compatible with Python 3.14 or greater.
+  from pydantic.v1.fields import FieldInfo as FieldInfoV1
+[32mINFO[0m:     Started server process [[36m8404[0m]
+[32mINFO[0m:     Waiting for application startup.
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT tenants.id, tenants.slug, tenants.name, tenants.description, tenants.grpc_target, tenants.qdrant_prefix, tenants.supervisor_model_slug, tenants.supervisor_prompt, tenants.max_turns, tenants.fallback_message, tenants.enabled, tenants.created_at 
+FROM tenants 
+WHERE tenants.enabled IS 1
+INFO:sqlalchemy.engine.Engine:[generated in 0.00308s] ()
+INFO:sqlalchemy.engine.Engine:SELECT tool_definitions.tenant_id AS tool_definitions_tenant_id, tool_definitions.id AS tool_definitions_id, tool_definitions.name AS tool_definitions_name, tool_definitions.description AS tool_definitions_description, tool_definitions.grpc_method AS tool_definitions_grpc_method, tool_definitions.input_schema AS tool_definitions_input_schema, tool_definitions.output_schema AS tool_definitions_output_schema, tool_definitions.enabled AS tool_definitions_enabled, tool_definitions.created_at AS tool_definitions_created_at 
+FROM tool_definitions 
+WHERE tool_definitions.tenant_id IN (?)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00047s] (1,)
+INFO:sqlalchemy.engine.Engine:SELECT workflows.tenant_id AS workflows_tenant_id, workflows.id AS workflows_id, workflows.name AS workflows_name, workflows.slug AS workflows_slug, workflows.description AS workflows_description, workflows.trigger_description AS workflows_trigger_description, workflows.definition AS workflows_definition, workflows.enabled AS workflows_enabled, workflows.created_at AS workflows_created_at 
+FROM workflows 
+WHERE workflows.tenant_id IN (?)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00030s] (1,)
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+INFO:sqlalchemy.engine.Engine:BEGIN (implicit)
+INFO:sqlalchemy.engine.Engine:SELECT model_instances.id, model_instances.tenant_id, model_instances.provider_id, model_instances.slug, model_instances.display_name, model_instances.model_name, model_instances.temperature, model_instances.max_tokens, model_instances.top_p, model_instances.system_prefix, model_instances.purpose, model_instances.fallback_slug, model_instances.enabled, model_instances.created_at 
+FROM model_instances 
+WHERE model_instances.enabled IS 1
+INFO:sqlalchemy.engine.Engine:[generated in 0.00039s] ()
+INFO:sqlalchemy.engine.Engine:SELECT model_providers.id AS model_providers_id, model_providers.slug AS model_providers_slug, model_providers.name AS model_providers_name, model_providers.provider_type AS model_providers_provider_type, model_providers.api_key_env_var AS model_providers_api_key_env_var, model_providers.base_url AS model_providers_base_url, model_providers.rate_limit_rpm AS model_providers_rate_limit_rpm, model_providers.enabled AS model_providers_enabled, model_providers.created_at AS model_providers_created_at 
+FROM model_providers 
+WHERE model_providers.id IN (?, ?)
+INFO:sqlalchemy.engine.Engine:[generated in 0.00026s] (1, 2)
+INFO:sqlalchemy.engine.Engine:ROLLBACK
+[32mINFO[0m:     Application startup complete.
+[32mINFO[0m:     Uvicorn running on [1mhttp://0.0.0.0:8100[0m (Press CTRL+C to quit)
