@@ -1,0 +1,16 @@
+# IDEs and Editors
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Project Specific
+.agent/
+.gemini/
+
+# Github
+.github/appmod/appcat
+
+
+# OS Files
+*.pdf

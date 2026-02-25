@@ -1,0 +1,124 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# AI Agent Platform — Test Requests
+# ═══════════════════════════════════════════════════════════════════════════
+
+### Health check
+GET http://127.0.0.1:8100/health
+Accept: application/json
+
+###
+
+### Root info
+GET http://127.0.0.1:8100/
+Accept: application/json
+
+###
+
+### Admin Dashboard (HTML)
+GET http://127.0.0.1:8100/admin
+
+###
+
+# ─── Providers ──────────────────────────────────────────────────────────────
+
+### List providers
+GET http://127.0.0.1:8100/api/admin/providers
+Accept: application/json
+
+###
+
+### Create OpenAI provider
+POST http://127.0.0.1:8100/api/admin/providers
+Content-Type: application/json
+
+{
+  "slug": "openai-main",
+  "name": "OpenAI Production",
+  "provider_type": "openai",
+  "api_key_env_var": "OPENAI_API_KEY",
+  "rate_limit_rpm": 500
+}
+
+###
+
+# ─── Tenants ────────────────────────────────────────────────────────────────
+
+### List tenants
+GET http://127.0.0.1:8100/api/admin/tenants
+Accept: application/json
+
+###
+
+### Create bus tenant
+POST http://127.0.0.1:8100/api/admin/tenants
+Content-Type: application/json
+
+{
+  "slug": "bus",
+  "name": "Đặt Vé Xe Bus",
+  "description": "AI Agent hỗ trợ tìm kiếm và đặt vé xe bus",
+  "grpc_target": "localhost:50052",
+  "qdrant_prefix": "bus"
+}
+
+###
+
+# ─── Task Types ─────────────────────────────────────────────────────────────
+
+### List available BPMN task types
+GET http://127.0.0.1:8100/api/admin/task-types
+Accept: application/json
+
+###
+
+# ─── Chat (REST) ────────────────────────────────────────────────────────────
+
+### Chat — search trips
+POST http://127.0.0.1:8100/api/v1/chat
+Content-Type: application/json
+
+{
+  "tenant_slug": "bus",
+  "message": "Tìm chuyến xe từ Hà Nội đi Đà Nẵng ngày mai"
+}
+
+###
+
+### Chat — check booking
+POST http://127.0.0.1:8100/api/v1/chat
+Content-Type: application/json
+
+{
+  "tenant_slug": "bus",
+  "message": "Kiểm tra vé BK-ABC123"
+}
+
+###
+
+### Chat — FAQ
+POST http://127.0.0.1:8100/api/v1/chat
+Content-Type: application/json
+
+{
+  "tenant_slug": "bus",
+  "message": "Chính sách hoàn vé như thế nào?"
+}
+
+###
+
+# ─── Reload ─────────────────────────────────────────────────────────────────
+
+### Reload all registries
+POST http://127.0.0.1:8100/api/admin/reload
+Accept: application/json
+
+###
+
+### Reload specific tenant
+POST http://127.0.0.1:8100/api/admin/reload/bus
+Accept: application/json
+
+###
+
+# ─── Seed (run once to bootstrap bus tenant) ────────────────────────────────
+# Run from terminal: cd aiservice && python -m src.seed

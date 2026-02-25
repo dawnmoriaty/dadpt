@@ -6,6 +6,7 @@ import (
 
 	"backend/configs"
 	"backend/db"
+	aiagentHttp "backend/internals/aiagent/controller/http"
 	authHttp "backend/internals/auth/controller/http"
 	bookingHttp "backend/internals/booking/controller/http"
 	busHttp "backend/internals/bus/controller/http"
@@ -27,6 +28,7 @@ type Server struct {
 	cfg           *configs.Config
 	db            *db.Database
 	authHandler   *authHttp.AuthHandler
+	chatHandler   *aiagentHttp.ChatHandler
 	uploadHandler *uploadHttp.UploadHandler
 	jwtProvider   jwt.JWTProvider
 	cache         redis.IRedis
@@ -37,6 +39,7 @@ func NewServer(
 	cfg *configs.Config,
 	database *db.Database,
 	authHandler *authHttp.AuthHandler,
+	chatHandler *aiagentHttp.ChatHandler,
 	uploadHandler *uploadHttp.UploadHandler,
 	jwtProvider jwt.JWTProvider,
 	cache redis.IRedis,
@@ -46,6 +49,7 @@ func NewServer(
 		cfg:           cfg,
 		db:            database,
 		authHandler:   authHandler,
+		chatHandler:   chatHandler,
 		uploadHandler: uploadHandler,
 		jwtProvider:   jwtProvider,
 		cache:         cache,
@@ -106,6 +110,21 @@ func (s *Server) MapRoutes() {
 	authBooking := bookingGroup.Group("")
 	authBooking.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache)
+
+	// AI Agent routes (public — chatbot endpoint)
+	if s.chatHandler != nil {
+		aiGroup := v1.Group("/ai")
+		{
+			aiGroup.POST("/chat", s.chatHandler.Chat)
+		}
+		// AI sync (admin only — push data to vector DB)
+		aiAdmin := v1.Group("/ai")
+		aiAdmin.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
+		aiAdmin.Use(middlewares.RoleMiddleware("admin", "operator"))
+		{
+			aiAdmin.POST("/sync", s.chatHandler.SyncData)
+		}
+	}
 
 	// Admin routes - requires auth + admin/operator role
 	admin := v1.Group("/admin")

@@ -1,0 +1,174 @@
+syntax = "proto3";
+
+package aiagent;
+
+option go_package = "backend/internals/aiagent/proto";
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AI Agent Service — Python side (this service runs in the AI microservice)
+// Go backend calls this to interact with the AI agent.
+// ═══════════════════════════════════════════════════════════════════════════
+
+service AIAgentService {
+  // Chat with the AI agent (single turn or resume paused workflow)
+  rpc Chat (ChatRequest) returns (ChatResponse);
+
+  // Sync data from backend into Qdrant vector store
+  rpc SyncData (SyncDataRequest) returns (SyncDataResponse);
+
+  // Health check
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// AI Agent Backend Service — Go side (this service runs in the Go backend)
+// AI agent calls this to fetch/mutate business data.
+// ═══════════════════════════════════════════════════════════════════════════
+
+service AIAgentBackend {
+  // Search trips
+  rpc SearchTrips (SearchTripsRequest) returns (SearchTripsResponse);
+
+  // Get trip details
+  rpc GetTripDetail (GetTripDetailRequest) returns (TripDetail);
+
+  // Get locations
+  rpc GetLocations (GetLocationsRequest) returns (GetLocationsResponse);
+
+  // Create a booking
+  rpc CreateBooking (CreateBookingRequest) returns (CreateBookingResponse);
+
+  // Get booking status
+  rpc GetBookingStatus (GetBookingStatusRequest) returns (BookingStatusResponse);
+}
+
+// ─── Chat Messages ─────────────────────────────────────────────────────────
+
+message ChatRequest {
+  string tenant_slug = 1;    // which tenant (bus, banking, edu...)
+  string session_id = 2;     // conversation session for context
+  string message = 3;        // user's message
+  string user_id = 4;        // optional: authenticated user ID
+}
+
+message ChatResponse {
+  string message = 1;                // AI's response message
+  string status = 2;                 // completed | paused | error
+  string session_id = 3;             // session for follow-up
+  string workflow_slug = 4;          // which workflow handled this (if any)
+  repeated ToolCallLog tool_calls = 5; // transparency: what tools were called
+}
+
+message ToolCallLog {
+  string tool_name = 1;
+  string inputs = 2;       // JSON string
+  string output = 3;       // JSON string (truncated)
+  string timestamp = 4;
+}
+
+// ─── Data Sync ─────────────────────────────────────────────────────────────
+
+message SyncDataRequest {
+  string tenant_slug = 1;
+  string collection = 2;   // "trips", "locations", "faq"
+  string data_json = 3;    // JSON array of objects
+}
+
+message SyncDataResponse {
+  int32 upserted_count = 1;
+  string message = 2;
+}
+
+// ─── Health ────────────────────────────────────────────────────────────────
+
+message HealthCheckRequest {}
+
+message HealthCheckResponse {
+  string status = 1;
+  int32 tenants_loaded = 2;
+  repeated string available_task_types = 3;
+}
+
+// ─── Backend Service Messages (Go implements these) ────────────────────────
+
+message SearchTripsRequest {
+  string origin = 1;
+  string destination = 2;
+  string date = 3;           // YYYY-MM-DD
+  int32 passengers = 4;
+}
+
+message SearchTripsResponse {
+  repeated TripDetail trips = 1;
+  int32 total = 2;
+}
+
+message TripDetail {
+  int64 id = 1;
+  string provider_name = 2;
+  string origin_name = 3;
+  string origin_city = 4;
+  string destination_name = 5;
+  string destination_city = 6;
+  string departure_time = 7;
+  string arrival_time = 8;
+  double base_price = 9;
+  double price_modifier = 10;
+  bool is_hot_deal = 11;
+  int32 available_seats = 12;
+  string status = 13;
+  repeated string booked_seats = 14;
+}
+
+message GetTripDetailRequest {
+  int64 trip_id = 1;
+}
+
+message GetLocationsRequest {
+  string query = 1;
+  int32 limit = 2;
+}
+
+message GetLocationsResponse {
+  repeated LocationDetail locations = 1;
+}
+
+message LocationDetail {
+  int32 id = 1;
+  string name = 2;
+  string city = 3;
+  string address = 4;
+}
+
+message CreateBookingRequest {
+  int64 trip_id = 1;
+  string user_id = 2;
+  string guest_name = 3;
+  string guest_phone = 4;
+  string guest_email = 5;
+  repeated string seat_codes = 6;
+  string pickup_point = 7;
+  string dropoff_point = 8;
+}
+
+message CreateBookingResponse {
+  string booking_code = 1;
+  string status = 2;
+  double total_amount = 3;
+  string expires_at = 4;
+  string message = 5;
+}
+
+message GetBookingStatusRequest {
+  string booking_code = 1;
+}
+
+message BookingStatusResponse {
+  string booking_code = 1;
+  string status = 2;
+  double total_amount = 3;
+  repeated string seat_codes = 4;
+  string departure_time = 5;
+  string origin = 6;
+  string destination = 7;
+}
