@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "MODULE_UPLOAD.md",
-                "mode": "source",
+                "file": "MODULE_BUSTYPE.md",
+                "mode": "preview",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "MODULE_UPLOAD"
+              "title": "MODULE_BUSTYPE"
             }
           }
         ],
@@ -189,35 +189,37 @@
   },
   "left-ribbon": {
     "hiddenItems": {
-      "mermaid-tools:Open Mermaid Toolbar": false,
       "switcher:Open quick switcher": false,
       "graph:Open graph view": false,
       "canvas:Create new canvas": false,
       "daily-notes:Open today's daily note": false,
       "templates:Insert template": false,
       "command-palette:Open command palette": false,
-      "bases:Create new base": false
+      "bases:Create new base": false,
+      "mermaid-tools:Open Mermaid Toolbar": false
     }
   },
   "active": "3289dfa53882d305",
   "lastOpenFiles": [
+    "MODULE_BOOKING.md",
+    "MODULE_AUTH.md",
+    "MODULE_BUS.md",
+    "MODULE_BUSTYPE.md",
+    "MODULE_LOCATION.md",
+    "~$DULE_AUTH.md",
+    "~$DULE_AUTH.adoc",
+    "MODULE_AUTH.adoc",
+    "MODULE_UPLOAD.md",
     "MODULE_UPLOAD.pdf",
     "MODULE_TRIP.md",
     "MODULE_TRIP.pdf",
     "MODULE_PROVIDER.md",
     "MODULE_PROVIDER.pdf",
-    "MODULE_LOCATION.md",
     "MODULE_LOCATION.pdf",
-    "MODULE_BUSTYPE.md",
     "MODULE_BUSTYPE.pdf",
-    "MODULE_BUS.md",
     "MODULE_BUS.pdf",
-    "MODULE_BOOKING.md",
     "MODULE_BOOKING.pdf",
-    "MODULE_AUTH.md",
     "MODULE_AUTH.pdf",
-    "MODULE_UPLOAD.md",
-    "Untitled.base",
     "Docs.md",
     "MODULE_TRIP_NEW.md",
     "MODULE_BOOKING_NEW.md"

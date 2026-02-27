@@ -2,5 +2,6 @@
   "obsidian-style-settings",
   "obsidian-plantuml",
   "mermaid-tools",
-  "obsidian-admonition"
+  "obsidian-admonition",
+  "obsidian-pandoc"
 ]

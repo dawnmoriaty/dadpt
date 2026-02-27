@@ -16,6 +16,7 @@ import { Route as PublicIndexRouteImport } from './routes/_public/index'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as PublicSearchRouteImport } from './routes/_public/search'
 import { Route as PublicMyBookingsRouteImport } from './routes/_public/my-bookings'
+import { Route as PublicChatRouteImport } from './routes/_public/chat'
 import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
@@ -56,6 +57,11 @@ const PublicSearchRoute = PublicSearchRouteImport.update({
 const PublicMyBookingsRoute = PublicMyBookingsRouteImport.update({
   id: '/my-bookings',
   path: '/my-bookings',
+  getParentRoute: () => PublicRoute,
+} as any)
+const PublicChatRoute = PublicChatRouteImport.update({
+  id: '/chat',
+  path: '/chat',
   getParentRoute: () => PublicRoute,
 } as any)
 const AuthRegisterRoute = AuthRegisterRouteImport.update({
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/chat': typeof PublicChatRoute
   '/my-bookings': typeof PublicMyBookingsRoute
   '/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRouteWithChildren
   '/login': typeof AuthLoginRoute
   '/register': typeof AuthRegisterRoute
+  '/chat': typeof PublicChatRoute
   '/my-bookings': typeof PublicMyBookingsRoute
   '/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -136,6 +144,7 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/_auth/login': typeof AuthLoginRoute
   '/_auth/register': typeof AuthRegisterRoute
+  '/_public/chat': typeof PublicChatRoute
   '/_public/my-bookings': typeof PublicMyBookingsRoute
   '/_public/search': typeof PublicSearchRoute
   '/admin/dashboard': typeof AdminDashboardRoute
@@ -153,6 +162,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/register'
+    | '/chat'
     | '/my-bookings'
     | '/search'
     | '/admin/dashboard'
@@ -168,6 +178,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/login'
     | '/register'
+    | '/chat'
     | '/my-bookings'
     | '/search'
     | '/admin/dashboard'
@@ -185,6 +196,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/_auth/login'
     | '/_auth/register'
+    | '/_public/chat'
     | '/_public/my-bookings'
     | '/_public/search'
     | '/admin/dashboard'
@@ -252,6 +264,13 @@ declare module '@tanstack/react-router' {
       path: '/my-bookings'
       fullPath: '/my-bookings'
       preLoaderRoute: typeof PublicMyBookingsRouteImport
+      parentRoute: typeof PublicRoute
+    }
+    '/_public/chat': {
+      id: '/_public/chat'
+      path: '/chat'
+      fullPath: '/chat'
+      preLoaderRoute: typeof PublicChatRouteImport
       parentRoute: typeof PublicRoute
     }
     '/_auth/register': {
@@ -326,6 +345,7 @@ const AuthRouteChildren: AuthRouteChildren = {
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
 interface PublicRouteChildren {
+  PublicChatRoute: typeof PublicChatRoute
   PublicMyBookingsRoute: typeof PublicMyBookingsRoute
   PublicSearchRoute: typeof PublicSearchRoute
   PublicIndexRoute: typeof PublicIndexRoute
@@ -333,6 +353,7 @@ interface PublicRouteChildren {
 }
 
 const PublicRouteChildren: PublicRouteChildren = {
+  PublicChatRoute: PublicChatRoute,
   PublicMyBookingsRoute: PublicMyBookingsRoute,
   PublicSearchRoute: PublicSearchRoute,
   PublicIndexRoute: PublicIndexRoute,

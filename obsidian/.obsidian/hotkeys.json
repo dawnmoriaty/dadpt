@@ -1,0 +1,11 @@
+{
+  "obsidian-pandoc:pandoc-export-asciidoc": [
+    {
+      "modifiers": [
+        "Mod",
+        "Shift"
+      ],
+      "key": "E"
+    }
+  ]
+}
