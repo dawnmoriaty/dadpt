@@ -32,6 +32,8 @@ async def seed():
             return
 
         # ── 1. Model Providers (Global) ─────────────────────────────────
+        # API keys resolved from env var fallback. To use DB-encrypted keys,
+        # call POST /api/admin/providers with {"api_key": "sk-xxx"} instead.
         openai_prov = ModelProvider(
             slug="openai-main",
             name="OpenAI Production",
@@ -46,7 +48,14 @@ async def seed():
             api_key_env_var="GOOGLE_API_KEY",
             rate_limit_rpm=360,
         )
-        session.add_all([openai_prov, google_prov])
+        hf_prov = ModelProvider(
+            slug="huggingface-main",
+            name="Hugging Face Inference API",
+            provider_type="huggingface",
+            api_key_env_var="HUGGINGFACEHUB_API_TOKEN",
+            rate_limit_rpm=120,
+        )
+        session.add_all([openai_prov, google_prov, hf_prov])
         await session.flush()
 
         # ── 2. Bus Tenant ───────────────────────────────────────────────
@@ -65,23 +74,25 @@ async def seed():
         await session.flush()
 
         # ── 3. Model Instances (Bus) ────────────────────────────────────
+        # Using HuggingFace free Inference API models.
+        # Change provider_id to google_prov.id / openai_prov.id if you have valid keys.
         session.add_all([
             ModelInstance(
                 tenant_id=bus.id,
-                provider_id=openai_prov.id,
+                provider_id=hf_prov.id,
                 slug="bus-supervisor-gpt",
-                display_name="GPT Supervisor",
-                model_name="gpt-4o-mini",
+                display_name="HF Supervisor",
+                model_name="Qwen/Qwen2.5-72B-Instruct",
                 temperature=0.1,
                 max_tokens=500,
                 purpose="supervisor",
             ),
             ModelInstance(
                 tenant_id=bus.id,
-                provider_id=openai_prov.id,
+                provider_id=hf_prov.id,
                 slug="bus-search-gpt",
-                display_name="GPT Search",
-                model_name="gpt-4o",
+                display_name="HF Search",
+                model_name="Qwen/Qwen2.5-72B-Instruct",
                 temperature=0.3,
                 max_tokens=2000,
                 purpose="search",
@@ -89,10 +100,10 @@ async def seed():
             ),
             ModelInstance(
                 tenant_id=bus.id,
-                provider_id=google_prov.id,
+                provider_id=hf_prov.id,
                 slug="bus-logic-gemini",
-                display_name="Gemini Logic",
-                model_name="gemini-2.0-flash",
+                display_name="HF Logic",
+                model_name="Qwen/Qwen2.5-72B-Instruct",
                 temperature=0.1,
                 max_tokens=4000,
                 purpose="reasoning",
@@ -100,10 +111,10 @@ async def seed():
             ),
             ModelInstance(
                 tenant_id=bus.id,
-                provider_id=openai_prov.id,
+                provider_id=hf_prov.id,
                 slug="bus-chat-gpt",
-                display_name="GPT Chat",
-                model_name="gpt-4o-mini",
+                display_name="HF Chat",
+                model_name="Qwen/Qwen2.5-72B-Instruct",
                 temperature=0.7,
                 max_tokens=1000,
                 purpose="conversation",

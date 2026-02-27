@@ -128,6 +128,15 @@ class Supervisor:
 
             executor = WorkflowExecutor(deps)
             ctx = await executor.run(skill.workflow_definition, ctx)
+
+            # If workflow errored and no response was generated, use fallback
+            if ctx.status == "error" and not ctx.response:
+                logger.warning(
+                    "supervisor.workflow_error_fallback",
+                    workflow=ctx.workflow_slug,
+                    error=ctx.error,
+                )
+                ctx = await self._fallback_response(ctx)
         else:
             # No agent/skill matched → fallback
             ctx = await self._fallback_response(ctx)
@@ -150,6 +159,10 @@ class Supervisor:
 
             executor = WorkflowExecutor(self.executor_deps)
             ctx = await executor.run(definition, ctx)
+
+            # If workflow errored and no response was generated, use fallback
+            if ctx.status == "error" and not ctx.response:
+                ctx = await self._fallback_response(ctx)
         else:
             ctx = await self._fallback_response(ctx)
 

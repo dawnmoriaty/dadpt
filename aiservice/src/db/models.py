@@ -38,7 +38,7 @@ class Base(DeclarativeBase):
 # LAYER 1 — Global Model Providers (API keys)
 # ─────────────────────────────────────────────────────────────────────────────
 class ModelProvider(Base):
-    """Platform-level LLM provider — stores API key reference."""
+    """Platform-level LLM provider — stores API key (encrypted in DB or env var fallback)."""
 
     __tablename__ = "model_providers"
 
@@ -47,9 +47,12 @@ class ModelProvider(Base):
     name: Mapped[str] = mapped_column(String(128), nullable=False)
     provider_type: Mapped[str] = mapped_column(
         String(32), nullable=False
-    )  # openai | google | anthropic | custom
-    # Phase-1: store env-var name like "OPENAI_API_KEY"; Phase-2: encrypted blob
-    api_key_env_var: Mapped[str] = mapped_column(String(128), nullable=False)
+    )  # openai | google | anthropic | qwen | deepseek | custom
+    # Fallback: env var name (e.g. "OPENAI_API_KEY"). Used if encrypted_api_key is empty.
+    api_key_env_var: Mapped[str] = mapped_column(String(128), nullable=False, default="")
+    # Primary: Fernet-encrypted API key stored directly in DB.
+    # Admin inputs plaintext → system encrypts before storing.
+    encrypted_api_key: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     base_url: Mapped[Optional[str]] = mapped_column(String(256), nullable=True)
     rate_limit_rpm: Mapped[int] = mapped_column(Integer, default=500)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True)

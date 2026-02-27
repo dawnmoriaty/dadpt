@@ -15,6 +15,7 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -58,6 +59,7 @@ from src.engine.task_registry import list_task_types
 from src.engine.workflow_context import WorkflowContext
 from src.engine.workflow_schema import WorkflowDefinitionSchema
 from src.platform.model_pool import get_model_pool
+from src.platform.providers.registry import get_provider_registry
 from src.platform.tenant_registry import get_tenant_registry
 from src.platform.tool_factory import ToolFactory
 from src.vectorstore.qdrant_manager import get_qdrant_manager
@@ -78,19 +80,56 @@ ui_router = APIRouter(tags=["admin-ui"])
 
 # ── Providers ───────────────────────────────────────────────────────────────
 
+
+def _provider_to_out(provider: ModelProvider) -> dict:
+    """Convert ModelProvider ORM → dict with has_api_key computed field."""
+    return {
+        "id": provider.id,
+        "slug": provider.slug,
+        "name": provider.name,
+        "provider_type": provider.provider_type,
+        "api_key_env_var": provider.api_key_env_var,
+        "has_api_key": bool(provider.encrypted_api_key),
+        "base_url": provider.base_url,
+        "rate_limit_rpm": provider.rate_limit_rpm,
+        "enabled": provider.enabled,
+    }
+
 @api_router.get("/providers", response_model=list[ProviderOut])
 async def list_providers(session: AsyncSession = Depends(get_session)):
     result = await session.execute(select(ModelProvider))
-    return result.scalars().all()
+    providers = result.scalars().all()
+    return [_provider_to_out(p) for p in providers]
+
+
+@api_router.get("/providers/supported-types")
+async def list_supported_types():
+    """List all supported LLM provider types."""
+    registry = get_provider_registry()
+    return {"supported_types": registry.supported_types()}
 
 
 @api_router.post("/providers", response_model=ProviderOut)
 async def create_provider(data: ProviderCreate, session: AsyncSession = Depends(get_session)):
-    provider = ModelProvider(**data.model_dump())
+    # Extract plaintext api_key before creating ORM object
+    plaintext_key = data.api_key
+    provider_data = data.model_dump(exclude={"api_key"})
+    provider = ModelProvider(**provider_data)
+
+    # Encrypt and store if api_key provided
+    if plaintext_key:
+        from src.platform.crypto import get_crypto
+        provider.encrypted_api_key = get_crypto().encrypt(plaintext_key)
+
     session.add(provider)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(409, f"Provider with slug '{data.slug}' already exists")
     await session.refresh(provider)
-    return provider
+    get_model_pool().invalidate()
+    return _provider_to_out(provider)
 
 
 @api_router.put("/providers/{provider_id}", response_model=ProviderOut)
@@ -100,11 +139,21 @@ async def update_provider(
     provider = await session.get(ModelProvider, provider_id)
     if not provider:
         raise HTTPException(404, "Provider not found")
-    for k, v in data.model_dump(exclude_unset=True).items():
+
+    # Handle api_key separately (encrypt before storing)
+    update_data = data.model_dump(exclude_unset=True, exclude={"api_key"})
+    for k, v in update_data.items():
         setattr(provider, k, v)
+
+    # Encrypt new api_key if provided
+    if data.api_key is not None:
+        from src.platform.crypto import get_crypto
+        provider.encrypted_api_key = get_crypto().encrypt(data.api_key)
+
     await session.commit()
     await session.refresh(provider)
-    return provider
+    get_model_pool().invalidate()
+    return _provider_to_out(provider)
 
 
 @api_router.delete("/providers/{provider_id}")
@@ -114,6 +163,7 @@ async def delete_provider(provider_id: int, session: AsyncSession = Depends(get_
         raise HTTPException(404, "Provider not found")
     await session.delete(provider)
     await session.commit()
+    get_model_pool().invalidate()
     return {"message": "Deleted"}
 
 
@@ -129,11 +179,18 @@ async def list_tenants(session: AsyncSession = Depends(get_session)):
 async def create_tenant(data: TenantCreate, session: AsyncSession = Depends(get_session)):
     tenant = Tenant(**data.model_dump())
     session.add(tenant)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        await session.rollback()
+        raise HTTPException(409, f"Tenant with slug '{data.slug}' already exists")
     await session.refresh(tenant)
     # Create default Qdrant collections
-    qdrant = get_qdrant_manager()
-    await qdrant.ensure_tenant_collections(tenant.qdrant_prefix)
+    try:
+        qdrant = get_qdrant_manager()
+        await qdrant.ensure_tenant_collections(tenant.qdrant_prefix)
+    except Exception:
+        pass  # Qdrant may not be running — tenant still created
     # Reload registry
     await get_tenant_registry().reload()
     return tenant
@@ -526,6 +583,7 @@ async def admin_dashboard(request: Request, session: AsyncSession = Depends(get_
     """Main admin dashboard — lists tenants and providers."""
     tenants = (await session.execute(select(Tenant))).scalars().all()
     providers = (await session.execute(select(ModelProvider))).scalars().all()
+    registry = get_provider_registry()
     return templates.TemplateResponse(
         "dashboard.html",
         {
@@ -533,6 +591,7 @@ async def admin_dashboard(request: Request, session: AsyncSession = Depends(get_
             "tenants": tenants,
             "providers": providers,
             "task_types": list_task_types(),
+            "supported_types": registry.supported_types(),
         },
     )
 
