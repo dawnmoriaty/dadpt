@@ -25,11 +25,21 @@
     </div>
 </div>
 
-<!-- Model Providers -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- Model Providers — Full CRUD with API Key management                   -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <section class="mb-8">
     <div class="flex justify-between items-center mb-4">
-        <h2 class="text-xl font-semibold text-gray-700">🔑 Model Providers (Global)</h2>
-        <button onclick="document.getElementById('providerModal').classList.remove('hidden')"
+        <div>
+            <h2 class="text-xl font-semibold text-gray-700">🔑 Model Providers (Global)</h2>
+            <p class="text-xs text-gray-400 mt-1">
+                Supported types:
+                {% for st in supported_types %}
+                <span class="bg-indigo-50 text-indigo-600 px-1.5 py-0.5 rounded font-mono">{{ st }}</span>
+                {% endfor %}
+            </p>
+        </div>
+        <button onclick="openProviderModal()"
                 class="bg-green-600 text-white px-3 py-1.5 rounded text-sm hover:bg-green-700">
             + New Provider
         </button>
@@ -41,36 +51,65 @@
                     <th class="px-4 py-2 text-left">Slug</th>
                     <th class="px-4 py-2 text-left">Name</th>
                     <th class="px-4 py-2 text-left">Type</th>
-                    <th class="px-4 py-2 text-left">Env Var</th>
+                    <th class="px-4 py-2 text-left">API Key</th>
+                    <th class="px-4 py-2 text-left">Env Var (Fallback)</th>
+                    <th class="px-4 py-2 text-left">Base URL</th>
                     <th class="px-4 py-2 text-left">RPM</th>
                     <th class="px-4 py-2 text-left">Status</th>
-                    <th class="px-4 py-2"></th>
+                    <th class="px-4 py-2 text-center">Actions</th>
                 </tr>
             </thead>
             <tbody>
                 {% for p in providers %}
-                <tr class="border-t hover:bg-gray-50">
+                <tr class="border-t hover:bg-gray-50" id="prov-row-{{ p.id }}">
                     <td class="px-4 py-2 font-mono text-xs">{{ p.slug }}</td>
-                    <td class="px-4 py-2">{{ p.name }}</td>
-                    <td class="px-4 py-2"><span class="px-2 py-0.5 rounded text-xs
-                        {% if p.provider_type == 'openai' %}bg-green-100 text-green-700
-                        {% elif p.provider_type == 'google' %}bg-blue-100 text-blue-700
-                        {% else %}bg-gray-100 text-gray-700{% endif %}">{{ p.provider_type }}</span></td>
-                    <td class="px-4 py-2 font-mono text-xs">{{ p.api_key_env_var }}</td>
+                    <td class="px-4 py-2 font-medium">{{ p.name }}</td>
+                    <td class="px-4 py-2">
+                        <span class="px-2 py-0.5 rounded text-xs font-mono
+                            {% if p.provider_type == 'openai' %}bg-green-100 text-green-700
+                            {% elif p.provider_type == 'google' %}bg-blue-100 text-blue-700
+                            {% elif p.provider_type == 'anthropic' %}bg-orange-100 text-orange-700
+                            {% else %}bg-gray-100 text-gray-700{% endif %}">{{ p.provider_type }}</span>
+                    </td>
+                    <td class="px-4 py-2">
+                        {% if p.encrypted_api_key %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-green-100 text-green-700">
+                            🔐 DB Key Set
+                        </span>
+                        {% else %}
+                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs bg-yellow-100 text-yellow-700">
+                            ⚠️ No DB Key
+                        </span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ p.api_key_env_var or '—' }}</td>
+                    <td class="px-4 py-2 font-mono text-xs text-gray-500">{{ p.base_url or '—' }}</td>
                     <td class="px-4 py-2">{{ p.rate_limit_rpm }}</td>
                     <td class="px-4 py-2">
                         <span class="px-2 py-0.5 rounded text-xs {{ 'bg-green-100 text-green-700' if p.enabled else 'bg-red-100 text-red-700' }}">
-                            {{ '✅ On' if p.enabled else '❌ Off' }}
+                            {{ 'Active' if p.enabled else 'Off' }}
                         </span>
                     </td>
-                    <td class="px-4 py-2">
-                        <button onclick="deleteItem('/api/admin/providers/{{ p.id }}')"
-                                class="text-red-500 hover:text-red-700 text-xs">Delete</button>
+                    <td class="px-4 py-2 text-center">
+                        <div class="flex gap-2 justify-center">
+                            <button class="edit-provider-btn text-indigo-500 hover:text-indigo-700 text-xs font-medium"
+                                    data-id="{{ p.id }}"
+                                    data-slug="{{ p.slug }}"
+                                    data-name="{{ p.name }}"
+                                    data-type="{{ p.provider_type }}"
+                                    data-env="{{ p.api_key_env_var }}"
+                                    data-url="{{ p.base_url or '' }}"
+                                    data-rpm="{{ p.rate_limit_rpm }}"
+                                    data-enabled="{{ 'true' if p.enabled else 'false' }}"
+                                    data-haskey="{{ 'true' if p.encrypted_api_key else 'false' }}">Edit</button>
+                            <button onclick="deleteItem('/api/admin/providers/{{ p.id }}')"
+                                    class="text-red-500 hover:text-red-700 text-xs font-medium">Delete</button>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}
                 {% if not providers %}
-                <tr><td colspan="7" class="px-4 py-8 text-center text-gray-400">No providers yet</td></tr>
+                <tr><td colspan="9" class="px-4 py-8 text-center text-gray-400">No providers yet — create one to get started!</td></tr>
                 {% endif %}
             </tbody>
         </table>
@@ -96,7 +135,7 @@
                     <p class="font-mono text-xs text-gray-400">{{ t.slug }}</p>
                 </div>
                 <span class="px-2 py-0.5 rounded text-xs {{ 'bg-green-100 text-green-700' if t.enabled else 'bg-red-100 text-red-700' }}">
-                    {{ '✅ Active' if t.enabled else '❌ Off' }}
+                    {{ 'Active' if t.enabled else 'Off' }}
                 </span>
             </div>
             <p class="text-gray-500 text-sm mt-2">{{ t.description or 'No description' }}</p>
@@ -123,26 +162,89 @@
     </div>
 </section>
 
-<!-- Provider Modal -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
+<!-- Provider Create/Edit Modal                                            -->
+<!-- ═══════════════════════════════════════════════════════════════════════ -->
 <div id="providerModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
-        <h3 class="text-lg font-bold mb-4">New Model Provider</h3>
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-lg">
+        <h3 class="text-lg font-bold mb-1" id="providerModalTitle">New Model Provider</h3>
+        <p class="text-xs text-gray-400 mb-4" id="providerModalSubtitle">Configure an LLM provider with API key</p>
+
         <form id="providerForm" class="space-y-3">
-            <input name="slug" placeholder="Slug (e.g. openai-main)" class="w-full border rounded px-3 py-2 text-sm" required>
-            <input name="name" placeholder="Display Name" class="w-full border rounded px-3 py-2 text-sm" required>
-            <select name="provider_type" class="w-full border rounded px-3 py-2 text-sm">
-                <option value="openai">OpenAI</option>
-                <option value="google">Google</option>
-                <option value="anthropic">Anthropic</option>
-                <option value="custom">Custom</option>
-            </select>
-            <input name="api_key_env_var" placeholder="Env var name (e.g. OPENAI_API_KEY)" class="w-full border rounded px-3 py-2 text-sm" required>
-            <input name="base_url" placeholder="Base URL (optional)" class="w-full border rounded px-3 py-2 text-sm">
-            <input name="rate_limit_rpm" type="number" value="500" placeholder="Rate limit RPM" class="w-full border rounded px-3 py-2 text-sm">
-            <div class="flex gap-2 justify-end">
-                <button type="button" onclick="document.getElementById('providerModal').classList.add('hidden')"
-                        class="px-4 py-2 border rounded text-sm">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">Create</button>
+            <input type="hidden" name="_provider_id" id="providerIdField">
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Slug *</label>
+                    <input name="slug" id="provSlug" placeholder="e.g. openai-main"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Display Name *</label>
+                    <input name="name" id="provName" placeholder="e.g. OpenAI Production"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500" required>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Provider Type *</label>
+                <select name="provider_type" id="provType"
+                        class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                    {% for st in supported_types %}
+                    <option value="{{ st }}">{{ st }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <!-- API Key — the main new feature -->
+            <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+                <label class="block text-xs font-bold text-amber-700 mb-1">🔑 API Key (encrypted in DB)</label>
+                <div class="relative">
+                    <input name="api_key" id="provApiKey" type="password" placeholder="sk-xxxxxxxxxxxxxxxx"
+                           class="w-full border border-amber-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-amber-500 focus:border-amber-500 pr-20">
+                    <button type="button" onclick="toggleKeyVisibility()"
+                            class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-amber-600 hover:text-amber-800 font-medium"
+                            id="toggleKeyBtn">Show</button>
+                </div>
+                <p class="text-xs text-amber-600 mt-1" id="provApiKeyHint">
+                    Enter your API key — it will be encrypted before storing.
+                </p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Env Var Fallback</label>
+                    <input name="api_key_env_var" id="provEnvVar" placeholder="e.g. OPENAI_API_KEY"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Rate Limit (RPM)</label>
+                    <input name="rate_limit_rpm" id="provRpm" type="number" value="500"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">Base URL (optional — for proxies/custom endpoints)</label>
+                <input name="base_url" id="provBaseUrl" placeholder="https://api.openai.com/v1"
+                       class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm font-mono focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500">
+            </div>
+
+            <!-- Enabled toggle (only shown in edit mode) -->
+            <div id="provEnabledRow" class="hidden">
+                <label class="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" name="enabled" id="provEnabled" class="rounded text-indigo-600 focus:ring-indigo-500">
+                    <span class="font-medium text-gray-700">Enabled</span>
+                </label>
+            </div>
+
+            <div class="flex gap-2 justify-end pt-2 border-t">
+                <button type="button" onclick="closeProviderModal()"
+                        class="px-4 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50">Cancel</button>
+                <button type="submit" id="providerSubmitBtn"
+                        class="bg-indigo-600 text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-indigo-700">
+                    Create Provider
+                </button>
             </div>
         </form>
     </div>
@@ -150,18 +252,18 @@
 
 <!-- Tenant Modal -->
 <div id="tenantModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-md">
+    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-md">
         <h3 class="text-lg font-bold mb-4">New Tenant</h3>
         <form id="tenantForm" class="space-y-3">
-            <input name="slug" placeholder="Slug (e.g. bus, banking)" class="w-full border rounded px-3 py-2 text-sm" required>
-            <input name="name" placeholder="Display Name" class="w-full border rounded px-3 py-2 text-sm" required>
-            <textarea name="description" placeholder="Description" class="w-full border rounded px-3 py-2 text-sm" rows="2"></textarea>
-            <input name="grpc_target" placeholder="gRPC target (e.g. localhost:50052)" class="w-full border rounded px-3 py-2 text-sm" required>
-            <input name="qdrant_prefix" placeholder="Qdrant prefix (e.g. bus)" class="w-full border rounded px-3 py-2 text-sm" required>
-            <div class="flex gap-2 justify-end">
+            <input name="slug" placeholder="Slug (e.g. bus, banking)" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+            <input name="name" placeholder="Display Name" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+            <textarea name="description" placeholder="Description" class="w-full border rounded-lg px-3 py-2 text-sm" rows="2"></textarea>
+            <input name="grpc_target" placeholder="gRPC target (e.g. localhost:50052)" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+            <input name="qdrant_prefix" placeholder="Qdrant prefix (e.g. bus)" class="w-full border rounded-lg px-3 py-2 text-sm" required>
+            <div class="flex gap-2 justify-end pt-2 border-t">
                 <button type="button" onclick="document.getElementById('tenantModal').classList.add('hidden')"
-                        class="px-4 py-2 border rounded text-sm">Cancel</button>
-                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">Create</button>
+                        class="px-4 py-2 border rounded-lg text-sm">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-indigo-700">Create</button>
             </div>
         </form>
     </div>
@@ -170,18 +272,117 @@
 
 {% block scripts %}
 <script>
+    // ── Provider Modal Logic ──────────────────────────────────────────────
+
+    let editingProviderId = null;
+
+    function openProviderModal() {
+        editingProviderId = null;
+        document.getElementById('providerModalTitle').textContent = 'New Model Provider';
+        document.getElementById('providerModalSubtitle').textContent = 'Configure an LLM provider with API key';
+        document.getElementById('providerSubmitBtn').textContent = 'Create Provider';
+        document.getElementById('provEnabledRow').classList.add('hidden');
+        document.getElementById('providerForm').reset();
+        document.getElementById('provSlug').removeAttribute('readonly');
+        document.getElementById('provSlug').classList.remove('bg-gray-100');
+        document.getElementById('provApiKeyHint').textContent = 'Enter your API key — it will be encrypted before storing.';
+        document.getElementById('providerModal').classList.remove('hidden');
+    }
+
+    function openEditProvider(id, slug, name, provType, envVar, baseUrl, rpm, enabled, hasKey) {
+        editingProviderId = id;
+        document.getElementById('providerModalTitle').textContent = 'Edit Provider: ' + slug;
+        document.getElementById('providerModalSubtitle').textContent = 'Update configuration or rotate API key';
+        document.getElementById('providerSubmitBtn').textContent = 'Save Changes';
+        document.getElementById('provEnabledRow').classList.remove('hidden');
+
+        document.getElementById('provSlug').value = slug;
+        document.getElementById('provSlug').setAttribute('readonly', true);
+        document.getElementById('provSlug').classList.add('bg-gray-100');
+        document.getElementById('provName').value = name;
+        document.getElementById('provType').value = provType;
+        document.getElementById('provEnvVar').value = envVar;
+        document.getElementById('provBaseUrl').value = baseUrl;
+        document.getElementById('provRpm').value = rpm;
+        document.getElementById('provEnabled').checked = enabled;
+        document.getElementById('provApiKey').value = '';
+
+        if (hasKey) {
+            document.getElementById('provApiKeyHint').textContent =
+                '🔐 Key already set. Leave blank to keep current key, or enter a new one to rotate.';
+        } else {
+            document.getElementById('provApiKeyHint').textContent =
+                '⚠️ No key set. Enter an API key or configure the env var fallback.';
+        }
+
+        document.getElementById('providerModal').classList.remove('hidden');
+    }
+
+    function closeProviderModal() {
+        document.getElementById('providerModal').classList.add('hidden');
+        editingProviderId = null;
+    }
+
+    function toggleKeyVisibility() {
+        const input = document.getElementById('provApiKey');
+        const btn = document.getElementById('toggleKeyBtn');
+        if (input.type === 'password') {
+            input.type = 'text';
+            btn.textContent = 'Hide';
+        } else {
+            input.type = 'password';
+            btn.textContent = 'Show';
+        }
+    }
+
+    // ── Provider Form Submit ──────────────────────────────────────────────
+
     document.getElementById('providerForm').addEventListener('submit', async (e) => {
         e.preventDefault();
-        const fd = new FormData(e.target);
-        const data = Object.fromEntries(fd);
-        data.rate_limit_rpm = parseInt(data.rate_limit_rpm) || 500;
-        if (!data.base_url) delete data.base_url;
+        const form = e.target;
+        const data = {};
+
+        // Gather fields
+        data.slug = form.slug.value.trim();
+        data.name = form.name.value.trim();
+        data.provider_type = form.provider_type.value;
+        data.api_key_env_var = form.api_key_env_var.value.trim() || '';
+        data.rate_limit_rpm = parseInt(form.rate_limit_rpm.value) || 500;
+        data.base_url = form.base_url.value.trim() || null;
+
+        // API key — only send if user typed something
+        const apiKey = form.api_key.value.trim();
+        if (apiKey) {
+            data.api_key = apiKey;
+        }
+
         try {
-            await apiCall('POST', '/api/admin/providers', data);
-            showToast('✅ Provider created!');
+            if (editingProviderId) {
+                // Edit mode — PUT
+                const updateData = { ...data };
+                delete updateData.slug; // slug is immutable
+                // Include enabled flag
+                updateData.enabled = form.enabled.checked;
+                // Only include api_key if user typed a new one
+                if (!apiKey) delete updateData.api_key;
+
+                await apiCall('PUT', `/api/admin/providers/${editingProviderId}`, updateData);
+                showToast('Provider updated!');
+            } else {
+                // Create mode — POST
+                if (!data.base_url) delete data.base_url;
+                if (!apiKey) delete data.api_key;
+
+                await apiCall('POST', '/api/admin/providers', data);
+                showToast('Provider created!');
+            }
             location.reload();
-        } catch (e) { showToast('❌ ' + e.message, true); }
+        } catch (err) {
+            showToast(err.message, true);
+        }
     });
+
+    // ── Tenant Form Submit ────────────────────────────────────────────────
 
     document.getElementById('tenantForm').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -189,9 +390,36 @@
         const data = Object.fromEntries(fd);
         try {
             await apiCall('POST', '/api/admin/tenants', data);
-            showToast('✅ Tenant created!');
+            showToast('Tenant created!');
             location.reload();
-        } catch (e) { showToast('❌ ' + e.message, true); }
+        } catch (e) { showToast(e.message, true); }
+    });
+
+    // Close modals on backdrop click
+    document.querySelectorAll('[id$="Modal"]').forEach(modal => {
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) {
+                modal.classList.add('hidden');
+                editingProviderId = null;
+            }
+        });
+    });
+
+    // Bind all edit-provider buttons via data attributes
+    document.querySelectorAll('.edit-provider-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            openEditProvider(
+                parseInt(btn.dataset.id),
+                btn.dataset.slug,
+                btn.dataset.name,
+                btn.dataset.type,
+                btn.dataset.env,
+                btn.dataset.url,
+                parseInt(btn.dataset.rpm),
+                btn.dataset.enabled === 'true',
+                btn.dataset.haskey === 'true'
+            );
+        });
     });
 </script>
 {% endblock %}

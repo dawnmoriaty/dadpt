@@ -10,8 +10,9 @@ from pydantic import BaseModel
 class ProviderCreate(BaseModel):
     slug: str
     name: str
-    provider_type: str  # openai | google | anthropic
-    api_key_env_var: str  # e.g. "OPENAI_API_KEY"
+    provider_type: str  # openai | google | anthropic | qwen | deepseek ...
+    api_key_env_var: str = ""  # fallback env var (e.g. "OPENAI_API_KEY")
+    api_key: str | None = None  # plaintext API key → encrypted before storing
     base_url: str | None = None
     rate_limit_rpm: int = 500
 
@@ -19,6 +20,7 @@ class ProviderUpdate(BaseModel):
     name: str | None = None
     provider_type: str | None = None
     api_key_env_var: str | None = None
+    api_key: str | None = None  # new plaintext key → re-encrypt
     base_url: str | None = None
     rate_limit_rpm: int | None = None
     enabled: bool | None = None
@@ -29,6 +31,7 @@ class ProviderOut(BaseModel):
     name: str
     provider_type: str
     api_key_env_var: str
+    has_api_key: bool = False  # True if encrypted key exists in DB (never expose key)
     base_url: str | None
     rate_limit_rpm: int
     enabled: bool

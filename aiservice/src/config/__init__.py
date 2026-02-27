@@ -14,9 +14,12 @@ class Settings(BaseSettings):
     grpc_port: int = 50051
     log_level: str = "DEBUG"
 
-    # --- LLM API Keys (global, referenced by model_providers via env_var_name) ---
+    # --- LLM API Keys (DEPRECATED fallback — primary source is now encrypted keys in DB) ---
+    # These env vars are only used if a ModelProvider has no encrypted_api_key.
+    # New providers should store keys via Admin API → encrypted in DB.
     openai_api_key: str = ""
     google_api_key: str = ""
+    huggingfacehub_api_token: str = ""
 
     # --- Qdrant ---
     qdrant_host: str = "localhost"

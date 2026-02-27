@@ -140,6 +140,10 @@ class WorkflowExecutor:
             ctx.status = "completed"
             ctx.current_node = END
 
+        # Bridge: copy workflow output variable → ctx.response for gRPC layer
+        if ctx.get_var("response") and not ctx.response:
+            ctx.response = ctx.get_var("response", "")
+
         if iteration >= max_iterations:
             ctx.error = "Workflow exceeded maximum iterations"
             ctx.status = "error"
@@ -158,8 +162,9 @@ class WorkflowExecutor:
         """Build adjacency list from edge definitions."""
         adj: dict[str, list[tuple[str, str | None]]] = {}
         for edge in edges:
-            src = edge.get("from", "")
-            tgt = edge.get("to", "")
+            # Support both BPMN format (from/to) and react-flow format (source/target)
+            src = edge.get("from") or edge.get("source", "")
+            tgt = edge.get("to") or edge.get("target", "")
             condition = edge.get("condition")  # "true", "false", or None
             adj.setdefault(src, []).append((tgt, condition))
         return adj

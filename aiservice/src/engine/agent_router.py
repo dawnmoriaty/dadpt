@@ -96,7 +96,7 @@ class AgentRouter:
         routing_prompt = (
             f"You are a router. Given the user message, select the most appropriate agent.\n"
             f"Available agents:\n{agent_descriptions}\n\n"
-            f"User message: {ctx.last_user_message}\n\n"
+            f"User message: {ctx.user_message}\n\n"
             f"Respond with ONLY the agent slug (e.g. 'customer_support'). "
             f"If none match, respond with 'NONE'."
         )
@@ -107,7 +107,7 @@ class AgentRouter:
             return agents_sorted[0]  # fallback to highest priority
 
         try:
-            llm = self._model_pool.get(model_slug)
+            llm = await self._model_pool.get_llm_with_fallback(model_slug)
             response = await llm.ainvoke(routing_prompt)
             selected_slug = response.content.strip().strip("'\"").lower()
 
@@ -145,7 +145,7 @@ class AgentRouter:
             f"You are {agent.name}. {agent.role_prompt}\n\n"
             f"Given the user message, select the most appropriate skill to handle it.\n"
             f"Available skills:\n{skill_descriptions}\n\n"
-            f"User message: {ctx.last_user_message}\n\n"
+            f"User message: {ctx.user_message}\n\n"
             f"Respond with ONLY the skill slug (e.g. 'check_trip'). "
             f"If none match, respond with 'NONE'."
         )
@@ -156,7 +156,7 @@ class AgentRouter:
             return skills[0]
 
         try:
-            llm = self._model_pool.get(model_slug)
+            llm = await self._model_pool.get_llm_with_fallback(model_slug)
             response = await llm.ainvoke(routing_prompt)
             selected_slug = response.content.strip().strip("'\"").lower()
 
