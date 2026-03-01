@@ -1,41 +1,43 @@
-import { PlusCircle, Pencil, Trash2 } from 'lucide-react'
-import { useState } from 'react'
+import { PlusCircle } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
+import { DataTable, DataTableViewOptions } from '@/components/common/data-table'
 import { Button } from '@/components/ui/button'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 
 import { useBusTypes, useDeleteBusType, useCreateBusType, useUpdateBusType } from '../hooks'
 import type { BusType, CreateBusTypeRequest, UpdateBusTypeRequest } from '../types'
 
+import { getBusTypesColumns } from './bus-types-columns'
 import { BusTypeFormDialog } from './BusTypeFormDialog'
 
 
 export function BusTypesPage(): React.ReactElement {
-    const [page] = useState(1)
+    const [page, setPage] = useState(0)
+    const [pageSize, setPageSize] = useState(20)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBusType, setEditingBusType] = useState<BusType | null>(null)
     const [deletingId, setDeletingId] = useState<number | null>(null)
     
-    const { data, isLoading, error } = useBusTypes(page, 20)
+    const { data, error } = useBusTypes(page + 1, pageSize)
     const deleteMutation = useDeleteBusType()
     const createMutation = useCreateBusType()
     const updateMutation = useUpdateBusType()
 
+    const columns = useMemo(
+        () =>
+            getBusTypesColumns({
+                onEdit: (busType) => {
+                    setEditingBusType(busType)
+                    setIsFormOpen(true)
+                },
+                onDelete: setDeletingId,
+            }),
+        [],
+    )
+
     const handleCreate = (): void => {
         setEditingBusType(null)
-        setIsFormOpen(true)
-    }
-
-    const handleEdit = (busType: BusType): void => {
-        setEditingBusType(busType)
         setIsFormOpen(true)
     }
 
@@ -65,6 +67,7 @@ export function BusTypesPage(): React.ReactElement {
     }
 
     const busTypes = data?.items ?? []
+    const totalPages = data?.total ? Math.ceil(data.total / pageSize) : 0
 
     return (
         <div className="space-y-6">
@@ -79,60 +82,22 @@ export function BusTypesPage(): React.ReactElement {
                 </Button>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>ID</TableHead>
-                            <TableHead>Name</TableHead>
-                            <TableHead>Total Seats</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8">
-                                    Loading...
-                                </TableCell>
-                            </TableRow>
-                        ) : busTypes.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={4} className="text-center py-8 text-muted-foreground">
-                                    No bus types found
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            busTypes.map((bt) => (
-                                <TableRow key={bt.id}>
-                                    <TableCell className="font-medium">{bt.id}</TableCell>
-                                    <TableCell>{bt.name}</TableCell>
-                                    <TableCell>{bt.totalSeats}</TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(bt)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setDeletingId(bt.id)}
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                columns={columns}
+                data={busTypes}
+                pageCount={totalPages}
+                pageIndex={page}
+                pageSize={pageSize}
+                onPaginationChange={(newPage, newSize) => {
+                    setPage(newPage)
+                    setPageSize(newSize)
+                }}
+                toolbar={(table) => (
+                    <div className="flex items-center justify-end">
+                        <DataTableViewOptions table={table} />
+                    </div>
+                )}
+            />
 
             <BusTypeFormDialog
                 isOpen={isFormOpen}

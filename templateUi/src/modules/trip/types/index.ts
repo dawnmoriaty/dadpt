@@ -21,6 +21,9 @@ export interface Trip {
     pickupPoints: Point[]
     dropoffPoints: Point[]
     bookedSeats: string[]
+
+    // Image URL from related bus
+    busImageUrl?: string | null
 }
 
 export interface Point {

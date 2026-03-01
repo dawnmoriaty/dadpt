@@ -7,6 +7,24 @@
 -- =============================================================================
 
 -- ─────────────────────────────────────────────────────────────────────────────
+-- 0. CLEANUP: Remove existing data & reset sequences (respect FK order)
+-- ─────────────────────────────────────────────────────────────────────────────
+DELETE FROM payment_transactions;
+DELETE FROM outbox_events;
+DELETE FROM bookings;
+DELETE FROM trips;
+DELETE FROM buses;
+DELETE FROM bus_types;
+DELETE FROM providers;
+DELETE FROM locations;
+
+ALTER SEQUENCE locations_id_seq RESTART WITH 1;
+ALTER SEQUENCE providers_id_seq RESTART WITH 1;
+ALTER SEQUENCE bus_types_id_seq RESTART WITH 1;
+ALTER SEQUENCE buses_id_seq RESTART WITH 1;
+ALTER SEQUENCE trips_id_seq RESTART WITH 1;
+
+-- ─────────────────────────────────────────────────────────────────────────────
 -- 1. LOCATIONS (~30 bến xe miền Bắc)
 -- ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,10 +1,13 @@
 -- name: GetTripByID :one
 SELECT t.*,
        p.name as provider_name,
+       bt.name as bus_type_name, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
 JOIN providers p ON t.provider_id = p.id
+JOIN buses b ON t.bus_id = b.id
+JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
 WHERE t.id = $1;
@@ -12,10 +15,13 @@ WHERE t.id = $1;
 -- name: SearchTrips :many
 SELECT t.*, 
        p.name as provider_name,
+       bt.name as bus_type_name, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
 JOIN providers p ON t.provider_id = p.id
+JOIN buses b ON t.bus_id = b.id
+JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
 WHERE t.origin_id = $1
@@ -72,10 +78,13 @@ DELETE FROM trips WHERE id = $1;
 -- name: ListTripsAdmin :many
 SELECT t.*, 
        p.name as provider_name,
+       bt.name as bus_type_name, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
 JOIN providers p ON t.provider_id = p.id
+JOIN buses b ON t.bus_id = b.id
+JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
 WHERE (sqlc.narg('provider_id')::int IS NULL OR t.provider_id = sqlc.narg('provider_id'))
@@ -96,7 +105,7 @@ WHERE trip_id = $1
 -- name: BrowseUpcomingTrips :many
 SELECT t.*,
        p.name as provider_name,
-       bt.name as bus_type_name,
+       bt.name as bus_type_name, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t

@@ -72,6 +72,9 @@ type TripResponse struct {
 	PickupPoints    []PointDTO `json:"pickupPoints"`
 	DropoffPoints   []PointDTO `json:"dropoffPoints"`
 	BookedSeats     []string   `json:"bookedSeats"`
+
+	// Image URL from related bus
+	BusImageURL string `json:"busImageUrl,omitempty"`
 }
 
 func (r *CreateTripRequest) ToInput() *domain.CreateTripInput {
@@ -159,6 +162,7 @@ func ToTripResponse(trip *domain.Trip) *TripResponse {
 		PickupPoints:    pointsDomainToDTO(trip.PickupPoints),
 		DropoffPoints:   pointsDomainToDTO(trip.DropoffPoints),
 		BookedSeats:     trip.BookedSeats,
+		BusImageURL:     trip.BusImageURL,
 	}
 }
 

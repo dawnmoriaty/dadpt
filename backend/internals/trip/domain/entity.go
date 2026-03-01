@@ -92,6 +92,9 @@ type Trip struct {
 	OriginCity      string
 	DestinationName string
 	DestinationCity string
+
+	// Joined image URL (from bus table)
+	BusImageURL string
 }
 
 // =============================================================================
