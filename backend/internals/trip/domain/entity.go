@@ -87,6 +87,7 @@ type Trip struct {
 
 	// Joined fields (for search results)
 	ProviderName    string
+	BusTypeName     string
 	OriginName      string
 	OriginCity      string
 	DestinationName string

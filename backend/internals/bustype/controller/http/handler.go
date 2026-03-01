@@ -38,6 +38,21 @@ func (h *BusTypeHandler) Create(c *gin.Context) {
 	response.Created(c, dto.ToBusTypeResponse(result))
 }
 
+func (h *BusTypeHandler) ListPublic(c *gin.Context) {
+	items, err := h.uc.ListAll(c.Request.Context())
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	responses := make([]dto.BusTypeResponse, len(items))
+	for i, item := range items {
+		responses[i] = *dto.ToBusTypeResponse(item)
+	}
+
+	response.Success(c, responses)
+}
+
 func (h *BusTypeHandler) GetByID(c *gin.Context) {
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {

@@ -149,4 +149,7 @@ func (s *Server) MapRoutes() {
 		// Upload routes
 		uploadHttp.RegisterRoutes(admin, s.uploadHandler)
 	}
+
+	// Public bus-types route (no auth required)
+	bustypeHttp.PublicRoutes(v1, s.db)
 }

@@ -18,6 +18,7 @@ type ITripUseCase interface {
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, pg *paging.Paging, input *domain.AdminListInput) ([]*domain.Trip, int64, error)
 	Search(ctx context.Context, input *domain.SearchTripsInput) ([]*domain.Trip, int64, error)
+	Browse(ctx context.Context, input *domain.BrowseTripsInput) ([]*domain.Trip, int64, error)
 }
 
 type tripUseCase struct {
@@ -185,4 +186,25 @@ func (uc *tripUseCase) Search(ctx context.Context, input *domain.SearchTripsInpu
 	}
 
 	return uc.repo.Search(ctx, filter)
+}
+
+func (uc *tripUseCase) Browse(ctx context.Context, input *domain.BrowseTripsInput) ([]*domain.Trip, int64, error) {
+	pg := &paging.Paging{Page: input.Page, PageSize: input.Limit}
+	pg.Process()
+
+	filter := &domain.TripFilter{
+		Limit:  int32(pg.PageSize),
+		Offset: int32(pg.Offset()),
+	}
+
+	if input.ProviderID != nil {
+		pid := int32(*input.ProviderID)
+		filter.ProviderID = &pid
+	}
+	if input.BusTypeID != nil {
+		btid := int32(*input.BusTypeID)
+		filter.BusTypeID = &btid
+	}
+
+	return uc.repo.Browse(ctx, filter)
 }

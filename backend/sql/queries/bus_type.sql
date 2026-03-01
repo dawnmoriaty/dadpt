@@ -22,3 +22,6 @@ RETURNING *;
 
 -- name: DeleteBusType :exec
 DELETE FROM bus_types WHERE id = $1;
+
+-- name: ListBusTypesPublic :many
+SELECT * FROM bus_types ORDER BY name;

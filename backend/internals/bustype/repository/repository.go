@@ -77,6 +77,18 @@ func (r *busTypeRepository) Delete(ctx context.Context, id int32) error {
 	return r.queries.DeleteBusType(ctx, id)
 }
 
+func (r *busTypeRepository) ListAll(ctx context.Context) ([]*domain.BusType, error) {
+	rows, err := r.queries.ListBusTypesPublic(ctx)
+	if err != nil {
+		return nil, err
+	}
+	result := make([]*domain.BusType, len(rows))
+	for i, row := range rows {
+		result[i] = r.toDomain(&row)
+	}
+	return result, nil
+}
+
 func (r *busTypeRepository) toDomain(m *models.BusType) *domain.BusType {
 	return &domain.BusType{
 		ID:         m.ID,

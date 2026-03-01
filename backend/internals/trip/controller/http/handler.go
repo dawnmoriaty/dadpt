@@ -41,6 +41,25 @@ func (h *TripHandler) Search(c *gin.Context) {
 	response.Success(c, paging.Of(dto.ToTripResponseList(trips), total, pg.Page))
 }
 
+func (h *TripHandler) Browse(c *gin.Context) {
+	var req dto.BrowseTripsRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
+		return
+	}
+
+	trips, total, err := h.uc.Browse(c.Request.Context(), req.ToInput())
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	pg := &paging.Paging{Page: req.Page, PageSize: req.Limit}
+	pg.Process()
+
+	response.Success(c, paging.Of(dto.ToTripResponseList(trips), total, pg.Page))
+}
+
 func (h *TripHandler) GetByID(c *gin.Context) {
 	id, err := strconv.ParseInt(c.Param("id"), 10, 64)
 	if err != nil {

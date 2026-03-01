@@ -9,6 +9,7 @@ type TripFilter struct {
 	DepartureDate *time.Time
 	MinSeats      int32
 	ProviderID    *int32
+	BusTypeID     *int32
 	Status        *TripStatus
 	Limit         int32
 	Offset        int32
@@ -50,6 +51,14 @@ type SearchTripsInput struct {
 	MinSeats      int
 	Page          int
 	Limit         int
+}
+
+// BrowseTripsInput is the input for browsing upcoming trips (public, no required params)
+type BrowseTripsInput struct {
+	ProviderID *int
+	BusTypeID  *int
+	Page       int
+	Limit      int
 }
 
 // AdminListInput is the input for listing trips (admin)

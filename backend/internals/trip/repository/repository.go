@@ -283,3 +283,57 @@ func (r *tripRepository) Search(ctx context.Context, filter *domain.TripFilter) 
 func (r *tripRepository) CountActiveBookings(ctx context.Context, tripID int64) (int64, error) {
 	return r.queries.CountActiveBookingsByTripID(ctx, tripID)
 }
+
+func (r *tripRepository) Browse(ctx context.Context, filter *domain.TripFilter) ([]*domain.Trip, int64, error) {
+	rows, err := r.queries.BrowseUpcomingTrips(ctx, models.BrowseUpcomingTripsParams{
+		Limit:      filter.Limit,
+		Offset:     filter.Offset,
+		ProviderID: filter.ProviderID,
+		BusTypeID:  filter.BusTypeID,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to browse trips: %w", err)
+	}
+
+	count, err := r.queries.CountBrowseUpcomingTrips(ctx, models.CountBrowseUpcomingTripsParams{
+		ProviderID: filter.ProviderID,
+		BusTypeID:  filter.BusTypeID,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("failed to count browse trips: %w", err)
+	}
+
+	result := make([]*domain.Trip, len(rows))
+	for i, row := range rows {
+		result[i] = browseRowToEntity(row)
+	}
+
+	return result, count, nil
+}
+
+func browseRowToEntity(m models.BrowseUpcomingTripsRow) *domain.Trip {
+	return &domain.Trip{
+		ID:              m.ID,
+		ProviderID:      m.ProviderID,
+		BusID:           m.BusID,
+		OriginID:        m.OriginID,
+		DestinationID:   m.DestinationID,
+		DepartureTime:   m.DepartureTime.Time,
+		ArrivalTime:     m.ArrivalTime.Time,
+		BasePrice:       utils.NumericToFloat64(m.BasePrice),
+		PriceModifier:   utils.NumericToFloat64(m.PriceModifier),
+		IsHotDeal:       utils.PtrToBool(m.IsHotDeal),
+		PickupPoints:    jsonToPoints(m.PickupPoints),
+		DropoffPoints:   jsonToPoints(m.DropoffPoints),
+		BookedSeats:     m.BookedSeats,
+		AvailableSeats:  m.AvailableSeats,
+		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
+		CreatedAt:       m.CreatedAt.Time,
+		ProviderName:    m.ProviderName,
+		BusTypeName:     m.BusTypeName,
+		OriginName:      m.OriginName,
+		OriginCity:      m.OriginCity,
+		DestinationName: m.DestinationName,
+		DestinationCity: m.DestinationCity,
+	}
+}
