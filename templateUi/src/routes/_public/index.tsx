@@ -1,8 +1,8 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Bus, Clock, MapPin, Shield, Star, Users } from 'lucide-react'
+import { Bus, Clock, Shield, Star, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
-import { SearchForm, type SearchTripsFormData } from '@/modules/booking'
+import { SearchForm, UpcomingTrips, type SearchTripsFormData } from '@/modules/booking'
 
 function HomePage() {
     const navigate = useNavigate()
@@ -72,42 +72,8 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Popular Routes */}
-            <section className="container mx-auto px-4 py-16">
-                <h2 className="text-2xl font-bold text-center mb-8">{t('home.popularRoutes')}</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {[
-                        { from: 'TP. Hồ Chí Minh', to: 'Đà Lạt', price: '250.000đ', time: '7h' },
-                        { from: 'Hà Nội', to: 'Sapa', price: '350.000đ', time: '6h' },
-                        { from: 'TP. Hồ Chí Minh', to: 'Nha Trang', price: '300.000đ', time: '9h' },
-                        { from: 'Hà Nội', to: 'Hải Phòng', price: '120.000đ', time: '2h' },
-                        { from: 'TP. Hồ Chí Minh', to: 'Vũng Tàu', price: '150.000đ', time: '2h30' },
-                        { from: 'Đà Nẵng', to: 'Huế', price: '100.000đ', time: '2h30' },
-                    ].map((route) => (
-                        <button
-                            key={`${route.from}-${route.to}`}
-                            onClick={() => navigate({ to: '/search' })}
-                            className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:shadow-md hover:border-primary/30 transition-all text-left group"
-                        >
-                            <div className="flex-shrink-0 h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
-                                <MapPin className="h-5 w-5 text-primary" />
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-semibold text-sm truncate">
-                                    {route.from} → {route.to}
-                                </p>
-                                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
-                                    <span className="flex items-center gap-1">
-                                        <Clock className="h-3 w-3" />
-                                        {route.time}
-                                    </span>
-                                    <span className="font-medium text-primary">{route.price}</span>
-                                </div>
-                            </div>
-                        </button>
-                    ))}
-                </div>
-            </section>
+            {/* Upcoming Trips */}
+            <UpcomingTrips />
 
             {/* Why Choose Us */}
             <section className="bg-muted/50 py-16">

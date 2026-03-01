@@ -1,8 +1,16 @@
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { useCallback, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
 
-import { SearchForm, TripSearchResults, useSearchTrips } from '@/modules/booking'
+import {
+    SearchForm,
+    TripSearchResults,
+    TripFilterSidebar,
+    type TripFilters,
+    useSearchTrips,
+    useBrowseTrips,
+} from '@/modules/booking'
 import type { SearchTripsFormData } from '@/modules/booking'
 import type { Trip } from '@/modules/trip'
 
@@ -23,14 +31,32 @@ function SearchPage() {
     const search = useSearch({ from: '/_public/search' })
     const { t } = useTranslation()
 
+    const [filters, setFilters] = useState<TripFilters>({
+        providerIds: [],
+        busTypeIds: [],
+    })
+
     const hasSearchParams = search.originId > 0 && search.destinationId > 0 && search.departureDate.length > 0
 
-    const { data, isLoading } = useSearchTrips({
+    // Directed search (origin + destination + date)
+    const { data: searchData, isLoading: searchLoading } = useSearchTrips({
         originId: search.originId,
         destinationId: search.destinationId,
         departureDate: search.departureDate,
         minSeats: search.passengers,
     })
+
+    // Browse mode (no search params — show upcoming trips)
+    const { data: browseData, isLoading: browseLoading } = useBrowseTrips(
+        hasSearchParams
+            ? undefined
+            : {
+                  providerIds: filters.providerIds,
+                  busTypeIds: filters.busTypeIds,
+                  page: 1,
+                  limit: 40,
+              },
+    )
 
     const handleSearch = (data: SearchTripsFormData) => {
         navigate({
@@ -52,6 +78,24 @@ function SearchPage() {
         })
     }
 
+    const handleFilterChange = useCallback((f: TripFilters) => setFilters(f), [])
+
+    // Client-side filter for searched results (sidebar filters apply to both modes)
+    const displayTrips = useMemo(() => {
+        const source = hasSearchParams ? searchData?.items : browseData?.items
+        if (!source) return []
+
+        return source.filter((trip) => {
+            if (filters.providerIds.length > 0 && !filters.providerIds.includes(trip.providerId)) {
+                return false
+            }
+            // busTypeIds filter not applicable if trip doesn't expose busTypeId, skip
+            return true
+        })
+    }, [hasSearchParams, searchData, browseData, filters])
+
+    const isLoading = hasSearchParams ? searchLoading : browseLoading
+
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="mb-8">
@@ -72,14 +116,27 @@ function SearchPage() {
                 />
             </div>
 
-            {hasSearchParams && (
-                <TripSearchResults
-                    trips={data?.items ?? []}
-                    isLoading={isLoading}
-                    passengers={search.passengers}
-                    onSelect={handleSelectTrip}
-                />
-            )}
+            <div className="flex flex-col lg:flex-row gap-6">
+                {/* Sidebar filters */}
+                <aside className="lg:w-72 flex-shrink-0">
+                    <TripFilterSidebar filters={filters} onChange={handleFilterChange} />
+                </aside>
+
+                {/* Results */}
+                <main className="flex-1 min-w-0">
+                    {!hasSearchParams && !isLoading && displayTrips.length > 0 && (
+                        <p className="text-sm text-muted-foreground mb-3">
+                            {t('searchPage.browseHint', 'Hiển thị các chuyến xe sắp khởi hành. Tìm kiếm để lọc theo tuyến đường cụ thể.')}
+                        </p>
+                    )}
+                    <TripSearchResults
+                        trips={displayTrips}
+                        isLoading={isLoading}
+                        passengers={search.passengers}
+                        onSelect={handleSelectTrip}
+                    />
+                </main>
+            </div>
         </div>
     )
 }

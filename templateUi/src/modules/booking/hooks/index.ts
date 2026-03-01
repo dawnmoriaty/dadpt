@@ -82,3 +82,15 @@ export function useSearchTrips(params: {
         enabled: params.originId > 0 && params.destinationId > 0 && params.departureDate.length > 0,
     })
 }
+
+export function useBrowseTrips(params?: {
+    providerIds?: number[]
+    busTypeIds?: number[]
+    page?: number
+    limit?: number
+}) {
+    return useQuery({
+        queryKey: ['browse-trips', params] as const,
+        queryFn: () => bookingApi.browseTrips(params),
+    })
+}
