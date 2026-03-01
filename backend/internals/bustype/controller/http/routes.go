@@ -23,3 +23,12 @@ func Routes(admin *gin.RouterGroup, database *db.Database) {
 		busTypes.DELETE("/:id", handler.Delete)
 	}
 }
+
+// PublicRoutes registers public bus type routes (no auth required)
+func PublicRoutes(public *gin.RouterGroup, database *db.Database) {
+	repo := repository.NewBusTypeRepository(database)
+	uc := usecase.NewBusTypeUseCase(repo)
+	handler := NewBusTypeHandler(uc)
+
+	public.GET("/bus-types", handler.ListPublic)
+}

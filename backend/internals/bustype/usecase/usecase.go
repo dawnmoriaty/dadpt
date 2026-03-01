@@ -12,6 +12,7 @@ type IBusTypeUseCase interface {
 	Create(ctx context.Context, input *domain.CreateBusTypeInput) (*domain.BusType, error)
 	GetByID(ctx context.Context, id int32) (*domain.BusType, error)
 	List(ctx context.Context, pg *paging.Paging) ([]*domain.BusType, int64, error)
+	ListAll(ctx context.Context) ([]*domain.BusType, error)
 	Update(ctx context.Context, id int32, input *domain.UpdateBusTypeInput) (*domain.BusType, error)
 	Delete(ctx context.Context, id int32) error
 }
@@ -82,4 +83,8 @@ func (uc *busTypeUseCase) Delete(ctx context.Context, id int32) error {
 	}
 
 	return uc.repo.Delete(ctx, id)
+}
+
+func (uc *busTypeUseCase) ListAll(ctx context.Context) ([]*domain.BusType, error) {
+	return uc.repo.ListAll(ctx)
 }

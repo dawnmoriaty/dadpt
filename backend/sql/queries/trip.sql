@@ -93,3 +93,33 @@ SELECT COUNT(*) FROM bookings
 WHERE trip_id = $1
   AND status IN ('pending', 'paid');
 
+-- name: BrowseUpcomingTrips :many
+SELECT t.*,
+       p.name as provider_name,
+       bt.name as bus_type_name,
+       o.name as origin_name, o.city as origin_city,
+       d.name as destination_name, d.city as destination_city
+FROM trips t
+JOIN providers p ON t.provider_id = p.id
+JOIN buses b ON t.bus_id = b.id
+JOIN bus_types bt ON b.bus_type_id = bt.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE t.status = 'scheduled'
+  AND t.departure_time > NOW()
+  AND t.available_seats > 0
+  AND (sqlc.narg('provider_id')::int IS NULL OR t.provider_id = sqlc.narg('provider_id'))
+  AND (sqlc.narg('bus_type_id')::int IS NULL OR b.bus_type_id = sqlc.narg('bus_type_id'))
+ORDER BY t.departure_time ASC
+LIMIT $1 OFFSET $2;
+
+-- name: CountBrowseUpcomingTrips :one
+SELECT COUNT(*)
+FROM trips t
+JOIN buses b ON t.bus_id = b.id
+WHERE t.status = 'scheduled'
+  AND t.departure_time > NOW()
+  AND t.available_seats > 0
+  AND (sqlc.narg('provider_id')::int IS NULL OR t.provider_id = sqlc.narg('provider_id'))
+  AND (sqlc.narg('bus_type_id')::int IS NULL OR b.bus_type_id = sqlc.narg('bus_type_id'));
+

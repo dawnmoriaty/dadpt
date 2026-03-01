@@ -11,5 +11,6 @@ type Repository interface {
 	Delete(ctx context.Context, id int64) error
 	List(ctx context.Context, filter *TripFilter) ([]*Trip, int64, error)
 	Search(ctx context.Context, filter *TripFilter) ([]*Trip, int64, error)
+	Browse(ctx context.Context, filter *TripFilter) ([]*Trip, int64, error)
 	CountActiveBookings(ctx context.Context, tripID int64) (int64, error)
 }

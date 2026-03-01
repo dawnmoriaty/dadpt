@@ -24,6 +24,7 @@ func Routes(public *gin.RouterGroup, admin *gin.RouterGroup, database *db.Databa
 	trips := public.Group("/trips")
 	{
 		trips.GET("", handler.Search)
+		trips.GET("/browse", handler.Browse)
 		trips.GET("/:id", handler.GetByID)
 	}
 

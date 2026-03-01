@@ -57,6 +57,7 @@ type TripResponse struct {
 	ID              int64      `json:"id"`
 	ProviderID      int        `json:"providerId"`
 	ProviderName    string     `json:"providerName,omitempty"`
+	BusTypeName     string     `json:"busTypeName,omitempty"`
 	OriginName      string     `json:"originName,omitempty"`
 	OriginCity      string     `json:"originCity,omitempty"`
 	DestinationName string     `json:"destinationName,omitempty"`
@@ -122,11 +123,28 @@ func (r *AdminTripListRequest) ToInput() *domain.AdminListInput {
 	}
 }
 
+type BrowseTripsRequest struct {
+	ProviderID *int `form:"providerId"`
+	BusTypeID  *int `form:"busTypeId"`
+	Page       int  `form:"page"`
+	Limit      int  `form:"limit"`
+}
+
+func (r *BrowseTripsRequest) ToInput() *domain.BrowseTripsInput {
+	return &domain.BrowseTripsInput{
+		ProviderID: r.ProviderID,
+		BusTypeID:  r.BusTypeID,
+		Page:       r.Page,
+		Limit:      r.Limit,
+	}
+}
+
 func ToTripResponse(trip *domain.Trip) *TripResponse {
 	return &TripResponse{
 		ID:              trip.ID,
 		ProviderID:      int(trip.ProviderID),
 		ProviderName:    trip.ProviderName,
+		BusTypeName:     trip.BusTypeName,
 		OriginName:      trip.OriginName,
 		OriginCity:      trip.OriginCity,
 		DestinationName: trip.DestinationName,
