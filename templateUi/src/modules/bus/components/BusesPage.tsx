@@ -1,49 +1,43 @@
-import { PlusCircle, Pencil, Trash2, Image } from 'lucide-react'
-import { useState } from 'react'
+import { PlusCircle } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
 import { ConfirmDialog } from '@/components/common/confirm-dialog'
-import { OptimizedImage } from '@/components/common/optimized-image'
-import { Badge } from '@/components/ui/badge'
+import { DataTable, DataTableViewOptions } from '@/components/common/data-table'
 import { Button } from '@/components/ui/button'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 
 import { useBuses, useDeleteBus, useCreateBus, useUpdateBus } from '../hooks'
 import type { Bus, CreateBusRequest, UpdateBusRequest } from '../types'
 
+import { getBusesColumns } from './buses-columns'
 import { BusFormDialog } from './BusFormDialog'
 
 
-const statusColors: Record<string, string> = {
-    active: 'bg-green-500/10 text-green-500 border-green-500/20',
-    maintenance: 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20',
-    retired: 'bg-red-500/10 text-red-500 border-red-500/20',
-}
-
 export function BusesPage(): React.ReactElement {
-    const [page] = useState(1)
+    const [page, setPage] = useState(0)
+    const [pageSize, setPageSize] = useState(20)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBus, setEditingBus] = useState<Bus | null>(null)
     const [deletingBusId, setDeletingBusId] = useState<number | null>(null)
     
-    const { data, isLoading, error } = useBuses(page, 20)
+    const { data, error } = useBuses(page + 1, pageSize)
     const deleteMutation = useDeleteBus()
     const createMutation = useCreateBus()
     const updateMutation = useUpdateBus()
 
+    const columns = useMemo(
+        () =>
+            getBusesColumns({
+                onEdit: (bus) => {
+                    setEditingBus(bus)
+                    setIsFormOpen(true)
+                },
+                onDelete: setDeletingBusId,
+            }),
+        [],
+    )
+
     const handleCreate = (): void => {
         setEditingBus(null)
-        setIsFormOpen(true)
-    }
-
-    const handleEdit = (bus: Bus): void => {
-        setEditingBus(bus)
         setIsFormOpen(true)
     }
 
@@ -73,13 +67,14 @@ export function BusesPage(): React.ReactElement {
     }
 
     const buses = data?.items ?? []
+    const totalPages = data?.total ? Math.ceil(data.total / pageSize) : 0
 
     return (
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
                     <h1 className="text-2xl font-bold">Buses</h1>
-                    <p className="text-muted-foreground">Manage your fleet of buses</p>
+                    <p className="text-muted-foreground">Manage your fleet of {data?.total ?? 0} buses</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <PlusCircle className="mr-2 h-4 w-4" />
@@ -87,85 +82,22 @@ export function BusesPage(): React.ReactElement {
                 </Button>
             </div>
 
-            <div className="rounded-md border">
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-16">Image</TableHead>
-                            <TableHead>License Plate</TableHead>
-                            <TableHead>Provider</TableHead>
-                            <TableHead>Bus Type</TableHead>
-                            <TableHead>Seats</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Actions</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8">
-                                    Loading...
-                                </TableCell>
-                            </TableRow>
-                        ) : buses.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
-                                    No buses found
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            buses.map((bus) => (
-                                <TableRow key={bus.id}>
-                                    <TableCell>
-                                        {bus.imageUrl ? (
-                                            <OptimizedImage
-                                                src={bus.imageUrl}
-                                                alt={bus.licensePlate}
-                                                width={48}
-                                                height={48}
-                                                className="rounded"
-                                                objectFit="cover"
-                                            />
-                                        ) : (
-                                            <div className="w-12 h-12 bg-muted rounded flex items-center justify-center">
-                                                <Image className="w-6 h-6 text-muted-foreground" />
-                                            </div>
-                                        )}
-                                    </TableCell>
-                                    <TableCell className="font-medium">{bus.licensePlate}</TableCell>
-                                    <TableCell>{bus.providerName}</TableCell>
-                                    <TableCell>{bus.busTypeName}</TableCell>
-                                    <TableCell>{bus.totalSeats}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="outline" className={statusColors[bus.status]}>
-                                            {bus.status}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className="flex justify-end gap-2">
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => handleEdit(bus)}
-                                            >
-                                                <Pencil className="h-4 w-4" />
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                onClick={() => setDeletingBusId(bus.id)}
-                                                disabled={deleteMutation.isPending}
-                                            >
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </div>
+            <DataTable
+                columns={columns}
+                data={buses}
+                pageCount={totalPages}
+                pageIndex={page}
+                pageSize={pageSize}
+                onPaginationChange={(newPage, newSize) => {
+                    setPage(newPage)
+                    setPageSize(newSize)
+                }}
+                toolbar={(table) => (
+                    <div className="flex items-center justify-end">
+                        <DataTableViewOptions table={table} />
+                    </div>
+                )}
+            />
 
             <BusFormDialog
                 isOpen={isFormOpen}

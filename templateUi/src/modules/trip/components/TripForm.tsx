@@ -1,7 +1,8 @@
 import { Loader2 } from 'lucide-react'
-import { useState } from 'react'
 import { useForm } from 'react-hook-form'
 
+import { DateTimePicker } from '@/components/common/date-time-picker'
+import { LocationCombobox } from '@/components/common/location-combobox'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -26,7 +27,6 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { formResolver } from '@/lib/form/resolver'
-import { useSearchLocations } from '@/modules/location'
 import { useProviders } from '@/modules/provider/hooks'
 
 import { createTripSchema, type CreateTripFormData } from '../schemas'
@@ -39,12 +39,7 @@ interface TripFormProps {
 }
 
 export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps): React.ReactElement {
-    const [originSearch, setOriginSearch] = useState('')
-    const [destSearch, setDestSearch] = useState('')
-
     const { data: providers } = useProviders({ page: 1, pageSize: 100 })
-    const { data: originLocations } = useSearchLocations(originSearch)
-    const { data: destLocations } = useSearchLocations(destSearch)
 
     const form = useForm<CreateTripFormData>({
         resolver: formResolver(createTripSchema),
@@ -65,8 +60,6 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
     }
 
     const providerItems = providers?.items ?? []
-    const originItems = originLocations ?? []
-    const destItems = destLocations ?? []
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
@@ -106,80 +99,42 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                         />
 
                         {/* Origin */}
-                        <div className="space-y-2">
-                            <FormField
-                                control={form.control}
-                                name="originId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Origin</FormLabel>
-                                        <Input
-                                            placeholder="Search origin location..."
-                                            value={originSearch}
-                                            onChange={(e) => setOriginSearch(e.target.value)}
+                        <FormField
+                            control={form.control}
+                            name="originId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Origin</FormLabel>
+                                    <FormControl>
+                                        <LocationCombobox
+                                            value={field.value}
+                                            onSelect={field.onChange}
+                                            placeholder="Select origin location..."
                                         />
-                                        {originItems.length > 0 && (
-                                            <Select
-                                                onValueChange={(val) => field.onChange(Number(val))}
-                                                value={field.value ? field.value.toString() : ''}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select origin..." />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {originItems.map((loc) => (
-                                                        <SelectItem key={loc.id} value={loc.id.toString()}>
-                                                            {loc.name} - {loc.city}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         {/* Destination */}
-                        <div className="space-y-2">
-                            <FormField
-                                control={form.control}
-                                name="destinationId"
-                                render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel>Destination</FormLabel>
-                                        <Input
-                                            placeholder="Search destination location..."
-                                            value={destSearch}
-                                            onChange={(e) => setDestSearch(e.target.value)}
+                        <FormField
+                            control={form.control}
+                            name="destinationId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Destination</FormLabel>
+                                    <FormControl>
+                                        <LocationCombobox
+                                            value={field.value}
+                                            onSelect={field.onChange}
+                                            placeholder="Select destination location..."
                                         />
-                                        {destItems.length > 0 && (
-                                            <Select
-                                                onValueChange={(val) => field.onChange(Number(val))}
-                                                value={field.value ? field.value.toString() : ''}
-                                            >
-                                                <FormControl>
-                                                    <SelectTrigger>
-                                                        <SelectValue placeholder="Select destination..." />
-                                                    </SelectTrigger>
-                                                </FormControl>
-                                                <SelectContent>
-                                                    {destItems.map((loc) => (
-                                                        <SelectItem key={loc.id} value={loc.id.toString()}>
-                                                            {loc.name} - {loc.city}
-                                                        </SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        )}
-                                        <FormMessage />
-                                    </FormItem>
-                                )}
-                            />
-                        </div>
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
 
                         {/* Times */}
                         <div className="grid grid-cols-2 gap-4">
@@ -190,7 +145,13 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                                     <FormItem>
                                         <FormLabel>Departure Time</FormLabel>
                                         <FormControl>
-                                            <Input type="datetime-local" {...field} />
+                                            <DateTimePicker
+                                                value={field.value ? new Date(field.value) : undefined}
+                                                onChange={(date) =>
+                                                    field.onChange(date ? date.toISOString() : '')
+                                                }
+                                                placeholder="Select departure..."
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>
@@ -203,7 +164,13 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                                     <FormItem>
                                         <FormLabel>Arrival Time</FormLabel>
                                         <FormControl>
-                                            <Input type="datetime-local" {...field} />
+                                            <DateTimePicker
+                                                value={field.value ? new Date(field.value) : undefined}
+                                                onChange={(date) =>
+                                                    field.onChange(date ? date.toISOString() : '')
+                                                }
+                                                placeholder="Select arrival..."
+                                            />
                                         </FormControl>
                                         <FormMessage />
                                     </FormItem>

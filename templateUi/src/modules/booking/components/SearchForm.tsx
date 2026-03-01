@@ -1,8 +1,9 @@
-import { ArrowRightLeft, CalendarDays, Search, Users } from 'lucide-react'
-import { useState } from 'react'
+import { ArrowRightLeft, Search, Users } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
+import { DatePicker } from '@/components/common/date-picker'
+import { LocationCombobox } from '@/components/common/location-combobox'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import {
@@ -14,15 +15,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
 import { formResolver } from '@/lib/form/resolver'
-import { useSearchLocations } from '@/modules/location'
 
 import { searchTripsSchema, type SearchTripsFormData } from '../schemas'
 
@@ -33,12 +26,7 @@ interface SearchFormProps {
 }
 
 export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps) {
-    const [originSearch, setOriginSearch] = useState('')
-    const [destSearch, setDestSearch] = useState('')
     const { t } = useTranslation()
-
-    const { data: originLocations } = useSearchLocations(originSearch)
-    const { data: destLocations } = useSearchLocations(destSearch)
 
     const form = useForm<SearchTripsFormData>({
         resolver: formResolver(searchTripsSchema),
@@ -49,9 +37,6 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
             passengers: defaultValues?.passengers ?? 1,
         },
     })
-
-    const originItems = originLocations ?? []
-    const destItems = destLocations ?? []
 
     return (
         <Card className={`w-full ${compact ? 'max-w-full' : 'max-w-4xl'} shadow-xl bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60`}>
@@ -71,31 +56,13 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                         <div className="h-3 w-3 rounded-full border-2 border-primary/60" />
                                         {t('searchPage.from')}
                                     </FormLabel>
-                                    <Input
-                                        placeholder={t('searchPage.searchOrigin')}
-                                        value={originSearch}
-                                        onChange={(e) => setOriginSearch(e.target.value)}
-                                        className="mb-1"
-                                    />
-                                    {originItems.length > 0 && (
-                                        <Select
-                                            onValueChange={(val) => field.onChange(Number(val))}
-                                            value={field.value ? field.value.toString() : ''}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t('searchPage.selectOrigin')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {originItems.map((loc) => (
-                                                    <SelectItem key={loc.id} value={loc.id.toString()}>
-                                                        {loc.name} - {loc.city}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
+                                    <FormControl>
+                                        <LocationCombobox
+                                            value={field.value}
+                                            onSelect={field.onChange}
+                                            placeholder={t('searchPage.selectOrigin')}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -114,9 +81,6 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                         const destId = form.getValues('destinationId')
                                         form.setValue('originId', destId)
                                         form.setValue('destinationId', originId)
-                                        const tempSearch = originSearch
-                                        setOriginSearch(destSearch)
-                                        setDestSearch(tempSearch)
                                     }}
                                 >
                                     <ArrowRightLeft className="h-4 w-4" />
@@ -134,31 +98,13 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                         <div className="h-3 w-3 rounded-full bg-primary/60" />
                                         {t('searchPage.to')}
                                     </FormLabel>
-                                    <Input
-                                        placeholder={t('searchPage.searchDest')}
-                                        value={destSearch}
-                                        onChange={(e) => setDestSearch(e.target.value)}
-                                        className="mb-1"
-                                    />
-                                    {destItems.length > 0 && (
-                                        <Select
-                                            onValueChange={(val) => field.onChange(Number(val))}
-                                            value={field.value ? field.value.toString() : ''}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t('searchPage.selectDest')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {destItems.map((loc) => (
-                                                    <SelectItem key={loc.id} value={loc.id.toString()}>
-                                                        {loc.name} - {loc.city}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    )}
+                                    <FormControl>
+                                        <LocationCombobox
+                                            value={field.value}
+                                            onSelect={field.onChange}
+                                            placeholder={t('searchPage.selectDest')}
+                                        />
+                                    </FormControl>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -171,14 +117,16 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel className="text-sm font-medium flex items-center gap-1.5">
-                                        <CalendarDays className="h-3.5 w-3.5" />
                                         {t('searchPage.date')}
                                     </FormLabel>
                                     <FormControl>
-                                        <Input
-                                            type="date"
-                                            min={new Date().toISOString().split('T')[0]}
-                                            {...field}
+                                        <DatePicker
+                                            value={field.value ? new Date(field.value) : undefined}
+                                            onChange={(date) =>
+                                                field.onChange(date ? date.toISOString().split('T')[0] : '')
+                                            }
+                                            placeholder={t('searchPage.date')}
+                                            minDate={new Date()}
                                         />
                                     </FormControl>
                                     <FormMessage />

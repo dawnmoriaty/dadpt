@@ -1,8 +1,9 @@
+import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { ArrowRight, Bus, Clock, Flame, MapPin, Ticket, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from '@tanstack/react-router'
 
+import { OptimizedImage } from '@/components/common/optimized-image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -55,6 +56,13 @@ function UpcomingTripCard({ trip }: { trip: Trip }) {
                 })
             }
         >
+            {/* Bus / route image */}
+            <OptimizedImage
+                src={trip.busImageUrl}
+                alt={`${trip.originName} → ${trip.destinationName}`}
+                className="w-full h-36 object-cover"
+                fallbackClassName="w-full h-36"
+            />
             <CardContent className="p-4">
                 {/* Provider & badge row */}
                 <div className="flex items-center justify-between mb-3">

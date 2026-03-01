@@ -1,5 +1,6 @@
 import { Pencil, Trash2, MapPin, Navigation } from 'lucide-react'
 
+import { OptimizedImage } from '@/components/common/optimized-image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 
@@ -13,12 +14,17 @@ interface LocationCardProps {
 
 export function LocationCard({ location, onEdit, onDelete }: LocationCardProps) {
     return (
-        <Card className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all" />
+        <Card className="group relative overflow-hidden border-0 shadow-md hover:shadow-xl transition-all duration-300 hover:-translate-y-1">            {/* Location image */}
+            <OptimizedImage
+                src={location.imageUrl}
+                alt={location.name}
+                className="w-full h-32 object-cover"
+                fallbackClassName="w-full h-32"
+            />            <div className="absolute inset-0 bg-linear-to-br from-blue-500/5 to-cyan-500/5 group-hover:from-blue-500/10 group-hover:to-cyan-500/10 transition-all" />
             <CardContent className="p-5">
                 <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                        <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/20">
+                        <div className="p-2.5 rounded-xl bg-linear-to-br from-blue-500 to-cyan-500 shadow-lg shadow-blue-500/20">
                             <MapPin className="h-5 w-5 text-white" />
                         </div>
                         <div className="flex-1 min-w-0">

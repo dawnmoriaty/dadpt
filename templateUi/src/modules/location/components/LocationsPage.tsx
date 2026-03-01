@@ -1,25 +1,19 @@
 import { Filter, LayoutGrid, LayoutList, MapPin, Plus, Search } from 'lucide-react'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 
+import { DataTable, DataTableViewOptions } from '@/components/common/data-table'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 
 import { useLocations, useCreateLocation, useUpdateLocation, useDeleteLocation } from '../hooks'
 import type { Location } from '../types'
 
 import { LocationCard } from './LocationCard'
 import { LocationForm } from './LocationForm'
+import { getLocationsColumns } from './locations-columns'
 
 
 type ViewMode = 'grid' | 'table'
@@ -29,13 +23,24 @@ export function LocationsPage() {
     const [editingLocation, setEditingLocation] = useState<Location | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [viewMode, setViewMode] = useState<ViewMode>('grid')
+    const [page, setPage] = useState(0)
+    const [pageSize, setPageSize] = useState(20)
 
-    const { data, isLoading } = useLocations({ page: 1, pageSize: 50 })
+    const { data, isLoading } = useLocations({ page: page + 1, pageSize })
     const createMutation = useCreateLocation()
     const updateMutation = useUpdateLocation()
     const deleteMutation = useDeleteLocation()
 
-    const handleSubmit = (formData: { name: string; city: string; address: string; keywords: string }) => {
+    const columns = useMemo(
+        () =>
+            getLocationsColumns({
+                onEdit: setEditingLocation,
+                onDelete: (id) => deleteMutation.mutate(id),
+            }),
+        [deleteMutation],
+    )
+
+    const handleSubmit = (formData: { name: string; city: string; address: string; keywords: string; imageUrl?: string }) => {
         if (editingLocation) {
             updateMutation.mutate(
                 { id: editingLocation.id, data: formData },
@@ -51,6 +56,7 @@ export function LocationsPage() {
             loc.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
             loc.city.toLowerCase().includes(searchQuery.toLowerCase())
     ) ?? []
+    const totalPages = data?.total ? Math.ceil(data.total / pageSize) : 0
 
     const cityCounts = filteredLocations.reduce((acc, loc) => {
         acc[loc.city] = (acc[loc.city] || 0) + 1
@@ -63,19 +69,19 @@ export function LocationsPage() {
             <div className="flex flex-col gap-4">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                     <div className="flex items-center gap-4">
-                        <div className="p-3 rounded-2xl bg-gradient-to-br from-blue-500 via-blue-600 to-cyan-500 shadow-lg shadow-blue-500/30">
+                        <div className="p-3 rounded-2xl bg-linear-to-br from-blue-500 via-blue-600 to-cyan-500 shadow-lg shadow-blue-500/30">
                             <MapPin className="h-7 w-7 text-white" />
                         </div>
                         <div>
                             <h1 className="text-3xl font-bold tracking-tight">Locations</h1>
                             <p className="text-muted-foreground">
-                                Manage {filteredLocations.length} bus stations across {Object.keys(cityCounts).length} cities
+                                Manage {data?.total ?? 0} bus stations across {Object.keys(cityCounts).length} cities
                             </p>
                         </div>
                     </div>
                     <Button
                         onClick={() => setIsFormOpen(true)}
-                        className="gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                        className="gap-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                     >
                         <Plus className="h-4 w-4" />
                         Add Location
@@ -104,7 +110,7 @@ export function LocationsPage() {
             </div>
 
             {/* Toolbar */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-background to-muted/30">
+            <Card className="border-0 shadow-md bg-linear-to-r from-background to-muted/30">
                 <CardContent className="p-4">
                     <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
                         <div className="relative flex-1 max-w-md">
@@ -163,27 +169,12 @@ export function LocationsPage() {
                         ))}
                     </div>
                 ) : (
-                    <Card className="border-0 shadow-md">
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead>Name</TableHead>
-                                    <TableHead>City</TableHead>
-                                    <TableHead>Address</TableHead>
-                                    <TableHead className="w-[100px]">Actions</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {[...Array(5)].map((_, i) => (
-                                    <TableRow key={i}>
-                                        <TableCell><Skeleton className="h-5 w-40" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                        <TableCell><Skeleton className="h-5 w-60" /></TableCell>
-                                        <TableCell><Skeleton className="h-8 w-20" /></TableCell>
-                                    </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                    <Card className="border-0 shadow-md p-6">
+                        <div className="space-y-3">
+                            {[...Array(5)].map((_, i) => (
+                                <Skeleton key={i} className="h-12 w-full" />
+                            ))}
+                        </div>
                     </Card>
                 )
             ) : filteredLocations.length === 0 ? (
@@ -222,65 +213,22 @@ export function LocationsPage() {
                     ))}
                 </div>
             ) : (
-                <Card className="border-0 shadow-md overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                <TableHead className="font-semibold">Name</TableHead>
-                                <TableHead className="font-semibold">City</TableHead>
-                                <TableHead className="font-semibold">Address</TableHead>
-                                <TableHead className="font-semibold">Keywords</TableHead>
-                                <TableHead className="font-semibold w-[120px]">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredLocations.map((location) => (
-                                <TableRow key={location.id} className="group">
-                                    <TableCell className="font-medium">{location.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant="secondary" className="gap-1">
-                                            <MapPin className="h-3 w-3" />
-                                            {location.city}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground max-w-xs truncate">
-                                        {location.address || '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        {location.keywords ? (
-                                            <div className="flex gap-1">
-                                                {location.keywords.split(',').slice(0, 2).map((k, i) => (
-                                                    <Badge key={i} variant="outline" className="text-xs">
-                                                        {k.trim()}
-                                                    </Badge>
-                                                ))}
-                                            </div>
-                                        ) : '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                onClick={() => setEditingLocation(location)}
-                                            >
-                                                Edit
-                                            </Button>
-                                            <Button
-                                                variant="ghost"
-                                                size="sm"
-                                                className="text-destructive hover:text-destructive"
-                                                onClick={() => deleteMutation.mutate(location.id)}
-                                            >
-                                                Delete
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Card>
+                <DataTable
+                    columns={columns}
+                    data={filteredLocations}
+                    pageCount={totalPages}
+                    pageIndex={page}
+                    pageSize={pageSize}
+                    onPaginationChange={(newPage, newSize) => {
+                        setPage(newPage)
+                        setPageSize(newSize)
+                    }}
+                    toolbar={(table) => (
+                        <div className="flex items-center justify-end">
+                            <DataTableViewOptions table={table} />
+                        </div>
+                    )}
+                />
             )}
 
             {/* Forms */}

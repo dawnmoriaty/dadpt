@@ -1,43 +1,42 @@
-import { Building2, MoreHorizontal, Plus, Power, Search } from 'lucide-react'
-import { useState } from 'react'
+import { Building2, Plus, Search } from 'lucide-react'
+import { useMemo, useState } from 'react'
 
-import { Badge } from '@/components/ui/badge'
+import { DataTable, DataTableViewOptions } from '@/components/common/data-table'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu'
 import { Input } from '@/components/ui/input'
 import { Skeleton } from '@/components/ui/skeleton'
-import {
-    Table,
-    TableBody,
-    TableCell,
-    TableHead,
-    TableHeader,
-    TableRow,
-} from '@/components/ui/table'
 
 import { useProviders, useCreateProvider, useUpdateProvider, useToggleProviderActive, useDeleteProvider } from '../hooks'
 import type { Provider } from '../types'
 
 import { ProviderForm } from './ProviderForm'
+import { getProvidersColumns } from './providers-columns'
 
 export function ProvidersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingProvider, setEditingProvider] = useState<Provider | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [page, setPage] = useState(0)
+    const [pageSize, setPageSize] = useState(20)
 
-    const { data, isLoading } = useProviders({ page: 1, pageSize: 50 })
+    const { data, isLoading } = useProviders({ page: page + 1, pageSize })
     const createMutation = useCreateProvider()
     const updateMutation = useUpdateProvider()
     const toggleActiveMutation = useToggleProviderActive()
     const deleteMutation = useDeleteProvider()
 
-    const handleSubmit = (formData: { name: string; hotline: string; slug: string; policyRefund: string }) => {
+    const columns = useMemo(
+        () =>
+            getProvidersColumns({
+                onEdit: setEditingProvider,
+                onToggleActive: (id) => toggleActiveMutation.mutate(id),
+                onDelete: (id) => deleteMutation.mutate(id),
+            }),
+        [toggleActiveMutation, deleteMutation],
+    )
+
+    const handleSubmit = (formData: { name: string; hotline: string; slug: string; policyRefund: string; imageUrl?: string }) => {
         if (editingProvider) {
             updateMutation.mutate(
                 { id: editingProvider.id, data: formData },
@@ -52,8 +51,9 @@ export function ProvidersPage() {
     const filteredProviders = allProviders.filter((provider) =>
         provider.name.toLowerCase().includes(searchQuery.toLowerCase())
     )
+    const totalPages = data?.total ? Math.ceil(data.total / pageSize) : 0
 
-    const activeCount = filteredProviders.filter(p => p.isActive).length
+    const activeCount = filteredProviders.filter((p) => p.isActive).length
     const inactiveCount = filteredProviders.length - activeCount
 
     return (
@@ -61,13 +61,13 @@ export function ProvidersPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="flex items-center gap-4">
-                    <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 via-purple-600 to-fuchsia-500 shadow-lg shadow-violet-500/30">
+                    <div className="p-3 rounded-2xl bg-linear-to-br from-violet-500 via-purple-600 to-fuchsia-500 shadow-lg shadow-violet-500/30">
                         <Building2 className="h-7 w-7 text-white" />
                     </div>
                     <div>
                         <h1 className="text-3xl font-bold tracking-tight">Providers</h1>
                         <p className="text-muted-foreground flex items-center gap-2">
-                            <span>{filteredProviders.length} total</span>
+                            <span>{data?.total ?? 0} total</span>
                             <span className="text-muted-foreground/50">•</span>
                             <span className="text-emerald-600">{activeCount} active</span>
                             <span className="text-muted-foreground/50">•</span>
@@ -77,55 +77,21 @@ export function ProvidersPage() {
                 </div>
                 <Button
                     onClick={() => setIsFormOpen(true)}
-                    className="gap-2 bg-gradient-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
+                    className="gap-2 bg-linear-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus className="h-4 w-4" />
                     Add Provider
                 </Button>
             </div>
 
-            {/* Toolbar */}
-            <Card className="border-0 shadow-md bg-gradient-to-r from-background to-muted/30">
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-4">
-                        <div className="relative flex-1 max-w-md">
-                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Search providers..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 border-0 bg-background shadow-sm"
-                            />
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-
             {/* Content */}
             {isLoading ? (
-                <Card className="border-0 shadow-md">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30">
-                                <TableHead>Provider</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Hotline</TableHead>
-                                <TableHead>Slug</TableHead>
-                                <TableHead>Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {[...Array(5)].map((_, i) => (
-                                <TableRow key={i}>
-                                    <TableCell><Skeleton className="h-10 w-48" /></TableCell>
-                                    <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-28" /></TableCell>
-                                    <TableCell><Skeleton className="h-5 w-24" /></TableCell>
-                                    <TableCell><Skeleton className="h-8 w-8" /></TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
+                <Card className="border-0 shadow-md p-6">
+                    <div className="space-y-3">
+                        {[...Array(5)].map((_, i) => (
+                            <Skeleton key={i} className="h-12 w-full" />
+                        ))}
+                    </div>
                 </Card>
             ) : filteredProviders.length === 0 ? (
                 <Card className="border-0 shadow-md">
@@ -152,77 +118,31 @@ export function ProvidersPage() {
                     </CardContent>
                 </Card>
             ) : (
-                <Card className="border-0 shadow-md overflow-hidden">
-                    <Table>
-                        <TableHeader>
-                            <TableRow className="bg-muted/30 hover:bg-muted/30">
-                                <TableHead className="font-semibold">Provider</TableHead>
-                                <TableHead className="font-semibold w-[120px]">Status</TableHead>
-                                <TableHead className="font-semibold">Hotline</TableHead>
-                                <TableHead className="font-semibold">Slug</TableHead>
-                                <TableHead className="font-semibold w-[80px]">Actions</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {filteredProviders.map((provider) => (
-                                <TableRow key={provider.id} className={`group ${!provider.isActive ? 'opacity-60' : ''}`}>
-                                    <TableCell>
-                                        <div className="flex items-center gap-3">
-                                            <div className={`h-10 w-10 rounded-xl flex items-center justify-center text-white font-semibold ${provider.isActive
-                                                    ? 'bg-gradient-to-br from-violet-500 to-purple-600'
-                                                    : 'bg-gray-400'
-                                                }`}>
-                                                {provider.name.substring(0, 2).toUpperCase()}
-                                            </div>
-                                            <div>
-                                                <p className="font-medium">{provider.name}</p>
-                                            </div>
-                                        </div>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Badge variant={provider.isActive ? 'success' : 'secondary'} className="gap-1">
-                                            <span className={`h-1.5 w-1.5 rounded-full ${provider.isActive ? 'bg-emerald-500' : 'bg-gray-400'}`} />
-                                            {provider.isActive ? 'Active' : 'Inactive'}
-                                        </Badge>
-                                    </TableCell>
-                                    <TableCell className="text-muted-foreground">
-                                        {provider.hotline || '—'}
-                                    </TableCell>
-                                    <TableCell>
-                                        <code className="text-xs bg-muted px-2 py-1 rounded">
-                                            /{provider.slug}
-                                        </code>
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon" className="h-8 w-8">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => toggleActiveMutation.mutate(provider.id)}>
-                                                    <Power className="h-4 w-4 mr-2" />
-                                                    {provider.isActive ? 'Deactivate' : 'Activate'}
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => setEditingProvider(provider)}>
-                                                    Edit Provider
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem
-                                                    className="text-destructive focus:text-destructive"
-                                                    onClick={() => deleteMutation.mutate(provider.id)}
-                                                    disabled={provider.isActive}
-                                                >
-                                                    Delete Provider
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </Card>
+                <DataTable
+                    columns={columns}
+                    data={filteredProviders}
+                    pageCount={totalPages}
+                    pageIndex={page}
+                    pageSize={pageSize}
+                    onPaginationChange={(newPage, newSize) => {
+                        setPage(newPage)
+                        setPageSize(newSize)
+                    }}
+                    toolbar={(table) => (
+                        <div className="flex items-center justify-between">
+                            <div className="relative max-w-sm">
+                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                                <Input
+                                    placeholder="Search providers..."
+                                    value={searchQuery}
+                                    onChange={(e) => setSearchQuery(e.target.value)}
+                                    className="h-8 pl-9 w-[250px]"
+                                />
+                            </div>
+                            <DataTableViewOptions table={table} />
+                        </div>
+                    )}
+                />
             )}
 
             {/* Forms */}

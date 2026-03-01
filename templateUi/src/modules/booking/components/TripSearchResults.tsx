@@ -9,6 +9,7 @@ import {
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { OptimizedImage } from '@/components/common/optimized-image'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
@@ -59,6 +60,13 @@ function TripResultCard({ trip, passengers, onSelect, t }: { trip: Trip; passeng
         <Card className={`transition-all hover:shadow-md ${!hasEnoughSeats ? 'opacity-60' : 'cursor-pointer hover:border-primary/30'}`}>
             <CardContent className="p-0">
                 <div className="flex flex-col md:flex-row">
+                    {/* Bus image */}
+                    <OptimizedImage
+                        src={trip.busImageUrl}
+                        alt={trip.providerName}
+                        className="w-full h-32 md:w-40 md:h-auto object-cover flex-shrink-0"
+                        fallbackClassName="w-full h-32 md:w-40 md:h-auto"
+                    />
                     {/* Route & Time */}
                     <div className="flex-1 p-5">
                         <div className="flex items-start justify-between mb-3">

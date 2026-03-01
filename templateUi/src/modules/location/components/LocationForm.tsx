@@ -1,8 +1,9 @@
 import { zodResolver } from '@hookform/resolvers/zod'
-import { Loader2, MapPin, ChevronDown, Search } from 'lucide-react'
+import { Loader2, MapPin, Search, Upload, X } from 'lucide-react'
 import { useEffect, useState, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 
+import { OptimizedImage } from '@/components/common/optimized-image'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -28,6 +29,7 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { useProvinces, useDistricts, useWards } from '@/hooks/useVietnamProvinces'
+import { useUploadImage } from '@/modules/upload'
 
 import { createLocationSchema, type CreateLocationFormData } from '../schemas'
 import type { Location } from '../types'
@@ -36,7 +38,7 @@ interface LocationFormProps {
     location?: Location | null
     isOpen: boolean
     onClose: () => void
-    onSubmit: (data: { name: string; city: string; address: string; keywords: string }) => void
+    onSubmit: (data: { name: string; city: string; address: string; keywords: string; imageUrl?: string }) => void
     isLoading?: boolean
 }
 
@@ -47,6 +49,8 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
     const [provinceSearch, setProvinceSearch] = useState('')
     const [districtSearch, setDistrictSearch] = useState('')
     const [wardSearch, setWardSearch] = useState('')
+
+    const uploadMutation = useUploadImage()
 
     const { data: provinces = [], isLoading: loadingProvinces } = useProvinces()
     const { data: districts = [], isLoading: loadingDistricts } = useDistricts(selectedProvinceCode)
@@ -82,8 +86,11 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
             wardName: '',
             streetAddress: '',
             keywords: '',
+            imageUrl: '',
         },
     })
+
+    const imageUrl = useWatch({ control: form.control, name: 'imageUrl' })
 
     // When editing, parse existing location data back into province/district/ward
     useEffect(() => {
@@ -98,6 +105,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                 wardName: '',
                 streetAddress: location.address ?? '',
                 keywords: location.keywords ?? '',
+                imageUrl: location.imageUrl ?? '',
             })
             // Try to match province by name for edit mode
             if (provinces.length > 0 && location.city) {
@@ -119,6 +127,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                 wardName: '',
                 streetAddress: '',
                 keywords: '',
+                imageUrl: '',
             })
             setSelectedProvinceCode(null)
             setSelectedDistrictCode(null)
@@ -140,6 +149,15 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
         return parts.join(', ')
     }
 
+    const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
+        const file = e.target.files?.[0]
+        if (!file) return
+        uploadMutation.mutate(
+            { file, folder: 'locations' },
+            { onSuccess: (data) => form.setValue('imageUrl', data.url) },
+        )
+    }
+
     const handleFormSubmit = (values: CreateLocationFormData): void => {
         const address = composeAddress(
             values.wardName,
@@ -152,6 +170,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
             city: values.provinceName,
             address,
             keywords: values.keywords ?? '',
+            imageUrl: imageUrl || undefined,
         })
     }
 
@@ -426,7 +445,45 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                             )}
                         />
 
-                        <Button type="submit" className="w-full" disabled={isLoading}>
+                        {/* Image Upload */}
+                        <div>
+                            <p className="text-sm font-medium mb-2">Hình ảnh địa điểm</p>
+                            {imageUrl ? (
+                                <div className="relative inline-block">
+                                    <OptimizedImage
+                                        src={imageUrl}
+                                        alt="Location preview"
+                                        width={128}
+                                        height={128}
+                                        className="rounded"
+                                        objectFit="cover"
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        className="absolute -top-2 -right-2 h-6 w-6"
+                                        onClick={() => form.setValue('imageUrl', '')}
+                                    >
+                                        <X className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
+                                    <Upload className="w-8 h-8 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground mt-2">Upload</span>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        className="hidden"
+                                        onChange={handleImageUpload}
+                                        disabled={uploadMutation.isPending}
+                                    />
+                                </label>
+                            )}
+                        </div>
+
+                        <Button type="submit" className="w-full" disabled={isLoading || uploadMutation.isPending}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                             {location ? 'Cập nhật' : 'Tạo'} địa điểm
                         </Button>
