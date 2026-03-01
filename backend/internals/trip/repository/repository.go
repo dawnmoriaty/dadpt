@@ -65,10 +65,12 @@ func getByIDRowToEntity(m models.GetTripByIDRow) *domain.Trip {
 		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
+		BusTypeName:     m.BusTypeName,
 		OriginName:      m.OriginName,
 		OriginCity:      m.OriginCity,
 		DestinationName: m.DestinationName,
 		DestinationCity: m.DestinationCity,
+		BusImageURL:     utils.PtrToString(m.BusImageUrl),
 	}
 }
 
@@ -91,10 +93,12 @@ func searchRowToEntity(m models.SearchTripsRow) *domain.Trip {
 		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
+		BusTypeName:     m.BusTypeName,
 		OriginName:      m.OriginName,
 		OriginCity:      m.OriginCity,
 		DestinationName: m.DestinationName,
 		DestinationCity: m.DestinationCity,
+		BusImageURL:     utils.PtrToString(m.BusImageUrl),
 	}
 }
 
@@ -117,10 +121,12 @@ func listAdminRowToEntity(m models.ListTripsAdminRow) *domain.Trip {
 		Status:          domain.TripStatus(utils.PtrToString(m.Status)),
 		CreatedAt:       m.CreatedAt.Time,
 		ProviderName:    m.ProviderName,
+		BusTypeName:     m.BusTypeName,
 		OriginName:      m.OriginName,
 		OriginCity:      m.OriginCity,
 		DestinationName: m.DestinationName,
 		DestinationCity: m.DestinationCity,
+		BusImageURL:     utils.PtrToString(m.BusImageUrl),
 	}
 }
 
@@ -335,5 +341,6 @@ func browseRowToEntity(m models.BrowseUpcomingTripsRow) *domain.Trip {
 		OriginCity:      m.OriginCity,
 		DestinationName: m.DestinationName,
 		DestinationCity: m.DestinationCity,
+		BusImageURL:     utils.PtrToString(m.BusImageUrl),
 	}
 }
