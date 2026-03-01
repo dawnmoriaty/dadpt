@@ -42,4 +42,20 @@ export const bookingApi = {
         const response = await api.get('/trips', { params })
         return response.data.data
     },
+
+    browseTrips: async (params?: {
+        providerIds?: number[]
+        busTypeIds?: number[]
+        page?: number
+        limit?: number
+    }): Promise<PaginatedResponse<Trip>> => {
+        const query: Record<string, unknown> = {
+            page: params?.page ?? 1,
+            limit: params?.limit ?? 20,
+        }
+        if (params?.providerIds?.length) query.providerId = params.providerIds[0]
+        if (params?.busTypeIds?.length) query.busTypeId = params.busTypeIds[0]
+        const response = await api.get('/trips/browse', { params: query })
+        return response.data.data
+    },
 }

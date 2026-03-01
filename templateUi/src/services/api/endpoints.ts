@@ -45,4 +45,8 @@ export const API_ENDPOINTS = {
     PROVIDERS: {
         LIST: '/providers',
     },
+    BUS_TYPES: {
+        LIST: '/bus-types',
+    },
+    BROWSE: '/trips/browse',
 } as const

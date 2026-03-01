@@ -34,4 +34,10 @@ export const busTypeApi = {
     delete: async (id: number): Promise<void> => {
         await api.delete(`/admin/bus-types/${id}`)
     },
+
+    /** Public endpoint — no auth required */
+    listPublic: async (): Promise<BusType[]> => {
+        const { data } = await api.get<{ data: BusType[] }>('/bus-types')
+        return data.data
+    },
 }

@@ -72,3 +72,10 @@ export function useDeleteBusType() {
         },
     })
 }
+
+export function usePublicBusTypes() {
+    return useQuery({
+        queryKey: [...busTypeKeys.all, 'public'] as const,
+        queryFn: () => busTypeApi.listPublic(),
+    })
+}

@@ -6,6 +6,7 @@ export interface Trip {
     id: number
     providerId: number
     providerName: string
+    busTypeName?: string
     originName: string
     originCity: string
     destinationName: string

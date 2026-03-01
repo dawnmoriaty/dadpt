@@ -1,5 +1,7 @@
 export { SearchForm } from './SearchForm'
 export { TripSearchResults } from './TripSearchResults'
+export { TripFilterSidebar, type TripFilters } from './TripFilterSidebar'
+export { UpcomingTrips } from './UpcomingTrips'
 export { BookingForm } from './BookingForm'
 export { MyBookingsPage } from './MyBookingsPage'
 export * from './BookingSuccess'
