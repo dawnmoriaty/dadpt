@@ -7,6 +7,7 @@ type CreateLocationRequest struct {
 	City     string `json:"city" binding:"required"`
 	Address  string `json:"address"`
 	Keywords string `json:"keywords"`
+	ImageURL string `json:"imageUrl"`
 }
 
 func (r *CreateLocationRequest) ToInput() *domain.CreateLocationInput {
@@ -15,6 +16,7 @@ func (r *CreateLocationRequest) ToInput() *domain.CreateLocationInput {
 		City:     r.City,
 		Address:  r.Address,
 		Keywords: r.Keywords,
+		ImageURL: r.ImageURL,
 	}
 }
 
@@ -23,6 +25,7 @@ type UpdateLocationRequest struct {
 	City     *string `json:"city"`
 	Address  *string `json:"address"`
 	Keywords *string `json:"keywords"`
+	ImageURL *string `json:"imageUrl"`
 }
 
 func (r *UpdateLocationRequest) ToInput() *domain.UpdateLocationInput {
@@ -31,6 +34,7 @@ func (r *UpdateLocationRequest) ToInput() *domain.UpdateLocationInput {
 		City:     r.City,
 		Address:  r.Address,
 		Keywords: r.Keywords,
+		ImageURL: r.ImageURL,
 	}
 }
 
@@ -40,6 +44,7 @@ type LocationResponse struct {
 	City     string `json:"city"`
 	Address  string `json:"address"`
 	Keywords string `json:"keywords"`
+	ImageURL string `json:"imageUrl,omitempty"`
 }
 
 func ToLocationResponse(loc *domain.Location) *LocationResponse {
@@ -49,6 +54,7 @@ func ToLocationResponse(loc *domain.Location) *LocationResponse {
 		City:     loc.City,
 		Address:  loc.Address,
 		Keywords: loc.Keywords,
+		ImageURL: loc.ImageURL,
 	}
 }
 

@@ -30,6 +30,7 @@ func (uc *locationUseCase) Create(ctx context.Context, input *domain.CreateLocat
 		City:     input.City,
 		Address:  input.Address,
 		Keywords: input.Keywords,
+		ImageURL: input.ImageURL,
 	}
 
 	if err := loc.Validate(); err != nil {
@@ -60,6 +61,9 @@ func (uc *locationUseCase) Update(ctx context.Context, id int32, input *domain.U
 	}
 	if input.Keywords != nil {
 		existing.Keywords = *input.Keywords
+	}
+	if input.ImageURL != nil {
+		existing.ImageURL = *input.ImageURL
 	}
 
 	if err := existing.Validate(); err != nil {

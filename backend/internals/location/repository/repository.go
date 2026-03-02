@@ -32,6 +32,7 @@ func sqlcToEntity(m models.Location) *domain.Location {
 		City:     m.City,
 		Address:  utils.PtrToString(m.Address),
 		Keywords: utils.PtrToString(m.Keywords),
+		ImageURL: utils.PtrToString(m.ImageUrl),
 	}
 }
 
@@ -43,6 +44,7 @@ func (r *locationRepository) Create(ctx context.Context, loc *domain.Location) (
 		City:     loc.City,
 		Address:  utils.StringToPtr(loc.Address),
 		Keywords: utils.StringToPtr(loc.Keywords),
+		ImageUrl: utils.StringToPtr(loc.ImageURL),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to create location: %w", err)
@@ -65,6 +67,7 @@ func (r *locationRepository) Update(ctx context.Context, loc *domain.Location) (
 		City:     loc.City,
 		Address:  utils.StringToPtr(loc.Address),
 		Keywords: utils.StringToPtr(loc.Keywords),
+		ImageUrl: utils.StringToPtr(loc.ImageURL),
 	})
 	if err != nil {
 		return nil, domain.ErrLocationNotFound
