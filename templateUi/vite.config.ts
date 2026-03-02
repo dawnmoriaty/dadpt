@@ -10,6 +10,12 @@ export default defineConfig({
     port: 4200,
     host: true,
     allowedHosts: [""],
+    proxy: {
+      '/api/v1/files': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
     watch: {
       usePolling: true,
       interval: 1000,
