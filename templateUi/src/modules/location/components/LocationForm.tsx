@@ -3,7 +3,6 @@ import { Loader2, MapPin, Search, Upload, X } from 'lucide-react'
 import { useEffect, useState, useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 
-import { OptimizedImage } from '@/components/common/optimized-image'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -45,6 +44,7 @@ interface LocationFormProps {
 export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }: LocationFormProps) {
     const [selectedProvinceCode, setSelectedProvinceCode] = useState<number | null>(null)
     const [selectedDistrictCode, setSelectedDistrictCode] = useState<number | null>(null)
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     const [provinceSearch, setProvinceSearch] = useState('')
     const [districtSearch, setDistrictSearch] = useState('')
@@ -152,6 +152,12 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
     const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>): void => {
         const file = e.target.files?.[0]
         if (!file) return
+
+        // Instant local preview via FileReader
+        const reader = new FileReader()
+        reader.onload = (ev) => setPreviewUrl(ev.target?.result as string)
+        reader.readAsDataURL(file)
+
         uploadMutation.mutate(
             { file, folder: 'locations' },
             { onSuccess: (data) => form.setValue('imageUrl', data.url) },
@@ -174,8 +180,15 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
         })
     }
 
+    const handleDialogChange = (open: boolean): void => {
+        if (!open) {
+            setPreviewUrl(null)
+        }
+        onClose()
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">
@@ -448,22 +461,22 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                         {/* Image Upload */}
                         <div>
                             <p className="text-sm font-medium mb-2">Hình ảnh địa điểm</p>
-                            {imageUrl ? (
+                            {(previewUrl || imageUrl) ? (
                                 <div className="relative inline-block">
-                                    <OptimizedImage
-                                        src={imageUrl}
+                                    <img
+                                        src={previewUrl || imageUrl}
                                         alt="Location preview"
-                                        width={128}
-                                        height={128}
-                                        className="rounded"
-                                        objectFit="cover"
+                                        className="w-32 h-32 object-cover rounded"
                                     />
                                     <Button
                                         type="button"
                                         variant="destructive"
                                         size="icon"
                                         className="absolute -top-2 -right-2 h-6 w-6"
-                                        onClick={() => form.setValue('imageUrl', '')}
+                                        onClick={() => {
+                                            form.setValue('imageUrl', '')
+                                            setPreviewUrl(null)
+                                        }}
                                     >
                                         <X className="h-3 w-3" />
                                     </Button>

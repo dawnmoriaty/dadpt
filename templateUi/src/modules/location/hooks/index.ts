@@ -20,14 +20,14 @@ export const LOCATIONS_QUERY_KEY = locationKeys.all
 
 export function useLocations(params?: PagingParams) {
     return useQuery({
-        queryKey: [...LOCATIONS_QUERY_KEY, params],
+        queryKey: locationKeys.list(params),
         queryFn: () => locationApi.list(params),
     })
 }
 
 export function useLocation(id: number) {
     return useQuery({
-        queryKey: [...LOCATIONS_QUERY_KEY, id],
+        queryKey: locationKeys.detail(id),
         queryFn: () => locationApi.getById(id),
         enabled: !!id,
     })
@@ -86,8 +86,8 @@ export function useDeleteLocation() {
 
 export function useSearchLocations(query: string) {
     return useQuery({
-        queryKey: ['locations-search', query],
+        queryKey: locationKeys.search(query),
         queryFn: () => locationApi.search(query),
-        enabled: query.length > 0,
+        enabled: query.trim().length > 0,
     })
 }

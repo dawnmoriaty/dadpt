@@ -12,7 +12,7 @@ export const bookingKeys = {
     mine: (page: number, pageSize: number) => [...bookingKeys.all, 'mine', page, pageSize] as const,
     detail: (id: number) => [...bookingKeys.all, 'detail', id] as const,
     code: (code: string) => [...bookingKeys.all, 'code', code] as const,
-    searchTrips: (params: Record<string, unknown>) => ['trip-search', params] as const,
+    searchTrips: (params: Record<string, unknown>) => [...bookingKeys.all, 'trip-search', params] as const,
 }
 
 export function useMyBookings(page = 1, pageSize = 20) {
@@ -90,7 +90,7 @@ export function useBrowseTrips(params?: {
     limit?: number
 }) {
     return useQuery({
-        queryKey: ['browse-trips', params] as const,
+        queryKey: [...bookingKeys.all, 'browse-trips', params] as const,
         queryFn: () => bookingApi.browseTrips(params),
     })
 }

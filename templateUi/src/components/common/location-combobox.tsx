@@ -28,9 +28,7 @@ export function LocationCombobox({
     const listRef = useRef<HTMLUListElement>(null)
 
     const debouncedQuery = useDebounce(inputValue, 300)
-    const { data: locations, isLoading } = useSearchLocations(
-        debouncedQuery.length > 0 ? debouncedQuery : ' ',
-    )
+    const { data: locations, isLoading } = useSearchLocations(debouncedQuery)
     const items = locations ?? []
 
     // Resolve label from value on mount / when items load

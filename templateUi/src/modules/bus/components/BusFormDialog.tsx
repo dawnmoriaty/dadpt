@@ -1,8 +1,7 @@
 import { Loader2, Upload, X } from 'lucide-react'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 
-import { OptimizedImage } from '@/components/common/optimized-image'
 import { Button } from '@/components/ui/button'
 import {
     Dialog,
@@ -54,6 +53,7 @@ export function BusFormDialog({
     const { data: providers } = useProviders({ page: 1, pageSize: 100 })
     const { data: busTypes } = useBusTypes(1, 100)
     const uploadMutation = useUploadImage()
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     const createForm = useForm<CreateBusFormData>({
         resolver: formResolver(createBusSchema),
@@ -103,6 +103,11 @@ export function BusFormDialog({
         const file = e.target.files?.[0]
         if (!file) return
 
+        // Instant local preview via FileReader
+        const reader = new FileReader()
+        reader.onload = (ev) => setPreviewUrl(ev.target?.result as string)
+        reader.readAsDataURL(file)
+
         uploadMutation.mutate(
             { file, folder: 'buses' },
             {
@@ -125,12 +130,19 @@ export function BusFormDialog({
         onSubmit({ ...values, imageUrl: imageUrl || undefined })
     }
 
+    const handleDialogChange = (open: boolean): void => {
+        if (!open) {
+            setPreviewUrl(null)
+        }
+        onClose()
+    }
+
     const providerItems = providers?.items ?? []
     const busTypeItems = busTypes?.items ?? []
     const isPending = isLoading || uploadMutation.isPending
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
@@ -141,15 +153,12 @@ export function BusFormDialog({
                 {/* Image Upload (shared between create/edit) */}
                 <div>
                     <p className="text-sm font-medium mb-2">Bus Image</p>
-                    {imageUrl ? (
+                    {(previewUrl || imageUrl) ? (
                         <div className="relative inline-block">
-                            <OptimizedImage
-                                src={imageUrl}
+                            <img
+                                src={previewUrl || imageUrl}
                                 alt="Bus preview"
-                                width={128}
-                                height={128}
-                                className="rounded"
-                                objectFit="cover"
+                                className="w-32 h-32 object-cover rounded"
                             />
                             <Button
                                 type="button"
@@ -162,6 +171,7 @@ export function BusFormDialog({
                                     } else {
                                         createForm.setValue('imageUrl', '')
                                     }
+                                    setPreviewUrl(null)
                                 }}
                             >
                                 <X className="h-3 w-3" />

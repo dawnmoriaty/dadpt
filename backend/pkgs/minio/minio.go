@@ -22,6 +22,7 @@ var publicReadPrefixes = []string{
 	"providers",
 	"avatars",
 	"uploads",
+	"locations",
 }
 var (
 	reUnsafe    = regexp.MustCompile(`[^a-z0-9.\-]+`)

@@ -100,7 +100,7 @@ export function useDeleteProvider() {
 
 export function useActiveProviders() {
     return useQuery({
-        queryKey: ['providers-active'],
+        queryKey: providerKeys.active(),
         queryFn: () => providerApi.listActive(),
     })
 }

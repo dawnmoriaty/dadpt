@@ -21,6 +21,7 @@ type Location struct {
 	City     string
 	Address  string
 	Keywords string
+	ImageURL string
 }
 
 // LocationFilter for listing/searching locations
@@ -52,6 +53,7 @@ type CreateLocationInput struct {
 	City     string
 	Address  string
 	Keywords string
+	ImageURL string
 }
 
 // UpdateLocationInput is the input for updating a location (partial update)
@@ -60,4 +62,5 @@ type UpdateLocationInput struct {
 	City     *string
 	Address  *string
 	Keywords *string
+	ImageURL *string
 }

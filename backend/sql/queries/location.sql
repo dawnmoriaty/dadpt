@@ -13,8 +13,8 @@ LIMIT 20;
 SELECT * FROM locations WHERE city = $1 ORDER BY name;
 
 -- name: CreateLocation :one
-INSERT INTO locations (name, city, address, keywords)
-VALUES ($1, $2, $3, $4)
+INSERT INTO locations (name, city, address, keywords, image_url)
+VALUES ($1, $2, $3, $4, $5)
 RETURNING *;
 
 -- name: UpdateLocation :one
@@ -22,7 +22,8 @@ UPDATE locations SET
     name = COALESCE($2, name),
     city = COALESCE($3, city),
     address = COALESCE($4, address),
-    keywords = COALESCE($5, keywords)
+    keywords = COALESCE($5, keywords),
+    image_url = COALESCE($6, image_url)
 WHERE id = $1
 RETURNING *;
 
