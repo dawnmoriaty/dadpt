@@ -84,6 +84,19 @@ export function ProvidersPage() {
                 </Button>
             </div>
 
+            {/* Search */}
+            {!isLoading && (
+                <div className="relative max-w-sm">
+                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Input
+                        placeholder="Search providers..."
+                        value={searchQuery}
+                        onChange={(e) => setSearchQuery(e.target.value)}
+                        className="h-9 pl-9 w-[300px]"
+                    />
+                </div>
+            )}
+
             {/* Content */}
             {isLoading ? (
                 <Card className="border-0 shadow-md p-6">
@@ -129,18 +142,7 @@ export function ProvidersPage() {
                         setPageSize(newSize)
                     }}
                     toolbar={(table) => (
-                        <div className="flex items-center justify-between">
-                            <div className="relative max-w-sm">
-                                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                                <Input
-                                    placeholder="Search providers..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                    className="h-8 pl-9 w-[250px]"
-                                />
-                            </div>
-                            <DataTableViewOptions table={table} />
-                        </div>
+                        <DataTableViewOptions table={table} />
                     )}
                 />
             )}

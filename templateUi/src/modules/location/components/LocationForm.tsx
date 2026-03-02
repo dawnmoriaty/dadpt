@@ -135,7 +135,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
         setProvinceSearch('')
         setDistrictSearch('')
         setWardSearch('')
-        setPreviewUrl(null)
     }, [isOpen, location, form, provinces])
 
     const composeAddress = (
@@ -181,8 +180,15 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
         })
     }
 
+    const handleDialogChange = (open: boolean): void => {
+        if (!open) {
+            setPreviewUrl(null)
+        }
+        onClose()
+    }
+
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2">

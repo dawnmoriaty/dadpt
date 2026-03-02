@@ -81,7 +81,6 @@ export function BusFormDialog({
 
     useEffect(() => {
         if (isOpen) {
-            setPreviewUrl(null)
             if (bus) {
                 updateForm.reset({
                     busTypeId: bus.busTypeId,
@@ -131,12 +130,19 @@ export function BusFormDialog({
         onSubmit({ ...values, imageUrl: imageUrl || undefined })
     }
 
+    const handleDialogChange = (open: boolean): void => {
+        if (!open) {
+            setPreviewUrl(null)
+        }
+        onClose()
+    }
+
     const providerItems = providers?.items ?? []
     const busTypeItems = busTypes?.items ?? []
     const isPending = isLoading || uploadMutation.isPending
 
     return (
-        <Dialog open={isOpen} onOpenChange={onClose}>
+        <Dialog open={isOpen} onOpenChange={handleDialogChange}>
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
