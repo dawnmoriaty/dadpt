@@ -15,7 +15,6 @@ export const providerKeys = {
     active: () => [...providerKeys.all, 'active'] as const,
 }
 
-// Keep legacy export for backward compatibility
 export const PROVIDERS_QUERY_KEY = providerKeys.all
 
 export function useProviders(params?: PagingParams) {
