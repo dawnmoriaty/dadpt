@@ -121,8 +121,24 @@
                     <span class="px-2 py-0.5 rounded text-xs {{ 'bg-green-100 text-green-700' if w.enabled else 'bg-red-100 text-red-700' }}">
                         {{ '✅ On' if w.enabled else '❌ Off' }}
                     </span>
+                    <button
+                        onclick="openWorkflowEditor(this)"
+                        data-workflow='{{ {
+                            "id": w.id,
+                            "name": w.name,
+                            "slug": w.slug,
+                            "description": w.description,
+                            "trigger_description": w.trigger_description,
+                            "definition": w.definition,
+                            "enabled": w.enabled
+                        } | tojson }}'
+                        class="text-indigo-600 hover:text-indigo-800 text-xs"
+                    >
+                        Edit
+                    </button>
                     <button onclick="deleteItem('/api/admin/workflows/{{ w.id }}')" class="text-red-500 hover:text-red-700 text-xs">Delete</button>
                 </div>
+
             </div>
             <!-- Workflow nodes visualization -->
             <div class="mt-3 flex flex-wrap gap-2">
@@ -273,7 +289,39 @@
         </form>
     </div>
 </div>
+
+<!-- Workflow Edit Modal -->
+<div id="workflowEditModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <h3 class="text-lg font-bold mb-4">Edit Workflow</h3>
+        <form id="workflowEditForm" class="space-y-3">
+            <input type="hidden" name="workflow_id">
+            <div class="grid grid-cols-2 gap-2">
+                <input name="name" placeholder="Name" class="w-full border rounded px-3 py-2 text-sm" required>
+                <input name="slug" placeholder="Slug" class="w-full border rounded px-3 py-2 text-sm" disabled>
+            </div>
+            <textarea name="description" placeholder="Description" class="w-full border rounded px-3 py-2 text-sm" rows="1"></textarea>
+            <textarea name="trigger_description" placeholder="Trigger description" class="w-full border rounded px-3 py-2 text-sm" rows="2" required></textarea>
+            <div>
+                <div class="flex justify-between items-center mb-1">
+                    <label class="text-xs text-gray-400">Workflow Definition (JSON)</label>
+                    <span class="text-xs text-gray-400">Task types: {{ task_types | join(', ') }}</span>
+                </div>
+                <textarea name="definition" class="w-full border rounded px-3 py-2 text-sm json-editor" rows="20" required></textarea>
+            </div>
+            <label class="inline-flex items-center gap-2 text-sm">
+                <input type="checkbox" name="enabled" class="rounded border-gray-300">
+                <span>Enabled</span>
+            </label>
+            <div class="flex gap-2 justify-end">
+                <button type="button" onclick="document.getElementById('workflowEditModal').classList.add('hidden')" class="px-4 py-2 border rounded text-sm">Cancel</button>
+                <button type="submit" class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700">Save</button>
+            </div>
+        </form>
+    </div>
+</div>
 {% endblock %}
+
 
 {% block scripts %}
 <script>
@@ -334,7 +382,38 @@
         } catch (e) { showToast('❌ ' + e.message, true); }
     });
 
+    function openWorkflowEditor(button) {
+        const workflow = JSON.parse(button.dataset.workflow);
+        const form = document.getElementById('workflowEditForm');
+        form.workflow_id.value = workflow.id;
+        form.name.value = workflow.name || '';
+        form.slug.value = workflow.slug || '';
+        form.description.value = workflow.description || '';
+        form.trigger_description.value = workflow.trigger_description || '';
+        form.definition.value = JSON.stringify(workflow.definition || {}, null, 2);
+        form.enabled.checked = Boolean(workflow.enabled);
+        document.getElementById('workflowEditModal').classList.remove('hidden');
+    }
+
+    document.getElementById('workflowEditForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const fd = new FormData(e.target);
+        const data = Object.fromEntries(fd);
+        const workflowId = data.workflow_id;
+        delete data.workflow_id;
+        delete data.slug;
+        data.enabled = fd.get('enabled') === 'on';
+        try { data.definition = JSON.parse(data.definition); }
+        catch { showToast('❌ Invalid workflow definition JSON', true); return; }
+        try {
+            await apiCall('PUT', `/api/admin/workflows/${workflowId}`, data);
+            showToast('✅ Workflow updated!');
+            location.reload();
+        } catch (e) { showToast('❌ ' + e.message, true); }
+    });
+
     // Chat
+
     const chatMessages = document.getElementById('chatMessages');
 
     function addChatMessage(role, text) {

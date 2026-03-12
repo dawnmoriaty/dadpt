@@ -21,7 +21,14 @@ class Settings(BaseSettings):
     google_api_key: str = ""
     huggingfacehub_api_token: str = ""
 
+    def model_post_init(self, __context: object) -> None:
+        if self.openai_api_key.startswith("your-"):
+            self.openai_api_key = ""
+        if not self.huggingfacehub_api_token and self.encryption_key:
+            self.huggingfacehub_api_token = self.encryption_key
+
     # --- Qdrant ---
+
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333
     qdrant_api_key: str = ""

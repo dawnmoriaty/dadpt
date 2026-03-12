@@ -7,11 +7,13 @@ Handles: Chat, SyncData, HealthCheck.
 from __future__ import annotations
 
 import json
+import time
 import uuid
 from typing import Any
 
 import grpc
 import structlog
+
 
 from src.config import get_settings
 from src.engine.supervisor import Supervisor
@@ -26,7 +28,9 @@ from src.vectorstore.qdrant_manager import get_qdrant_manager
 logger = structlog.get_logger()
 
 # ── Session store (Redis in production, in-memory for MVP) ──────────────────
+SESSION_TTL_SECONDS = 60 * 30
 _sessions: dict[str, dict[str, Any]] = {}
+
 
 
 class AIAgentServicer:
@@ -40,9 +44,11 @@ class AIAgentServicer:
         """Handle a chat message — route through supervisor."""
         # Extract fields from request (works with both proto objects and dicts)
         tenant_slug = _get_field(request, "tenant_slug", "")
-        session_id = _get_field(request, "session_id", "") or str(uuid.uuid4())
+        raw_session_id = _get_field(request, "session_id", "")
         message = _get_field(request, "message", "")
         user_id = _get_field(request, "user_id", "")
+        session_id = _build_session_key(tenant_slug, user_id, raw_session_id)
+
 
         logger.info(
             "grpc.chat",
@@ -80,7 +86,8 @@ class AIAgentServicer:
         ctx = await supervisor.handle(ctx)
 
         # Save session state for multi-turn
-        _sessions[session_id] = ctx.to_dict()
+        _save_session(session_id, ctx)
+
 
         # Build tool call logs
         tool_calls = []
@@ -154,11 +161,38 @@ def _get_field(obj: Any, name: str, default: Any = "") -> Any:
     return getattr(obj, name, default)
 
 
+def _build_session_key(tenant_slug: str, user_id: str, session_id: str) -> str:
+    if user_id:
+        return f"{tenant_slug}:{user_id}"
+    if session_id:
+        return session_id
+    return str(uuid.uuid4())
+
+
+def _get_session_data(session_key: str) -> dict[str, Any] | None:
+    record = _sessions.get(session_key)
+    if not record:
+        return None
+    updated_at = record.get("updated_at", 0)
+    if updated_at and time.time() - updated_at > SESSION_TTL_SECONDS:
+        _sessions.pop(session_key, None)
+        return None
+    return record.get("data")
+
+
+def _save_session(session_key: str, ctx: WorkflowContext) -> None:
+    _sessions[session_key] = {
+        "data": ctx.to_dict(),
+        "updated_at": time.time(),
+    }
+
+
+
 def _get_or_create_context(
     session_id: str, tenant_slug: str, message: str
 ) -> WorkflowContext:
     """Get existing context (for resume) or create new one."""
-    existing = _sessions.get(session_id)
+    existing = _get_session_data(session_id)
 
     if existing and existing.get("status") == "paused":
         # Resume paused workflow
@@ -182,6 +216,7 @@ def _get_or_create_context(
         ctx.add_message("user", message)
 
     return ctx
+
 
 
 def _make_chat_response(

@@ -210,6 +210,25 @@ async def seed():
                             "output_key": "search_results",
                         },
                     },
+                    "rerank": {
+                        "task_type": "rerank_trips",
+                        "config": {
+                            "input_key": "search_results",
+                            "list_key": "trips",
+                            "output_key": "top_trips",
+                            "top_n": 5,
+                            "price_field": "base_price"
+                        }
+                    },
+                    "rag": {
+                        "task_type": "rag_query",
+                        "config": {
+                            "collection": "trips",
+                            "query_key": "user_message",
+                            "top_k": 5,
+                            "output_key": "trip_context"
+                        }
+                    },
                     "format": {
                         "task_type": "llm_call",
                         "config": {
@@ -217,8 +236,9 @@ async def seed():
                             "system_prompt": "Bạn là nhân viên tư vấn vé xe bus. Hãy trình bày kết quả tìm kiếm một cách thân thiện, dễ đọc.",
                             "prompt_template": (
                                 "Khách hàng tìm: {user_message}\n\n"
-                                "Kết quả tìm kiếm:\n{search_results}\n\n"
-                                "Hãy trình bày kết quả dạng danh sách dễ đọc. "
+                                "Kết quả đã xếp hạng theo giá (rẻ → đắt):\n{top_trips}\n\n"
+                                "Ngữ cảnh chuyến xe liên quan:\n{trip_context}\n\n"
+                                "Hãy trình bày kết quả dạng danh sách dễ đọc, ưu tiên các chuyến rẻ hơn. "
                                 "Nếu không có kết quả, gợi ý khách tìm ngày khác hoặc tuyến khác."
                             ),
                             "output_key": "response",
@@ -228,7 +248,9 @@ async def seed():
                 "edges": [
                     {"from": "START", "to": "extract"},
                     {"from": "extract", "to": "search"},
-                    {"from": "search", "to": "format"},
+                    {"from": "search", "to": "rerank"},
+                    {"from": "rerank", "to": "rag"},
+                    {"from": "rag", "to": "format"},
                     {"from": "format", "to": "END"},
                 ],
             },

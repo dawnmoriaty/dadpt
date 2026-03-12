@@ -8,10 +8,13 @@ from __future__ import annotations
 
 from typing import Any
 
+import aiohttp
 import grpc
+import json
 import structlog
 from langchain_core.tools import StructuredTool
 from pydantic import create_model
+
 
 logger = structlog.get_logger()
 
@@ -47,10 +50,80 @@ class ToolFactory:
         self._grpc_target = grpc_target
         self._channel: grpc.aio.Channel | None = None
 
+    def _is_http_target(self) -> bool:
+        return self._grpc_target.startswith("http://") or self._grpc_target.startswith(
+            "https://"
+        )
+
     def _get_channel(self) -> grpc.aio.Channel:
         if self._channel is None:
             self._channel = grpc.aio.insecure_channel(self._grpc_target)
         return self._channel
+
+
+    async def _invoke_http(self, grpc_method: str, **kwargs: Any) -> str:
+        if grpc_method == "SearchTrips":
+            return await self._search_trips_http(**kwargs)
+        if grpc_method == "GetLocations":
+            return await self._get_locations_http(**kwargs)
+        return '{"error": "HTTP fallback not implemented"}'
+
+    async def _search_trips_http(self, **kwargs: Any) -> str:
+        origin = str(kwargs.get("origin", "")).strip()
+        destination = str(kwargs.get("destination", "")).strip()
+        date = str(kwargs.get("date", "")).strip()
+        passengers = int(kwargs.get("passengers", 1) or 1)
+
+        if not origin or not destination or not date:
+            return '{"error": "Missing origin/destination/date"}'
+
+        async with aiohttp.ClientSession() as session:
+            origin_id = await self._resolve_location_id(session, origin)
+            destination_id = await self._resolve_location_id(session, destination)
+            if not origin_id or not destination_id:
+                return '{"trips": [], "total": 0}'
+
+            params = {
+                "originId": origin_id,
+                "destinationId": destination_id,
+                "departureDate": date,
+                "minSeats": passengers,
+            }
+            async with session.get(f"{self._grpc_target}/api/v1/trips", params=params) as resp:
+                try:
+                    raw = await resp.json()
+                except Exception:
+                    return await resp.text()
+                if isinstance(raw, dict):
+                    data = raw.get("data", {})
+                    items = data.get("items", []) if isinstance(data, dict) else []
+                    total = data.get("total", len(items)) if isinstance(data, dict) else len(items)
+                    return json.dumps({"trips": items, "total": total})
+                return json.dumps({"trips": [], "total": 0})
+
+    async def _get_locations_http(self, **kwargs: Any) -> str:
+        query = str(kwargs.get("query", "")).strip()
+        if not query:
+            return '{"locations": []}'
+        params = {"q": query}
+        async with aiohttp.ClientSession() as session:
+            async with session.get(
+                f"{self._grpc_target}/api/v1/locations/search", params=params
+            ) as resp:
+                payload = await resp.text()
+                return payload
+
+    async def _resolve_location_id(self, session: aiohttp.ClientSession, query: str) -> int | None:
+        params = {"q": query}
+        async with session.get(f"{self._grpc_target}/api/v1/locations/search", params=params) as resp:
+            try:
+                data = await resp.json()
+            except Exception:
+                return None
+        items = data.get("data", []) if isinstance(data, dict) else []
+        if not items:
+            return None
+        return items[0].get("id")
 
     def create_tool(self, tool_config: dict[str, Any]) -> StructuredTool:
         """Convert a tool_definition dict → LangChain StructuredTool.
@@ -67,6 +140,8 @@ class ToolFactory:
         # Build the async callable that invokes gRPC
         async def _invoke_grpc(**kwargs: Any) -> str:
             """Call the backend gRPC method with the given arguments."""
+            if self._is_http_target():
+                return await self._invoke_http(grpc_method, **kwargs)
             try:
                 channel = self._get_channel()
                 # Use generic unary-unary call via channel
@@ -98,6 +173,7 @@ class ToolFactory:
             description=description,
             args_schema=input_model,
         )
+
 
     def create_tools(self, tool_configs: list[dict[str, Any]]) -> list[StructuredTool]:
         """Batch create tools from a list of tool_definition dicts."""
