@@ -39,7 +39,8 @@ func Dial(cfg Config) (*Conn, error) {
 		return nil, fmt.Errorf("grpc: target address is empty")
 	}
 
-	opts := []grpc.DialOption{}
+	registerRawCodec()
+	opts := []grpc.DialOption{grpc.WithDefaultCallOptions(grpc.ForceCodec(rawCodec{}))}
 	if cfg.Insecure {
 		opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	}
