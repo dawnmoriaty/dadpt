@@ -44,7 +44,8 @@ type BookingOutput struct {
 	Booking    *Booking
 	TripInfo   *TripSnapshot
 	OrderCode  string // For payment gateway
-	PaymentURL string // For redirect to payment gateway
+	PaymentURL string // Checkout URL from PayOS
+	QRCode     string // QR code data from PayOS
 }
 
 // BookingListOutput is the output from listing bookings

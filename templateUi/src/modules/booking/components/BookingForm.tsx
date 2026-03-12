@@ -368,9 +368,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="cod">{t('booking.cod')}</SelectItem>
-                                            <SelectItem value="vnpay">{t('booking.vnpay')}</SelectItem>
-                                            <SelectItem value="momo">{t('booking.momo')}</SelectItem>
+                                            <SelectItem value="bank_transfer">💳 Chuyển khoản ngân hàng</SelectItem>
+                                            <SelectItem value="cod">💵 Thanh toán khi lên xe (COD)</SelectItem>
+                                            <SelectItem value="visa" disabled>💎 Visa / Mastercard (Sắp ra mắt)</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />

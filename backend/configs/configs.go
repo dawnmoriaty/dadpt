@@ -18,6 +18,9 @@ type Config struct {
 	Environment string `mapstructure:"ENVIRONMENT"`
 	HTTPPort    int    `mapstructure:"HTTP_PORT"`
 
+	// Booking
+	BookingExpiryDuration time.Duration `mapstructure:"BOOKING_EXPIRY_DURATION"`
+
 	// Database
 	DatabaseURI string `mapstructure:"DATABASE_URI"`
 
@@ -44,6 +47,13 @@ type Config struct {
 
 	// AI Agent
 	AIAgentGRPCAddr string `mapstructure:"AI_AGENT_GRPC_ADDR"`
+
+	// PayOS
+	PayOSClientID    string `mapstructure:"PAYOS_CLIENT_ID"`
+	PayOSAPIKey      string `mapstructure:"PAYOS_API_KEY"`
+	PayOSChecksumKey string `mapstructure:"PAYOS_CHECKSUM_KEY"`
+	PayOSReturnURL   string `mapstructure:"PAYOS_RETURN_URL"`
+	PayOSCancelURL   string `mapstructure:"PAYOS_CANCEL_URL"`
 }
 
 var cfg Config
@@ -62,6 +72,7 @@ func LoadConfig() *Config {
 	cfg = Config{
 		Environment:          viper.GetString("ENVIRONMENT"),
 		HTTPPort:             viper.GetInt("HTTP_PORT"),
+		BookingExpiryDuration: viper.GetDuration("BOOKING_EXPIRY_DURATION"),
 		DatabaseURI:          viper.GetString("DATABASE_URI"),
 		RedisURI:             viper.GetString("REDIS_URI"),
 		RedisPassword:        viper.GetString("REDIS_PASSWORD"),
@@ -77,11 +88,19 @@ func LoadConfig() *Config {
 		AccessTokenDuration:  viper.GetDuration("ACCESS_TOKEN_DURATION"),
 		RefreshTokenDuration: viper.GetDuration("REFRESH_TOKEN_DURATION"),
 		AIAgentGRPCAddr:      viper.GetString("AI_AGENT_GRPC_ADDR"),
+		PayOSClientID:        viper.GetString("PAYOS_CLIENT_ID"),
+		PayOSAPIKey:          viper.GetString("PAYOS_API_KEY"),
+		PayOSChecksumKey:     viper.GetString("PAYOS_CHECKSUM_KEY"),
+		PayOSReturnURL:       viper.GetString("PAYOS_RETURN_URL"),
+		PayOSCancelURL:       viper.GetString("PAYOS_CANCEL_URL"),
 	}
 
 	// Defaults
 	if cfg.HTTPPort == 0 {
 		cfg.HTTPPort = 8080
+	}
+	if cfg.BookingExpiryDuration == 0 {
+		cfg.BookingExpiryDuration = 15 * time.Minute
 	}
 	if cfg.AIAgentGRPCAddr == "" {
 		cfg.AIAgentGRPCAddr = "localhost:50051"
@@ -94,6 +113,12 @@ func LoadConfig() *Config {
 	}
 	if cfg.RefreshTokenDuration == 0 {
 		cfg.RefreshTokenDuration = 168 * time.Hour
+	}
+	if cfg.PayOSReturnURL == "" {
+		cfg.PayOSReturnURL = "http://localhost:5173/payment/success"
+	}
+	if cfg.PayOSCancelURL == "" {
+		cfg.PayOSCancelURL = "http://localhost:5173/payment/cancel"
 	}
 
 	return &cfg
