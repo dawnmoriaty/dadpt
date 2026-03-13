@@ -218,13 +218,39 @@ func (u *bookingUseCase) GetBookingByCode(ctx context.Context, code string) (*do
 }
 
 func (u *bookingUseCase) ListUserBookings(ctx context.Context, input *domain.ListBookingsInput) (*domain.BookingListOutput, error) {
-	bookings, total, err := u.repo.ListByUser(ctx, input.UserID, input.Limit, input.Offset)
+	page := input.Page
+	pageSize := input.PageSize
+	limit := input.Limit
+	offset := input.Offset
+
+	if page > 0 {
+		if pageSize <= 0 {
+			pageSize = 20
+		}
+		limit = pageSize
+		offset = (page - 1) * pageSize
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	if page <= 0 {
+		pageSize = limit
+		page = (offset / limit) + 1
+	}
+
+	bookings, total, err := u.repo.ListByUser(ctx, input.UserID, limit, offset)
 	if err != nil {
 		return nil, err
 	}
 	return &domain.BookingListOutput{
 		Bookings: bookings,
 		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
 	}, nil
 }
 

@@ -31,7 +31,7 @@ func Routes(
 	handler := NewBookingHandler(uc)
 	paymentHandler := NewPaymentHandler(uc, paymentGw)
 
-	public.POST("", handler.CreateBooking)
+	authenticated.POST("", handler.CreateBooking)
 	public.GET("/code/:code", handler.GetBookingByCode)
 	public.POST("/payments/webhook", paymentHandler.HandleWebhook)
 	public.GET("/payments/:orderCode/status", paymentHandler.GetPaymentStatus)

@@ -30,10 +30,10 @@ type PointInfoDTO struct {
 }
 
 type ListBookingsRequest struct {
-	Page     int32 `form:"page,default=1" binding:"min=1"`
-	PageSize int32 `form:"pageSize,default=20" binding:"min=1,max=50"`
-	Limit    int32 `form:"limit" binding:"min=1,max=50"`
-	Offset   int32 `form:"offset" binding:"min=0"`
+	Page     int32 `form:"page,default=1" binding:"omitempty,min=1"`
+	PageSize int32 `form:"pageSize,default=20" binding:"omitempty,min=1,max=50"`
+	Limit    int32 `form:"limit" binding:"omitempty,min=1,max=50"`
+	Offset   int32 `form:"offset" binding:"omitempty,min=0"`
 }
 
 // =============================================================================
@@ -148,7 +148,7 @@ func ToBookingDetailResponse(b *domain.Booking) *BookingDetailResponse {
 	return resp
 }
 
-func ToBookingListResponse(output *domain.BookingListOutput, page, pageSize int32) *BookingListResponse {
+func ToBookingListResponse(output *domain.BookingListOutput) *BookingListResponse {
 	bookings := make([]*BookingDetailResponse, len(output.Bookings))
 	for i, b := range output.Bookings {
 		bookings[i] = ToBookingDetailResponse(b)
@@ -156,8 +156,8 @@ func ToBookingListResponse(output *domain.BookingListOutput, page, pageSize int3
 	return &BookingListResponse{
 		Items:    bookings,
 		Total:    output.Total,
-		Page:     page,
-		PageSize: pageSize,
+		Page:     output.Page,
+		PageSize: output.PageSize,
 	}
 }
 

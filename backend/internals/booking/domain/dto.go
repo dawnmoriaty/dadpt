@@ -23,9 +23,11 @@ type CancelBookingInput struct {
 
 // ListBookingsInput is the input for listing user's bookings
 type ListBookingsInput struct {
-	UserID int64
-	Limit  int32
-	Offset int32
+	UserID   int64
+	Limit    int32
+	Offset   int32
+	Page     int32
+	PageSize int32
 }
 
 // ConfirmPaymentInput is the input from the payment webhook
@@ -52,6 +54,8 @@ type BookingOutput struct {
 type BookingListOutput struct {
 	Bookings []*Booking
 	Total    int64
+	Page     int32
+	PageSize int32
 }
 
 // PaymentConfirmOutput is the output from payment confirmation
