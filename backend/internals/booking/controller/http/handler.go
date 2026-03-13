@@ -95,17 +95,33 @@ func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 		return
 	}
 
+	limit := req.Limit
+	offset := req.Offset
+	page := req.Page
+	pageSize := req.PageSize
+	if page > 0 {
+		if pageSize <= 0 {
+			pageSize = 20
+		}
+		limit = pageSize
+		offset = (page - 1) * pageSize
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+
 	result, err := h.uc.ListUserBookings(c.Request.Context(), &domain.ListBookingsInput{
 		UserID: userID.(int64),
-		Limit:  req.Limit,
-		Offset: req.Offset,
+		Limit:  limit,
+		Offset: offset,
 	})
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return
 	}
 
-	response.Success(c, dto.ToBookingListResponse(result))
+	response.Success(c, dto.ToBookingListResponse(result, page, pageSize))
 }
 
 // CancelBooking POST /bookings/:id/cancel

@@ -1,8 +1,9 @@
 import { Loader2, Ticket } from 'lucide-react'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
+import { useNavigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -27,6 +28,7 @@ import {
 import { Separator } from '@/components/ui/separator'
 import { formResolver } from '@/lib/form/resolver'
 import type { Trip } from '@/modules/trip'
+import { useAuthStore } from '@/stores/use-auth-store'
 
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
@@ -63,6 +65,8 @@ function formatCurrency(amount: number) {
 export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const createBooking = useCreateBooking()
     const { t } = useTranslation()
+    const navigate = useNavigate()
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
     const availableSeats = useMemo(
         () => generateSeatCodes(trip.availableSeats, trip.bookedSeats ?? []),
         [trip.availableSeats, trip.bookedSeats],
@@ -83,9 +87,34 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const selectedSeats = useWatch({ control: form.control, name: 'seatCodes' })
     const totalAmount = selectedSeats.length * trip.finalPrice
 
+    const draftKey = `booking_draft_${trip.id}`
+
+    useEffect(() => {
+        const raw = sessionStorage.getItem(draftKey)
+        if (!raw) return
+        try {
+            const draft = JSON.parse(raw) as Partial<CreateBookingFormData>
+            if (draft.tripId && draft.tripId !== trip.id) return
+            form.reset({
+                ...form.getValues(),
+                ...draft,
+                tripId: trip.id,
+            })
+        } catch {
+            sessionStorage.removeItem(draftKey)
+        }
+    }, [draftKey, form, trip.id])
+
     const onSubmit = (data: CreateBookingFormData) => {
+        if (!isAuthenticated) {
+            sessionStorage.setItem(draftKey, JSON.stringify(data))
+            navigate({ to: '/login', search: { redirect: `/trips/${trip.id}` } })
+            return
+        }
+
         createBooking.mutate(data, {
             onSuccess: (response) => {
+                sessionStorage.removeItem(draftKey)
                 onSuccess(response)
             },
         })

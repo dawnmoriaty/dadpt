@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	bookingExpiry  = 15 * time.Minute // Pending booking expires after 15 minutes
+	bookingExpiry  = 10 * time.Minute // Pending booking expires after 10 minutes
 	lockTTL        = 30 * time.Second // Redis lock TTL
 	bookingCodeLen = 8                // Length of booking code
 )

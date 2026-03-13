@@ -21,14 +21,14 @@ Go Backend ──gRPC──▶ AI Service (FastAPI + gRPC Server)
 
 ## Key Concepts
 
-| Concept | Description |
-|---------|-------------|
-| **Tenant** | Isolated customer domain (bus, banking, edu...) |
-| **Model Provider** | Global LLM vendor (OpenAI, Google, Anthropic) |
-| **Model Instance** | Per-tenant model config (slug, temperature, purpose) |
-| **Tool Definition** | gRPC method exposed to AI (SearchTrips, CreateBooking...) |
-| **Workflow** | BPMN-style JSON DAG — nodes are task types, edges are flow |
-| **Task Type** | Reusable building block (llm_call, grpc_call, rag_query, condition, human_input, transform, parallel) |
+| Concept             | Description                                                                                           |
+| ------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Tenant**          | Isolated customer domain (bus, banking, edu...)                                                       |
+| **Model Provider**  | Global LLM vendor (OpenAI, Google, Anthropic)                                                         |
+| **Model Instance**  | Per-tenant model config (slug, temperature, purpose)                                                  |
+| **Tool Definition** | gRPC method exposed to AI (SearchTrips, CreateBooking...)                                             |
+| **Workflow**        | BPMN-style JSON DAG — nodes are task types, edges are flow                                            |
+| **Task Type**       | Reusable building block (llm_call, grpc_call, rag_query, condition, human_input, transform, parallel) |
 
 ## Quick Start
 
@@ -48,7 +48,7 @@ docker compose up -d bus.qdrant bus.redis
 python -m src.seed
 
 # 5. Run the server
-python -m src.main
+.\.venv\Scripts\python -m src.main
 # → FastAPI: http://localhost:8100
 # → Admin UI: http://localhost:8100/admin
 # → Swagger: http://localhost:8100/docs
