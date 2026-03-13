@@ -4,6 +4,7 @@ import {
     Route,
     Building2,
     Bus,
+    Users,
     Settings,
     Grid3X3,
 } from 'lucide-react'
@@ -18,6 +19,7 @@ export interface NavItem {
 
 export const navigationItems: NavItem[] = [
     { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Users', href: '/admin/users', icon: Users },
     { title: 'Locations', href: '/admin/locations', icon: MapPin },
     { title: 'Trips', href: '/admin/trips', icon: Route },
     { title: 'Providers', href: '/admin/providers', icon: Building2 },

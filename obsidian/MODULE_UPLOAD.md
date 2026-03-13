@@ -20,11 +20,11 @@ updated: 2026-02-25
 
 ### 1.1. Danh sách yêu cầu chức năng (Functional Requirements)
 
-| ID | Tên chức năng | Mức độ ưu tiên | Độ phức tạp | Tác nhân (Actor) |
-|-----|---------------|----------------|-------------|------------------|
-| UP-01 | Tải lên hình ảnh | P1 | M | Admin/Operator |
-| UP-02 | Xóa hình ảnh | P2 | L | Admin/Operator |
-| UP-03 | Phục vụ file (Serve/Proxy) | P1 | M | Guest/Customer |
+| ID    | Tên chức năng              | Mức độ ưu tiên | Độ phức tạp | Tác nhân (Actor) |
+| ----- | -------------------------- | -------------- | ----------- | ---------------- |
+| UP-01 | Tải lên hình ảnh           | P1             | M           | Admin/Operator   |
+| UP-02 | Xóa hình ảnh               | P2             | L           | Admin/Operator   |
+| UP-03 | Phục vụ file (Serve/Proxy) | P1             | M           | Guest/Customer   |
 
 ### 1.2. Biểu đồ phân cấp chức năng (Functional Hierarchy)
 
