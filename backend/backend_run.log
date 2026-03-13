@@ -1,0 +1,128 @@
+[90m00:23:18[0m [32mINF[0m [1mDatabase connection established[0m
+[90m00:23:18[0m [32mINF[0m [1mRedis connection established[0m
+[90m00:23:18[0m [32mINF[0m [1mgRPC connection established: localhost:50051[0m
+[90m00:23:18[0m [32mINF[0m [1mMinIO: public-read policy applied on bucket bus-ticketing for prefixes [buses providers avatars uploads locations][0m
+[90m00:23:18[0m [32mINF[0m [1mMinIO connection established (bucket=bus-ticketing)[0m
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[90m00:23:19[0m [32mINF[0m [1mRabbitMQ connection established[0m
+[90m00:23:19[0m [32mINF[0m [1mStarting Bus Ticketing Backend...[0m
+[90m00:23:19[0m [32mINF[0m [1mBooking RabbitMQ topology set up successfully[0m
+[90m00:23:19[0m [32mINF[0m [1mOutbox processor started (interval=5s, batch=20)[0m
+[90m00:23:19[0m [32mINF[0m [1mExpiry worker started (interval=1m0s)[0m
+[90m00:23:41[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m78.3795 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0mb86e4212-df2f-4504-bfed-58c89c7a9a4e [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:23:41 | 200 |     78.3795ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:23:41[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m7.182 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m43c1307d-99af-459e-94b4-454e6be51107 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:23:41 | 200 |       7.182ms |             ::1 | GET      "/api/v1/trips?originId=1&destinationId=7&departureDate=2026-03-03&minSeats=1"
+[90m00:23:41[0m [31mERR[0m [1mAI Agent sync failed: AI agent SyncData RPC failed: rpc error: code = Unknown desc = Unexpected <class 'UnicodeEncodeError'>: 'utf-8' codec can't encode character '\udc90' in position 15: surrogates not allowed[0m
+[90m00:23:41[0m [31mERR[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m165.449 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/sync [36mrequest_id=[0m8fae1de2-c0c0-42f8-a3ad-e1effba77f3a [36mstatus=[0m500
+[GIN] 2026/03/11 - 00:23:41 | 500 |     165.449ms |             ::1 | POST     "/api/v1/ai/sync"
+[90m00:24:04[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m223.0256 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0m10c470a6-7b2b-4634-a8b9-a31f297bbe0a [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:24:04 | 200 |    224.0349ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:24:04[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m3.7397 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m3ff55e5f-e7c1-4731-b15d-610a70b75d29 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:24:04 | 200 |      3.7397ms |             ::1 | GET      "/api/v1/trips?originId=1&destinationId=7&departureDate=2026-03-03&minSeats=1"
+[90m00:24:10[0m [31mERR[0m [1mAI Agent sync failed: AI agent SyncData RPC failed: rpc error: code = Unknown desc = Unexpected <class 'openai.AuthenticationError'>: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}[0m
+[90m00:24:10[0m [31mERR[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m5706.0488 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/sync [36mrequest_id=[0m0458117f-9e4f-403b-bc76-2c48c4e722ec [36mstatus=[0m500
+[GIN] 2026/03/11 - 00:24:10 | 500 |    5.7060488s |             ::1 | POST     "/api/v1/ai/sync"
+[90m00:24:56[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m28380.5318 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m4524d962-98cc-4254-9743-525e4c41816f [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:24:56 | 200 |   28.3805318s |             ::1 | POST     "/api/v1/ai/chat"
+[90m00:25:28[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m45.8162 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0m768ce0df-63dc-44d2-95f3-d65414ce1a6a [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:25:28 | 200 |     45.8162ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:25:28[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m8.821 [36mmethod=[0mPOST [36mpath=[0m/api/v1/admin/trips [36mrequest_id=[0meaa14d57-9102-4808-860f-b165924be47e [36mstatus=[0m201
+[GIN] 2026/03/11 - 00:25:28 | 201 |       8.821ms |             ::1 | POST     "/api/v1/admin/trips"
+[90m00:25:28[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m3.6017 [36mmethod=[0mPOST [36mpath=[0m/api/v1/admin/trips [36mrequest_id=[0m4c3c404d-daa0-488d-a18c-6f24afac33cf [36mstatus=[0m201
+[GIN] 2026/03/11 - 00:25:28 | 201 |      3.6017ms |             ::1 | POST     "/api/v1/admin/trips"
+[90m00:25:35[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m3.3378 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m0e016bae-fbe2-4b1a-9628-bea9a374a20a [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:25:35 | 200 |      3.8413ms |             ::1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m00:27:05[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m146.427 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0m8ddda9ff-4258-4a6c-8562-c03222d5efd8 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:27:05 | 200 |     146.427ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:27:05[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m5.8303 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0mffbc2e21-841c-451d-8448-3f51377b3dd2 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:27:05 | 200 |      5.8303ms |             ::1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m00:27:06[0m [31mERR[0m [1mAI Agent sync failed: AI agent SyncData RPC failed: rpc error: code = Unknown desc = Unexpected <class 'openai.AuthenticationError'>: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}[0m
+[90m00:27:06[0m [31mERR[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m562.7619 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/sync [36mrequest_id=[0maa9e9398-9c8f-4965-9976-92f5e39b0321 [36mstatus=[0m500
+[GIN] 2026/03/11 - 00:27:06 | 500 |    562.7619ms |             ::1 | POST     "/api/v1/ai/sync"
+[90m00:38:10[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m37607.9216 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0ma0360772-9b33-4172-a7e1-765f8eece504 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:38:10 | 200 |   37.6211429s |             ::1 | POST     "/api/v1/ai/chat"
+[90m00:51:01[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m41834.9999 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m2728997f-a111-469c-8d55-9a6023734981 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:51:01 | 200 |   41.8371161s |             ::1 | POST     "/api/v1/ai/chat"
+[90m00:51:08[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m95.188 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m7d4ad83c-bf4f-44a4-9245-14d6bb4e1ee1 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:51:08 | 200 |     95.7022ms |             ::1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m00:58:06[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m99.812 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0me18e7186-a85c-4cd3-b368-60c44558eb6b [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:58:06 | 200 |    106.0604ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:58:06[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m19.1957 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m5587a344-d596-436d-90dd-40b1a94a449d [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:58:06 | 200 |     19.1957ms |             ::1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m00:58:10[0m [31mERR[0m [1mAI Agent sync failed: AI agent SyncData RPC failed: rpc error: code = Unknown desc = Unexpected <class 'openai.AuthenticationError'>: Error code: 401 - {'error': {'message': 'Incorrect API key provided: your-ope***-key. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_api_key'}}[0m
+[90m00:58:10[0m [31mERR[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m3996.0044 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/sync [36mrequest_id=[0m2a302ac4-728d-40e7-a633-dc8f31003521 [36mstatus=[0m500
+[GIN] 2026/03/11 - 00:58:10 | 500 |    3.9960044s |             ::1 | POST     "/api/v1/ai/sync"
+[90m00:58:46[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m99.9297 [36mmethod=[0mPOST [36mpath=[0m/api/v1/auth/login [36mrequest_id=[0m88471078-1c56-496c-ab97-497ca952ea60 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:58:46 | 200 |    100.6544ms |             ::1 | POST     "/api/v1/auth/login"
+[90m00:58:46[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m25.3013 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0ma6efe61c-286f-400c-b377-35625f23506a [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:58:46 | 200 |     25.3013ms |             ::1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m00:58:46[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m161.7433 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/sync [36mrequest_id=[0m681c917a-3405-4586-852f-5246ef8349fb [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:58:46 | 200 |    161.7433ms |             ::1 | POST     "/api/v1/ai/sync"
+[90m00:59:30[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m37755.317 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m044cae1a-e01b-4096-b3d1-cfc9c55d5700 [36mstatus=[0m200
+[GIN] 2026/03/11 - 00:59:30 | 200 |   37.7558518s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:02:12[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m43678.7261 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0mb7c2ef18-b09b-4738-a599-49c56dca1d6f [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:02:12 | 200 |   43.6794508s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:03:56[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m26757.1787 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m8d2778e6-b7cb-4966-8bf5-c3f070055110 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:03:56 | 200 |   26.7597861s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:06:13[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m14882.4231 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0mc9f656f1-eb45-4ac2-8750-4a2cb3d3a7cf [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:06:13 | 200 |   14.8830544s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:07:53[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m14463.3477 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0me940c3c0-3e57-4edd-a9af-08b801168054 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:07:53 | 200 |   14.4633477s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:11:50[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m20465.4142 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m643445b5-9cf7-4cbf-97ab-4cba0fb90922 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:11:50 | 200 |   20.4659373s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:13:44[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m44.9598 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0me1021037-b4a5-4251-b60e-affd0874824b [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:13:44 | 200 |     45.4864ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=H%C3%A0+N%E1%BB%99i"
+[90m01:13:44[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m2.3743 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0ma241c3f9-2e22-4ea1-a811-b25863b01e36 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:13:44 | 200 |      2.9005ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=%C4%90%C3%A0+N%E1%BA%B5ng"
+[90m01:14:11[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m36281.9516 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m65b4a566-e44d-4552-a36c-4a7a9addf2cb [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:14:11 | 200 |   36.2819516s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:15:42[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m12.0367 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m20f173e2-8275-48fe-91a4-c488a6bb79b3 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:15:42 | 200 |     12.0367ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=%7Borigin%7D"
+[90m01:15:42[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.2482 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m8e3507e1-31dc-4c41-be61-d3198f4cae39 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:15:42 | 200 |      1.7874ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=%7Bdestination%7D"
+[90m01:15:52[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m16116.2884 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m68e1762b-3a39-4442-ab48-d02d9e57bf60 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:15:52 | 200 |   16.1168197s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:16:33[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m18.8701 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m18b0515d-18e9-4c5d-923b-a04a39e4c838 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:16:33 | 200 |     18.8701ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=%7Borigin%7D"
+[90m01:16:33[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.4436 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m879ba82a-985a-4e7c-96f6-e4c49bc5ac4c [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:16:33 | 200 |      2.0065ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=%7Bdestination%7D"
+[90m01:16:46[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m20153.161 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0mf7fd5307-4dbc-4434-aba6-d8f2e09804dd [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:16:46 | 200 |   20.1537484s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:17:57[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.9423 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m71f11c03-4be0-437b-8530-1028e1ce821d [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:17:57 | 200 |      1.9423ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Mien+Dong"
+[90m01:17:57[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m7.5809 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m00391643-cadd-420c-8b89-2d096813c291 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:17:57 | 200 |      7.5809ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Da+Lat"
+[90m01:17:57[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m47.2723 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0mb7f9972e-6aa1-4972-9672-da4e80b325c9 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:17:57 | 200 |     47.2723ms |       127.0.0.1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m01:18:08[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m22864.0618 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m9134a7a4-338f-4450-9522-380c846b8e02 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:18:08 | 200 |    22.864583s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:18:56[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.6701 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0mcedba4d4-77c9-4297-96f5-073cc16f5412 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:18:56 | 200 |      1.6701ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Mien+Dong"
+[90m01:18:56[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m0.8284 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0me63eafbc-3e7b-4866-828e-dfebbb145ff6 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:18:56 | 200 |       828.4µs |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Da+Lat"
+[90m01:18:56[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m6.267 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m64a2b72e-f3bc-4ffd-9172-69c19c32bc58 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:18:56 | 200 |       6.267ms |       127.0.0.1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m01:19:07[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m17252.364 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0mb7b0200a-3b6b-438d-b073-799905143f11 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:19:07 | 200 |   17.2531615s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:22:22[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.5749 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0ma95357d3-325c-4394-bf4a-f0906e501de9 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:22:22 | 200 |      1.5749ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Mien+Dong"
+[90m01:22:22[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m0.5395 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m1c0e852b-6c9f-47a0-bdc5-8f69f9f368d9 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:22:22 | 200 |      1.0882ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Da+Lat"
+[90m01:22:22[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m5.3124 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0mc3cc7a05-f407-42b7-9c51-8ae3afe4c56a [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:22:22 | 200 |      5.3124ms |       127.0.0.1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m01:22:44[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m37874.9764 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0me2575979-57a0-418d-93bf-7a39330da2ca [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:22:44 | 200 |   37.8749764s |             ::1 | POST     "/api/v1/ai/chat"
+[90m01:24:14[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m6.8152 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0m1f2d4087-70c5-4b40-9a90-cb24328c8b0a [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:24:14 | 200 |      7.4421ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Mien+Dong"
+[90m01:24:14[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m1.8209 [36mmethod=[0mGET [36mpath=[0m/api/v1/locations/search [36mrequest_id=[0mce6b3dbe-dd24-4f60-b72d-de06528a1ab5 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:24:14 | 200 |      1.8209ms |       127.0.0.1 | GET      "/api/v1/locations/search?q=Ben+xe+Da+Lat"
+[90m01:24:14[0m [32mINF[0m [1mRequest[0m [36mip=[0m127.0.0.1 [36mlatency=[0m16.1526 [36mmethod=[0mGET [36mpath=[0m/api/v1/trips [36mrequest_id=[0m7b6099f4-574a-4433-9ac5-2648d3ce498d [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:24:14 | 200 |     17.1667ms |       127.0.0.1 | GET      "/api/v1/trips?originId=32&destinationId=33&departureDate=2026-03-20&minSeats=1"
+[90m01:24:24[0m [32mINF[0m [1mRequest[0m [36mip=[0m::1 [36mlatency=[0m18156.1406 [36mmethod=[0mPOST [36mpath=[0m/api/v1/ai/chat [36mrequest_id=[0m028f4d52-6ae5-4541-8f1c-6940a601ba22 [36mstatus=[0m200
+[GIN] 2026/03/11 - 01:24:24 | 200 |   18.1561406s |             ::1 | POST     "/api/v1/ai/chat"

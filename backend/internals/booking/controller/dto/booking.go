@@ -16,7 +16,7 @@ type CreateBookingRequest struct {
 	GuestInfo     GuestInfoDTO `json:"guestInfo" binding:"required"`
 	PickupInfo    PointInfoDTO `json:"pickupInfo" binding:"required"`
 	DropoffInfo   PointInfoDTO `json:"dropoffInfo" binding:"required"`
-	PaymentMethod string       `json:"paymentMethod" binding:"required,oneof=vnpay momo cod"`
+	PaymentMethod string       `json:"paymentMethod" binding:"required,oneof=bank_transfer cod visa"`
 }
 
 type GuestInfoDTO struct {
@@ -70,6 +70,7 @@ type CreateBookingResponse struct {
 	Booking    *BookingResponse `json:"booking"`
 	OrderCode  string           `json:"orderCode"`
 	PaymentURL string           `json:"paymentUrl,omitempty"`
+	QRCode     string           `json:"qrCode,omitempty"`
 }
 
 // =============================================================================
@@ -159,5 +160,6 @@ func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingRespons
 		Booking:    ToBookingResponse(output.Booking),
 		OrderCode:  output.OrderCode,
 		PaymentURL: output.PaymentURL,
+		QRCode:     output.QRCode,
 	}
 }

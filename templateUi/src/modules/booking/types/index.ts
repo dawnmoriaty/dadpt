@@ -1,6 +1,7 @@
 // Booking module types
 
 export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'expired'
+export type PaymentMethod = 'bank_transfer' | 'cod' | 'visa'
 
 export interface GuestInfo {
     name: string
@@ -50,6 +51,12 @@ export interface CreateBookingResponse {
     booking: Booking
     orderCode: string
     paymentUrl?: string
+    qrCode?: string
+}
+
+export interface PaymentStatusResponse {
+    orderCode: string
+    status: string
 }
 
 export interface BookingListParams {

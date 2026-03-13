@@ -12,11 +12,14 @@ import (
 	busHttp "backend/internals/bus/controller/http"
 	bustypeHttp "backend/internals/bustype/controller/http"
 	locationHttp "backend/internals/location/controller/http"
+	paymentDomain "backend/internals/payment/domain"
+	paymentInfra "backend/internals/payment/infrastructure"
 	providerHttp "backend/internals/provider/controller/http"
 	tripHttp "backend/internals/trip/controller/http"
 	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/i18n"
 	"backend/pkgs/jwt"
+	"backend/pkgs/logger"
 	"backend/pkgs/middlewares"
 	"backend/pkgs/redis"
 
@@ -105,11 +108,23 @@ func (s *Server) MapRoutes() {
 
 	// Location routes (self-contained, deps created inside Routes)
 	// Provider routes (self-contained, deps created inside Routes)
+	// Payment gateway setup
+	var paymentGw paymentDomain.PaymentGateway
+	if s.cfg.PayOSClientID != "" && s.cfg.PayOSAPIKey != "" && s.cfg.PayOSChecksumKey != "" {
+		adapter, err := paymentInfra.NewPayOSAdapter(s.cfg)
+		if err != nil {
+			logger.Error("Failed to create PayOS adapter: %v", err)
+		} else {
+			paymentGw = adapter
+			logger.Info("PayOS payment gateway initialized")
+		}
+	}
+
 	// Booking routes (self-contained, deps created inside Routes)
 	bookingGroup := v1.Group("/bookings")
 	authBooking := bookingGroup.Group("")
 	authBooking.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
-	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache)
+	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache, paymentGw)
 
 	// AI Agent routes (public — chatbot endpoint)
 	if s.chatHandler != nil {

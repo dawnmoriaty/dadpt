@@ -3,6 +3,7 @@ package usecase
 import (
 	"context"
 	"crypto/rand"
+	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 
 	"backend/configs"
 	"backend/internals/booking/domain"
+	paymentDomain "backend/internals/payment/domain"
 	"backend/pkgs/logger"
 )
 
@@ -35,6 +37,7 @@ type IBookingUseCase interface {
 	ListUserBookings(ctx context.Context, input *domain.ListBookingsInput) (*domain.BookingListOutput, error)
 	CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error)
 	ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error)
+	GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error)
 }
 
 type bookingUseCase struct {
@@ -43,6 +46,7 @@ type bookingUseCase struct {
 	outboxRepo  domain.OutboxRepository
 	paymentRepo domain.PaymentRepository
 	lock        domain.DistributedLock
+	paymentGw   paymentDomain.PaymentGateway // nil if not configured
 	cfg         *configs.Config
 }
 
@@ -53,6 +57,7 @@ func NewBookingUseCase(
 	outboxRepo domain.OutboxRepository,
 	paymentRepo domain.PaymentRepository,
 	lock domain.DistributedLock,
+	paymentGw paymentDomain.PaymentGateway,
 	cfg *configs.Config,
 ) IBookingUseCase {
 	return &bookingUseCase{
@@ -61,6 +66,7 @@ func NewBookingUseCase(
 		outboxRepo:  outboxRepo,
 		paymentRepo: paymentRepo,
 		lock:        lock,
+		paymentGw:   paymentGw,
 		cfg:         cfg,
 	}
 }
@@ -130,7 +136,7 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		TotalAmount:   totalAmount,
 		Status:        domain.StatusPending,
 		PaymentMethod: input.PaymentMethod,
-		ExpiresAt:     time.Now().Add(bookingExpiry),
+		ExpiresAt:     time.Now().Add(u.cfg.BookingExpiryDuration),
 	}
 
 	// Validate booking entity
@@ -159,7 +165,25 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		// Don't rollback booking — payment can be retried
 	}
 
-	// 10. Create outbox event (transactional outbox pattern)
+	// 10. Create payment link via gateway (if configured and method requires it)
+	var checkoutURL, qrCode string
+	if u.paymentGw != nil {
+		orderCodeInt := orderCodeToInt64(orderCode)
+		amountInt := int(totalAmount)
+		desc := fmt.Sprintf("VE XE %s", bookingCode)
+		expiresAt := booking.ExpiresAt.Unix()
+
+		linkResult, err := u.paymentGw.CreatePaymentLink(ctx, orderCodeInt, amountInt, desc, expiresAt)
+		if err != nil {
+			logger.Error("Failed to create payment link: %v", err)
+		} else {
+			checkoutURL = linkResult.CheckoutURL
+			qrCode = linkResult.QRCode
+			logger.Info("Payment link created: orderCode=%s, checkoutUrl=%s", orderCode, checkoutURL)
+		}
+	}
+
+	// 11. Create outbox event (transactional outbox pattern)
 	eventPayload, _ := json.Marshal(map[string]interface{}{
 		"eventType": TopicBookingCreated,
 		"bookingId": created.ID,
@@ -177,9 +201,11 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 	logger.Info("Booking created: code=%s, trip=%d, seats=%v, orderCode=%s", bookingCode, input.TripID, input.SeatCodes, orderCode)
 
 	return &domain.BookingOutput{
-		Booking:   created,
-		TripInfo:  trip,
-		OrderCode: orderCode,
+		Booking:    created,
+		TripInfo:   trip,
+		OrderCode:  orderCode,
+		PaymentURL: checkoutURL,
+		QRCode:     qrCode,
 	}, nil
 }
 
@@ -318,6 +344,11 @@ func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.Confi
 	}
 }
 
+// GetPaymentByOrderCode retrieves payment transaction by order code
+func (u *bookingUseCase) GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error) {
+	return u.paymentRepo.GetByOrderCode(ctx, orderCode)
+}
+
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -328,8 +359,19 @@ func generateBookingCode() string {
 	return "VX" + strings.ToUpper(hex.EncodeToString(bytes))
 }
 
+// generateOrderCode generates a numeric order code as string (for PayOS int64 compatibility).
+// Format: timestamp milliseconds + 3 random digits (ensures uniqueness).
 func generateOrderCode() string {
-	bytes := make([]byte, 8)
-	rand.Read(bytes)
-	return "PAY" + strings.ToUpper(hex.EncodeToString(bytes))
+	ts := time.Now().UnixMilli() % 9007199254740991 // PayOS max safe int
+	rb := make([]byte, 2)
+	rand.Read(rb)
+	random := int(binary.BigEndian.Uint16(rb)) % 1000
+	return fmt.Sprintf("%d%03d", ts, random)
+}
+
+// orderCodeToInt64 converts order code string to int64 for PayOS API.
+func orderCodeToInt64(code string) int64 {
+	var result int64
+	fmt.Sscanf(code, "%d", &result)
+	return result
 }

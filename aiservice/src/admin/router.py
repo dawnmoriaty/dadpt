@@ -525,18 +525,21 @@ chat_router = APIRouter(prefix="/api/v1", tags=["chat"])
 @chat_router.post("/chat", response_model=ChatOutput)
 async def chat(data: ChatInput):
     """REST chat endpoint — mirrors gRPC Chat for convenience."""
-    session_id = data.session_id or str(uuid.uuid4())
+    from src.grpc_server.server import _build_session_key, _get_or_create_context, _save_session
+
+    raw_session_id = data.session_id or ""
     tenant_slug = data.tenant_slug
+    session_id = _build_session_key(tenant_slug, data.user_id or "", raw_session_id)
 
     registry = get_tenant_registry()
+
     tenant = registry.get(tenant_slug)
     if not tenant:
         raise HTTPException(404, f"Tenant '{tenant_slug}' not found")
 
     # Build context
-    from src.grpc_server.server import _get_or_create_context
-
     ctx = _get_or_create_context(session_id, tenant_slug, data.message)
+
 
     # Build supervisor
     model_pool = get_model_pool()
@@ -553,9 +556,8 @@ async def chat(data: ChatInput):
     ctx = await supervisor.handle(ctx)
 
     # Save session
-    from src.grpc_server.server import _sessions
+    _save_session(session_id, ctx)
 
-    _sessions[session_id] = ctx.to_dict()
 
     return ChatOutput(
         message=ctx.response,

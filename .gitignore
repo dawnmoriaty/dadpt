@@ -6,7 +6,9 @@
 
 # Project Specific
 .agent/
+.agents/
 .gemini/
+.github/
 
 # Github
 .github/appmod/appcat

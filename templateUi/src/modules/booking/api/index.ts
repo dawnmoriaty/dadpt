@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '@/modules/shared'
 import type { Trip } from '@/modules/trip'
 import { api } from '@/services/api/client'
 
-import type { Booking, CreateBookingRequest, CreateBookingResponse } from '../types'
+import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatusResponse } from '../types'
 
 export const bookingApi = {
     create: async (data: CreateBookingRequest): Promise<CreateBookingResponse> => {
@@ -56,6 +56,11 @@ export const bookingApi = {
         if (params?.providerIds?.length) query.providerId = params.providerIds[0]
         if (params?.busTypeIds?.length) query.busTypeId = params.busTypeIds[0]
         const response = await api.get('/trips/browse', { params: query })
+        return response.data.data
+    },
+
+    getPaymentStatus: async (orderCode: string): Promise<PaymentStatusResponse> => {
+        const response = await api.get(`/bookings/payments/${orderCode}/status`)
         return response.data.data
     },
 }

@@ -13,6 +13,7 @@ export const bookingKeys = {
     detail: (id: number) => [...bookingKeys.all, 'detail', id] as const,
     code: (code: string) => [...bookingKeys.all, 'code', code] as const,
     searchTrips: (params: Record<string, unknown>) => [...bookingKeys.all, 'trip-search', params] as const,
+    paymentStatus: (orderCode: string) => [...bookingKeys.all, 'payment-status', orderCode] as const,
 }
 
 export function useMyBookings(page = 1, pageSize = 20) {
@@ -92,5 +93,18 @@ export function useBrowseTrips(params?: {
     return useQuery({
         queryKey: [...bookingKeys.all, 'browse-trips', params] as const,
         queryFn: () => bookingApi.browseTrips(params),
+    })
+}
+
+export function usePaymentStatus(orderCode: string, enabled: boolean) {
+    return useQuery({
+        queryKey: bookingKeys.paymentStatus(orderCode),
+        queryFn: () => bookingApi.getPaymentStatus(orderCode),
+        enabled: enabled && orderCode.length > 0,
+        refetchInterval: (query) => {
+            const status = query.state.data?.status
+            if (status === 'success' || status === 'failed') return false
+            return 5000
+        },
     })
 }

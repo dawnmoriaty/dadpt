@@ -12,9 +12,11 @@ from __future__ import annotations
 
 from typing import Any
 
+import hashlib
 import structlog
 from qdrant_client import AsyncQdrantClient
 from qdrant_client.models import Distance, PointStruct, VectorParams
+
 
 from src.config import get_settings
 
@@ -48,17 +50,33 @@ class QdrantManager:
         return self._client
 
     async def _get_embedding(self, text: str) -> list[float]:
-        """Get embedding vector for text using OpenAI."""
+        """Get embedding vector for text using OpenAI or fallback."""
+        settings = get_settings()
+        if not settings.openai_api_key:
+            return self._fallback_embedding(text, settings.embedding_dimensions)
+
         if self._embedding_fn is None:
             from langchain_openai import OpenAIEmbeddings
 
-            settings = get_settings()
             self._embedding_fn = OpenAIEmbeddings(
                 model=settings.embedding_model,
                 api_key=settings.openai_api_key,
                 dimensions=settings.embedding_dimensions,
             )
         return await self._embedding_fn.aembed_query(text)
+
+    @staticmethod
+    def _fallback_embedding(text: str, dimensions: int) -> list[float]:
+        """Generate a deterministic embedding without external APIs."""
+        if dimensions <= 0:
+            return []
+        digest = hashlib.sha256(text.encode("utf-8", errors="ignore")).digest()
+        vector = []
+        for i in range(dimensions):
+            byte = digest[i % len(digest)]
+            vector.append((byte / 255.0) * 2 - 1)
+        return vector
+
 
     # ── Collection Management ───────────────────────────────────────────────
 
@@ -153,11 +171,7 @@ class QdrantManager:
 
         query_vector = await self._get_embedding(query_text)
 
-        results = await client.search(
-            collection_name=collection_name,
-            query_vector=query_vector,
-            limit=top_k,
-        )
+        results = await self._search_points(client, collection_name, query_vector, top_k)
 
         return [
             {
@@ -167,6 +181,43 @@ class QdrantManager:
             }
             for r in results
         ]
+
+    @staticmethod
+    async def _search_points(
+        client: AsyncQdrantClient,
+        collection_name: str,
+        query_vector: list[float],
+        top_k: int,
+    ) -> list[Any]:
+        if hasattr(client, "query_points"):
+            response = await client.query_points(
+                collection_name=collection_name,
+                query=query_vector,
+                limit=top_k,
+                with_payload=True,
+            )
+            if hasattr(response, "points"):
+                return response.points
+            return response
+        if hasattr(client, "search"):
+            return await client.search(
+                collection_name=collection_name,
+                query_vector=query_vector,
+                limit=top_k,
+            )
+        if hasattr(client, "search_points"):
+            response = await client.search_points(
+                collection_name=collection_name,
+                query_vector=query_vector,
+                limit=top_k,
+            )
+            if hasattr(response, "result"):
+                return response.result
+            if hasattr(response, "points"):
+                return response.points
+            return response
+        raise AttributeError("Qdrant client has no search method")
+
 
     # ── Cleanup ─────────────────────────────────────────────────────────────
 
