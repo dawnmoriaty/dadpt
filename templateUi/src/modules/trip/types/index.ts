@@ -24,6 +24,19 @@ export interface Trip {
 
     // Image URL from related bus
     busImageUrl?: string | null
+
+    // Seat layout from bus type (JSONB)
+    seatLayout?: SeatLayout | null
+}
+
+export type BusLayoutType = 'seater' | 'sleeper' | 'limousine' | 'limousine_cabin'
+
+export interface SeatLayout {
+    type: BusLayoutType
+    rows: number
+    floors?: number
+    columns: string[]  // e.g. ["A","B","","C","D"] — empty string = aisle
+    seats: string[]    // e.g. ["A01","B01","C01","D01",...]
 }
 
 export interface Point {

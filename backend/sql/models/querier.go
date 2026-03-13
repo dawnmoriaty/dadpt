@@ -15,6 +15,7 @@ type Querier interface {
 	BusExistsByLicensePlate(ctx context.Context, licensePlate string) (bool, error)
 	CountActiveBookingsByTripID(ctx context.Context, tripID int64) (int64, error)
 	CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error)
+	CountBookingsByUser(ctx context.Context, userID *int64) (int64, error)
 	CountBrowseUpcomingTrips(ctx context.Context, arg CountBrowseUpcomingTripsParams) (int64, error)
 	CountBusTypes(ctx context.Context) (int64, error)
 	CountBuses(ctx context.Context) (int64, error)

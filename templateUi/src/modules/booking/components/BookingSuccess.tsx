@@ -1,6 +1,6 @@
 import { useNavigate } from '@tanstack/react-router'
 import { CheckCircle, Clock, CreditCard, ExternalLink } from 'lucide-react'
-import { useCallback, useState } from 'react'
+import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
+import { usePaymentStatus } from '../hooks'
 import type { CreateBookingResponse } from '../types'
 
 import { PaymentQR } from './PaymentQR'
@@ -21,8 +22,15 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
     const navigate = useNavigate()
     const { booking, orderCode, paymentUrl, qrCode } = data
 
-    const hasOnlinePayment = paymentUrl || qrCode
-    const [isPaid, setIsPaid] = useState(!hasOnlinePayment)
+    const hasOnlinePayment = !!(paymentUrl || qrCode)
+
+    // Derive isPaid from server state, not local state
+    const needsPolling = hasOnlinePayment && booking.status !== 'paid'
+    const { data: paymentStatus } = usePaymentStatus(orderCode, needsPolling)
+
+    const isPaid = !hasOnlinePayment
+        || booking.status === 'paid'
+        || paymentStatus?.status === 'success'
 
     const formatCurrency = (amount: number) => {
         return new Intl.NumberFormat('vi-VN', {
@@ -31,9 +39,13 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
         }).format(amount)
     }
 
+    // Toast once when payment succeeds (guard with ref to prevent duplicates)
+    const toastShownRef = useRef(false)
     const handlePaymentSuccess = useCallback(() => {
-        setIsPaid(true)
-        toast.success('Thanh toán thành công! Vé của bạn đã được xác nhận.')
+        if (!toastShownRef.current) {
+            toastShownRef.current = true
+            toast.success('Thanh toán thành công! Vé của bạn đã được xác nhận.')
+        }
     }, [])
 
     return (

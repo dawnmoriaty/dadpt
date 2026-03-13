@@ -15,7 +15,7 @@ import (
 const browseUpcomingTrips = `-- name: BrowseUpcomingTrips :many
 SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, t.version,
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -60,6 +60,7 @@ type BrowseUpcomingTripsRow struct {
 	Version         *int32             `json:"version"`
 	ProviderName    string             `json:"providerName"`
 	BusTypeName     string             `json:"busTypeName"`
+	SeatLayout      json.RawMessage    `json:"seatLayout"`
 	BusImageUrl     *string            `json:"busImageUrl"`
 	OriginName      string             `json:"originName"`
 	OriginCity      string             `json:"originCity"`
@@ -101,6 +102,7 @@ func (q *Queries) BrowseUpcomingTrips(ctx context.Context, arg BrowseUpcomingTri
 			&i.Version,
 			&i.ProviderName,
 			&i.BusTypeName,
+			&i.SeatLayout,
 			&i.BusImageUrl,
 			&i.OriginName,
 			&i.OriginCity,
@@ -274,7 +276,7 @@ func (q *Queries) DeleteTrip(ctx context.Context, id int64) error {
 const getTripByID = `-- name: GetTripByID :one
 SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, t.version,
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -306,6 +308,7 @@ type GetTripByIDRow struct {
 	Version         *int32             `json:"version"`
 	ProviderName    string             `json:"providerName"`
 	BusTypeName     string             `json:"busTypeName"`
+	SeatLayout      json.RawMessage    `json:"seatLayout"`
 	BusImageUrl     *string            `json:"busImageUrl"`
 	OriginName      string             `json:"originName"`
 	OriginCity      string             `json:"originCity"`
@@ -336,6 +339,7 @@ func (q *Queries) GetTripByID(ctx context.Context, id int64) (GetTripByIDRow, er
 		&i.Version,
 		&i.ProviderName,
 		&i.BusTypeName,
+		&i.SeatLayout,
 		&i.BusImageUrl,
 		&i.OriginName,
 		&i.OriginCity,
@@ -348,7 +352,7 @@ func (q *Queries) GetTripByID(ctx context.Context, id int64) (GetTripByIDRow, er
 const listTripsAdmin = `-- name: ListTripsAdmin :many
 SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, t.version, 
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -390,6 +394,7 @@ type ListTripsAdminRow struct {
 	Version         *int32             `json:"version"`
 	ProviderName    string             `json:"providerName"`
 	BusTypeName     string             `json:"busTypeName"`
+	SeatLayout      json.RawMessage    `json:"seatLayout"`
 	BusImageUrl     *string            `json:"busImageUrl"`
 	OriginName      string             `json:"originName"`
 	OriginCity      string             `json:"originCity"`
@@ -431,6 +436,7 @@ func (q *Queries) ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) 
 			&i.Version,
 			&i.ProviderName,
 			&i.BusTypeName,
+			&i.SeatLayout,
 			&i.BusImageUrl,
 			&i.OriginName,
 			&i.OriginCity,
@@ -450,7 +456,7 @@ func (q *Queries) ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) 
 const searchTrips = `-- name: SearchTrips :many
 SELECT t.id, t.provider_id, t.bus_id, t.origin_id, t.destination_id, t.departure_time, t.arrival_time, t.base_price, t.price_modifier, t.is_hot_deal, t.pickup_points, t.dropoff_points, t.booked_seats, t.available_seats, t.status, t.created_at, t.version, 
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -497,6 +503,7 @@ type SearchTripsRow struct {
 	Version         *int32             `json:"version"`
 	ProviderName    string             `json:"providerName"`
 	BusTypeName     string             `json:"busTypeName"`
+	SeatLayout      json.RawMessage    `json:"seatLayout"`
 	BusImageUrl     *string            `json:"busImageUrl"`
 	OriginName      string             `json:"originName"`
 	OriginCity      string             `json:"originCity"`
@@ -540,6 +547,7 @@ func (q *Queries) SearchTrips(ctx context.Context, arg SearchTripsParams) ([]Sea
 			&i.Version,
 			&i.ProviderName,
 			&i.BusTypeName,
+			&i.SeatLayout,
 			&i.BusImageUrl,
 			&i.OriginName,
 			&i.OriginCity,

@@ -1,8 +1,7 @@
 import { Loader2, Ticket } from 'lucide-react'
-import { useEffect, useMemo } from 'react'
+import { useEffect } from 'react'
 import { useForm, useWatch } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { toast } from 'sonner'
 import { useNavigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
@@ -33,26 +32,12 @@ import { useAuthStore } from '@/stores/use-auth-store'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
 import type { CreateBookingResponse } from '../types'
+import { SeatMap } from './SeatMap'
 
 interface BookingFormProps {
     trip: Trip
     passengers: number
     onSuccess: (data: CreateBookingResponse) => void
-}
-
-function generateSeatCodes(totalAvailable: number, bookedSeats: string[]): string[] {
-    const seats: string[] = []
-    const rows = Math.ceil((totalAvailable + bookedSeats.length) / 4)
-    const cols = ['A', 'B', 'C', 'D']
-    for (let r = 1; r <= rows; r++) {
-        for (const c of cols) {
-            const code = `${r}${c}`
-            if (!bookedSeats.includes(code)) {
-                seats.push(code)
-            }
-        }
-    }
-    return seats.slice(0, totalAvailable)
 }
 
 function formatCurrency(amount: number) {
@@ -67,10 +52,6 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-    const availableSeats = useMemo(
-        () => generateSeatCodes(trip.availableSeats, trip.bookedSeats ?? []),
-        [trip.availableSeats, trip.bookedSeats],
-    )
 
     const form = useForm<CreateBookingFormData>({
         resolver: formResolver(createBookingSchema),
@@ -175,6 +156,11 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                         <p className="text-sm text-muted-foreground">
                             {t('booking.selectSeatsHint', { count: passengers })}
                         </p>
+                        {trip.seatLayout && (
+                            <p className="text-xs text-muted-foreground capitalize">
+                                {trip.busTypeName}
+                            </p>
+                        )}
                     </CardHeader>
                     <CardContent>
                         <FormField
@@ -182,68 +168,22 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             name="seatCodes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-                                        {availableSeats.map((seat) => {
-                                            const isSelected = field.value.includes(seat)
-                                            return (
-                                                <Button
-                                                    key={seat}
-                                                    type="button"
-                                                    variant={isSelected ? 'default' : 'outline'}
-                                                    size="sm"
-                                                    className="text-xs h-9"
-                                                    onClick={() => {
-                                                        if (isSelected) {
-                                                            field.onChange(field.value.filter((s: string) => s !== seat))
-                                                        } else {
-                                                            const currentSeats = [...field.value, seat]
-                                                            if (currentSeats.length > 4) {
-                                                                toast.error(t('booking.errorTooManySeats', { max: 4 }))
-                                                                return
-                                                            }
-
-                                                            // Validation logic for consecutive seats
-                                                            if (currentSeats.length > 1) {
-                                                                const row = seat.substring(0, seat.length - 1)
-                                                                
-                                                                // Check if all selected seats are in the same row
-                                                                const allInSameRow = currentSeats.every(s => s.startsWith(row))
-                                                                if (!allInSameRow) {
-                                                                    toast.error(t('booking.errorNotSameRow'))
-                                                                    return
-                                                                }
-
-                                                                // Check if they are consecutive
-                                                                // Extract columns and sort them
-                                                                const cols = currentSeats.map(s => s.substring(s.length - 1)).sort()
-                                                                const charCodes = cols.map(c => c.charCodeAt(0))
-                                                                
-                                                                let isConsecutive = true
-                                                                for (let i = 0; i < charCodes.length - 1; i++) {
-                                                                    if (charCodes[i+1] - charCodes[i] !== 1) {
-                                                                        isConsecutive = false
-                                                                        break
-                                                                    }
-                                                                }
-
-                                                                if (!isConsecutive) {
-                                                                    toast.error(t('booking.errorNotConsecutive'))
-                                                                    return
-                                                                }
-                                                            }
-                                                            
-                                                            field.onChange(currentSeats)
-                                                        }
-                                                    }}
-                                                >
-                                                    {seat}
-                                                </Button>
-                                            )
-                                        })}
-                                    </div>
+                                    {trip.seatLayout ? (
+                                        <SeatMap
+                                            layout={trip.seatLayout}
+                                            bookedSeats={trip.bookedSeats ?? []}
+                                            selectedSeats={field.value}
+                                            maxSeats={4}
+                                            onSelectionChange={field.onChange}
+                                        />
+                                    ) : (
+                                        <p className="text-sm text-muted-foreground">
+                                            {t('booking.noSeatLayout', { defaultValue: 'Seat layout not available for this trip.' })}
+                                        </p>
+                                    )}
                                     <FormDescription>
                                         {t('booking.selected', { current: selectedSeats.length, total: passengers })}
-                                                {selectedSeats.length > 0 && (
+                                        {selectedSeats.length > 0 && (
                                             <span className="ml-2">
                                                 ({selectedSeats.map((s: string) => (
                                                     <Badge key={s} variant="secondary" className="ml-1 text-xs">

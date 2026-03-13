@@ -23,6 +23,17 @@ func (q *Queries) CountBookingsByTrip(ctx context.Context, tripID int64) (int64,
 	return count, err
 }
 
+const countBookingsByUser = `-- name: CountBookingsByUser :one
+SELECT COUNT(*) FROM bookings WHERE user_id = $1
+`
+
+func (q *Queries) CountBookingsByUser(ctx context.Context, userID *int64) (int64, error) {
+	row := q.db.QueryRow(ctx, countBookingsByUser, userID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createBooking = `-- name: CreateBooking :one
 INSERT INTO bookings (
     code, trip_id, user_id, guest_info,

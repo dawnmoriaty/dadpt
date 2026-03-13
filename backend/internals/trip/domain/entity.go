@@ -88,6 +88,7 @@ type Trip struct {
 	// Joined fields (for search results)
 	ProviderName    string
 	BusTypeName     string
+	SeatLayout      json.RawMessage
 	OriginName      string
 	OriginCity      string
 	DestinationName string

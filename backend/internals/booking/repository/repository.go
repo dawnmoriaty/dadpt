@@ -150,13 +150,17 @@ func (r *bookingRepository) ListByUser(ctx context.Context, userID int64, limit,
 		return nil, 0, fmt.Errorf("listing bookings: %w", err)
 	}
 
+	count, err := r.queries.CountBookingsByUser(ctx, &userID)
+	if err != nil {
+		return nil, 0, fmt.Errorf("counting bookings: %w", err)
+	}
+
 	result := make([]*domain.Booking, len(rows))
 	for i, row := range rows {
 		result[i] = listRowToEntity(row)
 	}
 
-	// TODO: Add count query for pagination
-	return result, int64(len(rows)), nil
+	return result, count, nil
 }
 
 func (r *bookingRepository) UpdateStatus(ctx context.Context, id int64, status domain.BookingStatus) (*domain.Booking, error) {

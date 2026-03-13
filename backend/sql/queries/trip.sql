@@ -1,7 +1,7 @@
 -- name: GetTripByID :one
 SELECT t.*,
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -15,7 +15,7 @@ WHERE t.id = $1;
 -- name: SearchTrips :many
 SELECT t.*, 
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -78,7 +78,7 @@ DELETE FROM trips WHERE id = $1;
 -- name: ListTripsAdmin :many
 SELECT t.*, 
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t
@@ -105,7 +105,7 @@ WHERE trip_id = $1
 -- name: BrowseUpcomingTrips :many
 SELECT t.*,
        p.name as provider_name,
-       bt.name as bus_type_name, b.image_url as bus_image_url,
+       bt.name as bus_type_name, bt.seat_layout as seat_layout, b.image_url as bus_image_url,
        o.name as origin_name, o.city as origin_city,
        d.name as destination_name, d.city as destination_city
 FROM trips t

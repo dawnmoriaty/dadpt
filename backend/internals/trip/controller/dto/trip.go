@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"encoding/json"
 	"time"
 
 	"backend/internals/trip/domain"
@@ -75,6 +76,9 @@ type TripResponse struct {
 
 	// Image URL from related bus
 	BusImageURL string `json:"busImageUrl,omitempty"`
+
+	// Seat layout from bus type (JSONB)
+	SeatLayout json.RawMessage `json:"seatLayout,omitempty"`
 }
 
 func (r *CreateTripRequest) ToInput() *domain.CreateTripInput {
@@ -163,6 +167,7 @@ func ToTripResponse(trip *domain.Trip) *TripResponse {
 		DropoffPoints:   pointsDomainToDTO(trip.DropoffPoints),
 		BookedSeats:     trip.BookedSeats,
 		BusImageURL:     trip.BusImageURL,
+		SeatLayout:      trip.SeatLayout,
 	}
 }
 
