@@ -19,6 +19,7 @@ from src.config import get_settings
 from src.engine.supervisor import Supervisor
 from src.engine.task_registry import list_task_types
 from src.engine.workflow_context import WorkflowContext
+from src.grpc_server.voice_service import VoiceBookingServicer
 from src.platform.model_pool import get_model_pool
 from src.platform.tenant_registry import get_tenant_registry
 from src.platform.tool_factory import ToolFactory
@@ -275,6 +276,41 @@ class _GenericHandler(grpc.GenericRpcHandler):
         )
 
 
+class _VoiceGenericHandler(grpc.GenericRpcHandler):
+    """Routes /aiagent.VoiceBookingService/<Method> using JSON payloads."""
+
+    SERVICE_NAME = "aiagent.VoiceBookingService"
+
+    def __init__(self, servicer: VoiceBookingServicer) -> None:
+        self._methods: dict[str, Any] = {
+            "ParseCommand": servicer.ParseCommand,
+            "HealthCheck": servicer.HealthCheck,
+        }
+
+    def service(self, handler_call_details: grpc.HandlerCallDetails):
+        method = handler_call_details.method
+        if not method:
+            return None
+        parts = method.split("/")
+        if len(parts) < 3:
+            return None
+        method_name = parts[-1]
+        handler_fn = self._methods.get(method_name)
+        if handler_fn is None:
+            return None
+
+        async def _handle(request_bytes: bytes, context: grpc.aio.ServicerContext) -> bytes:
+            request = json.loads(request_bytes) if request_bytes else {}
+            result = await handler_fn(request, context)
+            return json.dumps(result).encode("utf-8")
+
+        return grpc.unary_unary_rpc_method_handler(
+            _handle,
+            request_deserializer=lambda x: x,
+            response_serializer=lambda x: x,
+        )
+
+
 # ── Server startup ──────────────────────────────────────────────────────────
 
 async def start_grpc_server() -> grpc.aio.Server:
@@ -283,16 +319,22 @@ async def start_grpc_server() -> grpc.aio.Server:
     server = grpc.aio.server()
 
     servicer = AIAgentServicer()
+    voice_servicer = VoiceBookingServicer()
 
     try:
         # Try compiled proto stubs first (best performance)
         from src.grpc_server.generated import ai_agent_pb2_grpc
 
         ai_agent_pb2_grpc.add_AIAgentServiceServicer_to_server(servicer, server)
+        # Voice service currently uses generic JSON fallback until proto stubs are generated.
+        server.add_generic_rpc_handlers([_VoiceGenericHandler(voice_servicer)])
         logger.info("grpc.using_compiled_proto")
     except (ImportError, Exception):
         # Fallback: JSON-based generic handler (works without protoc)
-        server.add_generic_rpc_handlers([_GenericHandler(servicer)])
+        server.add_generic_rpc_handlers([
+            _GenericHandler(servicer),
+            _VoiceGenericHandler(voice_servicer),
+        ])
         logger.info("grpc.using_generic_json_handler")
 
     listen_addr = f"[::]:{settings.grpc_port}"

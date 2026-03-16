@@ -3,6 +3,7 @@ package http
 import (
 	"net/http"
 
+	authDomain "backend/internals/auth/domain"
 	"backend/pkgs/aiagent"
 	"backend/pkgs/logger"
 	"backend/pkgs/response"
@@ -12,12 +13,13 @@ import (
 
 // ChatHandler handles AI agent chat HTTP requests.
 type ChatHandler struct {
-	client aiagent.Client
+	client   aiagent.Client
+	userRepo authDomain.Repository
 }
 
 // NewChatHandler creates a new ChatHandler.
-func NewChatHandler(client aiagent.Client) *ChatHandler {
-	return &ChatHandler{client: client}
+func NewChatHandler(client aiagent.Client, userRepo authDomain.Repository) *ChatHandler {
+	return &ChatHandler{client: client, userRepo: userRepo}
 }
 
 // ChatRequest is the HTTP request body for /chat.

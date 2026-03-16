@@ -20,6 +20,12 @@ service AIAgentService {
   rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
 }
 
+// Dedicated voice parsing service (kept separate from chat service).
+service VoiceBookingService {
+  rpc ParseCommand (VoiceParseRequest) returns (VoiceParseResponse);
+  rpc HealthCheck (HealthCheckRequest) returns (HealthCheckResponse);
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // AI Agent Backend Service — Go side (this service runs in the Go backend)
 // AI agent calls this to fetch/mutate business data.
@@ -64,6 +70,21 @@ message ToolCallLog {
   string inputs = 2;       // JSON string
   string output = 3;       // JSON string (truncated)
   string timestamp = 4;
+}
+
+message VoiceParseRequest {
+  string transcript = 1;
+}
+
+message VoiceParseResponse {
+  string message = 1;
+  double confidence = 2;
+  repeated string missing_fields = 3;
+  string origin = 4;
+  string destination = 5;
+  string travel_date = 6;
+  int32 seat_count = 7;
+  repeated string seat_preference_order = 8;
 }
 
 // ─── Data Sync ─────────────────────────────────────────────────────────────

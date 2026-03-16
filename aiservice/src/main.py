@@ -26,6 +26,7 @@ from src.engine.task_registry import list_task_types
 from src.platform.model_pool import get_model_pool
 from src.platform.tenant_registry import get_tenant_registry
 from src.vectorstore.qdrant_manager import get_qdrant_manager
+from src.voice.router import voice_router
 
 logger = structlog.get_logger()
 
@@ -112,6 +113,7 @@ def create_app() -> FastAPI:
     app.include_router(api_router)
     app.include_router(chat_router)
     app.include_router(ui_router)
+    app.include_router(voice_router)
 
     # Health check
     @app.get("/health")

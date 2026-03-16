@@ -132,6 +132,14 @@ func (s *Server) MapRoutes() {
 		{
 			aiGroup.POST("/chat", s.chatHandler.Chat)
 		}
+
+		// AI voice booking command validation (authenticated users only)
+		aiAuth := v1.Group("/ai")
+		aiAuth.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
+		{
+			aiAuth.POST("/voice/booking/validate", s.chatHandler.ValidateVoiceBookingCommand)
+		}
+
 		// AI sync (admin only — push data to vector DB)
 		aiAdmin := v1.Group("/ai")
 		aiAdmin.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
