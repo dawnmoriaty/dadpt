@@ -185,6 +185,8 @@ func (r *tripRepository) GetByID(ctx context.Context, id int64) (*domain.Trip, e
 func (r *tripRepository) Update(ctx context.Context, trip *domain.Trip) (*domain.Trip, error) {
 	result, err := r.queries.UpdateTrip(ctx, models.UpdateTripParams{
 		ID:             trip.ID,
+		OriginID:       trip.OriginID,
+		DestinationID:  trip.DestinationID,
 		DepartureTime:  utils.TimeToTimestamptz(trip.DepartureTime),
 		ArrivalTime:    utils.TimeToTimestamptz(trip.ArrivalTime),
 		BasePrice:      utils.Float64ToNumeric(trip.BasePrice),

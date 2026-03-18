@@ -75,6 +75,12 @@ func (uc *tripUseCase) Update(ctx context.Context, id int64, input *domain.Updat
 	}
 
 	// Apply partial updates
+	if input.OriginID != nil {
+		existing.OriginID = *input.OriginID
+	}
+	if input.DestinationID != nil {
+		existing.DestinationID = *input.DestinationID
+	}
 	if input.DepartureTime != nil {
 		existing.DepartureTime = *input.DepartureTime
 	}
@@ -84,6 +90,9 @@ func (uc *tripUseCase) Update(ctx context.Context, id int64, input *domain.Updat
 	if input.BasePrice != nil {
 		existing.BasePrice = *input.BasePrice
 	}
+	if input.AvailableSeats != nil {
+		existing.AvailableSeats = *input.AvailableSeats
+	}
 	if input.IsHotDeal != nil {
 		existing.IsHotDeal = *input.IsHotDeal
 	}
@@ -92,6 +101,13 @@ func (uc *tripUseCase) Update(ctx context.Context, id int64, input *domain.Updat
 	}
 	if input.DropoffPoints != nil {
 		existing.DropoffPoints = input.DropoffPoints
+	}
+
+	if err := existing.Validate(); err != nil {
+		return nil, err
+	}
+	if existing.AvailableSeats < int32(len(existing.BookedSeats)) {
+		return nil, domain.ErrInvalidInput
 	}
 
 	updated, err := uc.repo.Update(ctx, existing)

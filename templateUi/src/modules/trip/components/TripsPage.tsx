@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 
-import { useTrips, useUpdateTripStatus, useCreateTrip } from '../hooks'
-import type { TripStatus, CreateTripRequest } from '../types'
+import { useTrips, useUpdateTripStatus, useCreateTrip, useUpdateTrip } from '../hooks'
+import type { TripStatus, CreateTripRequest, Trip, UpdateTripRequest } from '../types'
 
+import { TripDetailsModal } from './TripDetailsModal'
 import { TripForm } from './TripForm'
 import { getTripsColumns } from './trips-columns'
 
@@ -24,6 +25,8 @@ const statusTabs: { value: TripStatus | ''; label: string; color: string }[] = [
 export function TripsPage() {
     const [statusFilter, setStatusFilter] = useState<TripStatus | ''>('')
     const [isFormOpen, setIsFormOpen] = useState(false)
+    const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
+    const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
     const [page, setPage] = useState(0)
     const [pageSize, setPageSize] = useState(20)
 
@@ -34,19 +37,37 @@ export function TripsPage() {
     })
     const updateStatusMutation = useUpdateTripStatus()
     const createTripMutation = useCreateTrip()
+    const updateTripMutation = useUpdateTrip()
 
     const columns = useMemo(
         () =>
             getTripsColumns({
                 onUpdateStatus: (id, status) =>
                     updateStatusMutation.mutate({ id, status }),
+                onViewDetails: (trip) => setSelectedTrip(trip),
+                onEdit: (trip) => {
+                    setEditingTrip(trip)
+                    setIsFormOpen(true)
+                },
             }),
         [updateStatusMutation],
     )
 
     const handleCreateTrip = (formData: CreateTripRequest): void => {
         createTripMutation.mutate(formData, {
-            onSuccess: () => setIsFormOpen(false),
+            onSuccess: () => {
+                setIsFormOpen(false)
+                setEditingTrip(null)
+            },
+        })
+    }
+
+    const handleUpdateTrip = (id: number, formData: UpdateTripRequest): void => {
+        updateTripMutation.mutate({ id, data: formData }, {
+            onSuccess: () => {
+                setIsFormOpen(false)
+                setEditingTrip(null)
+            },
         })
     }
 
@@ -76,7 +97,10 @@ export function TripsPage() {
                     </div>
                 </div>
                 <Button
-                    onClick={() => setIsFormOpen(true)}
+                    onClick={() => {
+                        setEditingTrip(null)
+                        setIsFormOpen(true)
+                    }}
                     className="gap-2 bg-linear-to-r from-success to-info hover:opacity-90 shadow-lg shadow-success/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus className="h-4 w-4" />
@@ -162,9 +186,21 @@ export function TripsPage() {
             {/* Create Trip Form */}
             <TripForm
                 isOpen={isFormOpen}
-                onClose={() => setIsFormOpen(false)}
-                onSubmit={handleCreateTrip}
-                isLoading={createTripMutation.isPending}
+                onClose={() => {
+                    setIsFormOpen(false)
+                    setEditingTrip(null)
+                }}
+                onCreate={handleCreateTrip}
+                onUpdate={handleUpdateTrip}
+                initialTrip={editingTrip}
+                isLoading={createTripMutation.isPending || updateTripMutation.isPending}
+            />
+
+            {/* Trip Details Modal */}
+            <TripDetailsModal
+                trip={selectedTrip}
+                isOpen={selectedTrip !== null}
+                onClose={() => setSelectedTrip(null)}
             />
         </div>
     )

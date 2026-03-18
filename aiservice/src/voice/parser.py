@@ -6,13 +6,40 @@ Isolated parser for new voice flow, independent from legacy admin/chat router.
 from __future__ import annotations
 
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
-_ROUTE_PATTERN = re.compile(r"từ\s+(.+?)\s+đến\s+(.+?)(?:\s+ngày\s+|$)", re.IGNORECASE)
+_ROUTE_PATTERNS = [
+    re.compile(
+        r"(?:^|\s)từ\s+(.+?)\s+(?:đến|tới)\s+(.+?)(?=\s+(?:ngày|vào|lúc|cho|hôm nay|ngày mai|mai|mốt|ngày kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
+        re.IGNORECASE,
+    ),
+    re.compile(
+        r"(?:đi|đặt vé|book vé|mua vé)\s+từ\s+(.+?)\s+(?:đến|tới)\s+(.+?)(?=\s+(?:ngày|vào|lúc|cho|hôm nay|ngày mai|mai|mốt|ngày kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
+        re.IGNORECASE,
+    ),
+]
 _DATE_ISO_PATTERN = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 _DATE_VN_PATTERN = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b")
 _SEAT_COUNT_PATTERN = re.compile(r"\b(\d+)\s*(ghế|ve|vé|chỗ)\b", re.IGNORECASE)
+_SEAT_COUNT_WORD_PATTERN = re.compile(r"\b(một|mot|hai|ba|bốn|bon|tư|tu)\s*(ghế|ve|vé|chỗ)\b", re.IGNORECASE)
 _SEAT_CODE_PATTERN = re.compile(r"\b([A-Za-z]\d{1,2})\b")
+_WORD_TO_NUMBER = {
+    "một": 1,
+    "mot": 1,
+    "hai": 2,
+    "ba": 3,
+    "bốn": 4,
+    "bon": 4,
+    "tư": 4,
+    "tu": 4,
+}
+_RELATIVE_DATES = {
+    "hôm nay": 0,
+    "ngày mai": 1,
+    "mai": 1,
+    "ngày kia": 2,
+    "mốt": 2,
+}
 
 
 def build_parse_result(transcript: str) -> dict:
@@ -20,10 +47,12 @@ def build_parse_result(transcript: str) -> dict:
 
     origin = None
     destination = None
-    route_match = _ROUTE_PATTERN.search(text)
-    if route_match:
-        origin = route_match.group(1).strip(" ,.")
-        destination = route_match.group(2).strip(" ,.")
+    for route_pattern in _ROUTE_PATTERNS:
+        route_match = route_pattern.search(text)
+        if route_match:
+            origin = route_match.group(1).strip(" ,.")
+            destination = route_match.group(2).strip(" ,.")
+            break
 
     travel_date = _extract_date(text)
 
@@ -34,6 +63,10 @@ def build_parse_result(transcript: str) -> dict:
             seat_count = max(1, int(seat_match.group(1)))
         except ValueError:
             seat_count = 1
+    else:
+        seat_word_match = _SEAT_COUNT_WORD_PATTERN.search(text)
+        if seat_word_match:
+            seat_count = _WORD_TO_NUMBER.get(seat_word_match.group(1).lower(), 1)
 
     seats = [s.upper() for s in _SEAT_CODE_PATTERN.findall(text)]
     dedup_seats = []
@@ -87,6 +120,11 @@ def build_parse_result(transcript: str) -> dict:
 
 
 def _extract_date(text: str) -> str | None:
+    lowered = text.lower()
+    for phrase, offset in _RELATIVE_DATES.items():
+        if phrase in lowered:
+            return (datetime.now() + timedelta(days=offset)).strftime("%Y-%m-%d")
+
     iso_match = _DATE_ISO_PATTERN.search(text)
     if iso_match:
         value = iso_match.group(1)

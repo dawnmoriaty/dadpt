@@ -5,6 +5,9 @@ export type TripStatus = 'scheduled' | 'departed' | 'completed' | 'cancelled'
 export interface Trip {
     id: number
     providerId: number
+    busId: number
+    originId: number
+    destinationId: number
     providerName: string
     busTypeName?: string
     originName: string
@@ -59,9 +62,12 @@ export interface CreateTripRequest {
 }
 
 export interface UpdateTripRequest {
+    originId?: number
+    destinationId?: number
     departureTime?: string
     arrivalTime?: string
     basePrice?: number
+    availableSeats?: number
     isHotDeal?: boolean
     pickupPoints?: Point[]
     dropoffPoints?: Point[]

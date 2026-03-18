@@ -19,6 +19,8 @@ import { TripStatusBadge } from './TripStatusBadge'
 
 interface TripsColumnsOptions {
     onUpdateStatus: (id: number, status: TripStatus) => void
+    onViewDetails: (trip: Trip) => void
+    onEdit: (trip: Trip) => void
 }
 
 const formatDate = (dateStr: string) =>
@@ -36,7 +38,7 @@ const formatPrice = (price: number) =>
         minimumFractionDigits: 0,
     }).format(price)
 
-export function getTripsColumns({ onUpdateStatus }: TripsColumnsOptions): ColumnDef<Trip>[] {
+export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: TripsColumnsOptions): ColumnDef<Trip>[] {
     return [
         {
             id: 'select',
@@ -139,6 +141,8 @@ export function getTripsColumns({ onUpdateStatus }: TripsColumnsOptions): Column
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => onEdit(trip)}>Chỉnh sửa chuyến</DropdownMenuItem>
+                            <DropdownMenuSeparator />
                             {trip.status === 'scheduled' && (
                                 <>
                                     <DropdownMenuItem
@@ -169,7 +173,7 @@ export function getTripsColumns({ onUpdateStatus }: TripsColumnsOptions): Column
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onViewDetails(trip)}>View Details</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )

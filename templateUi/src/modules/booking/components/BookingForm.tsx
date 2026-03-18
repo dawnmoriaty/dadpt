@@ -1,6 +1,6 @@
 import { Loader2, Ticket } from 'lucide-react'
 import { useEffect } from 'react'
-import { useForm, useWatch } from 'react-hook-form'
+import { useForm, useWatch, type UseFormReturn } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from '@tanstack/react-router'
 
@@ -26,7 +26,7 @@ import {
 } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { formResolver } from '@/lib/form/resolver'
-import type { Trip } from '@/modules/trip'
+import type { Point, Trip } from '@/modules/trip'
 import { useAuthStore } from '@/stores/use-auth-store'
 
 import { useCreateBooking } from '../hooks'
@@ -70,6 +70,8 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     })
 
     const selectedSeats = useWatch({ control: form.control, name: 'seatCodes' })
+    const selectedPickupName = useWatch({ control: form.control, name: 'pickupInfo.name' })
+    const selectedDropoffName = useWatch({ control: form.control, name: 'dropoffInfo.name' })
     const totalAmount = selectedSeats.length * trip.finalPrice
 
     const draftKey = `booking_draft_${trip.id}`
@@ -105,8 +107,26 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
         })
     }
 
-    const pickupPoints = trip.pickupPoints ?? []
-    const dropoffPoints = trip.dropoffPoints ?? []
+    const pickupPoints = getSelectablePoints(trip.pickupPoints, trip.originName)
+    const dropoffPoints = getSelectablePoints(trip.dropoffPoints, trip.destinationName)
+
+    useEffect(() => {
+        syncPointSelection({
+            form,
+            fieldPrefix: 'pickupInfo',
+            points: pickupPoints,
+            selectedName: selectedPickupName,
+        })
+    }, [form, pickupPoints, selectedPickupName])
+
+    useEffect(() => {
+        syncPointSelection({
+            form,
+            fieldPrefix: 'dropoffInfo',
+            points: dropoffPoints,
+            selectedName: selectedDropoffName,
+        })
+    }, [dropoffPoints, form, selectedDropoffName])
 
     return (
         <Form {...form}>
@@ -266,35 +286,14 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('booking.pickupPoint')}</FormLabel>
-                                    {pickupPoints.length > 0 ? (
-                                        <Select
-                                            onValueChange={(val) => {
-                                                field.onChange(val)
-                                                const point = pickupPoints.find((p) => p.name === val)
-                                                if (point) {
-                                                    form.setValue('pickupInfo.surcharge', point.surcharge ?? 0)
-                                                }
-                                            }}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t('booking.pickupPlaceholder')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {pickupPoints.map((p) => (
-                                                    <SelectItem key={p.name} value={p.name}>
-                                                        {p.name} {p.time ? `(${p.time})` : ''} {p.surcharge > 0 ? `+${formatCurrency(p.surcharge)}` : ''}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <FormControl>
-                                            <Input placeholder={t('booking.pickupPlaceholder')} {...field} />
-                                        </FormControl>
-                                    )}
+                                    <PointSelect
+                                        points={pickupPoints}
+                                        selectedName={field.value}
+                                        placeholder={t('booking.pickupPlaceholder')}
+                                        onSelect={(point) => {
+                                            applyPointSelection(form, 'pickupInfo', point)
+                                        }}
+                                    />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -305,35 +304,14 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>{t('booking.dropoffPoint')}</FormLabel>
-                                    {dropoffPoints.length > 0 ? (
-                                        <Select
-                                            onValueChange={(val) => {
-                                                field.onChange(val)
-                                                const point = dropoffPoints.find((p) => p.name === val)
-                                                if (point) {
-                                                    form.setValue('dropoffInfo.surcharge', point.surcharge ?? 0)
-                                                }
-                                            }}
-                                            value={field.value}
-                                        >
-                                            <FormControl>
-                                                <SelectTrigger>
-                                                    <SelectValue placeholder={t('booking.dropoffPlaceholder')} />
-                                                </SelectTrigger>
-                                            </FormControl>
-                                            <SelectContent>
-                                                {dropoffPoints.map((p) => (
-                                                    <SelectItem key={p.name} value={p.name}>
-                                                        {p.name} {p.time ? `(${p.time})` : ''} {p.surcharge > 0 ? `+${formatCurrency(p.surcharge)}` : ''}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    ) : (
-                                        <FormControl>
-                                            <Input placeholder={t('booking.dropoffPlaceholder')} {...field} />
-                                        </FormControl>
-                                    )}
+                                    <PointSelect
+                                        points={dropoffPoints}
+                                        selectedName={field.value}
+                                        placeholder={t('booking.dropoffPlaceholder')}
+                                        onSelect={(point) => {
+                                            applyPointSelection(form, 'dropoffInfo', point)
+                                        }}
+                                    />
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -407,4 +385,91 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
             </form>
         </Form>
     )
+}
+
+type PointFieldPrefix = 'pickupInfo' | 'dropoffInfo'
+
+interface SyncPointSelectionParams {
+    form: UseFormReturn<CreateBookingFormData>
+    fieldPrefix: PointFieldPrefix
+    points: Point[]
+    selectedName?: string
+}
+
+function syncPointSelection({ form, fieldPrefix, points, selectedName }: SyncPointSelectionParams) {
+    if (points.length === 0) {
+        return
+    }
+
+    const matchedPoint = points.find((point) => point.name === selectedName)
+    const nextPoint = matchedPoint ?? points[0]
+    const currentTime = form.getValues(`${fieldPrefix}.time`)
+    const currentSurcharge = form.getValues(`${fieldPrefix}.surcharge`)
+
+    if (
+        selectedName === nextPoint.name
+        && currentTime === (nextPoint.time ?? '')
+        && currentSurcharge === (nextPoint.surcharge ?? 0)
+    ) {
+        return
+    }
+
+    applyPointSelection(form, fieldPrefix, nextPoint, false)
+}
+
+function applyPointSelection(
+    form: UseFormReturn<CreateBookingFormData>,
+    fieldPrefix: PointFieldPrefix,
+    point: Point,
+    shouldDirty = true,
+) {
+    form.setValue(`${fieldPrefix}.name`, point.name, { shouldDirty, shouldValidate: true })
+    form.setValue(`${fieldPrefix}.time`, point.time ?? '', { shouldDirty, shouldValidate: true })
+    form.setValue(`${fieldPrefix}.surcharge`, point.surcharge ?? 0, { shouldDirty, shouldValidate: true })
+}
+
+interface PointOptionsProps {
+    points: Point[]
+    selectedName?: string
+    placeholder: string
+    onSelect: (point: Point) => void
+}
+
+function PointSelect({ points, selectedName, placeholder, onSelect }: PointOptionsProps) {
+    return (
+        <Select
+            value={selectedName}
+            onValueChange={(value) => {
+                const point = points.find((item) => item.name === value)
+                if (point) {
+                    onSelect(point)
+                }
+            }}
+        >
+            <FormControl>
+                <SelectTrigger>
+                    <SelectValue placeholder={placeholder} />
+                </SelectTrigger>
+            </FormControl>
+            <SelectContent>
+                {points.map((point) => (
+                    <SelectItem key={`${point.name}-${point.time}`} value={point.name}>
+                        {point.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    )
+}
+
+function getSelectablePoints(points: Point[] | undefined, fallbackName: string): Point[] {
+    if (points && points.length > 0) {
+        return points
+    }
+
+    return [{
+        name: fallbackName,
+        time: '',
+        surcharge: 0,
+    }]
 }

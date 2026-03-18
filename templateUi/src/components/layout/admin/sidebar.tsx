@@ -22,13 +22,13 @@ export function Sidebar() {
     return (
         <aside
             className={cn(
-                'fixed left-0 top-0 z-40 h-screen border-r bg-gradient-to-b from-background via-background to-muted/20 transition-all duration-300 flex flex-col',
+                'fixed left-0 top-0 z-50 h-screen border-none shadow-[1px_0_15px_rgba(0,0,0,0.03)] bg-background transition-all duration-300 flex flex-col',
                 collapsed ? 'w-[72px]' : 'w-64'
             )}
         >
             {/* Logo */}
             <div className={cn(
-                'flex h-16 items-center border-b px-4 shrink-0',
+                'flex h-16 items-center px-4 shrink-0',
                 collapsed ? 'justify-center' : 'gap-3'
             )}>
                 <div className="p-2 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 shadow-lg shadow-primary/25">
@@ -95,7 +95,7 @@ export function Sidebar() {
             </nav>
 
             {/* Collapse button */}
-            <div className="p-3 border-t shrink-0">
+            <div className="p-3 shrink-0">
                 <Button
                     variant="ghost"
                     size="sm"

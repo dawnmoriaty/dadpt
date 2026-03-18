@@ -26,7 +26,9 @@ type GuestInfoDTO struct {
 }
 
 type PointInfoDTO struct {
-	Name string `json:"name" binding:"required"`
+	Name      string  `json:"name" binding:"required"`
+	Time      string  `json:"time,omitempty"`
+	Surcharge float64 `json:"surcharge,omitempty"`
 }
 
 type ListBookingsRequest struct {
@@ -93,10 +95,14 @@ func (r *CreateBookingRequest) ToInput(userID *int64) *domain.CreateBookingInput
 			Email: r.GuestInfo.Email,
 		},
 		PickupInfo: domain.PointInfo{
-			Name: r.PickupInfo.Name,
+			Name:      r.PickupInfo.Name,
+			Time:      r.PickupInfo.Time,
+			Surcharge: r.PickupInfo.Surcharge,
 		},
 		DropoffInfo: domain.PointInfo{
-			Name: r.DropoffInfo.Name,
+			Name:      r.DropoffInfo.Name,
+			Time:      r.DropoffInfo.Time,
+			Surcharge: r.DropoffInfo.Surcharge,
 		},
 		PaymentMethod: r.PaymentMethod,
 	}
@@ -118,10 +124,14 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 			Email: b.GuestInfo.Email,
 		},
 		PickupInfo: PointInfoDTO{
-			Name: b.PickupInfo.Name,
+			Name:      b.PickupInfo.Name,
+			Time:      b.PickupInfo.Time,
+			Surcharge: b.PickupInfo.Surcharge,
 		},
 		DropoffInfo: PointInfoDTO{
-			Name: b.DropoffInfo.Name,
+			Name:      b.DropoffInfo.Name,
+			Time:      b.DropoffInfo.Time,
+			Surcharge: b.DropoffInfo.Surcharge,
 		},
 		TotalAmount:   b.TotalAmount,
 		Status:        string(b.Status),

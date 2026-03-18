@@ -15,8 +15,8 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
-import { cn } from '@/lib/utils'
 import { formResolver } from '@/lib/form/resolver'
+import { cn } from '@/lib/utils'
 
 import { searchTripsSchema, type SearchTripsFormData } from '../schemas'
 
@@ -40,8 +40,8 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
     })
 
     return (
-        <Card className={cn('w-full shadow-xl bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60', compact ? 'max-w-full' : 'max-w-4xl')}>
-            <CardContent className="p-6">
+        <Card className={cn('w-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 rounded-2xl overflow-hidden', compact ? 'max-w-full' : 'max-w-5xl mx-auto')}>
+            <CardContent className="p-4 md:p-6">
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSearch)}
@@ -74,10 +74,11 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             <div className="hidden md:flex items-end justify-center pb-2">
                                 <Button
                                     type="button"
-                                    variant="ghost"
+                                    variant="outline"
                                     size="icon"
-                                    className="rounded-full"
-                                    onClick={() => {
+                                    className="rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:rotate-180 bg-background z-10"
+                                    onClick={(e) => {
+                                        e.preventDefault()
                                         const originId = form.getValues('originId')
                                         const destId = form.getValues('destinationId')
                                         form.setValue('originId', destId)
@@ -154,10 +155,16 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             />
                         )}
 
-                        <Button type="submit" size="lg" className="gap-2">
-                            <Search className="h-4 w-4" />
-                            {t('searchPage.searchBtn')}
-                        </Button>
+                        <div className="flex items-end justify-center w-full">
+                            <Button 
+                                type="submit" 
+                                size="lg" 
+                                className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-primary to-primary/90"
+                            >
+                                <Search className="h-5 w-5 mr-2" />
+                                {t('searchPage.searchBtn')}
+                            </Button>
+                        </div>
                     </form>
                 </Form>
             </CardContent>

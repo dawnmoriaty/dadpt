@@ -566,20 +566,24 @@ func (q *Queries) SearchTrips(ctx context.Context, arg SearchTripsParams) ([]Sea
 
 const updateTrip = `-- name: UpdateTrip :one
 UPDATE trips SET
-    departure_time = COALESCE($2, departure_time),
-    arrival_time = COALESCE($3, arrival_time),
-    base_price = COALESCE($4, base_price),
-    price_modifier = COALESCE($5, price_modifier),
-    is_hot_deal = COALESCE($6, is_hot_deal),
-    pickup_points = COALESCE($7, pickup_points),
-    dropoff_points = COALESCE($8, dropoff_points),
-    available_seats = COALESCE($9, available_seats)
+    origin_id = COALESCE($2, origin_id),
+    destination_id = COALESCE($3, destination_id),
+    departure_time = COALESCE($4, departure_time),
+    arrival_time = COALESCE($5, arrival_time),
+    base_price = COALESCE($6, base_price),
+    price_modifier = COALESCE($7, price_modifier),
+    is_hot_deal = COALESCE($8, is_hot_deal),
+    pickup_points = COALESCE($9, pickup_points),
+    dropoff_points = COALESCE($10, dropoff_points),
+    available_seats = COALESCE($11, available_seats)
 WHERE id = $1
 RETURNING id, provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, booked_seats, available_seats, status, created_at, version
 `
 
 type UpdateTripParams struct {
 	ID             int64              `json:"id"`
+	OriginID       int32              `json:"originId"`
+	DestinationID  int32              `json:"destinationId"`
 	DepartureTime  pgtype.Timestamptz `json:"departureTime"`
 	ArrivalTime    pgtype.Timestamptz `json:"arrivalTime"`
 	BasePrice      pgtype.Numeric     `json:"basePrice"`
@@ -593,6 +597,8 @@ type UpdateTripParams struct {
 func (q *Queries) UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error) {
 	row := q.db.QueryRow(ctx, updateTrip,
 		arg.ID,
+		arg.OriginID,
+		arg.DestinationID,
 		arg.DepartureTime,
 		arg.ArrivalTime,
 		arg.BasePrice,

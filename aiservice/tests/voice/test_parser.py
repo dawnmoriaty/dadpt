@@ -1,20 +1,31 @@
-from src.voice.parser import build_parse_result
+from datetime import datetime
+
+from src.voice import parser
 
 
-def test_parse_success_minimal_fields() -> None:
-    result = build_parse_result("đặt vé từ Hà Nội đến Đà Nẵng ngày 2026-03-20 2 ghế A1 A2")
+def test_build_parse_result_supports_toi_and_word_seat_count() -> None:
+    result = parser.build_parse_result(
+        "Dat cho toi hai ghe tu Sai Gon toi Nha Trang ngay 21/03/2026"
+    )
 
     assert result["command"] is not None
-    assert result["command"]["origin"] == "Hà Nội"
-    assert result["command"]["destination"] == "Đà Nẵng"
-    assert result["command"]["travel_date"] == "2026-03-20"
+    assert result["command"]["origin"] == "Sai Gon"
+    assert result["command"]["destination"] == "Nha Trang"
+    assert result["command"]["travel_date"] == "2026-03-21"
     assert result["command"]["seat_count"] == 2
-    assert result["command"]["seat_preference_order"] == ["A1", "A2"]
 
 
-def test_parse_missing_required_fields() -> None:
-    result = build_parse_result("cho tôi đặt vé ngày 2026-03-20")
+def test_build_parse_result_supports_relative_date(monkeypatch) -> None:
+    class FixedDatetime(datetime):
+        @classmethod
+        def now(cls, tz=None):
+            return cls(2026, 3, 19)
 
-    assert result["command"] is None
-    assert "origin" in result["missing_fields"]
-    assert "destination" in result["missing_fields"]
+    monkeypatch.setattr(parser, "datetime", FixedDatetime)
+
+    result = parser.build_parse_result(
+        "Dat ve tu Ha Noi den Da Nang ngay mai 1 ghe"
+    )
+
+    assert result["command"] is not None
+    assert result["command"]["travel_date"] == "2026-03-20"

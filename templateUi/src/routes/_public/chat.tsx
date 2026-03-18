@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { VoiceBookingPanel } from '@/modules/voice'
 import { cn } from '@/lib/utils'
 import { useChatStore, type ChatMessage } from '@/stores/use-chat-store'
 
@@ -52,7 +53,7 @@ function ChatPage() {
             <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-2">
                     <Bot className="h-6 w-6 text-primary" />
-                    <h1 className="text-xl font-bold">AI Hỗ Trợ Đặt Vé</h1>
+                    <h1 className="text-xl font-bold">AI đặt vé chuyến đi</h1>
                 </div>
                 {messages.length > 0 && (
                     <Button
@@ -65,6 +66,10 @@ function ChatPage() {
                         Xóa hội thoại
                     </Button>
                 )}
+            </div>
+
+            <div className="mb-4">
+                <VoiceBookingPanel onTranscript={sendMessage} disabled={isLoading} />
             </div>
 
             {/* Messages Area */}
@@ -90,7 +95,7 @@ function ChatPage() {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Nhập tin nhắn... (VD: Tìm chuyến xe từ Hà Nội đi Đà Nẵng)"
+                            placeholder="Nhập yêu cầu... (VD: Đặt cho tôi 2 vé từ Sài Gòn đến Nha Trang ngày mai)"
                             disabled={isLoading}
                             className="flex-1"
                         />
@@ -118,9 +123,10 @@ function EmptyState() {
     return (
         <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
             <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-            <p className="text-lg font-medium">Xin chào! Tôi có thể giúp gì cho bạn?</p>
-            <p className="text-sm mt-2">Bạn có thể hỏi tôi về:</p>
+            <p className="text-lg font-medium">Xin chào! Tôi có thể hỗ trợ tìm chuyến và đặt vé cho bạn.</p>
+            <p className="text-sm mt-2">Bạn có thể thử các câu như:</p>
             <div className="mt-3 space-y-1 text-sm">
+                <Suggestion text="Đặt cho tôi 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21" />
                 <Suggestion text="Tìm chuyến xe từ Hà Nội đi Đà Nẵng ngày mai" />
                 <Suggestion text="Kiểm tra vé BK-ABC123" />
                 <Suggestion text="Chính sách hoàn vé như thế nào?" />

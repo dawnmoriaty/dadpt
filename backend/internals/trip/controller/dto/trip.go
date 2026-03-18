@@ -31,12 +31,15 @@ type CreateTripRequest struct {
 }
 
 type UpdateTripRequest struct {
-	DepartureTime *utils.FlexibleTime `json:"departureTime"`
-	ArrivalTime   *utils.FlexibleTime `json:"arrivalTime"`
-	BasePrice     *float64            `json:"basePrice"`
-	IsHotDeal     *bool               `json:"isHotDeal"`
-	PickupPoints  []PointDTO          `json:"pickupPoints"`
-	DropoffPoints []PointDTO          `json:"dropoffPoints"`
+	OriginID       *int                `json:"originId" binding:"omitempty,min=1"`
+	DestinationID  *int                `json:"destinationId" binding:"omitempty,min=1"`
+	DepartureTime  *utils.FlexibleTime `json:"departureTime"`
+	ArrivalTime    *utils.FlexibleTime `json:"arrivalTime"`
+	BasePrice      *float64            `json:"basePrice"`
+	AvailableSeats *int                `json:"availableSeats" binding:"omitempty,min=1"`
+	IsHotDeal      *bool               `json:"isHotDeal"`
+	PickupPoints   []PointDTO          `json:"pickupPoints"`
+	DropoffPoints  []PointDTO          `json:"dropoffPoints"`
 }
 
 type UpdateTripStatusRequest struct {
@@ -57,6 +60,9 @@ type PointDTO struct {
 type TripResponse struct {
 	ID              int64      `json:"id"`
 	ProviderID      int        `json:"providerId"`
+	BusID           int        `json:"busId"`
+	OriginID        int        `json:"originId"`
+	DestinationID   int        `json:"destinationId"`
 	ProviderName    string     `json:"providerName,omitempty"`
 	BusTypeName     string     `json:"busTypeName,omitempty"`
 	OriginName      string     `json:"originName,omitempty"`
@@ -103,11 +109,23 @@ func (r *UpdateTripRequest) ToInput() *domain.UpdateTripInput {
 		PickupPoints:  pointsDTOToDomain(r.PickupPoints),
 		DropoffPoints: pointsDTOToDomain(r.DropoffPoints),
 	}
+	if r.OriginID != nil {
+		originID := int32(*r.OriginID)
+		input.OriginID = &originID
+	}
+	if r.DestinationID != nil {
+		destinationID := int32(*r.DestinationID)
+		input.DestinationID = &destinationID
+	}
 	if r.DepartureTime != nil {
 		input.DepartureTime = r.DepartureTime.ToTimePtr()
 	}
 	if r.ArrivalTime != nil {
 		input.ArrivalTime = r.ArrivalTime.ToTimePtr()
+	}
+	if r.AvailableSeats != nil {
+		availableSeats := int32(*r.AvailableSeats)
+		input.AvailableSeats = &availableSeats
 	}
 	return input
 }
@@ -150,6 +168,9 @@ func ToTripResponse(trip *domain.Trip) *TripResponse {
 	return &TripResponse{
 		ID:              trip.ID,
 		ProviderID:      int(trip.ProviderID),
+		BusID:           int(trip.BusID),
+		OriginID:        int(trip.OriginID),
+		DestinationID:   int(trip.DestinationID),
 		ProviderName:    trip.ProviderName,
 		BusTypeName:     trip.BusTypeName,
 		OriginName:      trip.OriginName,

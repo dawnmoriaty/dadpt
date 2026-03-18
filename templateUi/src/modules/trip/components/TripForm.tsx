@@ -1,5 +1,6 @@
-import { Loader2 } from 'lucide-react'
-import { useForm } from 'react-hook-form'
+import { Loader2, MapPin, Plus, X } from 'lucide-react'
+import { useEffect, useRef } from 'react'
+import { useFieldArray, useForm, useWatch, type Control } from 'react-hook-form'
 
 import { DateTimePicker } from '@/components/common/date-time-picker'
 import { LocationCombobox } from '@/components/common/location-combobox'
@@ -27,48 +28,165 @@ import {
     SelectValue,
 } from '@/components/ui/select'
 import { formResolver } from '@/lib/form/resolver'
+import { useLocation } from '@/modules/location'
 import { useProviders } from '@/modules/provider/hooks'
 
 import { createTripSchema, type CreateTripFormData } from '../schemas'
+import type { Point, Trip, UpdateTripRequest } from '../types'
 
 interface TripFormProps {
     isOpen: boolean
     onClose: () => void
-    onSubmit: (data: CreateTripFormData) => void
+    onCreate: (data: CreateTripFormData) => void
+    onUpdate: (id: number, data: UpdateTripRequest) => void
+    initialTrip?: Trip | null
     isLoading?: boolean
 }
 
-export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps): React.ReactElement {
+const defaultFormValues: CreateTripFormData = {
+    providerId: 0,
+    busId: 1,
+    originId: 0,
+    destinationId: 0,
+    departureTime: '',
+    arrivalTime: '',
+    basePrice: 0,
+    availableSeats: 40,
+    pickupPoints: [],
+    dropoffPoints: [],
+}
+
+export function TripForm({
+    isOpen,
+    onClose,
+    onCreate,
+    onUpdate,
+    initialTrip,
+    isLoading,
+}: TripFormProps): React.ReactElement {
     const { data: providers } = useProviders({ page: 1, pageSize: 100 })
+    const isEditMode = !!initialTrip
 
     const form = useForm<CreateTripFormData>({
         resolver: formResolver(createTripSchema),
-        defaultValues: {
-            providerId: 0,
-            busId: 1, // TODO: add bus selection
-            originId: 0,
-            destinationId: 0,
-            departureTime: '',
-            arrivalTime: '',
-            basePrice: 0,
-            availableSeats: 40,
-        },
+        defaultValues: defaultFormValues,
     })
 
+    const pickupPointsFieldArray = useFieldArray({
+        control: form.control,
+        name: 'pickupPoints',
+    })
+
+    const dropoffPointsFieldArray = useFieldArray({
+        control: form.control,
+        name: 'dropoffPoints',
+    })
+
+    const originId = useWatch({ control: form.control, name: 'originId' })
+    const destinationId = useWatch({ control: form.control, name: 'destinationId' })
+    const { data: originLocation } = useLocation(originId)
+    const { data: destinationLocation } = useLocation(destinationId)
+    const autoPickupNameRef = useRef<string | null>(null)
+    const autoDropoffNameRef = useRef<string | null>(null)
+
+    useEffect(() => {
+        if (!isOpen) {
+            return
+        }
+
+        if (initialTrip) {
+            form.reset({
+                providerId: initialTrip.providerId,
+                busId: initialTrip.busId,
+                originId: initialTrip.originId,
+                destinationId: initialTrip.destinationId,
+                departureTime: initialTrip.departureTime,
+                arrivalTime: initialTrip.arrivalTime,
+                basePrice: initialTrip.basePrice,
+                availableSeats: initialTrip.availableSeats,
+                pickupPoints: initialTrip.pickupPoints ?? [],
+                dropoffPoints: initialTrip.dropoffPoints ?? [],
+            })
+            autoPickupNameRef.current = null
+            autoDropoffNameRef.current = null
+            return
+        }
+
+        form.reset(defaultFormValues)
+        pickupPointsFieldArray.replace([])
+        dropoffPointsFieldArray.replace([])
+        autoPickupNameRef.current = null
+        autoDropoffNameRef.current = null
+    }, [dropoffPointsFieldArray, form, initialTrip, isOpen, pickupPointsFieldArray])
+
+    useEffect(() => {
+        if (!isOpen || !originLocation?.name) {
+            return
+        }
+
+        pickupPointsFieldArray.replace(
+            mergeTerminalPoint({
+                points: form.getValues('pickupPoints') ?? [],
+                terminalName: originLocation.name,
+                autoTerminalName: autoPickupNameRef.current,
+                position: 'start',
+            }),
+        )
+        autoPickupNameRef.current = originLocation.name
+    }, [form, isOpen, originLocation?.name, pickupPointsFieldArray])
+
+    useEffect(() => {
+        if (!isOpen || !destinationLocation?.name) {
+            return
+        }
+
+        dropoffPointsFieldArray.replace(
+            mergeTerminalPoint({
+                points: form.getValues('dropoffPoints') ?? [],
+                terminalName: destinationLocation.name,
+                autoTerminalName: autoDropoffNameRef.current,
+                position: 'end',
+            }),
+        )
+        autoDropoffNameRef.current = destinationLocation.name
+    }, [destinationLocation?.name, dropoffPointsFieldArray, form, isOpen])
+
     const handleFormSubmit = (values: CreateTripFormData): void => {
-        onSubmit(values)
+        const pickupPoints = sanitizePoints(values.pickupPoints)
+        const dropoffPoints = sanitizePoints(values.dropoffPoints)
+
+        if (initialTrip) {
+            onUpdate(initialTrip.id, {
+                originId: values.originId,
+                destinationId: values.destinationId,
+                departureTime: values.departureTime,
+                arrivalTime: values.arrivalTime,
+                basePrice: values.basePrice,
+                availableSeats: values.availableSeats,
+                pickupPoints,
+                dropoffPoints,
+            })
+            return
+        }
+
+        onCreate({
+            ...values,
+            pickupPoints,
+            dropoffPoints,
+        })
     }
 
     const providerItems = providers?.items ?? []
 
     return (
         <Dialog open={isOpen} onOpenChange={onClose}>
-            <DialogContent className="max-w-lg">
-                <DialogHeader>
-                    <DialogTitle>Create New Trip</DialogTitle>
+            <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden p-0">
+                <DialogHeader className="border-b px-6 py-4">
+                    <DialogTitle>{isEditMode ? 'Cập nhật chuyến đi' : 'Create New Trip'}</DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
+                    <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex max-h-[calc(90vh-73px)] flex-col">
+                        <div className="flex-1 overflow-y-auto px-6 py-4">
                         {/* Provider */}
                         <FormField
                             control={form.control}
@@ -79,6 +197,7 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                                     <Select
                                         onValueChange={(val) => field.onChange(Number(val))}
                                         value={field.value ? field.value.toString() : ''}
+                                        disabled={isEditMode}
                                     >
                                         <FormControl>
                                             <SelectTrigger>
@@ -110,6 +229,9 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                                             value={field.value}
                                             onSelect={field.onChange}
                                             placeholder="Select origin location..."
+                                            selectedLabel={initialTrip && field.value === initialTrip.originId
+                                                ? `${initialTrip.originName} - ${initialTrip.originCity}`
+                                                : undefined}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -129,6 +251,9 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                                             value={field.value}
                                             onSelect={field.onChange}
                                             placeholder="Select destination location..."
+                                            selectedLabel={initialTrip && field.value === initialTrip.destinationId
+                                                ? `${initialTrip.destinationName} - ${initialTrip.destinationCity}`
+                                                : undefined}
                                         />
                                     </FormControl>
                                     <FormMessage />
@@ -208,13 +333,165 @@ export function TripForm({ isOpen, onClose, onSubmit, isLoading }: TripFormProps
                             />
                         </div>
 
+                        <div className="grid gap-4 lg:grid-cols-2">
+                            <PointListSection
+                                title="Điểm đón"
+                                description="Thêm các điểm khách có thể lên xe cho chuyến này."
+                                emptyText="Chưa có điểm đón nào."
+                                fields={pickupPointsFieldArray.fields}
+                                onAdd={() => pickupPointsFieldArray.append(createEmptyPoint())}
+                                onRemove={(index) => pickupPointsFieldArray.remove(index)}
+                                registerName={(index) => `pickupPoints.${index}.name`}
+                                control={form.control}
+                            />
+
+                            <PointListSection
+                                title="Điểm trả"
+                                description="Thêm các điểm khách có thể xuống xe cho chuyến này."
+                                emptyText="Chưa có điểm trả nào."
+                                fields={dropoffPointsFieldArray.fields}
+                                onAdd={() => dropoffPointsFieldArray.append(createEmptyPoint())}
+                                onRemove={(index) => dropoffPointsFieldArray.remove(index)}
+                                registerName={(index) => `dropoffPoints.${index}.name`}
+                                control={form.control}
+                            />
+                        </div>
+
+                        </div>
+
+                        <div className="border-t bg-background px-6 py-4">
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Create Trip
+                            {isEditMode ? 'Lưu thay đổi' : 'Create Trip'}
                         </Button>
+                        </div>
                     </form>
                 </Form>
             </DialogContent>
         </Dialog>
+    )
+}
+
+function createEmptyPoint() {
+    return {
+        name: '',
+        time: '',
+        surcharge: 0,
+    }
+}
+
+function sanitizePoints(points: CreateTripFormData['pickupPoints']) {
+    return (points ?? [])
+        .map((point) => ({
+            name: point.name.trim(),
+            time: point.time ?? '',
+            surcharge: point.surcharge ?? 0,
+        }))
+        .filter((point) => point.name.length > 0)
+}
+
+interface MergeTerminalPointParams {
+    points: Point[]
+    terminalName: string
+    autoTerminalName: string | null
+    position: 'start' | 'end'
+}
+
+function mergeTerminalPoint({ points, terminalName, autoTerminalName, position }: MergeTerminalPointParams): Point[] {
+    const cleanedPoints = autoTerminalName
+        ? points.filter((point) => point.name !== autoTerminalName)
+        : [...points]
+
+    if (cleanedPoints.some((point) => point.name === terminalName)) {
+        return cleanedPoints
+    }
+
+    const terminalPoint: Point = {
+        name: terminalName,
+        time: '',
+        surcharge: 0,
+    }
+
+    return position === 'start'
+        ? [terminalPoint, ...cleanedPoints]
+        : [...cleanedPoints, terminalPoint]
+}
+
+interface PointListSectionProps {
+    title: string
+    description: string
+    emptyText: string
+    fields: Array<{ id: string }>
+    onAdd: () => void
+    onRemove: (index: number) => void
+    registerName: (index: number) => `pickupPoints.${number}.name` | `dropoffPoints.${number}.name`
+    control: Control<CreateTripFormData>
+}
+
+function PointListSection({
+    title,
+    description,
+    emptyText,
+    fields,
+    onAdd,
+    onRemove,
+    registerName,
+    control,
+}: PointListSectionProps) {
+    return (
+        <div className="rounded-2xl border border-border/70 bg-muted/20 p-4">
+            <div className="mb-4 flex items-start justify-between gap-3">
+                <div>
+                    <h3 className="font-semibold">{title}</h3>
+                    <p className="text-sm text-muted-foreground">{description}</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={onAdd}>
+                    <Plus className="h-4 w-4" />
+                    Thêm
+                </Button>
+            </div>
+
+            {fields.length === 0 ? (
+                <div className="rounded-xl border border-dashed bg-background/70 px-4 py-6 text-sm text-muted-foreground">
+                    {emptyText}
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    {fields.map((field, index) => (
+                        <div key={field.id} className="rounded-xl border bg-background p-3">
+                            <div className="mb-2 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 text-sm font-medium">
+                                    <MapPin className="h-4 w-4 text-primary" />
+                                    {title} {index + 1}
+                                </div>
+                                <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 text-muted-foreground"
+                                    onClick={() => onRemove(index)}
+                                >
+                                    <X className="h-4 w-4" />
+                                </Button>
+                            </div>
+
+                            <FormField
+                                control={control}
+                                name={registerName(index)}
+                                render={({ field: pointField }) => (
+                                    <FormItem>
+                                        <FormLabel>Tên điểm</FormLabel>
+                                        <FormControl>
+                                            <Input placeholder="Ví dụ: Bến xe Miền Đông" {...pointField} />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+        </div>
     )
 }

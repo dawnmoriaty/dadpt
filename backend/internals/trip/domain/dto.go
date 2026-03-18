@@ -35,12 +35,15 @@ type CreateTripInput struct {
 
 // UpdateTripInput is the input for updating a trip (partial update)
 type UpdateTripInput struct {
-	DepartureTime *time.Time
-	ArrivalTime   *time.Time
-	BasePrice     *float64
-	IsHotDeal     *bool
-	PickupPoints  []Point
-	DropoffPoints []Point
+	OriginID       *int32
+	DestinationID  *int32
+	DepartureTime  *time.Time
+	ArrivalTime    *time.Time
+	BasePrice      *float64
+	AvailableSeats *int32
+	IsHotDeal      *bool
+	PickupPoints   []Point
+	DropoffPoints  []Point
 }
 
 // SearchTripsInput is the input for searching trips (public)

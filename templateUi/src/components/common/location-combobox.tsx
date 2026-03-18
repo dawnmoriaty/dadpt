@@ -10,6 +10,7 @@ interface LocationComboboxProps {
     value: number
     onSelect: (id: number) => void
     placeholder?: string
+    selectedLabel?: string
     className?: string
     disabled?: boolean
 }
@@ -18,6 +19,7 @@ export function LocationCombobox({
     value,
     onSelect,
     placeholder,
+    selectedLabel,
     className,
     disabled,
 }: LocationComboboxProps) {
@@ -35,6 +37,11 @@ export function LocationCombobox({
 
     // Resolve label from value on mount / when items load
     useEffect(() => {
+        if (value && selectedLabel) {
+            setInputValue(selectedLabel)
+            return
+        }
+
         if (value && !inputValue && items.length > 0) {
             const found = items.find((loc) => loc.id === value)
             if (found) {
@@ -43,7 +50,7 @@ export function LocationCombobox({
         }
         // Only run when value or items change, not inputValue
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [value, items])
+    }, [value, items, selectedLabel])
 
     // Close dropdown on outside click
     useEffect(() => {

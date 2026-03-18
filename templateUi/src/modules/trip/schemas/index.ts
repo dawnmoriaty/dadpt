@@ -4,7 +4,7 @@ import { V } from '@/lib/validation/messages'
 
 const pointSchema = z.object({
     name: z.string().min(1, V.required('field.pointName')),
-    time: z.string().min(1, V.required('field.time')),
+    time: z.string().default(''),
     surcharge: z.coerce.number().min(0, V.gte('field.surcharge', 0)).default(0),
 })
 
