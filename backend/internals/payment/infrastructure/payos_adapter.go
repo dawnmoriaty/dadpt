@@ -104,3 +104,20 @@ func (a *PayOSAdapter) GetPaymentStatus(ctx context.Context, orderCode int64) (s
 
 	return string(result.Status), nil
 }
+
+// CancelPaymentLink cancels a payment link via PayOS.
+// If the payment was already paid, PayOS handles the refund to the original bank account.
+func (a *PayOSAdapter) CancelPaymentLink(ctx context.Context, orderCode int64, reason string) error {
+	var reasonPtr *string
+	if reason != "" {
+		reasonPtr = &reason
+	}
+
+	_, err := a.client.PaymentRequests.Cancel(ctx, orderCode, reasonPtr)
+	if err != nil {
+		return fmt.Errorf("payos.CancelPaymentLink: %w", err)
+	}
+
+	logger.Info("PayOS payment link cancelled: orderCode=%d, reason=%s", orderCode, reason)
+	return nil
+}

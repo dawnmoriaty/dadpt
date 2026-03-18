@@ -24,9 +24,10 @@ const (
 
 // Outbox event topics
 const (
-	TopicBookingCreated = "booking.created"
-	TopicBookingPaid    = "booking.paid"
-	TopicBookingExpired = "booking.expired"
+	TopicBookingCreated          = "booking.created"
+	TopicBookingPaid             = "booking.paid"
+	TopicBookingExpired          = "booking.expired"
+	TopicBookingRefundRequested  = "booking.refund_requested"
 )
 
 // IBookingUseCase defines the interface for booking use case
@@ -38,6 +39,11 @@ type IBookingUseCase interface {
 	CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error)
 	ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error)
 	GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error)
+	// Admin refund flow
+	ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error)
+	CountRefundPending(ctx context.Context) (int64, error)
+	ApproveRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error)
+	RejectRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error)
 }
 
 type bookingUseCase struct {
@@ -266,19 +272,27 @@ func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.Cancel
 		return nil, domain.ErrBookingNotFound // Don't reveal existence
 	}
 
-	// 3. Check if can be cancelled
-	if !booking.CanBeCancelled() {
+	// 3. Route to appropriate flow based on booking status
+	switch booking.Status {
+	case domain.StatusPending:
+		return u.cancelPendingBooking(ctx, booking)
+	case domain.StatusPaid:
+		return u.refundPaidBooking(ctx, booking)
+	default:
 		return nil, domain.ErrBookingCannotCancel
 	}
+}
 
-	// 4. Release seats
+// cancelPendingBooking cancels a booking that has not been paid yet.
+func (u *bookingUseCase) cancelPendingBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
+	// Release seats
 	seatCount := int32(len(booking.SeatCodes))
 	if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
 		logger.Warn("Failed to release seats for booking %d: %v", booking.ID, err)
 		// Continue with cancellation
 	}
 
-	// 5. Update booking status
+	// Update booking status
 	cancelled, err := u.repo.UpdateStatus(ctx, booking.ID, domain.StatusCancelled)
 	if err != nil {
 		return nil, fmt.Errorf("cancelling booking: %w", err)
@@ -286,6 +300,175 @@ func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.Cancel
 
 	logger.Info("Booking cancelled: id=%d, code=%s", booking.ID, booking.Code)
 	return cancelled, nil
+}
+
+// refundPaidBooking creates a refund request for a paid booking within the refund window.
+// The actual refund is processed when admin approves via ApproveRefund.
+func (u *bookingUseCase) refundPaidBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
+	// 1. Check refund eligibility (paid + within 5 min window)
+	if !booking.CanRequestRefund() {
+		return nil, domain.ErrRefundWindowExpired
+	}
+
+	// 2. Mark booking as refund_pending (awaiting admin approval)
+	pending, err := u.repo.MarkRefundPending(ctx, booking.ID)
+	if err != nil {
+		return nil, fmt.Errorf("uc.refundPaidBooking: marking refund pending: %w", err)
+	}
+
+	// 3. Create outbox event for booking.refund_requested (admin notification)
+	eventPayload, _ := json.Marshal(map[string]interface{}{
+		"eventType":   TopicBookingRefundRequested,
+		"bookingId":   pending.ID,
+		"code":        string(pending.Code),
+		"tripId":      pending.TripID,
+		"seatCodes":   pending.SeatCodes,
+		"amount":      pending.TotalAmount,
+		"status":      string(pending.Status),
+		"guestName":   pending.GuestInfo.Name,
+		"guestPhone":  pending.GuestInfo.Phone,
+	})
+	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingRefundRequested, eventPayload); err != nil {
+		logger.Error("Failed to create outbox event for refund request: %v", err)
+	}
+
+	logger.Info("Refund requested: id=%d, code=%s, amount=%.2f (awaiting admin approval)", booking.ID, booking.Code, booking.TotalAmount)
+	return pending, nil
+}
+
+// ListRefundRequests returns bookings with refund_pending status for admin review.
+func (u *bookingUseCase) ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error) {
+	page := input.Page
+	pageSize := input.PageSize
+	limit := input.Limit
+	offset := input.Offset
+
+	if page > 0 {
+		if pageSize <= 0 {
+			pageSize = 20
+		}
+		limit = pageSize
+		offset = (page - 1) * pageSize
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	if page <= 0 {
+		pageSize = limit
+		page = (offset / limit) + 1
+	}
+
+	bookings, total, err := u.repo.ListRefundPending(ctx, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("uc.ListRefundRequests: %w", err)
+	}
+
+	return &domain.RefundRequestListOutput{
+		Bookings: bookings,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+// CountRefundPending returns the count of bookings in refund_pending status.
+func (u *bookingUseCase) CountRefundPending(ctx context.Context) (int64, error) {
+	count, err := u.repo.CountRefundPending(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("uc.CountRefundPending: %w", err)
+	}
+	return count, nil
+}
+
+// ApproveRefund approves a refund request: simulate PayOS cancel, mark refunded, release seats.
+func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error) {
+	// 1. Get booking and verify status
+	booking, err := u.repo.GetByID(ctx, input.BookingID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !booking.IsRefundPending() {
+		return nil, domain.ErrBookingNotRefundPending
+	}
+
+	// 2. Get the successful payment transaction
+	payment, err := u.paymentRepo.GetSuccessByBookingID(ctx, booking.ID)
+	if err != nil {
+		return nil, fmt.Errorf("uc.ApproveRefund: %w", err)
+	}
+
+	// 3. Simulate PayOS cancel (no sandbox available — log and skip real call)
+	if u.paymentGw != nil && booking.PaymentMethod == "bank_transfer" {
+		orderCodeInt := orderCodeToInt64(payment.OrderCode)
+		reason := fmt.Sprintf("Admin approved refund for booking %s", booking.Code)
+		logger.Info("[SIMULATED] PayOS CancelPaymentLink: orderCode=%d, reason=%s (skipped — no sandbox)", orderCodeInt, reason)
+		// In production with real PayOS sandbox, uncomment the following:
+		// if err := u.paymentGw.CancelPaymentLink(ctx, orderCodeInt, reason); err != nil {
+		//     logger.Error("Failed to cancel payment link for booking %d: %v", booking.ID, err)
+		//     return nil, fmt.Errorf("uc.ApproveRefund: cancelling payment: %w", err)
+		// }
+	}
+
+	// 4. Mark payment transaction as refunded
+	if _, err := u.paymentRepo.MarkRefunded(ctx, booking.ID); err != nil {
+		logger.Error("Failed to mark payment refunded for booking %d: %v", booking.ID, err)
+	}
+
+	// 5. Release seats
+	seatCount := int32(len(booking.SeatCodes))
+	if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
+		logger.Warn("Failed to release seats for refunded booking %d: %v", booking.ID, err)
+	}
+
+	// 6. Mark booking as refunded
+	refunded, err := u.repo.MarkRefunded(ctx, booking.ID)
+	if err != nil {
+		return nil, fmt.Errorf("uc.ApproveRefund: marking refunded: %w", err)
+	}
+
+	// 7. Simulated email notification to customer
+	logger.Info("[SIMULATED EMAIL] To: %s <%s> | Subject: Hoàn tiền vé %s đã được duyệt | Body: Kính gửi %s, yêu cầu hoàn tiền cho vé %s (%.0f VND) đã được quản trị viên duyệt. Số tiền sẽ được hoàn về tài khoản của bạn trong 1-3 ngày làm việc.",
+		booking.GuestInfo.Name, booking.GuestInfo.Email,
+		booking.Code, booking.GuestInfo.Name, booking.Code, booking.TotalAmount)
+
+	logger.Info("Refund approved: id=%d, code=%s, amount=%.2f", booking.ID, booking.Code, booking.TotalAmount)
+	return refunded, nil
+}
+
+// RejectRefund rejects a refund request: revert booking back to paid status.
+func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error) {
+	// 1. Get booking and verify status
+	booking, err := u.repo.GetByID(ctx, input.BookingID)
+	if err != nil {
+		return nil, err
+	}
+
+	if !booking.IsRefundPending() {
+		return nil, domain.ErrBookingNotRefundPending
+	}
+
+	// 2. Revert booking to paid
+	reverted, err := u.repo.RevertToPaid(ctx, booking.ID)
+	if err != nil {
+		return nil, fmt.Errorf("uc.RejectRefund: reverting to paid: %w", err)
+	}
+
+	// 3. Simulated email notification to customer about rejection
+	reason := input.Reason
+	if reason == "" {
+		reason = "Không đủ điều kiện hoàn tiền"
+	}
+	logger.Info("[SIMULATED EMAIL] To: %s <%s> | Subject: Yêu cầu hoàn tiền vé %s bị từ chối | Body: Kính gửi %s, yêu cầu hoàn tiền cho vé %s đã bị từ chối. Lý do: %s. Vé của bạn vẫn ở trạng thái đã thanh toán.",
+		booking.GuestInfo.Name, booking.GuestInfo.Email,
+		booking.Code, booking.GuestInfo.Name, booking.Code, reason)
+
+	logger.Info("Refund rejected: id=%d, code=%s, reason=%s", booking.ID, booking.Code, input.Reason)
+	return reverted, nil
 }
 
 // ConfirmPayment processes a payment webhook callback

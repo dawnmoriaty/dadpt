@@ -1,4 +1,5 @@
 import { useNavigate } from '@tanstack/react-router'
+import { format } from 'date-fns'
 import { CheckCircle, Clock, CreditCard, ExternalLink } from 'lucide-react'
 import { useCallback, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
@@ -38,6 +39,21 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
             currency: 'VND',
         }).format(amount)
     }
+
+    const formatDateTime = (value?: string) => {
+        if (!value) return '—'
+        const date = new Date(value)
+        if (Number.isNaN(date.getTime())) return '—'
+        return format(date, 'dd/MM/yyyy HH:mm')
+    }
+
+    const seatDisplay = booking.seatCodes?.length ? booking.seatCodes.join(', ') : '—'
+    const passengerName = booking.guestInfo?.name || '—'
+    const passengerPhone = booking.guestInfo?.phone || '—'
+    const passengerEmail = booking.guestInfo?.email || '—'
+    const routeDisplay = booking.originName || booking.destinationName
+        ? `${booking.originName ?? '—'} → ${booking.destinationName ?? '—'}`
+        : '—'
 
     // Toast once when payment succeeds (guard with ref to prevent duplicates)
     const toastShownRef = useRef(false)
@@ -87,6 +103,61 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                             <p className="text-xl font-mono font-semibold text-muted-foreground tracking-wide">
                                 {orderCode}
                             </p>
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+            {/* Ticket Details */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">{t('booking.ticketDetails')}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.fullName')}</p>
+                            <p className="font-semibold">{passengerName}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.phone')}</p>
+                            <p className="font-semibold">{passengerPhone}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.email')}</p>
+                            <p className="font-semibold">{passengerEmail}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.seatNumbers')}</p>
+                            <p className="font-semibold">{seatDisplay}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('booking.route')}</p>
+                            <p className="font-semibold">{routeDisplay}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.paymentMethod')}</p>
+                            <p className="font-semibold">{booking.paymentMethod || '—'}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.departureTime')}</p>
+                            <p className="font-semibold">{formatDateTime(booking.departureTime)}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('field.arrivalTime')}</p>
+                            <p className="font-semibold">{formatDateTime(booking.arrivalTime)}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('booking.pickupPoint')}</p>
+                            <p className="font-semibold">{booking.pickupInfo?.name || '—'}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('booking.dropoffPoint')}</p>
+                            <p className="font-semibold">{booking.dropoffInfo?.name || '—'}</p>
+                        </div>
+                        <div className="space-y-1">
+                            <p className="text-xs text-muted-foreground">{t('booking.totalAmount')}</p>
+                            <p className="font-semibold text-primary">{formatCurrency(booking.totalAmount)}</p>
                         </div>
                     </div>
                 </CardContent>

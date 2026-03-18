@@ -9,6 +9,7 @@ import (
 	aiagentHttp "backend/internals/aiagent/controller/http"
 	authHttp "backend/internals/auth/controller/http"
 	bookingHttp "backend/internals/booking/controller/http"
+	"backend/internals/booking/infrastructure"
 	busHttp "backend/internals/bus/controller/http"
 	bustypeHttp "backend/internals/bustype/controller/http"
 	locationHttp "backend/internals/location/controller/http"
@@ -35,6 +36,7 @@ type Server struct {
 	uploadHandler *uploadHttp.UploadHandler
 	jwtProvider   jwt.JWTProvider
 	cache         redis.IRedis
+	sseHub        *infrastructure.SSEHub
 }
 
 // NewServer is injectable by DI container
@@ -46,6 +48,7 @@ func NewServer(
 	uploadHandler *uploadHttp.UploadHandler,
 	jwtProvider jwt.JWTProvider,
 	cache redis.IRedis,
+	sseHub *infrastructure.SSEHub,
 ) *Server {
 	return &Server{
 		engine:        gin.Default(),
@@ -56,6 +59,7 @@ func NewServer(
 		uploadHandler: uploadHandler,
 		jwtProvider:   jwtProvider,
 		cache:         cache,
+		sseHub:        sseHub,
 	}
 }
 
@@ -171,6 +175,9 @@ func (s *Server) MapRoutes() {
 
 		// Upload routes
 		uploadHttp.RegisterRoutes(admin, s.uploadHandler)
+
+		// Admin booking routes (refund management)
+		bookingHttp.AdminRoutes(admin, s.db, s.cfg, s.cache, paymentGw, s.sseHub)
 	}
 
 	// Public bus-types route (no auth required)

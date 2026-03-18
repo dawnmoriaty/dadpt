@@ -12,6 +12,7 @@ import (
 	authInfra "backend/internals/auth/infrastructure"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
+	bookingInfra "backend/internals/booking/infrastructure"
 	httpServer "backend/internals/server/http"
 	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/aiagent"
@@ -29,8 +30,13 @@ type Container struct {
 }
 
 // NewContainer creates a new DI container with all dependencies registered
-func NewContainer() (*Container, error) {
+func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 	c := dig.New()
+
+	// Provide the SSE hub (created externally, shared between server and consumer)
+	if err := c.Provide(func() *bookingInfra.SSEHub { return sseHub }); err != nil {
+		return nil, fmt.Errorf("failed to provide SSE hub: %w", err)
+	}
 
 	// Register all providers
 	providers := []interface{}{

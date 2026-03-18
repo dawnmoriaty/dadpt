@@ -7,6 +7,7 @@ import {
     Users,
     Settings,
     Grid3X3,
+    RotateCcw,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -18,12 +19,13 @@ export interface NavItem {
 }
 
 export const navigationItems: NavItem[] = [
-    { title: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
-    { title: 'Users', href: '/admin/users', icon: Users },
-    { title: 'Locations', href: '/admin/locations', icon: MapPin },
-    { title: 'Trips', href: '/admin/trips', icon: Route },
-    { title: 'Providers', href: '/admin/providers', icon: Building2 },
-    { title: 'Bus Types', href: '/admin/bus-types', icon: Grid3X3 },
-    { title: 'Buses', href: '/admin/buses', icon: Bus },
-    { title: 'Settings', href: '/admin/settings', icon: Settings },
+    { title: 'Tổng quan', href: '/admin/dashboard', icon: LayoutDashboard },
+    { title: 'Người dùng', href: '/admin/users', icon: Users },
+    { title: 'Địa điểm', href: '/admin/locations', icon: MapPin },
+    { title: 'Chuyến xe', href: '/admin/trips', icon: Route },
+    { title: 'Nhà xe', href: '/admin/providers', icon: Building2 },
+    { title: 'Loại xe', href: '/admin/bus-types', icon: Grid3X3 },
+    { title: 'Xe buýt', href: '/admin/buses', icon: Bus },
+    { title: 'Yêu cầu hoàn vé', href: '/admin/refund-requests', icon: RotateCcw },
+    { title: 'Cài đặt', href: '/admin/settings', icon: Settings },
 ]

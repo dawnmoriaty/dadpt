@@ -64,8 +64,8 @@ function TripResultCard({ trip, passengers, onSelect, t }: { trip: Trip; passeng
                     <OptimizedImage
                         src={trip.busImageUrl}
                         alt={trip.providerName}
-                        className="w-full h-32 md:w-40 md:h-auto object-cover flex-shrink-0"
-                        fallbackClassName="w-full h-32 md:w-40 md:h-auto"
+                        className="w-full h-32 md:w-36 md:h-36 object-cover flex-shrink-0"
+                        fallbackClassName="w-full h-32 md:w-36 md:h-36"
                     />
                     {/* Route & Time */}
                     <div className="flex-1 p-5">

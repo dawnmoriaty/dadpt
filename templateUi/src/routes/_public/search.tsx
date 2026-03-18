@@ -12,6 +12,7 @@ import {
     useBrowseTrips,
 } from '@/modules/booking'
 import type { SearchTripsFormData } from '@/modules/booking'
+import { usePublicBusTypes } from '@/modules/bustype'
 import type { Trip } from '@/modules/trip'
 
 const searchParamsSchema = z.object({
@@ -80,6 +81,9 @@ function SearchPage() {
 
     const handleFilterChange = useCallback((f: TripFilters) => setFilters(f), [])
 
+    // Load bus types for client-side name matching
+    const { data: busTypes } = usePublicBusTypes()
+
     // Client-side filter for searched results (sidebar filters apply to both modes)
     const displayTrips = useMemo(() => {
         const source = hasSearchParams ? searchData?.items : browseData?.items
@@ -89,10 +93,17 @@ function SearchPage() {
             if (filters.providerIds.length > 0 && !filters.providerIds.includes(trip.providerId)) {
                 return false
             }
-            // busTypeIds filter not applicable if trip doesn't expose busTypeId, skip
+            if (filters.busTypeIds.length > 0 && trip.busTypeName) {
+                const selectedNames = (busTypes ?? [])
+                    .filter((bt) => filters.busTypeIds.includes(bt.id))
+                    .map((bt) => bt.name)
+                if (!selectedNames.includes(trip.busTypeName)) {
+                    return false
+                }
+            }
             return true
         })
-    }, [hasSearchParams, searchData, browseData, filters])
+    }, [hasSearchParams, searchData, browseData, filters, busTypes])
 
     const isLoading = hasSearchParams ? searchLoading : browseLoading
 

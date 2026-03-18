@@ -183,9 +183,13 @@
     "backToResults": "Back to results",
     "confirmed": "Booking Confirmed!",
     "confirmedHint": "Your booking has been created successfully.",
+    "ticketDetails": "Ticket details",
     "backToHome": "Back to Home",
     "viewMyBookings": "View My Bookings",
-    "completeBooking": "Complete Your Booking"
+    "completeBooking": "Complete Your Booking",
+    "errorTooManySeats": "You can only select up to {{max}} seats",
+    "errorSeatsNotSameRow": "Please select seats in the same row (e.g. A01, B01, C01)",
+    "seatSameRowHint": "Select seats in the same row to sit together"
   },
   "myBookings": {
     "title": "My Bookings",
@@ -207,7 +211,75 @@
       "pending": "Pending Payment",
       "paid": "Paid",
       "cancelled": "Cancelled",
-      "expired": "Expired"
-    }
+      "expired": "Expired",
+      "refund_pending": "Refund Pending",
+      "refunded": "Refunded"
+    },
+    "refundBooking": "Refund",
+    "refundConfirm": "Are you sure you want to request a refund for booking {{code}}? The request will be sent to admin for approval.",
+    "refundCountdown": "{{time}} left to request refund",
+    "refundExpired": "Refund request window expired",
+    "refundRequested": "Refund request submitted! Please wait for admin approval.",
+    "refundSuccess": "Refund successful! Money will be returned to your account.",
+    "refundError": "Refund request failed",
+    "refundPendingMessage": "Waiting for admin to process your refund...",
+    "refundedMessage": "Refund has been processed successfully"
+  },
+  "adminRefund": {
+    "title": "Refund Requests",
+    "subtitle": "Manage refund requests from customers",
+    "noRequests": "No refund requests",
+    "noRequestsHint": "There are no refund requests to process at this time.",
+    "bookingCode": "Booking Code",
+    "customer": "Customer",
+    "phone": "Phone",
+    "route": "Route",
+    "seats": "Seats",
+    "amount": "Amount",
+    "requestedAt": "Requested At",
+    "approve": "Approve",
+    "reject": "Reject",
+    "approveConfirm": "Are you sure you want to approve refund for booking {{code}}? Money will be returned to the customer.",
+    "rejectConfirm": "Are you sure you want to reject refund for booking {{code}}? The booking will revert to paid status.",
+    "approveSuccess": "Refund approved successfully",
+    "rejectSuccess": "Refund request rejected",
+    "approveError": "Failed to approve refund",
+    "rejectError": "Failed to reject refund",
+    "departure": "Departure",
+    "found": "{{count}} request(s)"
+  },
+  "datePicker": {
+    "placeholder": "Select date",
+    "selectDate": "Select departure date",
+    "today": "Today"
+  },
+  "location": {
+    "placeholder": "Enter location...",
+    "noResults": "No locations found"
+  },
+  "header": {
+    "menu": "Menu",
+    "closeMenu": "Close"
+  },
+  "authPage": {
+    "loginTitle": "Welcome back",
+    "loginSubtitle": "Login to continue booking",
+    "registerTitle": "Create an account",
+    "registerSubtitle": "Register to start booking",
+    "loginTab": "Login",
+    "registerTab": "Register",
+    "loginLabel": "Phone or username",
+    "passwordLabel": "Password",
+    "loginBtn": "Login",
+    "registerFullName": "Full name",
+    "registerPhone": "Phone",
+    "registerUsername": "Username",
+    "registerEmail": "Email (Optional)",
+    "registerPassword": "Password",
+    "registerBtn": "Create account",
+    "switchToRegister": "Don't have an account?",
+    "switchToLogin": "Already have an account?",
+    "or": "or",
+    "backToHome": "Back to home"
   }
 }

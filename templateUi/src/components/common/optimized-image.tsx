@@ -34,7 +34,7 @@ export function OptimizedImage({
                 )}
                 style={{ width, height }}
             >
-                <ImageIcon className="h-1/3 w-1/3 text-muted-foreground" />
+                <ImageIcon className="h-8 w-8 text-muted-foreground" />
             </div>
         )
     }

@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
 	"strconv"
 	"time"
 )
@@ -15,21 +14,25 @@ import (
 // =============================================================================
 
 var (
-	ErrSeatsNotAvailable      = errors.New("seats not available")
-	ErrSeatsBeingBooked       = errors.New("seats being booked")
-	ErrTripLocked             = errors.New("trip locked")
-	ErrConcurrentModification = errors.New("concurrent modification")
-	ErrBookingNotFound        = errors.New("booking not found")
-	ErrBookingExpired         = errors.New("booking expired")
-	ErrInvalidSeatCode        = errors.New("invalid seat code")
-	ErrTripNotBookable        = errors.New("trip not bookable")
-	ErrInvalidGuestInfo       = errors.New("invalid guest info")
-	ErrBookingCannotCancel    = errors.New("booking cannot cancel")
-	ErrTooManySeats           = errors.New("too many seats")
-	ErrSeatsNotConsecutive    = errors.New("seats not consecutive")
-	ErrPaymentNotFound        = errors.New("payment not found")
-	ErrPaymentAlreadyDone     = errors.New("payment already processed")
-	ErrBookingNotPending      = errors.New("booking not pending")
+	ErrSeatsNotAvailable       = errors.New("seats not available")
+	ErrSeatsBeingBooked        = errors.New("seats being booked")
+	ErrTripLocked              = errors.New("trip locked")
+	ErrConcurrentModification  = errors.New("concurrent modification")
+	ErrBookingNotFound         = errors.New("booking not found")
+	ErrBookingExpired          = errors.New("booking expired")
+	ErrInvalidSeatCode         = errors.New("invalid seat code")
+	ErrTripNotBookable         = errors.New("trip not bookable")
+	ErrInvalidGuestInfo        = errors.New("invalid guest info")
+	ErrBookingCannotCancel     = errors.New("booking cannot cancel")
+	ErrTooManySeats            = errors.New("too many seats")
+	ErrSeatsNotConsecutive     = errors.New("seats not consecutive")
+	ErrPaymentNotFound         = errors.New("payment not found")
+	ErrPaymentAlreadyDone      = errors.New("payment already processed")
+	ErrBookingNotPending       = errors.New("booking not pending")
+	ErrRefundWindowExpired     = errors.New("refund window expired")
+	ErrBookingNotPaid          = errors.New("booking not paid")
+	ErrBookingNotRefundPending = errors.New("booking not refund pending")
+	ErrRefundAlreadyProcessed  = errors.New("refund already processed")
 )
 
 // =============================================================================
@@ -45,15 +48,17 @@ func (c BookingCode) String() string {
 type BookingStatus string
 
 const (
-	StatusPending   BookingStatus = "pending"
-	StatusPaid      BookingStatus = "paid"
-	StatusCancelled BookingStatus = "cancelled"
-	StatusExpired   BookingStatus = "expired"
+	StatusPending       BookingStatus = "pending"
+	StatusPaid          BookingStatus = "paid"
+	StatusCancelled     BookingStatus = "cancelled"
+	StatusExpired       BookingStatus = "expired"
+	StatusRefundPending BookingStatus = "refund_pending"
+	StatusRefunded      BookingStatus = "refunded"
 )
 
 func (s BookingStatus) IsValid() bool {
 	switch s {
-	case StatusPending, StatusPaid, StatusCancelled, StatusExpired:
+	case StatusPending, StatusPaid, StatusCancelled, StatusExpired, StatusRefundPending, StatusRefunded:
 		return true
 	}
 	return false
@@ -80,6 +85,7 @@ type Booking struct {
 	Status        BookingStatus
 	PaymentMethod string
 	ExpiresAt     time.Time
+	RefundedAt    time.Time
 	CreatedAt     time.Time
 	UpdatedAt     time.Time
 
@@ -113,6 +119,7 @@ type PaymentTransaction struct {
 	WebhookData   []byte
 	CreatedAt     time.Time
 	PaidAt        time.Time
+	RefundedAt    time.Time
 }
 
 // TripSnapshot - read-only trip data for booking validation
@@ -131,6 +138,9 @@ type TripSnapshot struct {
 // VALIDATION METHODS
 // =============================================================================
 
+// RefundWindow is the maximum time after booking creation within which a refund is allowed.
+const RefundWindow = 5 * time.Minute
+
 const MaxSeatsPerBooking = 4
 
 func (b *Booking) Validate() error {
@@ -147,6 +157,18 @@ func (b *Booking) CanBeCancelled() bool {
 	return b.Status == StatusPending
 }
 
+// CanRequestRefund checks if the booking is eligible for a refund request.
+// Conditions: status must be 'paid' and within the refund window since payment.
+// We use UpdatedAt because MarkBookingPaid sets updated_at = NOW().
+func (b *Booking) CanRequestRefund() bool {
+	return b.Status == StatusPaid && time.Since(b.UpdatedAt) <= RefundWindow
+}
+
+// IsRefundPending checks if the booking is waiting for admin approval.
+func (b *Booking) IsRefundPending() bool {
+	return b.Status == StatusRefundPending
+}
+
 func (b *Booking) IsExpired() bool {
 	return b.Status == StatusPending && time.Now().After(b.ExpiresAt)
 }
@@ -161,9 +183,8 @@ var seatPattern = regexp.MustCompile(`^([A-Za-z]+)(\d+)$`)
 
 // ValidateConsecutiveSeats validates:
 // 1. Max 4 seats per booking
-// 2. All seats share the same row prefix (e.g. all "A")
-// 3. Seat numbers are consecutive (e.g. 1,2,3)
-// Single seat bookings always pass the consecutive check.
+// 2. All seats share the same row number (e.g. A01, B01, C01 — same physical row)
+// Single seat bookings always pass the check.
 func ValidateConsecutiveSeats(seatCodes []string) error {
 	if len(seatCodes) > MaxSeatsPerBooking {
 		return fmt.Errorf("%w: maximum %d seats allowed, got %d", ErrTooManySeats, MaxSeatsPerBooking, len(seatCodes))
@@ -174,34 +195,22 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 		return nil
 	}
 
-	type parsed struct {
-		prefix string
-		number int
-	}
-
-	seats := make([]parsed, 0, len(seatCodes))
+	// Parse all seat codes
+	numbers := make([]int, 0, len(seatCodes))
 	for _, code := range seatCodes {
 		matches := seatPattern.FindStringSubmatch(code)
 		if matches == nil {
 			return fmt.Errorf("%w: %s", ErrInvalidSeatCode, code)
 		}
 		num, _ := strconv.Atoi(matches[2])
-		seats = append(seats, parsed{prefix: matches[1], number: num})
+		numbers = append(numbers, num)
 	}
 
-	// All seats must share the same row prefix
-	basePrefix := seats[0].prefix
-	for _, s := range seats[1:] {
-		if s.prefix != basePrefix {
+	// All seats must share the same row number (horizontal booking)
+	baseNumber := numbers[0]
+	for _, n := range numbers[1:] {
+		if n != baseNumber {
 			return fmt.Errorf("%w: seats must be in the same row", ErrSeatsNotConsecutive)
-		}
-	}
-
-	// Sort by number and check consecutive
-	sort.Slice(seats, func(i, j int) bool { return seats[i].number < seats[j].number })
-	for i := 1; i < len(seats); i++ {
-		if seats[i].number != seats[i-1].number+1 {
-			return fmt.Errorf("%w: seat numbers must be consecutive", ErrSeatsNotConsecutive)
 		}
 	}
 

@@ -26,6 +26,7 @@ type Booking struct {
 	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
 	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
 	ExpiresAt     pgtype.Timestamptz `json:"expiresAt"`
+	RefundedAt    pgtype.Timestamptz `json:"refundedAt"`
 }
 
 type Bus struct {
@@ -73,6 +74,7 @@ type PaymentTransaction struct {
 	WebhookData   []byte             `json:"webhookData"`
 	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
 	PaidAt        pgtype.Timestamptz `json:"paidAt"`
+	RefundedAt    pgtype.Timestamptz `json:"refundedAt"`
 }
 
 type Provider struct {

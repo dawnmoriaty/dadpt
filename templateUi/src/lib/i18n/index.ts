@@ -17,13 +17,14 @@ i18n.use(LanguageDetector)
     .init({
         resources,
         defaultNS,
+        lng: 'vi',
         fallbackLng: 'vi',
         supportedLngs: ['vi', 'en'],
         interpolation: {
             escapeValue: false, // React already escapes
         },
         detection: {
-            order: ['localStorage', 'navigator'],
+            order: ['localStorage'],
             caches: ['localStorage'],
             lookupLocalStorage: 'i18nextLng',
         },

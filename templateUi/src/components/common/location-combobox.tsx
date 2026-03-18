@@ -1,5 +1,6 @@
 import { Check, Loader2, MapPin, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
@@ -16,10 +17,11 @@ interface LocationComboboxProps {
 export function LocationCombobox({
     value,
     onSelect,
-    placeholder = 'Nhập địa điểm...',
+    placeholder,
     className,
     disabled,
 }: LocationComboboxProps) {
+    const { t } = useTranslation()
     const [inputValue, setInputValue] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [highlightIndex, setHighlightIndex] = useState(-1)
@@ -136,7 +138,7 @@ export function LocationCombobox({
                         }
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder={placeholder}
+                    placeholder={placeholder ?? t('location.placeholder')}
                     disabled={disabled}
                     className="pl-9 pr-8"
                     autoComplete="off"
@@ -197,7 +199,7 @@ export function LocationCombobox({
 
             {isOpen && !isLoading && debouncedQuery.length > 0 && items.length === 0 && (
                 <div className="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-4 shadow-lg text-center text-sm text-muted-foreground">
-                    Không tìm thấy địa điểm nào
+                    {t('location.noResults')}
                 </div>
             )}
         </div>

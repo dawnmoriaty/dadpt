@@ -4,8 +4,10 @@ import { toast } from 'sonner'
 
 import { getApiErrorMessage } from '@/services/api/client'
 
-import { bookingApi } from '../api'
-import type { CreateBookingRequest, CreateBookingResponse } from '../types'
+import { bookingApi, adminBookingApi } from '../api'
+import type { Booking, CreateBookingRequest, CreateBookingResponse, RefundActionRequest, RefundRequestListResponse } from '../types'
+
+export { useRefundSSE } from './useRefundSSE'
 
 export const bookingKeys = {
     all: ['bookings'] as const,
@@ -59,14 +61,22 @@ export function useCancelBooking() {
     const queryClient = useQueryClient()
     const { t } = useTranslation()
 
-    return useMutation({
-        mutationFn: (id: number) => bookingApi.cancel(id),
-        onSuccess: () => {
+    return useMutation<Booking, Error, { id: number; isRefund: boolean }>({
+        mutationFn: ({ id }) => bookingApi.cancel(id),
+        onSuccess: (_data, { isRefund }) => {
             queryClient.invalidateQueries({ queryKey: bookingKeys.all })
-            toast.success(t('toast.deleteSuccess', { entity: t('entity.booking') }))
+            if (isRefund) {
+                toast.success(t('myBookings.refundRequested'))
+            } else {
+                toast.success(t('toast.deleteSuccess', { entity: t('entity.booking') }))
+            }
         },
-        onError: (error: Error) => {
-            toast.error(getApiErrorMessage(error, t('toast.deleteError', { entity: t('entity.booking') })))
+        onError: (error: Error, { isRefund }) => {
+            if (isRefund) {
+                toast.error(getApiErrorMessage(error, t('myBookings.refundError')))
+            } else {
+                toast.error(getApiErrorMessage(error, t('toast.deleteError', { entity: t('entity.booking') })))
+            }
         },
     })
 }
@@ -105,6 +115,65 @@ export function usePaymentStatus(orderCode: string, enabled: boolean) {
             const status = query.state.data?.status
             if (status === 'success' || status === 'failed') return false
             return 5000
+        },
+    })
+}
+
+// =============================================================================
+// ADMIN REFUND HOOKS
+// =============================================================================
+
+export const adminBookingKeys = {
+    refundRequests: (page: number, pageSize: number) => ['admin-refund-requests', page, pageSize] as const,
+    refundPendingCount: ['admin-refund-pending-count'] as const,
+}
+
+export function useRefundRequests(page = 1, pageSize = 20) {
+    return useQuery<RefundRequestListResponse>({
+        queryKey: adminBookingKeys.refundRequests(page, pageSize),
+        queryFn: () => adminBookingApi.listRefundRequests(page, pageSize),
+    })
+}
+
+export function useRefundPendingCount() {
+    return useQuery<{ count: number }>({
+        queryKey: adminBookingKeys.refundPendingCount,
+        queryFn: () => adminBookingApi.countRefundPending(),
+    })
+}
+
+export function useApproveRefund() {
+    const queryClient = useQueryClient()
+    const { t } = useTranslation()
+
+    return useMutation<Booking, Error, { id: number; data?: RefundActionRequest }>({
+        mutationFn: ({ id, data }) => adminBookingApi.approveRefund(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-refund-requests'] })
+            queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundPendingCount })
+            queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+            toast.success(t('adminRefund.approveSuccess'))
+        },
+        onError: (error: Error) => {
+            toast.error(getApiErrorMessage(error, t('adminRefund.approveError')))
+        },
+    })
+}
+
+export function useRejectRefund() {
+    const queryClient = useQueryClient()
+    const { t } = useTranslation()
+
+    return useMutation<Booking, Error, { id: number; data?: RefundActionRequest }>({
+        mutationFn: ({ id, data }) => adminBookingApi.rejectRefund(id, data),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['admin-refund-requests'] })
+            queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundPendingCount })
+            queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+            toast.success(t('adminRefund.rejectSuccess'))
+        },
+        onError: (error: Error) => {
+            toast.error(getApiErrorMessage(error, t('adminRefund.rejectError')))
         },
     })
 }

@@ -51,14 +51,18 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const createBooking = useCreateBooking()
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
+    const { isAuthenticated, user } = useAuthStore()
 
     const form = useForm<CreateBookingFormData>({
         resolver: formResolver(createBookingSchema),
         defaultValues: {
             tripId: trip.id,
             seatCodes: [],
-            guestInfo: { name: '', phone: '', email: '' },
+            guestInfo: {
+                name: user?.fullName ?? '',
+                phone: user?.phone ?? '',
+                email: user?.email ?? '',
+            },
             pickupInfo: { name: '', surcharge: 0 },
             dropoffInfo: { name: '', surcharge: 0 },
             paymentMethod: '',
@@ -263,7 +267,16 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 <FormItem>
                                     <FormLabel>{t('booking.pickupPoint')}</FormLabel>
                                     {pickupPoints.length > 0 ? (
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select
+                                            onValueChange={(val) => {
+                                                field.onChange(val)
+                                                const point = pickupPoints.find((p) => p.name === val)
+                                                if (point) {
+                                                    form.setValue('pickupInfo.surcharge', point.surcharge ?? 0)
+                                                }
+                                            }}
+                                            value={field.value}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={t('booking.pickupPlaceholder')} />
@@ -293,7 +306,16 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 <FormItem>
                                     <FormLabel>{t('booking.dropoffPoint')}</FormLabel>
                                     {dropoffPoints.length > 0 ? (
-                                        <Select onValueChange={field.onChange} value={field.value}>
+                                        <Select
+                                            onValueChange={(val) => {
+                                                field.onChange(val)
+                                                const point = dropoffPoints.find((p) => p.name === val)
+                                                if (point) {
+                                                    form.setValue('dropoffInfo.surcharge', point.surcharge ?? 0)
+                                                }
+                                            }}
+                                            value={field.value}
+                                        >
                                             <FormControl>
                                                 <SelectTrigger>
                                                     <SelectValue placeholder={t('booking.dropoffPlaceholder')} />
@@ -367,7 +389,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             <Button
                                 type="submit"
                                 size="lg"
-                                disabled={createBooking.isPending || selectedSeats.length !== passengers}
+                                disabled={createBooking.isPending || selectedSeats.length === 0}
                                 className="min-w-40"
                             >
                                 {createBooking.isPending ? (

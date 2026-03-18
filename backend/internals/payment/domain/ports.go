@@ -13,4 +13,8 @@ type PaymentGateway interface {
 
 	// GetPaymentStatus retrieves payment status from the gateway.
 	GetPaymentStatus(ctx context.Context, orderCode int64) (string, error)
+
+	// CancelPaymentLink cancels a payment link by order code.
+	// If the payment was already paid, PayOS handles the refund to the original bank account.
+	CancelPaymentLink(ctx context.Context, orderCode int64, reason string) error
 }

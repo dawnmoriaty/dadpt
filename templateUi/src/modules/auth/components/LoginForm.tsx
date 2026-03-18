@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -23,6 +24,7 @@ interface LoginFormProps {
 
 export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
     const loginMutation = useLogin(redirectTo)
+    const { t } = useTranslation()
 
     const form = useForm<LoginFormData>({
         resolver: zodResolver(loginSchema),
@@ -46,7 +48,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     name="identifier"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Số điện thoại hoặc tên đăng nhập</FormLabel>
+                            <FormLabel>{t('authPage.loginLabel')}</FormLabel>
                             <FormControl>
                                 <Input 
                                     placeholder="0987..." 
@@ -63,7 +65,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Mật khẩu</FormLabel>
+                            <FormLabel>{t('authPage.passwordLabel')}</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="password" 
@@ -90,7 +92,7 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                     {loginMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Đăng nhập
+                    {t('authPage.loginBtn')}
                 </Button>
             </form>
         </Form>

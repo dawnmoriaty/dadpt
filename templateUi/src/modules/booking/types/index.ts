@@ -1,6 +1,6 @@
 // Booking module types
 
-export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'expired'
+export type BookingStatus = 'pending' | 'paid' | 'cancelled' | 'expired' | 'refund_pending' | 'refunded'
 export type PaymentMethod = 'bank_transfer' | 'cod' | 'visa'
 
 export interface GuestInfo {
@@ -28,6 +28,7 @@ export interface Booking {
     status: BookingStatus
     paymentMethod: string
     expiresAt: string
+    refundedAt?: string
     createdAt: string
     updatedAt: string
 
@@ -62,4 +63,21 @@ export interface PaymentStatusResponse {
 export interface BookingListParams {
     page?: number
     pageSize?: number
+}
+
+// Admin refund types
+export interface RefundRequestListParams {
+    page?: number
+    pageSize?: number
+}
+
+export interface RefundActionRequest {
+    reason?: string
+}
+
+export interface RefundRequestListResponse {
+    items: Booking[]
+    total: number
+    page: number
+    pageSize: number
 }

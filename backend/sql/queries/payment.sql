@@ -23,3 +23,13 @@ UPDATE payment_transactions SET
     webhook_data = $2
 WHERE order_code = $1 AND status = 'pending'
 RETURNING *;
+
+-- name: UpdatePaymentRefunded :one
+UPDATE payment_transactions SET
+    status = 'refunded',
+    refunded_at = NOW()
+WHERE booking_id = $1 AND status = 'success'
+RETURNING *;
+
+-- name: GetSuccessPaymentByBookingID :one
+SELECT * FROM payment_transactions WHERE booking_id = $1 AND status = 'success' LIMIT 1;

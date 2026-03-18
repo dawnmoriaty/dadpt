@@ -17,8 +17,11 @@ import (
 )
 
 func main() {
+	// Create SSE hub (shared between server and consumer)
+	sseHub := infrastructure.NewSSEHub()
+
 	// Create DI container
-	container, err := di.NewContainer()
+	container, err := di.NewContainer(sseHub)
 	if err != nil {
 		logger.Fatal("Failed to create DI container: ", err)
 	}
@@ -55,6 +58,10 @@ func main() {
 		expiryWorker := usecase.NewExpiryWorker(bookingRepo, tripLocker, outboxRepo)
 		go expiryWorker.Start(ctx)
 
+		// Start refund event consumer (RabbitMQ → SSE hub for admin notifications)
+		refundConsumer := infrastructure.NewRefundEventConsumer(rmq, sseHub)
+		go refundConsumer.Start(ctx)
+
 		// =====================================================================
 		// GRACEFUL SHUTDOWN
 		// =====================================================================
@@ -81,3 +88,4 @@ func main() {
 		logger.Fatal("Startup failed: ", err)
 	}
 }
+

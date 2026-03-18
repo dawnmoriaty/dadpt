@@ -22,6 +22,7 @@ type Querier interface {
 	CountBusesByProvider(ctx context.Context, providerID int32) (int64, error)
 	CountLocations(ctx context.Context) (int64, error)
 	CountProviders(ctx context.Context) (int64, error)
+	CountRefundPendingBookings(ctx context.Context) (int64, error)
 	CountSearchTrips(ctx context.Context, arg CountSearchTripsParams) (int64, error)
 	CountTripsAdmin(ctx context.Context, arg CountTripsAdminParams) (int64, error)
 	CreateBooking(ctx context.Context, arg CreateBookingParams) (Booking, error)
@@ -57,6 +58,7 @@ type Querier interface {
 	GetPendingOutboxEvents(ctx context.Context, limit int32) ([]OutboxEvent, error)
 	GetProviderByID(ctx context.Context, id int32) (Provider, error)
 	GetProviderBySlug(ctx context.Context, slug *string) (Provider, error)
+	GetSuccessPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error)
 	GetTripByID(ctx context.Context, id int64) (GetTripByIDRow, error)
 	GetUserByEmail(ctx context.Context, email *string) (User, error)
 	GetUserByID(ctx context.Context, id int64) (User, error)
@@ -73,6 +75,7 @@ type Querier interface {
 	ListLocationsByCity(ctx context.Context, city string) ([]Location, error)
 	ListProviders(ctx context.Context) ([]Provider, error)
 	ListProvidersAdmin(ctx context.Context, arg ListProvidersAdminParams) ([]Provider, error)
+	ListRefundPendingBookings(ctx context.Context, arg ListRefundPendingBookingsParams) ([]ListRefundPendingBookingsRow, error)
 	ListTripsAdmin(ctx context.Context, arg ListTripsAdminParams) ([]ListTripsAdminRow, error)
 	// ============================================================================
 	// BOOKING LOCKING QUERIES - For race condition handling
@@ -81,10 +84,19 @@ type Querier interface {
 	LockTripForBooking(ctx context.Context, id int64) (Trip, error)
 	MarkBookingExpired(ctx context.Context, id int64) (Booking, error)
 	MarkBookingPaid(ctx context.Context, id int64) (Booking, error)
+	// ============================================================================
+	// ADMIN REFUND FLOW QUERIES
+	// ============================================================================
+	MarkBookingRefundPending(ctx context.Context, id int64) (Booking, error)
+	// ============================================================================
+	// REFUND FLOW QUERIES
+	// ============================================================================
+	MarkBookingRefunded(ctx context.Context, id int64) (Booking, error)
 	MarkOutboxEventFailed(ctx context.Context, id uuid.UUID) error
 	MarkOutboxEventProcessed(ctx context.Context, id uuid.UUID) error
 	// Release seats when booking cancelled/expired (using array subtraction)
 	ReleaseTripSeats(ctx context.Context, arg ReleaseTripSeatsParams) (Trip, error)
+	RevertBookingToPaid(ctx context.Context, id int64) (Booking, error)
 	SearchLocations(ctx context.Context, dollar_1 *string) ([]Location, error)
 	SearchTrips(ctx context.Context, arg SearchTripsParams) ([]SearchTripsRow, error)
 	ToggleProviderActive(ctx context.Context, id int32) (Provider, error)
@@ -94,6 +106,7 @@ type Querier interface {
 	UpdateBusType(ctx context.Context, arg UpdateBusTypeParams) (BusType, error)
 	UpdateLocation(ctx context.Context, arg UpdateLocationParams) (Location, error)
 	UpdatePaymentFailed(ctx context.Context, arg UpdatePaymentFailedParams) (PaymentTransaction, error)
+	UpdatePaymentRefunded(ctx context.Context, bookingID int64) (PaymentTransaction, error)
 	UpdatePaymentSuccess(ctx context.Context, arg UpdatePaymentSuccessParams) (PaymentTransaction, error)
 	UpdateProvider(ctx context.Context, arg UpdateProviderParams) (Provider, error)
 	UpdateTrip(ctx context.Context, arg UpdateTripParams) (Trip, error)

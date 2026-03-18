@@ -1,6 +1,7 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useForm } from 'react-hook-form'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -22,6 +23,7 @@ interface RegisterFormProps {
 
 export function RegisterForm({ onSuccess }: RegisterFormProps) {
     const registerMutation = useRegister()
+    const { t } = useTranslation()
 
     const form = useForm<RegisterFormData>({
         resolver: zodResolver(registerSchema),
@@ -48,7 +50,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="fullName"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Họ và tên</FormLabel>
+                            <FormLabel>{t('authPage.registerFullName')}</FormLabel>
                             <FormControl>
                                 <Input 
                                     placeholder="Nguyễn Văn A" 
@@ -66,7 +68,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                         name="phone"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Số điện thoại</FormLabel>
+                                <FormLabel>{t('authPage.registerPhone')}</FormLabel>
                                 <FormControl>
                                     <Input 
                                         placeholder="0912345678" 
@@ -83,7 +85,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                         name="username"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Tên đăng nhập</FormLabel>
+                                <FormLabel>{t('authPage.registerUsername')}</FormLabel>
                                 <FormControl>
                                     <Input 
                                         placeholder="nguyenvana" 
@@ -101,7 +103,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="email"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Email (Tùy chọn)</FormLabel>
+                            <FormLabel>{t('authPage.registerEmail')}</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="email" 
@@ -119,7 +121,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     name="password"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>Mật khẩu</FormLabel>
+                            <FormLabel>{t('authPage.registerPassword')}</FormLabel>
                             <FormControl>
                                 <Input 
                                     type="password" 
@@ -146,7 +148,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                     {registerMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    Đăng ký tài khoản
+                    {t('authPage.registerBtn')}
                 </Button>
             </form>
         </Form>

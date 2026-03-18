@@ -103,3 +103,47 @@ RETURNING *;
 
 -- name: CountBookingsByUser :one
 SELECT COUNT(*) FROM bookings WHERE user_id = $1;
+
+-- ============================================================================
+-- REFUND FLOW QUERIES
+-- ============================================================================
+
+-- name: MarkBookingRefunded :one
+UPDATE bookings SET
+    status = 'refunded',
+    refunded_at = NOW(),
+    updated_at = NOW()
+WHERE id = $1 AND status = 'refund_pending'
+RETURNING *;
+
+-- ============================================================================
+-- ADMIN REFUND FLOW QUERIES
+-- ============================================================================
+
+-- name: MarkBookingRefundPending :one
+UPDATE bookings SET
+    status = 'refund_pending',
+    updated_at = NOW()
+WHERE id = $1 AND status = 'paid'
+RETURNING *;
+
+-- name: ListRefundPendingBookings :many
+SELECT b.*, t.departure_time, t.arrival_time,
+       o.name as origin_name, d.name as destination_name
+FROM bookings b
+JOIN trips t ON b.trip_id = t.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE b.status = 'refund_pending'
+ORDER BY b.updated_at ASC
+LIMIT $1 OFFSET $2;
+
+-- name: CountRefundPendingBookings :one
+SELECT COUNT(*) FROM bookings WHERE status = 'refund_pending';
+
+-- name: RevertBookingToPaid :one
+UPDATE bookings SET
+    status = 'paid',
+    updated_at = NOW()
+WHERE id = $1 AND status = 'refund_pending'
+RETURNING *;

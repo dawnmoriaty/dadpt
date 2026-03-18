@@ -21,6 +21,7 @@ import { Route as AuthRegisterRouteImport } from './routes/_auth/register'
 import { Route as AuthLoginRouteImport } from './routes/_auth/login'
 import { Route as AdminUsersIndexRouteImport } from './routes/admin/users/index'
 import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
+import { Route as AdminRefundRequestsIndexRouteImport } from './routes/admin/refund-requests/index'
 import { Route as AdminProvidersIndexRouteImport } from './routes/admin/providers/index'
 import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
 import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
@@ -85,6 +86,12 @@ const AdminTripsIndexRoute = AdminTripsIndexRouteImport.update({
   path: '/trips/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminRefundRequestsIndexRoute =
+  AdminRefundRequestsIndexRouteImport.update({
+    id: '/refund-requests/',
+    path: '/refund-requests/',
+    getParentRoute: () => AdminRoute,
+  } as any)
 const AdminProvidersIndexRoute = AdminProvidersIndexRouteImport.update({
   id: '/providers/',
   path: '/providers/',
@@ -125,6 +132,7 @@ export interface FileRoutesByFullPath {
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
   '/admin/providers': typeof AdminProvidersIndexRoute
+  '/admin/refund-requests': typeof AdminRefundRequestsIndexRoute
   '/admin/trips': typeof AdminTripsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
 }
@@ -142,6 +150,7 @@ export interface FileRoutesByTo {
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
   '/admin/providers': typeof AdminProvidersIndexRoute
+  '/admin/refund-requests': typeof AdminRefundRequestsIndexRoute
   '/admin/trips': typeof AdminTripsIndexRoute
   '/admin/users': typeof AdminUsersIndexRoute
 }
@@ -162,6 +171,7 @@ export interface FileRoutesById {
   '/admin/buses/': typeof AdminBusesIndexRoute
   '/admin/locations/': typeof AdminLocationsIndexRoute
   '/admin/providers/': typeof AdminProvidersIndexRoute
+  '/admin/refund-requests/': typeof AdminRefundRequestsIndexRoute
   '/admin/trips/': typeof AdminTripsIndexRoute
   '/admin/users/': typeof AdminUsersIndexRoute
 }
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/admin/buses'
     | '/admin/locations'
     | '/admin/providers'
+    | '/admin/refund-requests'
     | '/admin/trips'
     | '/admin/users'
   fileRoutesByTo: FileRoutesByTo
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/admin/buses'
     | '/admin/locations'
     | '/admin/providers'
+    | '/admin/refund-requests'
     | '/admin/trips'
     | '/admin/users'
   id:
@@ -217,6 +229,7 @@ export interface FileRouteTypes {
     | '/admin/buses/'
     | '/admin/locations/'
     | '/admin/providers/'
+    | '/admin/refund-requests/'
     | '/admin/trips/'
     | '/admin/users/'
   fileRoutesById: FileRoutesById
@@ -313,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminTripsIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/refund-requests/': {
+      id: '/admin/refund-requests/'
+      path: '/refund-requests'
+      fullPath: '/admin/refund-requests'
+      preLoaderRoute: typeof AdminRefundRequestsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/providers/': {
       id: '/admin/providers/'
       path: '/providers'
@@ -388,6 +408,7 @@ interface AdminRouteChildren {
   AdminBusesIndexRoute: typeof AdminBusesIndexRoute
   AdminLocationsIndexRoute: typeof AdminLocationsIndexRoute
   AdminProvidersIndexRoute: typeof AdminProvidersIndexRoute
+  AdminRefundRequestsIndexRoute: typeof AdminRefundRequestsIndexRoute
   AdminTripsIndexRoute: typeof AdminTripsIndexRoute
   AdminUsersIndexRoute: typeof AdminUsersIndexRoute
 }
@@ -398,6 +419,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBusesIndexRoute: AdminBusesIndexRoute,
   AdminLocationsIndexRoute: AdminLocationsIndexRoute,
   AdminProvidersIndexRoute: AdminProvidersIndexRoute,
+  AdminRefundRequestsIndexRoute: AdminRefundRequestsIndexRoute,
   AdminTripsIndexRoute: AdminTripsIndexRoute,
   AdminUsersIndexRoute: AdminUsersIndexRoute,
 }

@@ -2,7 +2,7 @@ import type { PaginatedResponse } from '@/modules/shared'
 import type { Trip } from '@/modules/trip'
 import { api } from '@/services/api/client'
 
-import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatusResponse } from '../types'
+import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatusResponse, RefundActionRequest, RefundRequestListResponse } from '../types'
 
 export const bookingApi = {
     create: async (data: CreateBookingRequest): Promise<CreateBookingResponse> => {
@@ -61,6 +61,31 @@ export const bookingApi = {
 
     getPaymentStatus: async (orderCode: string): Promise<PaymentStatusResponse> => {
         const response = await api.get(`/bookings/payments/${orderCode}/status`)
+        return response.data.data
+    },
+}
+
+// Admin refund API
+export const adminBookingApi = {
+    listRefundRequests: async (page = 1, pageSize = 20): Promise<RefundRequestListResponse> => {
+        const response = await api.get('/admin/bookings/refund-requests', {
+            params: { page, pageSize },
+        })
+        return response.data.data
+    },
+
+    countRefundPending: async (): Promise<{ count: number }> => {
+        const response = await api.get('/admin/bookings/refund-pending-count')
+        return response.data.data
+    },
+
+    approveRefund: async (id: number, data?: RefundActionRequest): Promise<Booking> => {
+        const response = await api.post(`/admin/bookings/${id}/approve-refund`, data ?? {})
+        return response.data.data
+    },
+
+    rejectRefund: async (id: number, data?: RefundActionRequest): Promise<Booking> => {
+        const response = await api.post(`/admin/bookings/${id}/reject-refund`, data ?? {})
         return response.data.data
     },
 }

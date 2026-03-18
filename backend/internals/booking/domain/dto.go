@@ -63,3 +63,29 @@ type PaymentConfirmOutput struct {
 	Booking *Booking
 	Payment *PaymentTransaction
 }
+
+// =============================================================================
+// ADMIN REFUND DTOs
+// =============================================================================
+
+// RefundRequestInput is the input for admin approve/reject refund
+type RefundRequestInput struct {
+	BookingID int64
+	Reason    string
+}
+
+// RefundRequestListInput is the input for listing refund requests
+type RefundRequestListInput struct {
+	Limit    int32
+	Offset   int32
+	Page     int32
+	PageSize int32
+}
+
+// RefundRequestListOutput is the output from listing refund requests
+type RefundRequestListOutput struct {
+	Bookings []*Booking
+	Total    int64
+	Page     int32
+	PageSize int32
+}

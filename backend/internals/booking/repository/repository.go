@@ -45,6 +45,7 @@ func sqlcToEntity(m models.Booking) *domain.Booking {
 		Status:        domain.BookingStatus(utils.PtrToString(m.Status)),
 		PaymentMethod: utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:     m.ExpiresAt.Time,
+		RefundedAt:    m.RefundedAt.Time,
 		CreatedAt:     m.CreatedAt.Time,
 		UpdatedAt:     m.UpdatedAt.Time,
 	}
@@ -64,6 +65,31 @@ func listRowToEntity(m models.ListBookingsByUserRow) *domain.Booking {
 		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
 		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:       m.ExpiresAt.Time,
+		RefundedAt:      m.RefundedAt.Time,
+		CreatedAt:       m.CreatedAt.Time,
+		UpdatedAt:       m.UpdatedAt.Time,
+		DepartureTime:   m.DepartureTime.Time,
+		ArrivalTime:     m.ArrivalTime.Time,
+		OriginName:      m.OriginName,
+		DestinationName: m.DestinationName,
+	}
+}
+
+func refundPendingRowToEntity(m models.ListRefundPendingBookingsRow) *domain.Booking {
+	return &domain.Booking{
+		ID:              m.ID,
+		Code:            domain.BookingCode(m.Code),
+		TripID:          m.TripID,
+		UserID:          m.UserID,
+		GuestInfo:       jsonToGuestInfo(m.GuestInfo),
+		PickupInfo:      jsonToPointInfo(m.PickupInfo),
+		DropoffInfo:     jsonToPointInfo(m.DropoffInfo),
+		SeatCodes:       m.SeatCodes,
+		TotalAmount:     utils.NumericToFloat64(m.TotalAmount),
+		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
+		ExpiresAt:       m.ExpiresAt.Time,
+		RefundedAt:      m.RefundedAt.Time,
 		CreatedAt:       m.CreatedAt.Time,
 		UpdatedAt:       m.UpdatedAt.Time,
 		DepartureTime:   m.DepartureTime.Time,
@@ -209,6 +235,68 @@ func (r *bookingRepository) MarkExpired(ctx context.Context, id int64) (*domain.
 			return nil, domain.ErrBookingNotPending
 		}
 		return nil, fmt.Errorf("marking booking expired: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}
+
+func (r *bookingRepository) MarkRefunded(ctx context.Context, id int64) (*domain.Booking, error) {
+	result, err := r.queries.MarkBookingRefunded(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotRefundPending
+		}
+		return nil, fmt.Errorf("marking booking refunded: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}
+
+func (r *bookingRepository) MarkRefundPending(ctx context.Context, id int64) (*domain.Booking, error) {
+	result, err := r.queries.MarkBookingRefundPending(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotPaid
+		}
+		return nil, fmt.Errorf("marking booking refund pending: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}
+
+func (r *bookingRepository) ListRefundPending(ctx context.Context, limit, offset int32) ([]*domain.Booking, int64, error) {
+	rows, err := r.queries.ListRefundPendingBookings(ctx, models.ListRefundPendingBookingsParams{
+		Limit:  limit,
+		Offset: offset,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("listing refund pending bookings: %w", err)
+	}
+
+	count, err := r.queries.CountRefundPendingBookings(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("counting refund pending bookings: %w", err)
+	}
+
+	result := make([]*domain.Booking, len(rows))
+	for i, row := range rows {
+		result[i] = refundPendingRowToEntity(row)
+	}
+	return result, count, nil
+}
+
+func (r *bookingRepository) CountRefundPending(ctx context.Context) (int64, error) {
+	count, err := r.queries.CountRefundPendingBookings(ctx)
+	if err != nil {
+		return 0, fmt.Errorf("counting refund pending bookings: %w", err)
+	}
+	return count, nil
+}
+
+func (r *bookingRepository) RevertToPaid(ctx context.Context, id int64) (*domain.Booking, error) {
+	result, err := r.queries.RevertBookingToPaid(ctx, id)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotRefundPending
+		}
+		return nil, fmt.Errorf("reverting booking to paid: %w", err)
 	}
 	return sqlcToEntity(result), nil
 }

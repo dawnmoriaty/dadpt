@@ -30,6 +30,37 @@ function getColumnLetter(seatCode: string): string {
 }
 
 /**
+ * Parse a seat code into its prefix (column letter) and number (row number).
+ */
+function parseSeatCode(code: string): { prefix: string; number: number } | null {
+    const match = code.match(/^([A-Za-z]+)(\d+)$/)
+    if (!match) return null
+    return { prefix: match[1], number: parseInt(match[2], 10) }
+}
+
+/**
+ * Check if a set of seat codes forms a valid same-row selection:
+ * All seats must share the same row number (e.g. A01, B01, C01 — same physical row).
+ */
+function isSameRowSet(seatCodes: string[]): boolean {
+    if (seatCodes.length <= 1) return true
+
+    const parsed = seatCodes.map(parseSeatCode).filter(Boolean) as { prefix: string; number: number }[]
+    if (parsed.length !== seatCodes.length) return false
+
+    const baseNumber = parsed[0].number
+    return parsed.every((p) => p.number === baseNumber)
+}
+
+/**
+ * Check if adding a specific seat to the current selection would still be valid.
+ */
+function canAddSeat(seatCode: string, currentSelection: string[]): boolean {
+    if (currentSelection.length === 0) return true
+    return isSameRowSet([...currentSelection, seatCode])
+}
+
+/**
  * Build a grid: rows × columns from the layout data.
  * Returns Map<rowNumber, Map<columnLetter, seatCode | null>>
  */
@@ -82,7 +113,7 @@ function SeatButton({
     onClick,
 }: {
     seatCode: string
-    status: 'available' | 'selected' | 'booked'
+    status: 'available' | 'selected' | 'booked' | 'disabled'
     layoutType: string
     onClick: () => void
 }) {
@@ -92,7 +123,7 @@ function SeatButton({
     return (
         <button
             type="button"
-            disabled={status === 'booked'}
+            disabled={status === 'booked' || status === 'disabled'}
             onClick={onClick}
             className={cn(
                 'flex items-center justify-center border font-medium transition-all text-xs',
@@ -105,6 +136,8 @@ function SeatButton({
                 // Color by status
                 status === 'booked' &&
                     'bg-muted text-muted-foreground/50 border-muted cursor-not-allowed line-through',
+                status === 'disabled' &&
+                    'bg-muted/50 text-muted-foreground/30 border-muted/50 cursor-not-allowed',
                 status === 'available' &&
                     'bg-background border-border hover:border-primary hover:bg-primary/10 cursor-pointer',
                 status === 'selected' &&
@@ -152,7 +185,13 @@ function FloorGrid({
             return
         }
 
-        onSelectionChange([...selectedSeats, seatCode])
+        const newSelection = [...selectedSeats, seatCode]
+        if (!isSameRowSet(newSelection)) {
+            toast.error(t('booking.errorSeatsNotSameRow'))
+            return
+        }
+
+        onSelectionChange(newSelection)
     }
 
     return (
@@ -195,11 +234,18 @@ function FloorGrid({
 
                             const isBooked = bookedSeats.includes(seatCode)
                             const isSelected = selectedSeats.includes(seatCode)
+                            const isDisabled =
+                                !isBooked &&
+                                !isSelected &&
+                                selectedSeats.length > 0 &&
+                                !canAddSeat(seatCode, selectedSeats)
                             const status = isBooked
                                 ? 'booked'
                                 : isSelected
                                   ? 'selected'
-                                  : 'available'
+                                  : isDisabled
+                                    ? 'disabled'
+                                    : 'available'
 
                             return (
                                 <SeatButton
@@ -286,19 +332,24 @@ export function SeatMap({
 function SeatLegend() {
     const { t } = useTranslation()
     return (
-        <div className="flex gap-4 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5">
-                <div className="h-4 w-4 rounded border border-border bg-background" />
-                <span>{t('booking.seatAvailable', { defaultValue: 'Available' })}</span>
+        <div className="space-y-2">
+            <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
+                <div className="flex items-center gap-1.5">
+                    <div className="h-4 w-4 rounded border border-border bg-background" />
+                    <span>{t('booking.seatAvailable', { defaultValue: 'Available' })}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="h-4 w-4 rounded bg-primary" />
+                    <span>{t('booking.seatSelected', { defaultValue: 'Selected' })}</span>
+                </div>
+                <div className="flex items-center gap-1.5">
+                    <div className="h-4 w-4 rounded bg-muted border border-muted" />
+                    <span>{t('booking.seatBooked', { defaultValue: 'Booked' })}</span>
+                </div>
             </div>
-            <div className="flex items-center gap-1.5">
-                <div className="h-4 w-4 rounded bg-primary" />
-                <span>{t('booking.seatSelected', { defaultValue: 'Selected' })}</span>
-            </div>
-            <div className="flex items-center gap-1.5">
-                <div className="h-4 w-4 rounded bg-muted border border-muted" />
-                <span>{t('booking.seatBooked', { defaultValue: 'Booked' })}</span>
-            </div>
+            <p className="text-xs text-muted-foreground/80 italic">
+                {t('booking.seatSameRowHint')}
+            </p>
         </div>
     )
 }

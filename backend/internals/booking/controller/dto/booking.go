@@ -52,6 +52,7 @@ type BookingResponse struct {
 	Status        string       `json:"status"`
 	PaymentMethod string       `json:"paymentMethod"`
 	ExpiresAt     string       `json:"expiresAt,omitempty"`
+	RefundedAt    string       `json:"refundedAt,omitempty"`
 	CreatedAt     string       `json:"createdAt"`
 }
 
@@ -130,6 +131,9 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 	if !b.ExpiresAt.IsZero() {
 		resp.ExpiresAt = b.ExpiresAt.Format(time.RFC3339)
 	}
+	if !b.RefundedAt.IsZero() {
+		resp.RefundedAt = b.RefundedAt.Format(time.RFC3339)
+	}
 	return resp
 }
 
@@ -167,5 +171,38 @@ func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingRespons
 		OrderCode:  output.OrderCode,
 		PaymentURL: output.PaymentURL,
 		QRCode:     output.QRCode,
+	}
+}
+
+// =============================================================================
+// ADMIN REFUND DTOs
+// =============================================================================
+
+type ListRefundRequestsParams struct {
+	Page     int32 `form:"page,default=1" binding:"omitempty,min=1"`
+	PageSize int32 `form:"pageSize,default=20" binding:"omitempty,min=1,max=50"`
+}
+
+type RefundActionRequest struct {
+	Reason string `json:"reason" binding:"omitempty,max=500"`
+}
+
+type RefundRequestListResponse struct {
+	Items    []*BookingDetailResponse `json:"items"`
+	Total    int64                    `json:"total"`
+	Page     int32                    `json:"page"`
+	PageSize int32                    `json:"pageSize"`
+}
+
+func ToRefundRequestListResponse(output *domain.RefundRequestListOutput) *RefundRequestListResponse {
+	bookings := make([]*BookingDetailResponse, len(output.Bookings))
+	for i, b := range output.Bookings {
+		bookings[i] = ToBookingDetailResponse(b)
+	}
+	return &RefundRequestListResponse{
+		Items:    bookings,
+		Total:    output.Total,
+		Page:     output.Page,
+		PageSize: output.PageSize,
 	}
 }

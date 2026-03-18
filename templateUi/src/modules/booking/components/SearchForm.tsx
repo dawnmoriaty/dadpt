@@ -15,6 +15,7 @@ import {
     FormMessage,
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
+import { cn } from '@/lib/utils'
 import { formResolver } from '@/lib/form/resolver'
 
 import { searchTripsSchema, type SearchTripsFormData } from '../schemas'
@@ -39,7 +40,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
     })
 
     return (
-        <Card className={`w-full ${compact ? 'max-w-full' : 'max-w-4xl'} shadow-xl bg-white/95 backdrop-blur supports-backdrop-filter:bg-white/60`}>
+        <Card className={cn('w-full shadow-xl bg-card/95 backdrop-blur supports-backdrop-filter:bg-card/60', compact ? 'max-w-full' : 'max-w-4xl')}>
             <CardContent className="p-6">
                 <Form {...form}>
                     <form
@@ -70,7 +71,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
 
                         {/* Swap button (visual only on large layout) */}
                         {!compact && (
-                            <div className="hidden md:flex items-center justify-center -mx-2">
+                            <div className="hidden md:flex items-end justify-center pb-2">
                                 <Button
                                     type="button"
                                     variant="ghost"

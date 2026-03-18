@@ -2,6 +2,7 @@ import { format } from 'date-fns'
 import { vi } from 'date-fns/locale'
 import { CalendarDays } from 'lucide-react'
 import { useState } from 'react'
+import { useTranslation } from 'react-i18next'
 
 import { Button } from '@/components/ui/button'
 import { Calendar } from '@/components/ui/calendar'
@@ -21,13 +22,14 @@ interface DatePickerProps {
 export function DatePicker({
     value,
     onChange,
-    placeholder = 'Chọn ngày',
+    placeholder,
     minDate,
     maxDate,
     className,
     disabled,
 }: DatePickerProps) {
     const [open, setOpen] = useState(false)
+    const { t } = useTranslation()
 
     const handleSelectToday = () => {
         const today = new Date()
@@ -53,7 +55,7 @@ export function DatePicker({
                 <Button
                     variant="outline"
                     className={cn(
-                        'w-full justify-start text-left font-normal h-9',
+                        'w-full justify-start text-left font-normal h-10',
                         !value && 'text-muted-foreground',
                         className,
                     )}
@@ -63,7 +65,7 @@ export function DatePicker({
                     {value ? (
                         <span className="truncate">{formatDisplayDate(value)}</span>
                     ) : (
-                        <span>{placeholder}</span>
+                        <span>{placeholder ?? t('datePicker.placeholder')}</span>
                     )}
                 </Button>
             </PopoverTrigger>
@@ -72,14 +74,14 @@ export function DatePicker({
                 align="start"
             >
                 <div className="p-3 pb-1 flex items-center justify-between border-b">
-                    <span className="text-sm font-semibold text-foreground">Chọn ngày khởi hành</span>
+                    <span className="text-sm font-semibold text-foreground">{t('datePicker.selectDate')}</span>
                     <Button
                         variant="ghost"
                         size="sm"
                         className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
                         onClick={handleSelectToday}
                     >
-                        Hôm nay
+                        {t('datePicker.today')}
                     </Button>
                 </div>
                 <Calendar
@@ -94,7 +96,7 @@ export function DatePicker({
                     }}
                     locale={vi}
                     autoFocus
-                    className="p-3"
+                    className="p-4 [--cell-size:2.5rem] text-sm"
                     startMonth={minDate}
                     endMonth={maxDate ?? new Date(new Date().getFullYear() + 1, 11)}
                 />

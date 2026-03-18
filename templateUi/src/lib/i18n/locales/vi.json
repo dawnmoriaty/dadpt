@@ -183,6 +183,7 @@
     "backToResults": "Quay lại kết quả",
     "confirmed": "Đặt vé thành công!",
     "confirmedHint": "Vé của bạn đã được đặt thành công.",
+    "ticketDetails": "Thông tin vé",
     "backToHome": "Về trang chủ",
     "viewMyBookings": "Xem vé của tôi",
     "completeBooking": "Hoàn tất đặt vé",
@@ -197,8 +198,8 @@
     "paymentSimulated": "Đã gửi yêu cầu giả lập thanh toán!",
     "simulationFailed": "Giả lập thanh toán thất bại",
     "errorTooManySeats": "Bạn chỉ có thể chọn tối đa {{max}} ghế",
-    "errorNotSameRow": "Vui lòng chọn các ghế trong cùng một hàng",
-    "errorNotConsecutive": "Vui lòng chọn các ghế kế nhau"
+    "errorSeatsNotSameRow": "Vui lòng chọn các ghế cùng hàng ngang (ví dụ: A01, B01, C01)",
+    "seatSameRowHint": "Chọn ghế cùng hàng ngang để ngồi cạnh nhau"
   },
   "myBookings": {
     "title": "Vé của tôi",
@@ -220,7 +221,75 @@
       "pending": "Chờ thanh toán",
       "paid": "Đã thanh toán",
       "cancelled": "Đã hủy",
-      "expired": "Hết hạn"
-    }
+      "expired": "Hết hạn",
+      "refund_pending": "Chờ duyệt hoàn",
+      "refunded": "Đã hoàn tiền"
+    },
+    "refundBooking": "Hoàn vé",
+    "refundConfirm": "Bạn có chắc muốn yêu cầu hoàn vé {{code}}? Yêu cầu sẽ được gửi cho quản trị viên xét duyệt.",
+    "refundCountdown": "Còn {{time}} để yêu cầu hoàn vé",
+    "refundExpired": "Đã hết thời gian yêu cầu hoàn vé",
+    "refundRequested": "Yêu cầu hoàn vé đã được gửi! Vui lòng chờ quản trị viên xét duyệt.",
+    "refundSuccess": "Hoàn vé thành công! Tiền sẽ được hoàn về tài khoản của bạn.",
+    "refundError": "Yêu cầu hoàn vé thất bại",
+    "refundPendingMessage": "Đang chờ quản trị viên xử lý hoàn tiền...",
+    "refundedMessage": "Hoàn tiền đã được xử lý thành công"
+  },
+  "adminRefund": {
+    "title": "Yêu cầu hoàn vé",
+    "subtitle": "Quản lý các yêu cầu hoàn vé từ khách hàng",
+    "noRequests": "Không có yêu cầu hoàn vé nào",
+    "noRequestsHint": "Hiện tại không có yêu cầu hoàn vé nào cần xử lý.",
+    "bookingCode": "Mã vé",
+    "customer": "Khách hàng",
+    "phone": "Số điện thoại",
+    "route": "Tuyến đường",
+    "seats": "Ghế",
+    "amount": "Số tiền",
+    "requestedAt": "Thời gian yêu cầu",
+    "approve": "Duyệt hoàn",
+    "reject": "Từ chối",
+    "approveConfirm": "Bạn có chắc muốn duyệt hoàn vé {{code}}? Tiền sẽ được hoàn lại cho khách hàng.",
+    "rejectConfirm": "Bạn có chắc muốn từ chối hoàn vé {{code}}? Vé sẽ trở về trạng thái đã thanh toán.",
+    "approveSuccess": "Đã duyệt hoàn vé thành công",
+    "rejectSuccess": "Đã từ chối yêu cầu hoàn vé",
+    "approveError": "Duyệt hoàn vé thất bại",
+    "rejectError": "Từ chối hoàn vé thất bại",
+    "departure": "Khởi hành",
+    "found": "{{count}} yêu cầu"
+  },
+  "datePicker": {
+    "placeholder": "Chọn ngày",
+    "selectDate": "Chọn ngày khởi hành",
+    "today": "Hôm nay"
+  },
+  "location": {
+    "placeholder": "Nhập địa điểm...",
+    "noResults": "Không tìm thấy địa điểm nào"
+  },
+  "header": {
+    "menu": "Menu",
+    "closeMenu": "Đóng"
+  },
+  "authPage": {
+    "loginTitle": "Chào mừng trở lại",
+    "loginSubtitle": "Đăng nhập để tiếp tục đặt vé",
+    "registerTitle": "Tạo tài khoản mới",
+    "registerSubtitle": "Đăng ký để bắt đầu đặt vé",
+    "loginTab": "Đăng nhập",
+    "registerTab": "Đăng ký",
+    "loginLabel": "Số điện thoại hoặc tên đăng nhập",
+    "passwordLabel": "Mật khẩu",
+    "loginBtn": "Đăng nhập",
+    "registerFullName": "Họ và tên",
+    "registerPhone": "Số điện thoại",
+    "registerUsername": "Tên đăng nhập",
+    "registerEmail": "Email (Tùy chọn)",
+    "registerPassword": "Mật khẩu",
+    "registerBtn": "Đăng ký tài khoản",
+    "switchToRegister": "Chưa có tài khoản?",
+    "switchToLogin": "Đã có tài khoản?",
+    "or": "hoặc",
+    "backToHome": "Về trang chủ"
   }
 }

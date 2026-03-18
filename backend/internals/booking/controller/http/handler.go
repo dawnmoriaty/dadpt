@@ -194,6 +194,14 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrSeatsNotConsecutive
 	case errors.Is(err, domain.ErrBookingNotPending):
 		return pkgErrors.ErrBookingNotPending
+	case errors.Is(err, domain.ErrRefundWindowExpired):
+		return pkgErrors.ErrRefundWindowExpired
+	case errors.Is(err, domain.ErrBookingNotPaid):
+		return pkgErrors.ErrBookingNotPaid
+	case errors.Is(err, domain.ErrBookingNotRefundPending):
+		return pkgErrors.ErrBookingNotRefundPending
+	case errors.Is(err, domain.ErrRefundAlreadyProcessed):
+		return pkgErrors.ErrRefundAlreadyProcessed
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}

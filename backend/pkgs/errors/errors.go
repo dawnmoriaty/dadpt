@@ -94,19 +94,23 @@ const (
 	ErrCodeBusTypeSeatLayoutRequired ErrorCode = "BUS_TYPE_SEAT_LAYOUT_REQUIRED"
 
 	// Booking
-	ErrCodeSeatsNotAvailable      ErrorCode = "SEATS_NOT_AVAILABLE"
-	ErrCodeSeatsBeingBooked       ErrorCode = "SEATS_BEING_BOOKED"
-	ErrCodeConcurrentModification ErrorCode = "CONCURRENT_MODIFICATION"
-	ErrCodeTripLocked             ErrorCode = "TRIP_LOCKED"
-	ErrCodeTripNotBookable        ErrorCode = "TRIP_NOT_BOOKABLE"
-	ErrCodeBookingCannotCancel    ErrorCode = "BOOKING_CANNOT_CANCEL"
-	ErrCodeBookingExpired         ErrorCode = "BOOKING_EXPIRED"
-	ErrCodeBookingNotFound        ErrorCode = "BOOKING_NOT_FOUND"
-	ErrCodeInvalidSeatCode        ErrorCode = "INVALID_SEAT_CODE"
-	ErrCodeInvalidGuestInfo       ErrorCode = "INVALID_GUEST_INFO"
-	ErrCodeTooManySeats           ErrorCode = "TOO_MANY_SEATS"
-	ErrCodeSeatsNotConsecutive    ErrorCode = "SEATS_NOT_CONSECUTIVE"
-	ErrCodeBookingNotPending      ErrorCode = "BOOKING_NOT_PENDING"
+	ErrCodeSeatsNotAvailable       ErrorCode = "SEATS_NOT_AVAILABLE"
+	ErrCodeSeatsBeingBooked        ErrorCode = "SEATS_BEING_BOOKED"
+	ErrCodeConcurrentModification  ErrorCode = "CONCURRENT_MODIFICATION"
+	ErrCodeTripLocked              ErrorCode = "TRIP_LOCKED"
+	ErrCodeTripNotBookable         ErrorCode = "TRIP_NOT_BOOKABLE"
+	ErrCodeBookingCannotCancel     ErrorCode = "BOOKING_CANNOT_CANCEL"
+	ErrCodeBookingExpired          ErrorCode = "BOOKING_EXPIRED"
+	ErrCodeBookingNotFound         ErrorCode = "BOOKING_NOT_FOUND"
+	ErrCodeInvalidSeatCode         ErrorCode = "INVALID_SEAT_CODE"
+	ErrCodeInvalidGuestInfo        ErrorCode = "INVALID_GUEST_INFO"
+	ErrCodeTooManySeats            ErrorCode = "TOO_MANY_SEATS"
+	ErrCodeSeatsNotConsecutive     ErrorCode = "SEATS_NOT_CONSECUTIVE"
+	ErrCodeBookingNotPending       ErrorCode = "BOOKING_NOT_PENDING"
+	ErrCodeRefundWindowExpired     ErrorCode = "REFUND_WINDOW_EXPIRED"
+	ErrCodeBookingNotPaid          ErrorCode = "BOOKING_NOT_PAID"
+	ErrCodeBookingNotRefundPending ErrorCode = "BOOKING_NOT_REFUND_PENDING"
+	ErrCodeRefundAlreadyProcessed  ErrorCode = "REFUND_ALREADY_PROCESSED"
 
 	// Payment
 	ErrCodePaymentNotFound         ErrorCode = "PAYMENT_NOT_FOUND"
@@ -259,19 +263,23 @@ var (
 	ErrBusTypeSeatLayoutRequired = NewAppError(http.StatusBadRequest, ErrCodeBusTypeSeatLayoutRequired)
 
 	// Booking
-	ErrSeatsNotAvailable      = NewAppError(http.StatusConflict, ErrCodeSeatsNotAvailable)
-	ErrSeatsBeingBooked       = NewAppError(http.StatusConflict, ErrCodeSeatsBeingBooked)
-	ErrConcurrentModification = NewAppError(http.StatusConflict, ErrCodeConcurrentModification)
-	ErrTripLocked             = NewAppError(423, ErrCodeTripLocked)
-	ErrTripNotBookable        = NewAppError(http.StatusBadRequest, ErrCodeTripNotBookable)
-	ErrBookingCannotCancel    = NewAppError(http.StatusBadRequest, ErrCodeBookingCannotCancel)
-	ErrBookingExpired         = NewAppError(http.StatusBadRequest, ErrCodeBookingExpired)
-	ErrBookingNotFound        = NewAppError(http.StatusNotFound, ErrCodeBookingNotFound)
-	ErrInvalidSeatCode        = NewAppError(http.StatusBadRequest, ErrCodeInvalidSeatCode)
-	ErrInvalidGuestInfo       = NewAppError(http.StatusBadRequest, ErrCodeInvalidGuestInfo)
-	ErrTooManySeats           = NewAppError(http.StatusBadRequest, ErrCodeTooManySeats)
-	ErrSeatsNotConsecutive    = NewAppError(http.StatusBadRequest, ErrCodeSeatsNotConsecutive)
-	ErrBookingNotPending      = NewAppError(http.StatusBadRequest, ErrCodeBookingNotPending)
+	ErrSeatsNotAvailable       = NewAppError(http.StatusConflict, ErrCodeSeatsNotAvailable)
+	ErrSeatsBeingBooked        = NewAppError(http.StatusConflict, ErrCodeSeatsBeingBooked)
+	ErrConcurrentModification  = NewAppError(http.StatusConflict, ErrCodeConcurrentModification)
+	ErrTripLocked              = NewAppError(423, ErrCodeTripLocked)
+	ErrTripNotBookable         = NewAppError(http.StatusBadRequest, ErrCodeTripNotBookable)
+	ErrBookingCannotCancel     = NewAppError(http.StatusBadRequest, ErrCodeBookingCannotCancel)
+	ErrBookingExpired          = NewAppError(http.StatusBadRequest, ErrCodeBookingExpired)
+	ErrBookingNotFound         = NewAppError(http.StatusNotFound, ErrCodeBookingNotFound)
+	ErrInvalidSeatCode         = NewAppError(http.StatusBadRequest, ErrCodeInvalidSeatCode)
+	ErrInvalidGuestInfo        = NewAppError(http.StatusBadRequest, ErrCodeInvalidGuestInfo)
+	ErrTooManySeats            = NewAppError(http.StatusBadRequest, ErrCodeTooManySeats)
+	ErrSeatsNotConsecutive     = NewAppError(http.StatusBadRequest, ErrCodeSeatsNotConsecutive)
+	ErrBookingNotPending       = NewAppError(http.StatusBadRequest, ErrCodeBookingNotPending)
+	ErrRefundWindowExpired     = NewAppError(http.StatusBadRequest, ErrCodeRefundWindowExpired)
+	ErrBookingNotPaid          = NewAppError(http.StatusBadRequest, ErrCodeBookingNotPaid)
+	ErrBookingNotRefundPending = NewAppError(http.StatusBadRequest, ErrCodeBookingNotRefundPending)
+	ErrRefundAlreadyProcessed  = NewAppError(http.StatusConflict, ErrCodeRefundAlreadyProcessed)
 
 	// Payment
 	ErrPaymentNotFound         = NewAppError(http.StatusNotFound, ErrCodePaymentNotFound)

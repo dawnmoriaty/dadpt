@@ -52,3 +52,30 @@ func Routes(
 	authenticated.POST("/:id/cancel", handler.CancelBooking)
 	authenticated.POST("/voice/execute", voiceHandler.Execute)
 }
+
+// AdminRoutes registers admin booking endpoints (refund management).
+// Must be called with an admin-protected router group.
+func AdminRoutes(
+	admin *gin.RouterGroup,
+	database *db.Database,
+	cfg *configs.Config,
+	cache redis.IRedis,
+	paymentGw paymentDomain.PaymentGateway,
+	sseHub *infrastructure.SSEHub,
+) {
+	repo := repository.NewBookingRepository(database)
+	tripLocker := repository.NewTripLocker(database)
+	outboxRepo := repository.NewOutboxRepository(database)
+	paymentRepo := repository.NewPaymentRepository(database)
+	distributedLock := infrastructure.NewDistributedLock(cache)
+
+	uc := usecase.NewBookingUseCase(repo, tripLocker, outboxRepo, paymentRepo, distributedLock, paymentGw, cfg)
+	handler := NewAdminBookingHandler(uc, sseHub)
+
+	bookings := admin.Group("/bookings")
+	bookings.GET("/refund-requests", handler.ListRefundRequests)
+	bookings.GET("/refund-pending-count", handler.CountRefundPending)
+	bookings.POST("/:id/approve-refund", handler.ApproveRefund)
+	bookings.POST("/:id/reject-refund", handler.RejectRefund)
+	bookings.GET("/refund-events", handler.StreamRefundEvents)
+}

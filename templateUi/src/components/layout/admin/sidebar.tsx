@@ -2,14 +2,22 @@ import { Link, useLocation } from '@tanstack/react-router'
 import { Bus, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { useRefundPendingCount, useRefundSSE } from '@/modules/booking'
 
 import { navigationItems } from './navigation'
 
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false)
     const location = useLocation()
+    const { data: refundCountData } = useRefundPendingCount()
+
+    // SSE: real-time refund notifications (invalidates badge count automatically)
+    useRefundSSE()
+
+    const refundPendingCount = refundCountData?.count ?? 0
 
     return (
         <aside
@@ -29,7 +37,7 @@ export function Sidebar() {
                 {!collapsed && (
                     <div className="flex flex-col">
                         <span className="font-bold text-lg tracking-tight">BusAdmin</span>
-                        <span className="text-[10px] text-muted-foreground -mt-0.5">Management Portal</span>
+                        <span className="text-[10px] text-muted-foreground -mt-0.5">Quản lý vé xe</span>
                     </div>
                 )}
             </div>
@@ -39,6 +47,8 @@ export function Sidebar() {
                 {navigationItems.map((item) => {
                     const isActive = location.pathname === item.href || 
                         (item.href !== '/admin/dashboard' && location.pathname.startsWith(item.href))
+                    const isRefundItem = item.href === '/admin/refund-requests'
+                    const badgeCount = isRefundItem ? refundPendingCount : 0
                     return (
                         <Link
                             key={item.href}
@@ -52,15 +62,32 @@ export function Sidebar() {
                             )}
                             title={collapsed ? item.title : undefined}
                         >
-                            <item.icon className={cn(
-                                'h-5 w-5 shrink-0 transition-transform duration-200',
-                                isActive ? '' : 'group-hover:scale-110'
-                            )} />
+                            <div className="relative shrink-0">
+                                <item.icon className={cn(
+                                    'h-5 w-5 transition-transform duration-200',
+                                    isActive ? '' : 'group-hover:scale-110'
+                                )} />
+                                {collapsed && badgeCount > 0 && (
+                                    <span className="absolute -right-1.5 -top-1.5 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-destructive px-0.5 text-[9px] font-bold text-destructive-foreground">
+                                        {badgeCount}
+                                    </span>
+                                )}
+                            </div>
                             {!collapsed && (
-                                <span className="truncate">{item.title}</span>
-                            )}
-                            {!collapsed && isActive && (
-                                <Sparkles className="h-3 w-3 ml-auto opacity-60" />
+                                <>
+                                    <span className="truncate flex-1">{item.title}</span>
+                                    {badgeCount > 0 && (
+                                        <Badge
+                                            variant={isActive ? 'secondary' : 'destructive'}
+                                            className="h-5 min-w-5 px-1.5 text-[10px] font-bold justify-center"
+                                        >
+                                            {badgeCount}
+                                        </Badge>
+                                    )}
+                                    {!badgeCount && isActive && (
+                                        <Sparkles className="h-3 w-3 ml-auto opacity-60" />
+                                    )}
+                                </>
                             )}
                         </Link>
                     )
@@ -83,7 +110,7 @@ export function Sidebar() {
                     ) : (
                         <>
                             <ChevronLeft className="h-4 w-4 mr-2" />
-                            <span className="text-xs">Collapse</span>
+                            <span className="text-xs">Thu gọn</span>
                         </>
                     )}
                 </Button>

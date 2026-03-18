@@ -78,6 +78,28 @@ func (r *paymentRepository) MarkFailed(ctx context.Context, orderCode string, we
 	return paymentToEntity(result), nil
 }
 
+func (r *paymentRepository) GetSuccessByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	result, err := r.queries.GetSuccessPaymentByBookingID(ctx, bookingID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPaymentNotFound
+		}
+		return nil, fmt.Errorf("getting success payment by booking id: %w", err)
+	}
+	return paymentToEntity(result), nil
+}
+
+func (r *paymentRepository) MarkRefunded(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	result, err := r.queries.UpdatePaymentRefunded(ctx, bookingID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPaymentAlreadyDone
+		}
+		return nil, fmt.Errorf("marking payment refunded: %w", err)
+	}
+	return paymentToEntity(result), nil
+}
+
 func paymentToEntity(m models.PaymentTransaction) *domain.PaymentTransaction {
 	return &domain.PaymentTransaction{
 		ID:            m.ID.String(),
@@ -89,5 +111,6 @@ func paymentToEntity(m models.PaymentTransaction) *domain.PaymentTransaction {
 		WebhookData:   m.WebhookData,
 		CreatedAt:     utils.TimestamptzToTime(m.CreatedAt),
 		PaidAt:        utils.TimestamptzToTime(m.PaidAt),
+		RefundedAt:    utils.TimestamptzToTime(m.RefundedAt),
 	}
 }

@@ -14,13 +14,15 @@ const (
 	BookingExchange = "booking.events"
 	ExchangeKind    = "topic"
 
-	RoutingKeyCreated = "booking.created"
-	RoutingKeyPaid    = "booking.paid"
-	RoutingKeyExpired = "booking.expired"
+	RoutingKeyCreated          = "booking.created"
+	RoutingKeyPaid             = "booking.paid"
+	RoutingKeyExpired          = "booking.expired"
+	RoutingKeyRefundRequested  = "booking.refund_requested"
 
-	QueueBookingCreated = "booking.created.queue"
-	QueueBookingPaid    = "booking.paid.queue"
-	QueueBookingExpired = "booking.expired.queue"
+	QueueBookingCreated          = "booking.created.queue"
+	QueueBookingPaid             = "booking.paid.queue"
+	QueueBookingExpired          = "booking.expired.queue"
+	QueueBookingRefundRequested  = "booking.refund_requested.queue"
 )
 
 // BookingEvent is the message payload published to RabbitMQ
@@ -61,6 +63,10 @@ func (p *bookingEventPublisher) PublishBookingPaid(ctx context.Context, booking 
 
 func (p *bookingEventPublisher) PublishBookingExpired(ctx context.Context, booking *domain.Booking) error {
 	return p.publish(ctx, RoutingKeyExpired, booking)
+}
+
+func (p *bookingEventPublisher) PublishRefundRequested(ctx context.Context, booking *domain.Booking) error {
+	return p.publish(ctx, RoutingKeyRefundRequested, booking)
 }
 
 func (p *bookingEventPublisher) publish(ctx context.Context, routingKey string, booking *domain.Booking) error {
@@ -106,6 +112,7 @@ func SetupBookingTopology(rmq rabbitmq.IRabbitMQ) error {
 		{QueueBookingCreated, RoutingKeyCreated},
 		{QueueBookingPaid, RoutingKeyPaid},
 		{QueueBookingExpired, RoutingKeyExpired},
+		{QueueBookingRefundRequested, RoutingKeyRefundRequested},
 	}
 
 	for _, t := range topologies {
