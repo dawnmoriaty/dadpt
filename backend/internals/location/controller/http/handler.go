@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"backend/internals/location/controller/dto"
 	"backend/internals/location/domain"
@@ -15,10 +16,10 @@ import (
 )
 
 type LocationHandler struct {
-	uc usecase.ILocationUseCase
+	uc usecase.LocationUseCase
 }
 
-func NewLocationHandler(uc usecase.ILocationUseCase) *LocationHandler {
+func NewLocationHandler(uc usecase.LocationUseCase) *LocationHandler {
 	return &LocationHandler{uc: uc}
 }
 
@@ -99,7 +100,14 @@ func (h *LocationHandler) List(c *gin.Context) {
 	}
 	pg.Process()
 
-	items, total, err := h.uc.List(c.Request.Context(), &pg)
+	filter := &domain.LocationFilter{
+		Limit:  int32(pg.PageSize),
+		Offset: int32(pg.Offset()),
+		Query:  strings.TrimSpace(c.Query("q")),
+		City:   strings.TrimSpace(c.Query("city")),
+	}
+
+	items, total, err := h.uc.List(c.Request.Context(), filter)
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return

@@ -25,22 +25,40 @@ func (q *Queries) BusExistsByLicensePlate(ctx context.Context, licensePlate stri
 }
 
 const countBuses = `-- name: CountBuses :one
-SELECT COUNT(*) FROM buses
+SELECT COUNT(*) FROM buses b
+WHERE ($1::text IS NULL OR b.license_plate ILIKE '%' || $1::text || '%')
+AND ($2::text IS NULL OR b.status = $2)
+AND ($3::int IS NULL OR b.provider_id = $3)
 `
 
-func (q *Queries) CountBuses(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countBuses)
+type CountBusesParams struct {
+	Q          *string `json:"q"`
+	Status     *string `json:"status"`
+	ProviderID *int32  `json:"providerId"`
+}
+
+func (q *Queries) CountBuses(ctx context.Context, arg CountBusesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countBuses, arg.Q, arg.Status, arg.ProviderID)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
 }
 
 const countBusesByProvider = `-- name: CountBusesByProvider :one
-SELECT COUNT(*) FROM buses WHERE provider_id = $1
+SELECT COUNT(*) FROM buses b
+WHERE b.provider_id = $1
+AND ($2::text IS NULL OR b.license_plate ILIKE '%' || $2::text || '%')
+AND ($3::text IS NULL OR b.status = $3)
 `
 
-func (q *Queries) CountBusesByProvider(ctx context.Context, providerID int32) (int64, error) {
-	row := q.db.QueryRow(ctx, countBusesByProvider, providerID)
+type CountBusesByProviderParams struct {
+	ProviderID int32   `json:"providerId"`
+	Q          *string `json:"q"`
+	Status     *string `json:"status"`
+}
+
+func (q *Queries) CountBusesByProvider(ctx context.Context, arg CountBusesByProviderParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countBusesByProvider, arg.ProviderID, arg.Q, arg.Status)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -162,13 +180,23 @@ SELECT b.id, b.provider_id, b.bus_type_id, b.license_plate, b.status, b.image_ur
 FROM buses b
 JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN providers p ON b.provider_id = p.id
+WHERE ($3::text IS NULL OR (
+  b.license_plate ILIKE '%' || $3::text || '%'
+  OR bt.name ILIKE '%' || $3::text || '%'
+  OR p.name ILIKE '%' || $3::text || '%'
+))
+AND ($4::text IS NULL OR b.status = $4)
+AND ($5::int IS NULL OR b.provider_id = $5)
 ORDER BY p.name, b.license_plate
 LIMIT $1 OFFSET $2
 `
 
 type ListBusesParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit      int32   `json:"limit"`
+	Offset     int32   `json:"offset"`
+	Q          *string `json:"q"`
+	Status     *string `json:"status"`
+	ProviderID *int32  `json:"providerId"`
 }
 
 type ListBusesRow struct {
@@ -184,7 +212,13 @@ type ListBusesRow struct {
 }
 
 func (q *Queries) ListBuses(ctx context.Context, arg ListBusesParams) ([]ListBusesRow, error) {
-	rows, err := q.db.Query(ctx, listBuses, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listBuses,
+		arg.Limit,
+		arg.Offset,
+		arg.Q,
+		arg.Status,
+		arg.ProviderID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -219,14 +253,22 @@ FROM buses b
 JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN providers p ON b.provider_id = p.id
 WHERE b.provider_id = $1
+AND ($4::text IS NULL OR (
+  b.license_plate ILIKE '%' || $4::text || '%'
+  OR bt.name ILIKE '%' || $4::text || '%'
+  OR p.name ILIKE '%' || $4::text || '%'
+))
+AND ($5::text IS NULL OR b.status = $5)
 ORDER BY b.license_plate
 LIMIT $2 OFFSET $3
 `
 
 type ListBusesByProviderParams struct {
-	ProviderID int32 `json:"providerId"`
-	Limit      int32 `json:"limit"`
-	Offset     int32 `json:"offset"`
+	ProviderID int32   `json:"providerId"`
+	Limit      int32   `json:"limit"`
+	Offset     int32   `json:"offset"`
+	Q          *string `json:"q"`
+	Status     *string `json:"status"`
 }
 
 type ListBusesByProviderRow struct {
@@ -242,7 +284,13 @@ type ListBusesByProviderRow struct {
 }
 
 func (q *Queries) ListBusesByProvider(ctx context.Context, arg ListBusesByProviderParams) ([]ListBusesByProviderRow, error) {
-	rows, err := q.db.Query(ctx, listBusesByProvider, arg.ProviderID, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listBusesByProvider,
+		arg.ProviderID,
+		arg.Limit,
+		arg.Offset,
+		arg.Q,
+		arg.Status,
+	)
 	if err != nil {
 		return nil, err
 	}

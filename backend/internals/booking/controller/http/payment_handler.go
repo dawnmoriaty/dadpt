@@ -29,6 +29,11 @@ type PaymentWebhookResponse struct {
 	Status    string `json:"status,omitempty"`
 }
 
+type simpleWebhookRequest struct {
+	OrderCode string `json:"orderCode"`
+	Status    string `json:"status"`
+}
+
 type PaymentHandler struct {
 	uc        usecase.IBookingUseCase
 	paymentGw paymentDomain.PaymentGateway
@@ -74,11 +79,7 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 			paymentStatus = "failed"
 		}
 	} else {
-		// Fallback: simple webhook for testing without gateway
-		var simpleReq struct {
-			OrderCode string `json:"orderCode"`
-			Status    string `json:"status"`
-		}
+		var simpleReq simpleWebhookRequest
 		if err := json.Unmarshal(bodyBytes, &simpleReq); err != nil {
 			response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 			return

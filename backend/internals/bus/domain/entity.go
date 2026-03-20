@@ -45,5 +45,8 @@ func (b *Bus) Validate() error {
 	if len(b.LicensePlate) < 5 {
 		return ErrBusLicensePlateTooShort
 	}
+	if b.Status != "" && b.Status != "active" && b.Status != "maintenance" && b.Status != "retired" {
+		return ErrBusStatusInvalid
+	}
 	return nil
 }

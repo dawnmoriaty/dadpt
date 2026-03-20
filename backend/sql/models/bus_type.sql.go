@@ -12,10 +12,11 @@ import (
 
 const countBusTypes = `-- name: CountBusTypes :one
 SELECT COUNT(*) FROM bus_types
+WHERE ($1::text IS NULL OR name ILIKE '%' || $1::text || '%')
 `
 
-func (q *Queries) CountBusTypes(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countBusTypes)
+func (q *Queries) CountBusTypes(ctx context.Context, q_ *string) (int64, error) {
+	row := q.db.QueryRow(ctx, countBusTypes, q_)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -71,16 +72,20 @@ func (q *Queries) GetBusTypeByID(ctx context.Context, id int32) (BusType, error)
 }
 
 const listBusTypes = `-- name: ListBusTypes :many
-SELECT id, name, total_seats, seat_layout FROM bus_types ORDER BY name LIMIT $1 OFFSET $2
+SELECT id, name, total_seats, seat_layout FROM bus_types
+WHERE ($3::text IS NULL OR name ILIKE '%' || $3::text || '%')
+ORDER BY name
+LIMIT $1 OFFSET $2
 `
 
 type ListBusTypesParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int32   `json:"limit"`
+	Offset int32   `json:"offset"`
+	Q      *string `json:"q"`
 }
 
 func (q *Queries) ListBusTypes(ctx context.Context, arg ListBusTypesParams) ([]BusType, error) {
-	rows, err := q.db.Query(ctx, listBusTypes, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listBusTypes, arg.Limit, arg.Offset, arg.Q)
 	if err != nil {
 		return nil, err
 	}

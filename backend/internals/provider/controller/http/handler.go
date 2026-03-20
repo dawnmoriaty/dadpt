@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"backend/internals/provider/controller/dto"
 	"backend/internals/provider/domain"
@@ -15,10 +16,10 @@ import (
 )
 
 type ProviderHandler struct {
-	uc usecase.IProviderUseCase
+	uc usecase.ProviderUseCase
 }
 
-func NewProviderHandler(uc usecase.IProviderUseCase) *ProviderHandler {
+func NewProviderHandler(uc usecase.ProviderUseCase) *ProviderHandler {
 	return &ProviderHandler{uc: uc}
 }
 
@@ -99,7 +100,19 @@ func (h *ProviderHandler) List(c *gin.Context) {
 	}
 	pg.Process()
 
-	items, total, err := h.uc.List(c.Request.Context(), &pg)
+	filter := &domain.ProviderFilter{
+		Limit:  int32(pg.PageSize),
+		Offset: int32(pg.Offset()),
+		Query:  strings.TrimSpace(c.Query("q")),
+	}
+
+	if active := strings.TrimSpace(c.Query("isActive")); active != "" {
+		if v, parseErr := strconv.ParseBool(active); parseErr == nil {
+			filter.IsActive = &v
+		}
+	}
+
+	items, total, err := h.uc.List(c.Request.Context(), filter)
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return

@@ -15,3 +15,11 @@ type UpdateBusInput struct {
 	Status       *string
 	ImageURL     *string
 }
+
+type BusFilter struct {
+	Limit      int32
+	Offset     int32
+	ProviderID int32
+	Query      string
+	Status     string
+}

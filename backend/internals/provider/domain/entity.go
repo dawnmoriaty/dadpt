@@ -31,8 +31,10 @@ type Provider struct {
 
 // ProviderFilter for listing providers
 type ProviderFilter struct {
-	Limit  int32
-	Offset int32
+	Limit    int32
+	Offset   int32
+	Query    string
+	IsActive *bool
 }
 
 // Validation patterns

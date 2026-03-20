@@ -11,10 +11,21 @@ import (
 
 const countProviders = `-- name: CountProviders :one
 SELECT COUNT(*) FROM providers
+WHERE ($1::text IS NULL OR (
+  name ILIKE '%' || $1::text || '%'
+  OR hotline ILIKE '%' || $1::text || '%'
+  OR slug ILIKE '%' || $1::text || '%'
+))
+AND ($2::boolean IS NULL OR is_active = $2)
 `
 
-func (q *Queries) CountProviders(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countProviders)
+type CountProvidersParams struct {
+	Q        *string `json:"q"`
+	IsActive *bool   `json:"isActive"`
+}
+
+func (q *Queries) CountProviders(ctx context.Context, arg CountProvidersParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countProviders, arg.Q, arg.IsActive)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -133,16 +144,31 @@ func (q *Queries) ListProviders(ctx context.Context) ([]Provider, error) {
 }
 
 const listProvidersAdmin = `-- name: ListProvidersAdmin :many
-SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers ORDER BY name LIMIT $1 OFFSET $2
+SELECT id, name, hotline, slug, policy_refund, is_active, image_url FROM providers
+WHERE ($3::text IS NULL OR (
+  name ILIKE '%' || $3::text || '%'
+  OR hotline ILIKE '%' || $3::text || '%'
+  OR slug ILIKE '%' || $3::text || '%'
+))
+AND ($4::boolean IS NULL OR is_active = $4)
+ORDER BY name
+LIMIT $1 OFFSET $2
 `
 
 type ListProvidersAdminParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit    int32   `json:"limit"`
+	Offset   int32   `json:"offset"`
+	Q        *string `json:"q"`
+	IsActive *bool   `json:"isActive"`
 }
 
 func (q *Queries) ListProvidersAdmin(ctx context.Context, arg ListProvidersAdminParams) ([]Provider, error) {
-	rows, err := q.db.Query(ctx, listProvidersAdmin, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listProvidersAdmin,
+		arg.Limit,
+		arg.Offset,
+		arg.Q,
+		arg.IsActive,
+	)
 	if err != nil {
 		return nil, err
 	}

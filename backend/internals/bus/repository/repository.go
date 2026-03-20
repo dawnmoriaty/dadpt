@@ -2,21 +2,23 @@ package repository
 
 import (
 	"context"
+	"errors"
+	"fmt"
 
 	"backend/db"
 	"backend/internals/bus/domain"
 	"backend/pkgs/utils"
 	"backend/sql/models"
+
+	"github.com/jackc/pgx/v5"
 )
 
 type busRepository struct {
-	db      *db.Database
 	queries *models.Queries
 }
 
 func NewBusRepository(database *db.Database) domain.Repository {
 	return &busRepository{
-		db:      database,
 		queries: models.New(database.GetPool()),
 	}
 }
@@ -29,7 +31,7 @@ func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 
 	existLicensePlate, err := r.queries.BusExistsByLicensePlate(ctx, bus.LicensePlate)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("busRepository.Create.BusExistsByLicensePlate: %w", err)
 	}
 	if existLicensePlate {
 		return nil, domain.ErrBusLicensePlateAlreadyExists
@@ -42,7 +44,7 @@ func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 		ImageUrl:     utils.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("busRepository.Create: %w", err)
 	}
 	return r.basicToDomain(&row), nil
 }
@@ -50,18 +52,35 @@ func (r *busRepository) Create(ctx context.Context, bus *domain.Bus) (*domain.Bu
 func (r *busRepository) GetByID(ctx context.Context, id int32) (*domain.Bus, error) {
 	row, err := r.queries.GetBusByID(ctx, id)
 	if err != nil {
-		return nil, domain.ErrBusNotFound
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBusNotFound
+		}
+		return nil, fmt.Errorf("busRepository.GetByID: %w", err)
 	}
 	return r.joinedToDomain(&row), nil
 }
 
-func (r *busRepository) List(ctx context.Context, limit, offset int32) ([]*domain.Bus, error) {
-	rows, err := r.queries.ListBuses(ctx, models.ListBusesParams{
-		Limit:  limit,
-		Offset: offset,
-	})
+func (r *busRepository) List(ctx context.Context, filter *domain.BusFilter) ([]*domain.Bus, error) {
+	params := models.ListBusesParams{
+		Limit:  filter.Limit,
+		Offset: filter.Offset,
+	}
+	if filter.Query != "" {
+		q := filter.Query
+		params.Q = &q
+	}
+	if filter.Status != "" {
+		status := filter.Status
+		params.Status = &status
+	}
+	if filter.ProviderID > 0 {
+		providerID := filter.ProviderID
+		params.ProviderID = &providerID
+	}
+
+	rows, err := r.queries.ListBuses(ctx, params)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("busRepository.List: %w", err)
 	}
 
 	result := make([]*domain.Bus, len(rows))
@@ -71,14 +90,16 @@ func (r *busRepository) List(ctx context.Context, limit, offset int32) ([]*domai
 	return result, nil
 }
 
-func (r *busRepository) ListByProvider(ctx context.Context, providerID int32, limit, offset int32) ([]*domain.Bus, error) {
+func (r *busRepository) ListByProvider(ctx context.Context, filter *domain.BusFilter) ([]*domain.Bus, error) {
 	rows, err := r.queries.ListBusesByProvider(ctx, models.ListBusesByProviderParams{
-		ProviderID: providerID,
-		Limit:      limit,
-		Offset:     offset,
+		ProviderID: filter.ProviderID,
+		Limit:      filter.Limit,
+		Offset:     filter.Offset,
+		Q:          stringPtr(filter.Query),
+		Status:     stringPtr(filter.Status),
 	})
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("busRepository.ListByProvider: %w", err)
 	}
 
 	result := make([]*domain.Bus, len(rows))
@@ -88,12 +109,33 @@ func (r *busRepository) ListByProvider(ctx context.Context, providerID int32, li
 	return result, nil
 }
 
-func (r *busRepository) Count(ctx context.Context) (int64, error) {
-	return r.queries.CountBuses(ctx)
+func (r *busRepository) Count(ctx context.Context, filter *domain.BusFilter) (int64, error) {
+	params := models.CountBusesParams{
+		Q:      stringPtr(filter.Query),
+		Status: stringPtr(filter.Status),
+	}
+	if filter.ProviderID > 0 {
+		providerID := filter.ProviderID
+		params.ProviderID = &providerID
+	}
+
+	count, err := r.queries.CountBuses(ctx, params)
+	if err != nil {
+		return 0, fmt.Errorf("busRepository.Count: %w", err)
+	}
+	return count, nil
 }
 
-func (r *busRepository) CountByProvider(ctx context.Context, providerID int32) (int64, error) {
-	return r.queries.CountBusesByProvider(ctx, providerID)
+func (r *busRepository) CountByProvider(ctx context.Context, filter *domain.BusFilter) (int64, error) {
+	count, err := r.queries.CountBusesByProvider(ctx, models.CountBusesByProviderParams{
+		ProviderID: filter.ProviderID,
+		Q:          stringPtr(filter.Query),
+		Status:     stringPtr(filter.Status),
+	})
+	if err != nil {
+		return 0, fmt.Errorf("busRepository.CountByProvider: %w", err)
+	}
+	return count, nil
 }
 
 func (r *busRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (*domain.Bus, error) {
@@ -105,7 +147,10 @@ func (r *busRepository) Update(ctx context.Context, id int32, bus *domain.Bus) (
 		ImageUrl:     utils.StringToPtr(bus.ImageURL),
 	})
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBusNotFound
+		}
+		return nil, fmt.Errorf("busRepository.Update: %w", err)
 	}
 	return r.basicToDomain(&row), nil
 }
@@ -116,13 +161,20 @@ func (r *busRepository) UpdateStatus(ctx context.Context, id int32, status strin
 		Status: &status,
 	})
 	if err != nil {
-		return nil, err
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBusNotFound
+		}
+		return nil, fmt.Errorf("busRepository.UpdateStatus: %w", err)
 	}
 	return r.basicToDomain(&row), nil
 }
 
 func (r *busRepository) Delete(ctx context.Context, id int32) error {
-	return r.queries.DeleteBus(ctx, id)
+	err := r.queries.DeleteBus(ctx, id)
+	if err != nil {
+		return fmt.Errorf("busRepository.Delete: %w", err)
+	}
+	return nil
 }
 
 func (r *busRepository) basicToDomain(m *models.Bus) *domain.Bus {
@@ -176,4 +228,11 @@ func (r *busRepository) providerRowToDomain(m *models.ListBusesByProviderRow) *d
 		TotalSeats:   m.TotalSeats,
 		ProviderName: m.ProviderName,
 	}
+}
+
+func stringPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }

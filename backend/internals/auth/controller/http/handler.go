@@ -1,6 +1,7 @@
 package http
 
 import (
+	"backend/configs"
 	"errors"
 	"strings"
 
@@ -14,11 +15,12 @@ import (
 )
 
 type AuthHandler struct {
-	uc usecase.IAuthUseCase
+	uc  usecase.IAuthUseCase
+	cfg *configs.Config
 }
 
-func NewAuthHandler(uc usecase.IAuthUseCase) *AuthHandler {
-	return &AuthHandler{uc: uc}
+func NewAuthHandler(uc usecase.IAuthUseCase, cfg *configs.Config) *AuthHandler {
+	return &AuthHandler{uc: uc, cfg: cfg}
 }
 
 func (h *AuthHandler) Register(c *gin.Context) {
@@ -49,8 +51,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 		response.HandleError(c, mapDomainError(err))
 		return
 	}
-	// đoạn này nhớ sau sửa thời gian refresh thì cắm lại
-	c.SetCookie("refresh_token", result.RefreshToken, 7*24*3600, "/", "", false, true)
+	c.SetCookie("refresh_token", result.RefreshToken, int(h.cfg.RefreshTokenDuration.Seconds()), "/", "", false, true)
 	response.Success(c, dto.ToAuthResponse(result))
 }
 
@@ -90,7 +91,7 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	c.SetCookie("refresh_token", result.RefreshToken, 7*24*3600, "/", "", false, true)
+	c.SetCookie("refresh_token", result.RefreshToken, int(h.cfg.RefreshTokenDuration.Seconds()), "/", "", false, true)
 	response.Success(c, dto.ToAuthResponse(result))
 }
 

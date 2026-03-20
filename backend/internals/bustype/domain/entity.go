@@ -53,3 +53,9 @@ type UpdateBusTypeInput struct {
 	TotalSeats *int32
 	SeatLayout json.RawMessage
 }
+
+type BusTypeFilter struct {
+	Limit  int32
+	Offset int32
+	Query  string
+}

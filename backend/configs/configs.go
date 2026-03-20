@@ -109,10 +109,10 @@ func LoadConfig() *Config {
 		cfg.Environment = EnvironmentDev
 	}
 	if cfg.AccessTokenDuration == 0 {
-		cfg.AccessTokenDuration = 15 * time.Minute
+		cfg.AccessTokenDuration = 168 * time.Hour
 	}
 	if cfg.RefreshTokenDuration == 0 {
-		cfg.RefreshTokenDuration = 168 * time.Hour
+		cfg.RefreshTokenDuration = 720 * time.Hour
 	}
 	if cfg.PayOSReturnURL == "" {
 		cfg.PayOSReturnURL = "http://localhost:5173/payment/success"

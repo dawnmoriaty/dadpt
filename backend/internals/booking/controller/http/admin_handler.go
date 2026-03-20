@@ -14,6 +14,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type eventTypeEnvelope struct {
+	EventType string `json:"eventType"`
+}
+
 // AdminBookingHandler handles admin refund management endpoints.
 type AdminBookingHandler struct {
 	uc     usecase.IBookingUseCase
@@ -145,9 +149,7 @@ func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 }
 
 func getAdminSSEEventName(data []byte) string {
-	var envelope struct {
-		EventType string `json:"eventType"`
-	}
+	var envelope eventTypeEnvelope
 
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return "booking_event"

@@ -29,14 +29,14 @@ type VoiceExecuteRequest struct {
 type VoiceBookingHandler struct {
 	bookingUC bookingUsecase.IBookingUseCase
 	userRepo  authDomain.Repository
-	locUC     locationUsecase.ILocationUseCase
+	locUC     locationUsecase.LocationUseCase
 	tripUC    tripUsecase.ITripUseCase
 }
 
 func NewVoiceBookingHandler(
 	bookingUC bookingUsecase.IBookingUseCase,
 	userRepo authDomain.Repository,
-	locUC locationUsecase.ILocationUseCase,
+	locUC locationUsecase.LocationUseCase,
 	tripUC tripUsecase.ITripUseCase,
 ) *VoiceBookingHandler {
 	return &VoiceBookingHandler{

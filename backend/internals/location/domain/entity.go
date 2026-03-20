@@ -28,6 +28,8 @@ type Location struct {
 type LocationFilter struct {
 	Limit  int32
 	Offset int32
+	Query  string
+	City   string
 }
 
 // Validate validates the location entity

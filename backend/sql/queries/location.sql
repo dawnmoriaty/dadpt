@@ -3,9 +3,9 @@ SELECT * FROM locations WHERE id = $1;
 
 -- name: SearchLocations :many
 SELECT * FROM locations 
-WHERE city ILIKE '%' || $1 || '%' 
-   OR name ILIKE '%' || $1 || '%'
-   OR keywords ILIKE '%' || $1 || '%'
+WHERE city ILIKE '%' || $1 || '%'
+OR name ILIKE '%' || $1 || '%'
+OR keywords ILIKE '%' || $1 || '%'
 ORDER BY city, name
 LIMIT 20;
 
@@ -32,9 +32,21 @@ DELETE FROM locations WHERE id = $1;
 
 -- name: ListLocations :many
 SELECT * FROM locations 
+WHERE (sqlc.narg('q')::text IS NULL OR (
+  name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR city ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR keywords ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('city')::text IS NULL OR city ILIKE '%' || sqlc.narg('city')::text || '%')
 ORDER BY city, name
 LIMIT $1 OFFSET $2;
 
 -- name: CountLocations :one
-SELECT COUNT(*) FROM locations;
+SELECT COUNT(*) FROM locations
+WHERE (sqlc.narg('q')::text IS NULL OR (
+  name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR city ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR keywords ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('city')::text IS NULL OR city ILIKE '%' || sqlc.narg('city')::text || '%');
 

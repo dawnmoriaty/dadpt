@@ -11,10 +11,21 @@ import (
 
 const countLocations = `-- name: CountLocations :one
 SELECT COUNT(*) FROM locations
+WHERE ($1::text IS NULL OR (
+  name ILIKE '%' || $1::text || '%'
+  OR city ILIKE '%' || $1::text || '%'
+  OR keywords ILIKE '%' || $1::text || '%'
+))
+AND ($2::text IS NULL OR city ILIKE '%' || $2::text || '%')
 `
 
-func (q *Queries) CountLocations(ctx context.Context) (int64, error) {
-	row := q.db.QueryRow(ctx, countLocations)
+type CountLocationsParams struct {
+	Q    *string `json:"q"`
+	City *string `json:"city"`
+}
+
+func (q *Queries) CountLocations(ctx context.Context, arg CountLocationsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countLocations, arg.Q, arg.City)
 	var count int64
 	err := row.Scan(&count)
 	return count, err
@@ -83,17 +94,30 @@ func (q *Queries) GetLocationByID(ctx context.Context, id int32) (Location, erro
 
 const listLocations = `-- name: ListLocations :many
 SELECT id, name, city, address, keywords, image_url FROM locations 
+WHERE ($3::text IS NULL OR (
+  name ILIKE '%' || $3::text || '%'
+  OR city ILIKE '%' || $3::text || '%'
+  OR keywords ILIKE '%' || $3::text || '%'
+))
+AND ($4::text IS NULL OR city ILIKE '%' || $4::text || '%')
 ORDER BY city, name
 LIMIT $1 OFFSET $2
 `
 
 type ListLocationsParams struct {
-	Limit  int32 `json:"limit"`
-	Offset int32 `json:"offset"`
+	Limit  int32   `json:"limit"`
+	Offset int32   `json:"offset"`
+	Q      *string `json:"q"`
+	City   *string `json:"city"`
 }
 
 func (q *Queries) ListLocations(ctx context.Context, arg ListLocationsParams) ([]Location, error) {
-	rows, err := q.db.Query(ctx, listLocations, arg.Limit, arg.Offset)
+	rows, err := q.db.Query(ctx, listLocations,
+		arg.Limit,
+		arg.Offset,
+		arg.Q,
+		arg.City,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -152,9 +176,9 @@ func (q *Queries) ListLocationsByCity(ctx context.Context, city string) ([]Locat
 
 const searchLocations = `-- name: SearchLocations :many
 SELECT id, name, city, address, keywords, image_url FROM locations 
-WHERE city ILIKE '%' || $1 || '%' 
-   OR name ILIKE '%' || $1 || '%'
-   OR keywords ILIKE '%' || $1 || '%'
+WHERE city ILIKE '%' || $1 || '%'
+OR name ILIKE '%' || $1 || '%'
+OR keywords ILIKE '%' || $1 || '%'
 ORDER BY city, name
 LIMIT 20
 `

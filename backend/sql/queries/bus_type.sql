@@ -2,10 +2,14 @@
 SELECT * FROM bus_types WHERE id = $1;
 
 -- name: ListBusTypes :many
-SELECT * FROM bus_types ORDER BY name LIMIT $1 OFFSET $2;
+SELECT * FROM bus_types
+WHERE (sqlc.narg('q')::text IS NULL OR name ILIKE '%' || sqlc.narg('q')::text || '%')
+ORDER BY name
+LIMIT $1 OFFSET $2;
 
 -- name: CountBusTypes :one
-SELECT COUNT(*) FROM bus_types;
+SELECT COUNT(*) FROM bus_types
+WHERE (sqlc.narg('q')::text IS NULL OR name ILIKE '%' || sqlc.narg('q')::text || '%');
 
 -- name: CreateBusType :one
 INSERT INTO bus_types (name, total_seats, seat_layout)

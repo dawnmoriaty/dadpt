@@ -11,6 +11,12 @@ FROM buses b
 JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN providers p ON b.provider_id = p.id
 WHERE b.provider_id = $1
+AND (sqlc.narg('q')::text IS NULL OR (
+  b.license_plate ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR bt.name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR p.name ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('status')::text IS NULL OR b.status = sqlc.narg('status'))
 ORDER BY b.license_plate
 LIMIT $2 OFFSET $3;
 
@@ -19,14 +25,27 @@ SELECT b.*, bt.name as bus_type_name, bt.total_seats, p.name as provider_name
 FROM buses b
 JOIN bus_types bt ON b.bus_type_id = bt.id
 JOIN providers p ON b.provider_id = p.id
+WHERE (sqlc.narg('q')::text IS NULL OR (
+  b.license_plate ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR bt.name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR p.name ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('status')::text IS NULL OR b.status = sqlc.narg('status'))
+AND (sqlc.narg('provider_id')::int IS NULL OR b.provider_id = sqlc.narg('provider_id'))
 ORDER BY p.name, b.license_plate
 LIMIT $1 OFFSET $2;
 
 -- name: CountBuses :one
-SELECT COUNT(*) FROM buses;
+SELECT COUNT(*) FROM buses b
+WHERE (sqlc.narg('q')::text IS NULL OR b.license_plate ILIKE '%' || sqlc.narg('q')::text || '%')
+AND (sqlc.narg('status')::text IS NULL OR b.status = sqlc.narg('status'))
+AND (sqlc.narg('provider_id')::int IS NULL OR b.provider_id = sqlc.narg('provider_id'));
 
 -- name: CountBusesByProvider :one
-SELECT COUNT(*) FROM buses WHERE provider_id = $1;
+SELECT COUNT(*) FROM buses b
+WHERE b.provider_id = $1
+AND (sqlc.narg('q')::text IS NULL OR b.license_plate ILIKE '%' || sqlc.narg('q')::text || '%')
+AND (sqlc.narg('status')::text IS NULL OR b.status = sqlc.narg('status'));
 
 -- name: CreateBus :one
 INSERT INTO buses (provider_id, bus_type_id, license_plate, status, image_url)

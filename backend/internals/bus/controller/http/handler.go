@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"backend/internals/bus/controller/dto"
 	"backend/internals/bus/domain"
@@ -15,10 +16,10 @@ import (
 )
 
 type BusHandler struct {
-	uc usecase.IBusUseCase
+	uc usecase.BusUseCase
 }
 
-func NewBusHandler(uc usecase.IBusUseCase) *BusHandler {
+func NewBusHandler(uc usecase.BusUseCase) *BusHandler {
 	return &BusHandler{uc: uc}
 }
 
@@ -63,13 +64,21 @@ func (h *BusHandler) List(c *gin.Context) {
 	pg.Process()
 
 	providerID := int32(0)
-	if pid := c.Query("providerId"); pid != "" {
+	if pid := strings.TrimSpace(c.Query("providerId")); pid != "" {
 		if id, err := strconv.Atoi(pid); err == nil {
 			providerID = int32(id)
 		}
 	}
 
-	items, total, err := h.uc.List(c.Request.Context(), &pg, providerID)
+	filter := &domain.BusFilter{
+		Limit:      int32(pg.PageSize),
+		Offset:     int32(pg.Offset()),
+		ProviderID: providerID,
+		Query:      strings.TrimSpace(c.Query("q")),
+		Status:     strings.TrimSpace(c.Query("status")),
+	}
+
+	items, total, err := h.uc.List(c.Request.Context(), filter)
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return

@@ -25,10 +25,24 @@ RETURNING *;
 DELETE FROM providers WHERE id = $1;
 
 -- name: ListProvidersAdmin :many
-SELECT * FROM providers ORDER BY name LIMIT $1 OFFSET $2;
+SELECT * FROM providers
+WHERE (sqlc.narg('q')::text IS NULL OR (
+  name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR hotline ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR slug ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('is_active')::boolean IS NULL OR is_active = sqlc.narg('is_active'))
+ORDER BY name
+LIMIT $1 OFFSET $2;
 
 -- name: CountProviders :one
-SELECT COUNT(*) FROM providers;
+SELECT COUNT(*) FROM providers
+WHERE (sqlc.narg('q')::text IS NULL OR (
+  name ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR hotline ILIKE '%' || sqlc.narg('q')::text || '%'
+  OR slug ILIKE '%' || sqlc.narg('q')::text || '%'
+))
+AND (sqlc.narg('is_active')::boolean IS NULL OR is_active = sqlc.narg('is_active'));
 
 -- name: ToggleProviderActive :one
 UPDATE providers SET is_active = NOT is_active WHERE id = $1 RETURNING *;

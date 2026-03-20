@@ -3,6 +3,7 @@ package http
 import (
 	"errors"
 	"strconv"
+	"strings"
 
 	"backend/internals/bustype/controller/dto"
 	"backend/internals/bustype/domain"
@@ -15,10 +16,10 @@ import (
 )
 
 type BusTypeHandler struct {
-	uc usecase.IBusTypeUseCase
+	uc usecase.BusTypeUseCase
 }
 
-func NewBusTypeHandler(uc usecase.IBusTypeUseCase) *BusTypeHandler {
+func NewBusTypeHandler(uc usecase.BusTypeUseCase) *BusTypeHandler {
 	return &BusTypeHandler{uc: uc}
 }
 
@@ -77,7 +78,11 @@ func (h *BusTypeHandler) List(c *gin.Context) {
 	}
 	pg.Process()
 
-	items, total, err := h.uc.List(c.Request.Context(), &pg)
+	items, total, err := h.uc.List(c.Request.Context(), &domain.BusTypeFilter{
+		Limit:  int32(pg.PageSize),
+		Offset: int32(pg.Offset()),
+		Query:  strings.TrimSpace(c.Query("q")),
+	})
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return

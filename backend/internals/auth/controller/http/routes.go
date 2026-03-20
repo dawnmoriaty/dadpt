@@ -23,7 +23,7 @@ func Routes(r *gin.RouterGroup, database *db.Database, cfg *configs.Config, cach
 	uc := usecase.NewAuthUseCase(repo, hasher, jwtProv, cache, cfg)
 
 	// Interface layer - HTTP handler
-	handler := NewAuthHandler(uc)
+	handler := NewAuthHandler(uc, cfg)
 
 	// Register routes
 	auth := r.Group("/auth")
