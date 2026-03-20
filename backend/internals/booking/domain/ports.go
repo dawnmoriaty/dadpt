@@ -55,6 +55,7 @@ type BookingEventPublisher interface {
 	PublishBookingCreated(ctx context.Context, booking *Booking) error
 	PublishBookingPaid(ctx context.Context, booking *Booking) error
 	PublishBookingExpired(ctx context.Context, booking *Booking) error
+	PublishBookingCancelled(ctx context.Context, booking *Booking) error
 	PublishRefundRequested(ctx context.Context, booking *Booking) error
 }
 

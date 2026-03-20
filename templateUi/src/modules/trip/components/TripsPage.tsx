@@ -15,11 +15,11 @@ import { TripForm } from './TripForm'
 import { getTripsColumns } from './trips-columns'
 
 const statusTabs: { value: TripStatus | ''; label: string; color: string }[] = [
-    { value: '', label: 'All Trips', color: 'bg-muted' },
-    { value: 'scheduled', label: 'Scheduled', color: 'bg-blue-500' },
-    { value: 'departed', label: 'Departed', color: 'bg-yellow-500' },
-    { value: 'completed', label: 'Completed', color: 'bg-emerald-500' },
-    { value: 'cancelled', label: 'Cancelled', color: 'bg-red-500' },
+    { value: '', label: 'Tất cả chuyến', color: 'bg-muted' },
+    { value: 'scheduled', label: 'Đã lên lịch', color: 'bg-blue-500' },
+    { value: 'departed', label: 'Đã xuất bến', color: 'bg-yellow-500' },
+    { value: 'completed', label: 'Hoàn thành', color: 'bg-emerald-500' },
+    { value: 'cancelled', label: 'Đã hủy', color: 'bg-red-500' },
 ]
 
 export function TripsPage() {

@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
@@ -88,11 +89,22 @@ export function TripForm({
     const { data: destinationLocation } = useLocation(destinationId)
     const autoPickupNameRef = useRef<string | null>(null)
     const autoDropoffNameRef = useRef<string | null>(null)
+    const initializedKeyRef = useRef<string | null>(null)
 
     useEffect(() => {
         if (!isOpen) {
+            initializedKeyRef.current = null
+            autoPickupNameRef.current = null
+            autoDropoffNameRef.current = null
             return
         }
+
+        const nextKey = initialTrip ? `edit-${initialTrip.id}` : 'create'
+        if (initializedKeyRef.current === nextKey) {
+            return
+        }
+
+        initializedKeyRef.current = nextKey
 
         if (initialTrip) {
             form.reset({
@@ -113,14 +125,16 @@ export function TripForm({
         }
 
         form.reset(defaultFormValues)
-        pickupPointsFieldArray.replace([])
-        dropoffPointsFieldArray.replace([])
         autoPickupNameRef.current = null
         autoDropoffNameRef.current = null
-    }, [dropoffPointsFieldArray, form, initialTrip, isOpen, pickupPointsFieldArray])
+    }, [form, initialTrip, isOpen])
 
     useEffect(() => {
         if (!isOpen || !originLocation?.name) {
+            return
+        }
+
+        if (autoPickupNameRef.current === originLocation.name) {
             return
         }
 
@@ -137,6 +151,10 @@ export function TripForm({
 
     useEffect(() => {
         if (!isOpen || !destinationLocation?.name) {
+            return
+        }
+
+        if (autoDropoffNameRef.current === destinationLocation.name) {
             return
         }
 
@@ -183,6 +201,11 @@ export function TripForm({
             <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden p-0">
                 <DialogHeader className="border-b px-6 py-4">
                     <DialogTitle>{isEditMode ? 'Cập nhật chuyến đi' : 'Create New Trip'}</DialogTitle>
+                    <DialogDescription>
+                        {isEditMode
+                            ? 'Cập nhật thông tin chuyến đi, điểm đón và điểm trả.'
+                            : 'Tạo chuyến đi mới và cấu hình các điểm đón trả cho khách.'}
+                    </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleFormSubmit)} className="flex max-h-[calc(90vh-73px)] flex-col">

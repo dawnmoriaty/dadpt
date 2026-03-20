@@ -42,8 +42,6 @@ interface LocationFormProps {
 }
 
 export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }: LocationFormProps) {
-    const [selectedProvinceCode, setSelectedProvinceCode] = useState<number | null>(null)
-    const [selectedDistrictCode, setSelectedDistrictCode] = useState<number | null>(null)
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
     const [provinceSearch, setProvinceSearch] = useState('')
@@ -89,6 +87,13 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
             imageUrl: '',
         },
     })
+    const selectedProvinceCode = useWatch({ control: form.control, name: 'provinceCode' }) ?? null
+    const selectedDistrictCode = useWatch({ control: form.control, name: 'districtCode' }) ?? null
+    const watchedProvinceName = useWatch({ control: form.control, name: 'provinceName' })
+    const watchedDistrictName = useWatch({ control: form.control, name: 'districtName' })
+    const selectedWardCode = useWatch({ control: form.control, name: 'wardCode' })
+    const watchedWardName = useWatch({ control: form.control, name: 'wardName' })
+    const watchedStreetAddress = useWatch({ control: form.control, name: 'streetAddress' })
 
     const imageUrl = useWatch({ control: form.control, name: 'imageUrl' })
 
@@ -111,7 +116,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
             if (provinces.length > 0 && location.city) {
                 const matched = provinces.find((p) => p.name === location.city)
                 if (matched) {
-                    setSelectedProvinceCode(matched.code)
                     form.setValue('provinceCode', matched.code)
                     form.setValue('provinceName', matched.name)
                 }
@@ -129,8 +133,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                 keywords: '',
                 imageUrl: '',
             })
-            setSelectedProvinceCode(null)
-            setSelectedDistrictCode(null)
         }
         setProvinceSearch('')
         setDistrictSearch('')
@@ -226,8 +228,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                                             const code = Number(val)
                                             const prov = provinces.find((p) => p.code === code)
                                             if (prov) {
-                                                setSelectedProvinceCode(code)
-                                                setSelectedDistrictCode(null)
                                                 form.setValue('provinceCode', code)
                                                 form.setValue('provinceName', prov.name)
                                                 form.setValue('districtCode', undefined as unknown as number)
@@ -288,7 +288,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                                             const code = Number(val)
                                             const dist = districts.find((d) => d.code === code)
                                             if (dist) {
-                                                setSelectedDistrictCode(code)
                                                 form.setValue('districtCode', code)
                                                 form.setValue('districtName', dist.name)
                                                 form.setValue('wardCode', undefined)
@@ -351,7 +350,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                                 <FormItem>
                                     <FormLabel>Phường / Xã</FormLabel>
                                     <Select
-                                        value={form.watch('wardCode')?.toString() ?? ''}
+                                        value={selectedWardCode?.toString() ?? ''}
                                         onValueChange={(val) => {
                                             const code = Number(val)
                                             const ward = wards.find((w) => w.code === code)
@@ -424,15 +423,15 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                         />
 
                         {/* Address Preview */}
-                        {(form.watch('provinceName') || form.watch('districtName') || form.watch('wardName')) && (
+                        {(watchedProvinceName || watchedDistrictName || watchedWardName) && (
                             <div className="rounded-lg border bg-muted/30 p-3">
                                 <p className="text-xs font-medium text-muted-foreground mb-1">Địa chỉ đầy đủ:</p>
                                 <p className="text-sm">
                                     {[
-                                        form.watch('streetAddress'),
-                                        form.watch('wardName'),
-                                        form.watch('districtName'),
-                                        form.watch('provinceName'),
+                                        watchedStreetAddress,
+                                        watchedWardName,
+                                        watchedDistrictName,
+                                        watchedProvinceName,
                                     ]
                                         .filter(Boolean)
                                         .join(', ')}

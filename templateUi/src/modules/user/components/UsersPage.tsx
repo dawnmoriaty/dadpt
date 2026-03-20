@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 import { useUsers, useDeleteUser, useCreateUser, useUpdateUser } from '../hooks'
 import type { User, CreateUserRequest, UpdateUserRequest } from '../types'
 
-import { getUsersColumns } from './users-columns'
 import { UserFormDialog } from './UserFormDialog'
+import { getUsersColumns } from './users-columns'
 
 export function UsersPage(): React.ReactElement {
     const [page, setPage] = useState(0)

@@ -259,6 +259,8 @@
     "rejectSuccess": "Đã từ chối yêu cầu hoàn vé",
     "approveError": "Duyệt hoàn vé thất bại",
     "rejectError": "Từ chối hoàn vé thất bại",
+    "newRequest": "Yêu cầu hoàn tiền mới: {{code}} - {{name}} ({{amount}})",
+    "bookingCancelled": "Khách {{name}} đã hủy vé {{code}}",
     "departure": "Khởi hành",
     "found": "{{count}} yêu cầu"
   },

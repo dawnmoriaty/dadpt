@@ -56,6 +56,7 @@ type BookingResponse struct {
 	ExpiresAt     string       `json:"expiresAt,omitempty"`
 	RefundedAt    string       `json:"refundedAt,omitempty"`
 	CreatedAt     string       `json:"createdAt"`
+	UpdatedAt     string       `json:"updatedAt"`
 }
 
 type BookingDetailResponse struct {
@@ -137,6 +138,7 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 		Status:        string(b.Status),
 		PaymentMethod: b.PaymentMethod,
 		CreatedAt:     b.CreatedAt.Format(time.RFC3339),
+		UpdatedAt:     b.UpdatedAt.Format(time.RFC3339),
 	}
 	if !b.ExpiresAt.IsZero() {
 		resp.ExpiresAt = b.ExpiresAt.Format(time.RFC3339)

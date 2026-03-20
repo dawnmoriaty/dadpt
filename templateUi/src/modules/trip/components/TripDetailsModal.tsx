@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import {
     Dialog,
     DialogContent,
+    DialogDescription,
     DialogHeader,
     DialogTitle,
 } from '@/components/ui/dialog'
@@ -55,6 +56,9 @@ export function TripDetailsModal({ trip, isOpen, onClose }: TripDetailsModalProp
                         <DialogTitle className="text-2xl font-bold">Trip Details</DialogTitle>
                         <TripStatusBadge status={trip.status} />
                     </div>
+                    <DialogDescription>
+                        Xem nhanh tuyến đường, giá vé và số ghế hiện có của chuyến đi.
+                    </DialogDescription>
                 </DialogHeader>
 
                 <div className="grid gap-6 py-4">

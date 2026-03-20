@@ -8,21 +8,31 @@ import (
 	"backend/internals/booking/domain"
 	"backend/pkgs/logger"
 	"backend/pkgs/rabbitmq"
+
+	amqp "github.com/rabbitmq/amqp091-go"
 )
 
 const (
 	BookingExchange = "booking.events"
 	ExchangeKind    = "topic"
 
-	RoutingKeyCreated          = "booking.created"
-	RoutingKeyPaid             = "booking.paid"
-	RoutingKeyExpired          = "booking.expired"
-	RoutingKeyRefundRequested  = "booking.refund_requested"
+	QueueAdminBookingEvents = "admin.booking.events.queue"
 
-	QueueBookingCreated          = "booking.created.queue"
-	QueueBookingPaid             = "booking.paid.queue"
-	QueueBookingExpired          = "booking.expired.queue"
-	QueueBookingRefundRequested  = "booking.refund_requested.queue"
+	RoutingKeyCreated         = "booking.created"
+	RoutingKeyPaid            = "booking.paid"
+	RoutingKeyExpired         = "booking.expired"
+	RoutingKeyCancelled       = "booking.cancelled"
+	RoutingKeyRefundRequested = "booking.refund.requested"
+
+	QueueBookingCreated         = "booking.created.queue"
+	QueueBookingPaid            = "booking.paid.queue"
+	QueueBookingExpired         = "booking.expired.queue"
+	QueueBookingCancelled       = "booking.cancelled.queue"
+	QueueBookingRefundRequested = "booking.refund.requested.queue"
+
+	QueueAdminBookingEventsDLQ = "admin.booking.events.dlq"
+	DLXName                    = "booking.events.dlx"
+	DLXRoutingKey              = "booking.events.dead"
 )
 
 // BookingEvent is the message payload published to RabbitMQ
@@ -63,6 +73,10 @@ func (p *bookingEventPublisher) PublishBookingPaid(ctx context.Context, booking 
 
 func (p *bookingEventPublisher) PublishBookingExpired(ctx context.Context, booking *domain.Booking) error {
 	return p.publish(ctx, RoutingKeyExpired, booking)
+}
+
+func (p *bookingEventPublisher) PublishBookingCancelled(ctx context.Context, booking *domain.Booking) error {
+	return p.publish(ctx, RoutingKeyCancelled, booking)
 }
 
 func (p *bookingEventPublisher) PublishRefundRequested(ctx context.Context, booking *domain.Booking) error {
@@ -112,6 +126,7 @@ func SetupBookingTopology(rmq rabbitmq.IRabbitMQ) error {
 		{QueueBookingCreated, RoutingKeyCreated},
 		{QueueBookingPaid, RoutingKeyPaid},
 		{QueueBookingExpired, RoutingKeyExpired},
+		{QueueBookingCancelled, RoutingKeyCancelled},
 		{QueueBookingRefundRequested, RoutingKeyRefundRequested},
 	}
 
@@ -119,6 +134,23 @@ func SetupBookingTopology(rmq rabbitmq.IRabbitMQ) error {
 		if err := rmq.SetupTopology(BookingExchange, ExchangeKind, t.queue, t.routingKey); err != nil {
 			return err
 		}
+	}
+
+	adminQueueArgs := amqp.Table{
+		"x-dead-letter-exchange":    DLXName,
+		"x-dead-letter-routing-key": DLXRoutingKey,
+	}
+
+	if err := rmq.SetupTopologyWithQueueArgs(BookingExchange, ExchangeKind, QueueAdminBookingEvents, "booking.*", adminQueueArgs); err != nil {
+		return err
+	}
+
+	if err := rmq.SetupTopologyWithQueueArgs(BookingExchange, ExchangeKind, QueueAdminBookingEvents, "booking.refund.*", adminQueueArgs); err != nil {
+		return err
+	}
+
+	if err := rmq.SetupTopology(DLXName, ExchangeKind, QueueAdminBookingEventsDLQ, DLXRoutingKey); err != nil {
+		return err
 	}
 
 	logger.Info("Booking RabbitMQ topology set up successfully")

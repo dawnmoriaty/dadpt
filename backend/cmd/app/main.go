@@ -58,9 +58,9 @@ func main() {
 		expiryWorker := usecase.NewExpiryWorker(bookingRepo, tripLocker, outboxRepo)
 		go expiryWorker.Start(ctx)
 
-		// Start refund event consumer (RabbitMQ → SSE hub for admin notifications)
-		refundConsumer := infrastructure.NewRefundEventConsumer(rmq, sseHub)
-		go refundConsumer.Start(ctx)
+		// Start admin booking event consumer (RabbitMQ → SSE hub for admin notifications)
+		adminEventConsumer := infrastructure.NewAdminBookingEventConsumer(rmq, sseHub)
+		go adminEventConsumer.Start(ctx)
 
 		// =====================================================================
 		// GRACEFUL SHUTDOWN
@@ -88,4 +88,3 @@ func main() {
 		logger.Fatal("Startup failed: ", err)
 	}
 }
-

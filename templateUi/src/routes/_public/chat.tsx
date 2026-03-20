@@ -5,8 +5,8 @@ import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { VoiceBookingPanel } from '@/modules/voice'
 import { cn } from '@/lib/utils'
+import { VoiceBookingPanel } from '@/modules/voice'
 import { useChatStore, type ChatMessage } from '@/stores/use-chat-store'
 
 export const Route = createFileRoute('/_public/chat')({

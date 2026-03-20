@@ -1,5 +1,6 @@
 import { api } from '@/services/api/client'
-import type { User, CreateUserRequest, UpdateUserRequest, UserListResponse } from '../types'
+
+import type { User, CreateUserRequest, UpdateUserRequest } from '../types'
 
 interface PagedResponse<T> {
     total: number

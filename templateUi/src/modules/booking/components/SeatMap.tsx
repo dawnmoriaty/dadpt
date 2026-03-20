@@ -1,8 +1,8 @@
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
-import { cn } from '@/lib/utils'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { cn } from '@/lib/utils'
 import type { SeatLayout } from '@/modules/trip'
 
 interface SeatMapProps {
@@ -165,7 +165,7 @@ function FloorGrid({
     onSelectionChange: (seats: string[]) => void
 }) {
     const { t } = useTranslation()
-    const { rows, columnLetters } = buildSeatGrid(layout, seats)
+    const { rows } = buildSeatGrid(layout, seats)
     const sortedRowNumbers = Array.from(rows.keys()).sort((a, b) => a - b)
 
     // Build the column template including aisle gaps

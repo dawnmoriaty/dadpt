@@ -1,5 +1,5 @@
 import { Check, Loader2, MapPin, X } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { Input } from '@/components/ui/input'
@@ -33,7 +33,7 @@ export function LocationCombobox({
 
     const debouncedQuery = useDebounce(inputValue, 300)
     const { data: locations, isLoading } = useSearchLocations(debouncedQuery)
-    const items = locations ?? []
+    const items = useMemo(() => locations ?? [], [locations])
 
     // Resolve label from value on mount / when items load
     useEffect(() => {

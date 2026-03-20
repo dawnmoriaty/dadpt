@@ -2,7 +2,6 @@ package usecase
 
 import (
 	"context"
-	"encoding/json"
 	"time"
 
 	"backend/internals/booking/domain"
@@ -91,15 +90,7 @@ func (w *ExpiryWorker) expireBooking(ctx context.Context, booking *domain.Bookin
 	}
 
 	// 3. Create outbox event
-	eventPayload, _ := json.Marshal(map[string]interface{}{
-		"eventType": TopicBookingExpired,
-		"bookingId": booking.ID,
-		"code":      string(booking.Code),
-		"tripId":    booking.TripID,
-		"seatCodes": booking.SeatCodes,
-		"amount":    booking.TotalAmount,
-		"status":    "expired",
-	})
+	eventPayload := domain.NewBookingEventEnvelope(TopicBookingExpired, booking, "expiry-worker")
 	if err := w.outboxRepo.CreateEvent(ctx, TopicBookingExpired, eventPayload); err != nil {
 		logger.Error("Expiry worker: failed to create outbox event for booking %d: %v", booking.ID, err)
 	}

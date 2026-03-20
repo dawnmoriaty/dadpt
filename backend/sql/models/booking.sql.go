@@ -547,6 +547,7 @@ const markBookingRefundPending = `-- name: MarkBookingRefundPending :one
 
 UPDATE bookings SET
     status = 'refund_pending',
+    refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'paid'
 RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
@@ -658,6 +659,7 @@ func (q *Queries) ReleaseTripSeats(ctx context.Context, arg ReleaseTripSeatsPara
 const revertBookingToPaid = `-- name: RevertBookingToPaid :one
 UPDATE bookings SET
     status = 'paid',
+    refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'refund_pending'
 RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at

@@ -1,15 +1,15 @@
-import { useEffect, useRef } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
 import { useAuthStore } from '@/stores/use-auth-store'
 
-import { adminBookingKeys } from '.'
+import { adminBookingKeys, pushAdminBookingEvent } from '.'
 
 const SSE_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
-interface RefundEvent {
+interface AdminBookingEvent {
     eventType: string
     bookingId: number
     code: string
@@ -47,7 +47,7 @@ export function useRefundSSE() {
 
         es.addEventListener('refund_requested', (event) => {
             try {
-                const data: RefundEvent = JSON.parse(event.data)
+                const data: AdminBookingEvent = JSON.parse(event.data)
                 console.log('[SSE] Received refund event:', data)
 
                 // Invalidate queries to auto-refresh the admin refund list and badge
@@ -69,8 +69,40 @@ export function useRefundSSE() {
                     }),
                     { duration: 8000 },
                 )
+
+                pushAdminBookingEvent(queryClient, {
+                    type: 'refund_requested',
+                    code: data.code,
+                    guestName: data.guestName,
+                    amount: data.amount,
+                })
             } catch (err) {
                 console.error('[SSE] Failed to parse refund event:', err)
+            }
+        })
+
+        es.addEventListener('booking_cancelled', (event) => {
+            try {
+                const data: AdminBookingEvent = JSON.parse(event.data)
+                console.log('[SSE] Received cancellation event:', data)
+
+                toast.warning(
+                    t('adminRefund.bookingCancelled', {
+                        code: data.code,
+                        name: data.guestName,
+                        defaultValue: `Khách ${data.guestName} đã hủy vé ${data.code}`,
+                    }),
+                    { duration: 8000 },
+                )
+
+                pushAdminBookingEvent(queryClient, {
+                    type: 'booking_cancelled',
+                    code: data.code,
+                    guestName: data.guestName,
+                    amount: data.amount,
+                })
+            } catch (err) {
+                console.error('[SSE] Failed to parse cancellation event:', err)
             }
         })
 

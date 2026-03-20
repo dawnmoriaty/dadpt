@@ -123,6 +123,7 @@ RETURNING *;
 -- name: MarkBookingRefundPending :one
 UPDATE bookings SET
     status = 'refund_pending',
+    refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'paid'
 RETURNING *;
@@ -144,6 +145,7 @@ SELECT COUNT(*) FROM bookings WHERE status = 'refund_pending';
 -- name: RevertBookingToPaid :one
 UPDATE bookings SET
     status = 'paid',
+    refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'refund_pending'
 RETURNING *;

@@ -1,8 +1,8 @@
+import { useNavigate } from '@tanstack/react-router'
 import { Loader2, Ticket } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm, useWatch, type UseFormReturn } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from '@tanstack/react-router'
 
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -32,6 +32,7 @@ import { useAuthStore } from '@/stores/use-auth-store'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
 import type { CreateBookingResponse } from '../types'
+
 import { SeatMap } from './SeatMap'
 
 interface BookingFormProps {

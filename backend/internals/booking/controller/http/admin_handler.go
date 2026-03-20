@@ -7,6 +7,7 @@ import (
 	"backend/internals/booking/usecase"
 	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/response"
+	"encoding/json"
 	"fmt"
 	"io"
 
@@ -134,7 +135,7 @@ func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 			if !ok {
 				return false
 			}
-			c.SSEvent("refund_requested", string(data))
+			c.SSEvent(getAdminSSEEventName(data), string(data))
 			c.Writer.Flush()
 			// Also write a comment as keepalive
 			fmt.Fprint(w, "")
@@ -143,3 +144,27 @@ func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 	})
 }
 
+func getAdminSSEEventName(data []byte) string {
+	var envelope struct {
+		EventType string `json:"eventType"`
+	}
+
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return "booking_event"
+	}
+
+	switch envelope.EventType {
+	case usecase.TopicBookingRefundRequested:
+		return "refund_requested"
+	case usecase.TopicBookingCancelled:
+		return "booking_cancelled"
+	case usecase.TopicBookingRefundApproved:
+		return "refund_approved"
+	case usecase.TopicBookingRefundRejected:
+		return "refund_rejected"
+	case usecase.TopicBookingStatusUpdated:
+		return "booking_status_updated"
+	default:
+		return "booking_event"
+	}
+}

@@ -53,7 +53,7 @@ function useRefundCountdown(booking: Booking) {
         update()
         const interval = setInterval(update, 1000)
         return () => clearInterval(interval)
-    }, [booking.status, booking.updatedAt])
+    }, [booking])
 
     return remainingMs
 }

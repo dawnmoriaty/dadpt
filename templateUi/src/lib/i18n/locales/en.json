@@ -249,6 +249,8 @@
     "rejectSuccess": "Refund request rejected",
     "approveError": "Failed to approve refund",
     "rejectError": "Failed to reject refund",
+    "newRequest": "New refund request: {{code}} - {{name}} ({{amount}})",
+    "bookingCancelled": "Customer {{name}} cancelled booking {{code}}",
     "departure": "Departure",
     "found": "{{count}} request(s)"
   },

@@ -14,12 +14,14 @@ import (
 type IRabbitMQ interface {
 	Close()
 	DeclareQueue(name string) (amqp.Queue, error)
+	DeclareQueueWithArgs(name string, args amqp.Table) (amqp.Queue, error)
 	DeclareExchange(name, kind string) error
 	BindQueue(queue, exchange, routingKey string) error
 	PublishJSON(ctx context.Context, exchange, routingKey string, body interface{}) error
 	PublishRaw(ctx context.Context, exchange, routingKey string, body []byte) error
 	Consume(queue string) (<-chan amqp.Delivery, error)
 	SetupTopology(exchange, exchangeKind, queue, routingKey string) error
+	SetupTopologyWithQueueArgs(exchange, exchangeKind, queue, routingKey string, args amqp.Table) error
 }
 
 type rabbitMQ struct {
@@ -59,6 +61,10 @@ func (r *rabbitMQ) Close() {
 
 func (r *rabbitMQ) DeclareQueue(name string) (amqp.Queue, error) {
 	return r.Channel.QueueDeclare(name, true, false, false, false, nil)
+}
+
+func (r *rabbitMQ) DeclareQueueWithArgs(name string, args amqp.Table) (amqp.Queue, error) {
+	return r.Channel.QueueDeclare(name, true, false, false, false, args)
 }
 
 func (r *rabbitMQ) DeclareExchange(name, kind string) error {
@@ -102,11 +108,16 @@ func (r *rabbitMQ) Consume(queue string) (<-chan amqp.Delivery, error) {
 
 // SetupTopology declares an exchange, a queue, and binds them.
 func (r *rabbitMQ) SetupTopology(exchange, exchangeKind, queue, routingKey string) error {
+	return r.SetupTopologyWithQueueArgs(exchange, exchangeKind, queue, routingKey, nil)
+}
+
+// SetupTopologyWithQueueArgs declares an exchange, a queue with args, and binds them.
+func (r *rabbitMQ) SetupTopologyWithQueueArgs(exchange, exchangeKind, queue, routingKey string, args amqp.Table) error {
 	if err := r.DeclareExchange(exchange, exchangeKind); err != nil {
 		return fmt.Errorf("failed to declare exchange %s: %w", exchange, err)
 	}
 
-	if _, err := r.DeclareQueue(queue); err != nil {
+	if _, err := r.DeclareQueueWithArgs(queue, args); err != nil {
 		return fmt.Errorf("failed to declare queue %s: %w", queue, err)
 	}
 

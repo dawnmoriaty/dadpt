@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/binary"
 	"encoding/hex"
-	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -24,10 +23,14 @@ const (
 
 // Outbox event topics
 const (
-	TopicBookingCreated          = "booking.created"
-	TopicBookingPaid             = "booking.paid"
-	TopicBookingExpired          = "booking.expired"
-	TopicBookingRefundRequested  = "booking.refund_requested"
+	TopicBookingCreated         = "booking.created"
+	TopicBookingPaid            = "booking.paid"
+	TopicBookingExpired         = "booking.expired"
+	TopicBookingCancelled       = "booking.cancelled"
+	TopicBookingRefundRequested = "booking.refund.requested"
+	TopicBookingRefundApproved  = "booking.refund.approved"
+	TopicBookingRefundRejected  = "booking.refund.rejected"
+	TopicBookingStatusUpdated   = "booking.status.updated"
 )
 
 // IBookingUseCase defines the interface for booking use case
@@ -190,16 +193,8 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 	}
 
 	// 11. Create outbox event (transactional outbox pattern)
-	eventPayload, _ := json.Marshal(map[string]interface{}{
-		"eventType": TopicBookingCreated,
-		"bookingId": created.ID,
-		"code":      string(created.Code),
-		"tripId":    created.TripID,
-		"seatCodes": created.SeatCodes,
-		"amount":    created.TotalAmount,
-		"status":    string(created.Status),
-		"orderCode": orderCode,
-	})
+	correlationID := getCorrelationIDFromContext(ctx)
+	eventPayload := domain.NewBookingEventEnvelope(TopicBookingCreated, created, correlationID)
 	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingCreated, eventPayload); err != nil {
 		logger.Error("Failed to create outbox event: %v", err)
 	}
@@ -298,6 +293,10 @@ func (u *bookingUseCase) cancelPendingBooking(ctx context.Context, booking *doma
 		return nil, fmt.Errorf("cancelling booking: %w", err)
 	}
 
+	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingCancelled, domain.NewBookingEventEnvelope(TopicBookingCancelled, cancelled, getCorrelationIDFromContext(ctx))); err != nil {
+		logger.Error("Failed to create outbox event for booking cancellation: %v", err)
+	}
+
 	logger.Info("Booking cancelled: id=%d, code=%s", booking.ID, booking.Code)
 	return cancelled, nil
 }
@@ -316,18 +315,8 @@ func (u *bookingUseCase) refundPaidBooking(ctx context.Context, booking *domain.
 		return nil, fmt.Errorf("uc.refundPaidBooking: marking refund pending: %w", err)
 	}
 
-	// 3. Create outbox event for booking.refund_requested (admin notification)
-	eventPayload, _ := json.Marshal(map[string]interface{}{
-		"eventType":   TopicBookingRefundRequested,
-		"bookingId":   pending.ID,
-		"code":        string(pending.Code),
-		"tripId":      pending.TripID,
-		"seatCodes":   pending.SeatCodes,
-		"amount":      pending.TotalAmount,
-		"status":      string(pending.Status),
-		"guestName":   pending.GuestInfo.Name,
-		"guestPhone":  pending.GuestInfo.Phone,
-	})
+	// 3. Create outbox event for booking.refund.requested (admin notification)
+	eventPayload := domain.NewBookingEventEnvelope(TopicBookingRefundRequested, pending, getCorrelationIDFromContext(ctx))
 	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingRefundRequested, eventPayload); err != nil {
 		logger.Error("Failed to create outbox event for refund request: %v", err)
 	}
@@ -495,16 +484,7 @@ func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.Confi
 		}
 
 		// Create outbox event for booking.paid
-		eventPayload, _ := json.Marshal(map[string]interface{}{
-			"eventType": TopicBookingPaid,
-			"bookingId": updatedBooking.ID,
-			"code":      string(updatedBooking.Code),
-			"tripId":    updatedBooking.TripID,
-			"seatCodes": updatedBooking.SeatCodes,
-			"amount":    updatedBooking.TotalAmount,
-			"status":    string(updatedBooking.Status),
-			"orderCode": input.OrderCode,
-		})
+		eventPayload := domain.NewBookingEventEnvelope(TopicBookingPaid, updatedBooking, getCorrelationIDFromContext(ctx))
 		if err := u.outboxRepo.CreateEvent(ctx, TopicBookingPaid, eventPayload); err != nil {
 			logger.Error("Failed to create outbox event for payment: %v", err)
 		}
@@ -576,6 +556,14 @@ func generateOrderCode() string {
 	rand.Read(rb)
 	random := int(binary.BigEndian.Uint16(rb)) % 1000
 	return fmt.Sprintf("%d%03d", ts, random)
+}
+
+func getCorrelationIDFromContext(ctx context.Context) string {
+	v := ctx.Value("requestID")
+	if id, ok := v.(string); ok {
+		return id
+	}
+	return ""
 }
 
 // orderCodeToInt64 converts order code string to int64 for PayOS API.
