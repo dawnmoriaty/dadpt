@@ -5,6 +5,8 @@ import { useAuthStore } from '@/stores/use-auth-store'
 
 import { chatApi } from '../api'
 import type { ChatMessage, ChatResponse } from '../types'
+import { toAssistantMessage, toErrorMessage, toUserMessage } from '../utils/message-mapper'
+export { useChatInput } from './use-chat-input'
 
 interface ChatState {
     messages: ChatMessage[]
@@ -15,9 +17,6 @@ interface ChatState {
     sendMessage: (text: string) => Promise<void>
     clearChat: () => void
 }
-
-let messageCounter = 0
-const nextId = () => `msg_${++messageCounter}_${Date.now()}`
 
 export const useChatStore = create<ChatState>()(
     devtools(
@@ -36,12 +35,7 @@ export const useChatStore = create<ChatState>()(
                 const { tenantSlug, sessionId } = get()
                 const authState = useAuthStore.getState()
 
-                const userMessage: ChatMessage = {
-                    id: nextId(),
-                    role: 'user',
-                    content: trimmed,
-                    timestamp: new Date(),
-                }
+                const userMessage = toUserMessage(trimmed)
 
                 set(
                     (state) => ({
@@ -61,15 +55,7 @@ export const useChatStore = create<ChatState>()(
                         user_id: authState.user ? String(authState.user.id) : undefined,
                     })
 
-                    const assistantMessage: ChatMessage = {
-                        id: nextId(),
-                        role: 'assistant',
-                        content: response.message || '(empty response)',
-                        timestamp: new Date(),
-                        status: response.status,
-                        workflowSlug: response.workflow_slug,
-                        toolCalls: response.tool_calls,
-                    }
+                    const assistantMessage = toAssistantMessage(response)
 
                     set(
                         (state) => ({
@@ -83,13 +69,7 @@ export const useChatStore = create<ChatState>()(
                 } catch (error) {
                     const errorMessage = error instanceof Error ? error.message : 'Cannot connect to AI service'
 
-                    const assistantMessage: ChatMessage = {
-                        id: nextId(),
-                        role: 'assistant',
-                        content: `Warning: ${errorMessage}`,
-                        timestamp: new Date(),
-                        status: 'error',
-                    }
+                    const assistantMessage = toErrorMessage(errorMessage)
 
                     set(
                         (state) => ({

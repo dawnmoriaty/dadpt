@@ -63,7 +63,7 @@ export function TripCard({ trip, onUpdateStatus, onDelete }: TripCardProps) {
                                     className="bg-yellow-500/10 border-yellow-500/20 text-yellow-700 hover:bg-yellow-500/20"
                                     onClick={() => onUpdateStatus(trip.id, 'departed')}
                                 >
-                                    Mark Departed
+                                    Đánh dấu đã xuất bến
                                 </Button>
                                 <Button
                                     variant="outline"
@@ -71,7 +71,7 @@ export function TripCard({ trip, onUpdateStatus, onDelete }: TripCardProps) {
                                     className="bg-red-500/10 border-red-500/20 text-red-700 hover:bg-red-500/20"
                                     onClick={() => onUpdateStatus(trip.id, 'cancelled')}
                                 >
-                                    Cancel
+                                    Hủy chuyến
                                 </Button>
                                 <Button
                                     variant="ghost"
@@ -90,7 +90,7 @@ export function TripCard({ trip, onUpdateStatus, onDelete }: TripCardProps) {
                                 className="bg-emerald-500/10 border-emerald-500/20 text-emerald-700 hover:bg-emerald-500/20"
                                 onClick={() => onUpdateStatus(trip.id, 'completed')}
                             >
-                                Mark Completed
+                                Đánh dấu hoàn thành
                             </Button>
                         )}
                     </div>
@@ -98,20 +98,20 @@ export function TripCard({ trip, onUpdateStatus, onDelete }: TripCardProps) {
                 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4 pt-4 border-t border-border/50">
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Departure</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Khởi hành</p>
                         <p className="text-sm font-medium mt-0.5">{formatDate(trip.departureTime)}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Arrival</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Đến nơi</p>
                         <p className="text-sm font-medium mt-0.5">{formatDate(trip.arrivalTime)}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Price</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Giá vé</p>
                         <p className="text-sm font-semibold text-primary mt-0.5">{formatPrice(trip.finalPrice)}</p>
                     </div>
                     <div>
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Seats</p>
-                        <p className="text-sm font-medium mt-0.5">{trip.availableSeats} available</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Số ghế</p>
+                        <p className="text-sm font-medium mt-0.5">Còn {trip.availableSeats} ghế</p>
                     </div>
                 </div>
             </CardContent>

@@ -10,7 +10,7 @@ export function ChatFab() {
                 asChild
                 size="icon"
                 className="h-12 w-12 rounded-full shadow-lg"
-                aria-label="Open AI chat"
+                aria-label="Mở chat AI"
             >
                 <Link to="/chat">
                     <MessageCircle className="h-5 w-5" />

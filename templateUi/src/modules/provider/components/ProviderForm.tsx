@@ -86,19 +86,19 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
             <DialogContent>
                 <DialogHeader>
                     <DialogTitle>
-                        {provider ? 'Edit Provider' : 'Add New Provider'}
+                        {provider ? 'Chỉnh sửa nhà xe' : 'Thêm nhà xe mới'}
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
                     <form onSubmit={form.handleSubmit(handleFormSubmit)} className="space-y-4">
                         {/* Image Upload */}
                         <div>
-                            <p className="text-sm font-medium mb-2">Provider Image</p>
+                            <p className="text-sm font-medium mb-2">Hình ảnh nhà xe</p>
                             {imageUrl ? (
                                 <div className="relative inline-block">
                                     <OptimizedImage
                                         src={imageUrl}
-                                        alt="Provider preview"
+                                        alt="Xem trước hình nhà xe"
                                         width={128}
                                         height={128}
                                         className="rounded"
@@ -117,7 +117,7 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                             ) : (
                                 <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
                                     <Upload className="w-8 h-8 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground mt-2">Upload</span>
+                                    <span className="text-xs text-muted-foreground mt-2">Tải ảnh lên</span>
                                     <input
                                         type="file"
                                         accept="image/*"
@@ -134,7 +134,7 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Tên nhà xe</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -148,7 +148,7 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                             name="hotline"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Hotline</FormLabel>
+                                    <FormLabel>Số hotline</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -162,9 +162,9 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                             name="slug"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Slug</FormLabel>
+                                    <FormLabel>Đường dẫn (slug)</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="auto-generated if empty" {...field} />
+                                        <Input placeholder="Tự sinh nếu để trống" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -176,7 +176,7 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
                             name="policyRefund"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Refund Policy</FormLabel>
+                                    <FormLabel>Chính sách hoàn vé</FormLabel>
                                     <FormControl>
                                         <Input {...field} />
                                     </FormControl>
@@ -187,7 +187,7 @@ export function ProviderForm({ provider, isOpen, onClose, onSubmit, isLoading }:
 
                         <Button type="submit" className="w-full" disabled={isPending}>
                             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {provider ? 'Update' : 'Create'} Provider
+                            {provider ? 'Cập nhật' : 'Tạo mới'} nhà xe
                         </Button>
                     </form>
                 </Form>

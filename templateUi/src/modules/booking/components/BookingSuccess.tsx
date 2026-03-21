@@ -11,6 +11,7 @@ import { Separator } from '@/components/ui/separator'
 
 import { usePaymentStatus } from '../hooks'
 import type { CreateBookingResponse } from '../types'
+import { formatVndCurrency } from '../utils'
 
 import { PaymentQR } from './PaymentQR'
 
@@ -32,13 +33,6 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
     const isPaid = !hasOnlinePayment
         || booking.status === 'paid'
         || paymentStatus?.status === 'success'
-
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('vi-VN', {
-            style: 'currency',
-            currency: 'VND',
-        }).format(amount)
-    }
 
     const formatDateTime = (value?: string) => {
         if (!value) return '—'
@@ -157,7 +151,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                         </div>
                         <div className="space-y-1">
                             <p className="text-xs text-muted-foreground">{t('booking.totalAmount')}</p>
-                            <p className="font-semibold text-primary">{formatCurrency(booking.totalAmount)}</p>
+                            <p className="font-semibold text-primary">{formatVndCurrency(booking.totalAmount)}</p>
                         </div>
                     </div>
                 </CardContent>
@@ -176,7 +170,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                         {/* Amount */}
                         <div className="flex justify-between items-center bg-muted/50 p-4 rounded-lg">
                             <span className="text-muted-foreground">{t('booking.totalAmount')}</span>
-                            <span className="text-2xl font-bold text-primary">{formatCurrency(booking.totalAmount)}</span>
+                            <span className="text-2xl font-bold text-primary">{formatVndCurrency(booking.totalAmount)}</span>
                         </div>
 
                         {/* QR Code Payment (bank_transfer via PayOS) */}

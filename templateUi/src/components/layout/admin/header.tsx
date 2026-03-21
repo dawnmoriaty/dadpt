@@ -12,7 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAdminBookingEventFeed, useRefundPendingCount } from '@/modules/booking'
+import { useAdminBookingEventFeed, useRefundPendingCount } from '@/modules/booking/hooks/use-admin-refund-hooks'
 import { useAuthStore } from '@/stores/use-auth-store'
 
 export function Header() {

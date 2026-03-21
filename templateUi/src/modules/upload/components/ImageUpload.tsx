@@ -22,12 +22,12 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
         if (!file) return
 
         if (!file.type.startsWith('image/')) {
-            setError('Please select an image file')
+            setError('Vui lòng chọn tệp hình ảnh')
             return
         }
 
         if (file.size > 5 * 1024 * 1024) {
-            setError('Image must be less than 5MB')
+            setError('Kích thước ảnh phải nhỏ hơn 5MB')
             return
         }
 
@@ -42,7 +42,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
             const response = await uploadMutation.mutateAsync({ file })
             onChange?.(response.url)
         } catch {
-            setError('Upload failed. Please try again.')
+            setError('Tải ảnh thất bại. Vui lòng thử lại.')
             setPreview(null)
             onChange?.(null)
         }
@@ -68,7 +68,7 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
                 <div className="relative inline-block">
                     <img
                         src={preview}
-                        alt="Preview"
+                        alt="Xem trước"
                         className="w-32 h-32 object-cover rounded-lg border"
                     />
                     <Button
@@ -88,13 +88,13 @@ export function ImageUpload({ value, onChange, className }: ImageUploadProps) {
                 >
                     {uploadMutation.isPending ? (
                         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
-                    ) : (
-                        <>
-                            <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
-                            <span className="text-xs text-muted-foreground">Click to upload</span>
-                        </>
-                    )}
-                </div>
+                        ) : (
+                            <>
+                                <ImageIcon className="h-8 w-8 text-muted-foreground mb-2" />
+                                <span className="text-xs text-muted-foreground">Bấm để tải ảnh</span>
+                            </>
+                        )}
+                    </div>
             )}
 
             {error && <p className="text-sm text-destructive mt-2">{error}</p>}

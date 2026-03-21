@@ -32,7 +32,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-[2px]"
                 />
             ),
@@ -40,7 +40,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-[2px]"
                 />
             ),
@@ -49,7 +49,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         },
         {
             id: 'image',
-            header: 'Image',
+            header: 'Hình ảnh',
             cell: ({ row }) => {
                 const location = row.original
                 return location.imageUrl ? (
@@ -73,7 +73,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         {
             accessorKey: 'name',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Name" />
+                <DataTableColumnHeader column={column} title="Tên địa điểm" />
             ),
             cell: ({ row }) => (
                 <span className="font-medium">{row.getValue('name')}</span>
@@ -82,7 +82,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         {
             accessorKey: 'city',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="City" />
+                <DataTableColumnHeader column={column} title="Tỉnh/Thành phố" />
             ),
             cell: ({ row }) => (
                 <Badge variant="secondary" className="gap-1">
@@ -94,7 +94,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         {
             accessorKey: 'address',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Address" />
+                <DataTableColumnHeader column={column} title="Địa chỉ" />
             ),
             cell: ({ row }) => (
                 <span className="text-muted-foreground max-w-xs truncate block">
@@ -104,7 +104,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         },
         {
             accessorKey: 'keywords',
-            header: 'Keywords',
+            header: 'Từ khóa',
             cell: ({ row }) => {
                 const keywords = row.getValue('keywords') as string
                 if (!keywords) return <span className="text-muted-foreground">—</span>
@@ -122,21 +122,21 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const location = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onEdit(location)}>
                                 <Pencil className="h-4 w-4 mr-2" />
-                                Edit
+                                Chỉnh sửa
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -144,7 +144,7 @@ export function getLocationsColumns({ onEdit, onDelete }: LocationsColumnsOption
                                 onClick={() => onDelete(location.id)}
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                Xóa
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

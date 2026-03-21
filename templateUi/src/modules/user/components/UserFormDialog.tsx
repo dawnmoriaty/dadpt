@@ -100,7 +100,7 @@ export function UserFormDialog({
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditing ? 'Edit User' : 'Create User'}
+                        {isEditing ? 'Chỉnh sửa người dùng' : 'Tạo người dùng'}
                     </DialogTitle>
                 </DialogHeader>
 
@@ -111,9 +111,9 @@ export function UserFormDialog({
                             name="username"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Username</FormLabel>
+                                    <FormLabel>Tên đăng nhập</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="johndoe" {...field} />
+                                        <Input placeholder="nguyenvana" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -125,9 +125,9 @@ export function UserFormDialog({
                             name="fullName"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Full Name</FormLabel>
+                                    <FormLabel>Họ và tên</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="John Doe" {...field} />
+                                        <Input placeholder="Nguyễn Văn A" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -139,9 +139,9 @@ export function UserFormDialog({
                             name="email"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Email</FormLabel>
+                                    <FormLabel>Email liên hệ</FormLabel>
                                     <FormControl>
-                                        <Input type="email" placeholder="john@example.com" {...field} />
+                                        <Input type="email" placeholder="email@example.com" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -153,7 +153,7 @@ export function UserFormDialog({
                             name="phone"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Phone</FormLabel>
+                                    <FormLabel>Số điện thoại</FormLabel>
                                     <FormControl>
                                         <Input placeholder="0987654321" {...field} />
                                     </FormControl>
@@ -167,7 +167,7 @@ export function UserFormDialog({
                             name="password"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>{isEditing ? 'Password (leave blank to keep current)' : 'Password'}</FormLabel>
+                                    <FormLabel>{isEditing ? 'Mật khẩu (để trống nếu giữ nguyên)' : 'Mật khẩu'}</FormLabel>
                                     <FormControl>
                                         <Input type="password" {...field} />
                                     </FormControl>
@@ -181,17 +181,17 @@ export function UserFormDialog({
                             name="role"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Role</FormLabel>
+                                    <FormLabel>Vai trò</FormLabel>
                                     <Select onValueChange={field.onChange} value={field.value}>
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select role" />
+                                                <SelectValue placeholder="Chọn vai trò" />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
-                                            <SelectItem value="admin">Admin</SelectItem>
-                                            <SelectItem value="operator">Operator</SelectItem>
-                                            <SelectItem value="customer">Customer</SelectItem>
+                                            <SelectItem value="admin">Quản trị viên</SelectItem>
+                                            <SelectItem value="operator">Điều hành</SelectItem>
+                                            <SelectItem value="customer">Khách hàng</SelectItem>
                                         </SelectContent>
                                     </Select>
                                     <FormMessage />
@@ -205,7 +205,7 @@ export function UserFormDialog({
                             render={({ field }) => (
                                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                                     <div className="space-y-0.5">
-                                        <FormLabel>Active Status</FormLabel>
+                                        <FormLabel>Trạng thái hoạt động</FormLabel>
                                     </div>
                                     <FormControl>
                                         <Checkbox
@@ -219,11 +219,11 @@ export function UserFormDialog({
 
                         <div className="flex gap-2 justify-end">
                             <Button type="button" variant="outline" onClick={onClose}>
-                                Cancel
+                                Hủy
                             </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isEditing ? 'Update' : 'Create'}
+                                {isEditing ? 'Cập nhật' : 'Tạo mới'}
                             </Button>
                         </div>
                     </form>

@@ -466,7 +466,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                                 <div className="relative inline-block">
                                     <img
                                         src={previewUrl || imageUrl}
-                                        alt="Location preview"
+                                        alt="Xem trước hình địa điểm"
                                         className="w-32 h-32 object-cover rounded"
                                     />
                                     <Button
@@ -485,7 +485,7 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                             ) : (
                                 <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
                                     <Upload className="w-8 h-8 text-muted-foreground" />
-                                    <span className="text-xs text-muted-foreground mt-2">Upload</span>
+                                    <span className="text-xs text-muted-foreground mt-2">Tải ảnh lên</span>
                                     <input
                                         type="file"
                                         accept="image/*"

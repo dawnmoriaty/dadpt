@@ -38,7 +38,7 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-[2px]"
                 />
             ),
@@ -46,7 +46,7 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-[2px]"
                 />
             ),
@@ -55,7 +55,7 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
         },
         {
             id: 'image',
-            header: 'Image',
+            header: 'Hình ảnh',
             cell: ({ row }) => {
                 const bus = row.original
                 return bus.imageUrl ? (
@@ -79,7 +79,7 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
         {
             accessorKey: 'licensePlate',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="License Plate" />
+                <DataTableColumnHeader column={column} title="Biển số xe" />
             ),
             cell: ({ row }) => (
                 <span className="font-medium">{row.getValue('licensePlate')}</span>
@@ -88,52 +88,60 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
         {
             accessorKey: 'providerName',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Provider" />
+                <DataTableColumnHeader column={column} title="Nhà xe" />
             ),
         },
         {
             accessorKey: 'busTypeName',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Bus Type" />
+                <DataTableColumnHeader column={column} title="Loại xe" />
             ),
         },
         {
             accessorKey: 'totalSeats',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Seats" />
+                <DataTableColumnHeader column={column} title="Số ghế" />
             ),
         },
         {
             accessorKey: 'status',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title="Trạng thái" />
             ),
             cell: ({ row }) => {
                 const status = row.getValue('status') as string
+                const statusLabel =
+                    status === 'active'
+                        ? 'Đang hoạt động'
+                        : status === 'maintenance'
+                            ? 'Bảo trì'
+                            : status === 'retired'
+                                ? 'Ngừng khai thác'
+                                : status
                 return (
                     <Badge variant={statusVariants[status] ?? 'secondary'}>
-                        {status}
+                        {statusLabel}
                     </Badge>
                 )
             },
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const bus = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onEdit(bus)}>
                                 <Pencil className="h-4 w-4 mr-2" />
-                                Edit
+                                Chỉnh sửa
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -141,7 +149,7 @@ export function getBusesColumns({ onEdit, onDelete }: BusesColumnsOptions): Colu
                                 onClick={() => onDelete(bus.id)}
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                Xóa
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

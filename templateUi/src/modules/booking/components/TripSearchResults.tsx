@@ -16,6 +16,8 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import type { Trip } from '@/modules/trip'
 
+import { formatVndCurrency } from '../utils'
+
 interface TripSearchResultsProps {
     trips: Trip[]
     isLoading: boolean
@@ -37,13 +39,6 @@ function formatDate(dateStr: string) {
     } catch {
         return dateStr
     }
-}
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-    }).format(amount)
 }
 
 function getDuration(departure: string, arrival: string) {
@@ -134,12 +129,12 @@ function TripResultCard({ trip, passengers, onSelect, t }: { trip: Trip; passeng
                     <div className="flex md:flex-col items-center justify-between md:justify-center gap-3 p-5 md:w-52">
                         <div className="text-center">
                             {trip.isHotDeal && trip.finalPrice < trip.basePrice && (
-                                <p className="text-sm text-muted-foreground line-through">
-                                    {formatCurrency(trip.basePrice)}
-                                </p>
-                            )}
+                                    <p className="text-sm text-muted-foreground line-through">
+                                        {formatVndCurrency(trip.basePrice)}
+                                    </p>
+                                )}
                             <p className="text-2xl font-bold text-primary">
-                                {formatCurrency(trip.finalPrice)}
+                                {formatVndCurrency(trip.finalPrice)}
                             </p>
                             <p className="text-xs text-muted-foreground">{t('searchPage.perSeat')}</p>
                         </div>

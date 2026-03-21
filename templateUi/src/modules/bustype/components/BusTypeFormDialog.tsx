@@ -82,7 +82,7 @@ export function BusTypeFormDialog({
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditing ? 'Edit Bus Type' : 'Create Bus Type'}
+                        {isEditing ? 'Chỉnh sửa loại xe' : 'Tạo loại xe'}
                     </DialogTitle>
                 </DialogHeader>
                 <Form {...form}>
@@ -92,9 +92,9 @@ export function BusTypeFormDialog({
                             name="name"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Name</FormLabel>
+                                    <FormLabel>Tên loại xe</FormLabel>
                                     <FormControl>
-                                        <Input placeholder="e.g. Giường nằm 40 chỗ" {...field} />
+                                        <Input placeholder="Ví dụ: Giường nằm 40 chỗ" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>
@@ -106,7 +106,7 @@ export function BusTypeFormDialog({
                             name="totalSeats"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Total Seats</FormLabel>
+                                    <FormLabel>Tổng số ghế</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="number"
@@ -126,11 +126,11 @@ export function BusTypeFormDialog({
 
                         <div className="flex gap-2 justify-end">
                             <Button type="button" variant="outline" onClick={onClose}>
-                                Cancel
+                                Hủy
                             </Button>
                             <Button type="submit" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                {isEditing ? 'Update' : 'Create'}
+                                {isEditing ? 'Cập nhật' : 'Tạo mới'}
                             </Button>
                         </div>
                     </form>

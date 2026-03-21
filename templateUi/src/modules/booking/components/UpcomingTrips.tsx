@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import type { Trip } from '@/modules/trip'
 
 import { useBrowseTrips } from '../hooks'
+import { formatVndCurrency } from '../utils'
 
 function formatTime(dateStr: string) {
     try {
@@ -25,13 +26,6 @@ function formatDate(dateStr: string) {
     } catch {
         return dateStr
     }
-}
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-    }).format(amount)
 }
 
 function getDuration(departure: string, arrival: string) {
@@ -114,11 +108,11 @@ function UpcomingTripCard({ trip }: { trip: Trip }) {
                     <div>
                         {trip.isHotDeal && trip.finalPrice < trip.basePrice && (
                             <span className="text-xs text-muted-foreground line-through mr-2">
-                                {formatCurrency(trip.basePrice)}
+                                {formatVndCurrency(trip.basePrice)}
                             </span>
                         )}
                         <span className="text-lg font-bold text-primary">
-                            {formatCurrency(trip.finalPrice)}
+                            {formatVndCurrency(trip.finalPrice)}
                         </span>
                     </div>
                     <div className="flex items-center gap-1 text-xs">

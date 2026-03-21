@@ -90,9 +90,9 @@ export function TripsPage() {
                         <Bus className="h-7 w-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Trips</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">Chuyến đi</h1>
                         <p className="text-muted-foreground">
-                            Manage {data?.total ?? 0} scheduled bus trips
+                            Quản lý {data?.total ?? 0} chuyến xe đã lên lịch
                         </p>
                     </div>
                 </div>
@@ -104,7 +104,7 @@ export function TripsPage() {
                     className="gap-2 bg-linear-to-r from-success to-info hover:opacity-90 shadow-lg shadow-success/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus className="h-4 w-4" />
-                    Create Trip
+                    Tạo chuyến đi
                 </Button>
             </div>
 
@@ -156,11 +156,11 @@ export function TripsPage() {
                         <div className="p-4 rounded-full bg-muted/50 mb-4">
                             <Bus className="h-8 w-8 text-muted-foreground/50" />
                         </div>
-                        <h3 className="font-semibold text-lg">No trips found</h3>
+                        <h3 className="font-semibold text-lg">Không tìm thấy chuyến đi</h3>
                         <p className="text-muted-foreground mt-1 text-center max-w-sm">
                             {statusFilter
-                                ? `No ${statusFilter} trips at the moment.`
-                                : 'Get started by creating your first bus trip.'}
+                                ? `Hiện chưa có chuyến ở trạng thái ${statusFilter}.`
+                                : 'Hãy bắt đầu bằng cách tạo chuyến xe đầu tiên.'}
                         </p>
                     </CardContent>
                 </Card>

@@ -36,3 +36,5 @@ export function getVoiceErrorMessage(error: unknown): string {
     if (error instanceof Error && error.message) return error.message
     return 'Không thể xử lý file giọng nói lúc này.'
 }
+
+export { useVoiceBooking } from './use-voice-booking'

@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 import { usePaymentStatus } from '../hooks'
+import { formatVndCurrency } from '../utils'
 
 interface PaymentQRProps {
     qrCode: string
@@ -95,7 +96,7 @@ export function PaymentQR({ qrCode, orderCode, amount, paymentUrl, expiresAt, on
                             <div className="flex justify-between">
                                 <span className="text-muted-foreground">Số tiền:</span>
                                 <span className="font-semibold text-primary">
-                                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(amount)}
+                                    {formatVndCurrency(amount)}
                                 </span>
                             </div>
                             <div className="flex justify-between">

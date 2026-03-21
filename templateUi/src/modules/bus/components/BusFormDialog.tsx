@@ -146,18 +146,18 @@ export function BusFormDialog({
             <DialogContent className="max-w-md">
                 <DialogHeader>
                     <DialogTitle>
-                        {isEditing ? 'Edit Bus' : 'Create Bus'}
+                        {isEditing ? 'Chỉnh sửa xe' : 'Tạo xe'}
                     </DialogTitle>
                 </DialogHeader>
 
                 {/* Image Upload (shared between create/edit) */}
                 <div>
-                    <p className="text-sm font-medium mb-2">Bus Image</p>
+                    <p className="text-sm font-medium mb-2">Hình ảnh xe</p>
                     {(previewUrl || imageUrl) ? (
                         <div className="relative inline-block">
                             <img
                                 src={previewUrl || imageUrl}
-                                alt="Bus preview"
+                                alt="Xem trước hình xe"
                                 className="w-32 h-32 object-cover rounded"
                             />
                             <Button
@@ -180,7 +180,7 @@ export function BusFormDialog({
                     ) : (
                         <label className="flex flex-col items-center justify-center w-32 h-32 border-2 border-dashed rounded-lg cursor-pointer hover:bg-muted/50">
                             <Upload className="w-8 h-8 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground mt-2">Upload</span>
+                            <span className="text-xs text-muted-foreground mt-2">Tải ảnh lên</span>
                             <input
                                 type="file"
                                 accept="image/*"
@@ -200,20 +200,20 @@ export function BusFormDialog({
                                 name="busTypeId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Bus Type</FormLabel>
+                                        <FormLabel>Loại xe</FormLabel>
                                         <Select
                                             onValueChange={(val) => field.onChange(Number(val))}
                                             value={field.value?.toString() ?? ''}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select bus type..." />
+                                                    <SelectValue placeholder="Chọn loại xe..." />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 {busTypeItems.map((bt) => (
                                                     <SelectItem key={bt.id} value={bt.id.toString()}>
-                                                        {bt.name} ({bt.totalSeats} seats)
+                                                        {bt.name} ({bt.totalSeats} ghế)
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -228,12 +228,12 @@ export function BusFormDialog({
                                 name="licensePlate"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>License Plate</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. 51B-123.45" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                        <FormLabel>Biển số xe</FormLabel>
+                                    <FormControl>
+                                            <Input placeholder="Ví dụ: 51B-123.45" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                                 )}
                             />
 
@@ -242,7 +242,7 @@ export function BusFormDialog({
                                 name="status"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Status</FormLabel>
+                                        <FormLabel>Trạng thái</FormLabel>
                                         <Select onValueChange={field.onChange} value={field.value ?? 'active'}>
                                             <FormControl>
                                                 <SelectTrigger>
@@ -250,9 +250,9 @@ export function BusFormDialog({
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
-                                                <SelectItem value="active">Active</SelectItem>
-                                                <SelectItem value="maintenance">Maintenance</SelectItem>
-                                                <SelectItem value="retired">Retired</SelectItem>
+                                                <SelectItem value="active">Đang hoạt động</SelectItem>
+                                                <SelectItem value="maintenance">Bảo trì</SelectItem>
+                                                <SelectItem value="retired">Ngừng khai thác</SelectItem>
                                             </SelectContent>
                                         </Select>
                                         <FormMessage />
@@ -262,11 +262,11 @@ export function BusFormDialog({
 
                             <div className="flex gap-2 justify-end">
                                 <Button type="button" variant="outline" onClick={onClose}>
-                                    Cancel
+                                    Hủy
                                 </Button>
                                 <Button type="submit" disabled={isPending}>
                                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Update
+                                    Cập nhật
                                 </Button>
                             </div>
                         </form>
@@ -279,14 +279,14 @@ export function BusFormDialog({
                                 name="providerId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Provider</FormLabel>
+                                        <FormLabel>Nhà xe</FormLabel>
                                         <Select
                                             onValueChange={(val) => field.onChange(Number(val))}
                                             value={field.value ? field.value.toString() : ''}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select provider..." />
+                                                    <SelectValue placeholder="Chọn nhà xe..." />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
@@ -307,20 +307,20 @@ export function BusFormDialog({
                                 name="busTypeId"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Bus Type</FormLabel>
+                                        <FormLabel>Loại xe</FormLabel>
                                         <Select
                                             onValueChange={(val) => field.onChange(Number(val))}
                                             value={field.value ? field.value.toString() : ''}
                                         >
                                             <FormControl>
                                                 <SelectTrigger>
-                                                    <SelectValue placeholder="Select bus type..." />
+                                                    <SelectValue placeholder="Chọn loại xe..." />
                                                 </SelectTrigger>
                                             </FormControl>
                                             <SelectContent>
                                                 {busTypeItems.map((bt) => (
                                                     <SelectItem key={bt.id} value={bt.id.toString()}>
-                                                        {bt.name} ({bt.totalSeats} seats)
+                                                        {bt.name} ({bt.totalSeats} ghế)
                                                     </SelectItem>
                                                 ))}
                                             </SelectContent>
@@ -335,22 +335,22 @@ export function BusFormDialog({
                                 name="licensePlate"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>License Plate</FormLabel>
-                                        <FormControl>
-                                            <Input placeholder="e.g. 51B-123.45" {...field} />
-                                        </FormControl>
-                                        <FormMessage />
-                                    </FormItem>
+                                        <FormLabel>Biển số xe</FormLabel>
+                                    <FormControl>
+                                            <Input placeholder="Ví dụ: 51B-123.45" {...field} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
                                 )}
                             />
 
                             <div className="flex gap-2 justify-end">
                                 <Button type="button" variant="outline" onClick={onClose}>
-                                    Cancel
+                                    Hủy
                                 </Button>
                                 <Button type="submit" disabled={isPending}>
                                     {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                                    Create
+                                    Tạo mới
                                 </Button>
                             </div>
                         </form>

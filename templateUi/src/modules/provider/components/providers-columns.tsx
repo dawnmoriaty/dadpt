@@ -37,7 +37,7 @@ export function getProvidersColumns({
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-0.5"
                 />
             ),
@@ -45,7 +45,7 @@ export function getProvidersColumns({
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-0.5"
                 />
             ),
@@ -55,7 +55,7 @@ export function getProvidersColumns({
         {
             accessorKey: 'name',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Provider" />
+                <DataTableColumnHeader column={column} title="Nhà xe" />
             ),
             cell: ({ row }) => {
                 const provider = row.original
@@ -89,7 +89,7 @@ export function getProvidersColumns({
         {
             accessorKey: 'isActive',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title="Trạng thái" />
             ),
             cell: ({ row }) => {
                 const isActive = row.getValue('isActive') as boolean
@@ -98,7 +98,7 @@ export function getProvidersColumns({
                         <span
                             className={`h-1.5 w-1.5 rounded-full ${isActive ? 'bg-emerald-500' : 'bg-gray-400'}`}
                         />
-                        {isActive ? 'Active' : 'Inactive'}
+                        {isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
                     </Badge>
                 )
             },
@@ -125,24 +125,24 @@ export function getProvidersColumns({
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const provider = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onToggleActive(provider.id)}>
                                 <Power className="h-4 w-4 mr-2" />
-                                {provider.isActive ? 'Deactivate' : 'Activate'}
+                                {provider.isActive ? 'Ngừng hoạt động' : 'Kích hoạt'}
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => onEdit(provider)}>
-                                Edit Provider
+                                Chỉnh sửa nhà xe
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -150,7 +150,7 @@ export function getProvidersColumns({
                                 onClick={() => onDelete(provider.id)}
                                 disabled={provider.isActive}
                             >
-                                Delete Provider
+                                Xóa nhà xe
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

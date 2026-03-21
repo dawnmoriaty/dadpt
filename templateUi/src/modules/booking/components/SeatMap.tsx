@@ -298,10 +298,10 @@ export function SeatMap({
             <Tabs defaultValue="floor-1" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="floor-1">
-                        {t('booking.lowerFloor', { defaultValue: 'Lower Floor' })}
+                        {t('booking.lowerFloor', { defaultValue: 'Tầng dưới' })}
                     </TabsTrigger>
                     <TabsTrigger value="floor-2">
-                        {t('booking.upperFloor', { defaultValue: 'Upper Floor' })}
+                        {t('booking.upperFloor', { defaultValue: 'Tầng trên' })}
                     </TabsTrigger>
                 </TabsList>
                 <TabsContent value="floor-1" className="pt-2">
@@ -336,15 +336,15 @@ function SeatLegend() {
             <div className="flex flex-wrap gap-4 text-xs text-muted-foreground">
                 <div className="flex items-center gap-1.5">
                     <div className="h-4 w-4 rounded border border-border bg-background" />
-                    <span>{t('booking.seatAvailable', { defaultValue: 'Available' })}</span>
+                    <span>{t('booking.seatAvailable', { defaultValue: 'Còn trống' })}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="h-4 w-4 rounded bg-primary" />
-                    <span>{t('booking.seatSelected', { defaultValue: 'Selected' })}</span>
+                    <span>{t('booking.seatSelected', { defaultValue: 'Đang chọn' })}</span>
                 </div>
                 <div className="flex items-center gap-1.5">
                     <div className="h-4 w-4 rounded bg-muted border border-muted" />
-                    <span>{t('booking.seatBooked', { defaultValue: 'Booked' })}</span>
+                    <span>{t('booking.seatBooked', { defaultValue: 'Đã đặt' })}</span>
                 </div>
             </div>
             <p className="text-xs text-muted-foreground/80 italic">

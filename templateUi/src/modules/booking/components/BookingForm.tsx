@@ -32,6 +32,7 @@ import { useAuthStore } from '@/stores/use-auth-store'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
 import type { CreateBookingResponse } from '../types'
+import { formatVndCurrency } from '../utils'
 
 import { SeatMap } from './SeatMap'
 
@@ -39,13 +40,6 @@ interface BookingFormProps {
     trip: Trip
     passengers: number
     onSuccess: (data: CreateBookingResponse) => void
-}
-
-function formatCurrency(amount: number) {
-    return new Intl.NumberFormat('vi-VN', {
-        style: 'currency',
-        currency: 'VND',
-    }).format(amount)
 }
 
 export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
@@ -164,7 +158,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             </div>
                             <div>
                                 <p className="text-muted-foreground">{t('booking.pricePerSeat')}</p>
-                                <p className="font-bold text-primary">{formatCurrency(trip.finalPrice)}</p>
+                                <p className="font-bold text-primary">{formatVndCurrency(trip.finalPrice)}</p>
                             </div>
                             <div>
                                 <p className="text-muted-foreground">{t('booking.availableSeats')}</p>
@@ -203,7 +197,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                         />
                                     ) : (
                                         <p className="text-sm text-muted-foreground">
-                                            {t('booking.noSeatLayout', { defaultValue: 'Seat layout not available for this trip.' })}
+                                            {t('booking.noSeatLayout', { defaultValue: 'Chuyến này chưa có sơ đồ ghế.' })}
                                         </p>
                                     )}
                                     <FormDescription>
@@ -359,10 +353,10 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                             <div>
                                 <p className="text-sm text-muted-foreground">{t('booking.totalAmount')}</p>
                                 <p className="text-3xl font-bold text-primary">
-                                    {formatCurrency(totalAmount)}
+                                    {formatVndCurrency(totalAmount)}
                                 </p>
                                 <p className="text-xs text-muted-foreground">
-                                    {selectedSeats.length} {t('field.seats').toLowerCase()} × {formatCurrency(trip.finalPrice)}
+                                    {selectedSeats.length} {t('field.seats').toLowerCase()} × {formatVndCurrency(trip.finalPrice)}
                                 </p>
                             </div>
                             <Button

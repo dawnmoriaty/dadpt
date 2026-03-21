@@ -65,13 +65,13 @@ export function ProvidersPage() {
                         <Building2 className="h-7 w-7 text-white" />
                     </div>
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">Providers</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">Nhà xe</h1>
                         <p className="text-muted-foreground flex items-center gap-2">
-                            <span>{data?.total ?? 0} total</span>
+                            <span>Tổng {data?.total ?? 0}</span>
                             <span className="text-muted-foreground/50">•</span>
-                            <span className="text-emerald-600">{activeCount} active</span>
+                            <span className="text-emerald-600">{activeCount} hoạt động</span>
                             <span className="text-muted-foreground/50">•</span>
-                            <span className="text-muted-foreground">{inactiveCount} inactive</span>
+                            <span className="text-muted-foreground">{inactiveCount} ngưng hoạt động</span>
                         </p>
                     </div>
                 </div>
@@ -80,7 +80,7 @@ export function ProvidersPage() {
                     className="gap-2 bg-linear-to-r from-violet-500 to-fuchsia-500 hover:from-violet-600 hover:to-fuchsia-600 shadow-lg shadow-violet-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                 >
                     <Plus className="h-4 w-4" />
-                    Add Provider
+                    Thêm nhà xe
                 </Button>
             </div>
 
@@ -89,7 +89,7 @@ export function ProvidersPage() {
                 <div className="relative max-w-sm">
                     <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
-                        placeholder="Search providers..."
+                        placeholder="Tìm nhà xe..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="h-9 pl-9 w-[300px]"
@@ -112,11 +112,11 @@ export function ProvidersPage() {
                         <div className="p-4 rounded-full bg-muted/50 mb-4">
                             <Building2 className="h-8 w-8 text-muted-foreground/50" />
                         </div>
-                        <h3 className="font-semibold text-lg">No providers found</h3>
+                        <h3 className="font-semibold text-lg">Không tìm thấy nhà xe</h3>
                         <p className="text-muted-foreground mt-1 text-center max-w-sm">
                             {searchQuery
-                                ? `No results matching "${searchQuery}".`
-                                : 'Get started by adding your first bus service provider.'}
+                                ? `Không tìm thấy kết quả phù hợp "${searchQuery}".`
+                                : 'Hãy bắt đầu bằng cách thêm nhà xe đầu tiên của bạn.'}
                         </p>
                         {!searchQuery && (
                             <Button
@@ -125,7 +125,7 @@ export function ProvidersPage() {
                                 variant="outline"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Your First Provider
+                                Thêm nhà xe đầu tiên
                             </Button>
                         )}
                     </CardContent>

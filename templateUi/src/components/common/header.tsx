@@ -136,7 +136,7 @@ export function Header() {
                         size="icon"
                         className="md:hidden h-10 w-10 rounded-lg hover:bg-primary/10"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        aria-label="Menu"
+                        aria-label="Menu điều hướng"
                     >
                         {mobileMenuOpen ? (
                             <X className="h-5 w-5" />

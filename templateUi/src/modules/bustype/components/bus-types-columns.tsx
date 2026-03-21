@@ -30,7 +30,7 @@ export function getBusTypesColumns({ onEdit, onDelete }: BusTypesColumnsOptions)
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-0.5"
                 />
             ),
@@ -38,7 +38,7 @@ export function getBusTypesColumns({ onEdit, onDelete }: BusTypesColumnsOptions)
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-0.5"
                 />
             ),
@@ -57,7 +57,7 @@ export function getBusTypesColumns({ onEdit, onDelete }: BusTypesColumnsOptions)
         {
             accessorKey: 'name',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Name" />
+                <DataTableColumnHeader column={column} title="Tên loại xe" />
             ),
             cell: ({ row }) => (
                 <span className="font-medium">{row.getValue('name')}</span>
@@ -66,26 +66,26 @@ export function getBusTypesColumns({ onEdit, onDelete }: BusTypesColumnsOptions)
         {
             accessorKey: 'totalSeats',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Total Seats" />
+                <DataTableColumnHeader column={column} title="Tổng số ghế" />
             ),
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const busType = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onEdit(busType)}>
                                 <Pencil className="h-4 w-4 mr-2" />
-                                Edit
+                                Chỉnh sửa
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -93,7 +93,7 @@ export function getBusTypesColumns({ onEdit, onDelete }: BusTypesColumnsOptions)
                                 onClick={() => onDelete(busType.id)}
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                Xóa
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

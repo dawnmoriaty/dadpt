@@ -31,7 +31,7 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-[2px]"
                 />
             ),
@@ -39,7 +39,7 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-[2px]"
                 />
             ),
@@ -49,7 +49,7 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
         {
             accessorKey: 'username',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Username" />
+                <DataTableColumnHeader column={column} title="Tên đăng nhập" />
             ),
             cell: ({ row }) => {
                 const user = row.original
@@ -66,7 +66,7 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
         {
             accessorKey: 'fullName',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Full Name" />
+                <DataTableColumnHeader column={column} title="Họ và tên" />
             ),
         },
         {
@@ -78,19 +78,27 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
         {
             accessorKey: 'phone',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Phone" />
+                <DataTableColumnHeader column={column} title="Số điện thoại" />
             ),
         },
         {
             accessorKey: 'role',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Role" />
+                <DataTableColumnHeader column={column} title="Vai trò" />
             ),
             cell: ({ row }) => {
                 const role = row.getValue('role') as string
+                const roleLabel =
+                    role === 'admin'
+                        ? 'Quản trị viên'
+                        : role === 'operator'
+                            ? 'Điều hành'
+                            : role === 'customer'
+                                ? 'Khách hàng'
+                                : role
                 return (
                     <Badge variant={role === 'admin' ? 'default' : 'secondary'}>
-                        {role}
+                        {roleLabel}
                     </Badge>
                 )
             },
@@ -98,34 +106,34 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
         {
             accessorKey: 'isActive',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title="Trạng thái" />
             ),
             cell: ({ row }) => {
                 const isActive = row.getValue('isActive') as boolean
                 return (
                     <Badge variant={isActive ? 'success' : 'destructive'}>
-                        {isActive ? 'Active' : 'Inactive'}
+                        {isActive ? 'Hoạt động' : 'Ngưng hoạt động'}
                     </Badge>
                 )
             },
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const user = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => onEdit(user)}>
                                 <Pencil className="h-4 w-4 mr-2" />
-                                Edit
+                                Chỉnh sửa
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
@@ -133,7 +141,7 @@ export function getUsersColumns({ onEdit, onDelete }: UsersColumnsOptions): Colu
                                 onClick={() => onDelete(user.id)}
                             >
                                 <Trash2 className="h-4 w-4 mr-2" />
-                                Delete
+                                Xóa
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>

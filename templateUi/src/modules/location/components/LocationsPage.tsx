@@ -73,9 +73,9 @@ export function LocationsPage() {
                             <MapPin className="h-7 w-7 text-white" />
                         </div>
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight">Locations</h1>
+                            <h1 className="text-3xl font-bold tracking-tight">Địa điểm</h1>
                             <p className="text-muted-foreground">
-                                Manage {data?.total ?? 0} bus stations across {Object.keys(cityCounts).length} cities
+                                Quản lý {data?.total ?? 0} điểm đón/trả tại {Object.keys(cityCounts).length} tỉnh thành
                             </p>
                         </div>
                     </div>
@@ -84,7 +84,7 @@ export function LocationsPage() {
                         className="gap-2 bg-linear-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 shadow-lg shadow-blue-500/25 transition-all hover:shadow-xl hover:-translate-y-0.5"
                     >
                         <Plus className="h-4 w-4" />
-                        Add Location
+                        Thêm địa điểm
                     </Button>
                 </div>
 
@@ -102,7 +102,7 @@ export function LocationsPage() {
                         ))}
                         {Object.keys(cityCounts).length > 5 && (
                             <Badge variant="outline" className="py-1.5">
-                                +{Object.keys(cityCounts).length - 5} more
+                                +{Object.keys(cityCounts).length - 5} tỉnh thành khác
                             </Badge>
                         )}
                     </div>
@@ -116,7 +116,7 @@ export function LocationsPage() {
                         <div className="relative flex-1 max-w-md">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search by name or city..."
+                                placeholder="Tìm theo tên hoặc tỉnh/thành..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10 border-0 bg-background shadow-sm"
@@ -125,7 +125,7 @@ export function LocationsPage() {
                         <div className="flex items-center gap-2">
                             <Button variant="outline" size="sm" className="gap-2">
                                 <Filter className="h-4 w-4" />
-                                Filter
+                                Lọc
                             </Button>
                             <div className="flex items-center border rounded-lg p-1 bg-muted/50">
                                 <Button
@@ -183,11 +183,11 @@ export function LocationsPage() {
                         <div className="p-4 rounded-full bg-muted/50 mb-4">
                             <MapPin className="h-8 w-8 text-muted-foreground/50" />
                         </div>
-                        <h3 className="font-semibold text-lg">No locations found</h3>
+                        <h3 className="font-semibold text-lg">Không tìm thấy địa điểm</h3>
                         <p className="text-muted-foreground mt-1 text-center max-w-sm">
                             {searchQuery
-                                ? `No results matching "${searchQuery}". Try a different search term.`
-                                : 'Get started by adding your first bus station or terminal.'}
+                                ? `Không có kết quả phù hợp "${searchQuery}". Hãy thử từ khóa khác.`
+                                : 'Hãy bắt đầu bằng cách thêm địa điểm đầu tiên.'}
                         </p>
                         {!searchQuery && (
                             <Button
@@ -196,7 +196,7 @@ export function LocationsPage() {
                                 variant="outline"
                             >
                                 <Plus className="h-4 w-4" />
-                                Add Your First Location
+                                Thêm địa điểm đầu tiên
                             </Button>
                         )}
                     </CardContent>

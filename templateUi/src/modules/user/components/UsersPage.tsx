@@ -62,7 +62,7 @@ export function UsersPage(): React.ReactElement {
     }
 
     if (error) {
-        return <div className="text-destructive">Error loading users</div>
+        return <div className="text-destructive">Không thể tải danh sách người dùng</div>
     }
 
     const users = data?.items ?? []
@@ -72,12 +72,12 @@ export function UsersPage(): React.ReactElement {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Users</h1>
-                    <p className="text-muted-foreground">Manage system users and their roles</p>
+                    <h1 className="text-2xl font-bold">Người dùng</h1>
+                    <p className="text-muted-foreground">Quản lý người dùng hệ thống và vai trò</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <UserPlus className="mr-2 h-4 w-4" />
-                    Add User
+                    Thêm người dùng
                 </Button>
             </div>
 
@@ -110,8 +110,8 @@ export function UsersPage(): React.ReactElement {
                 open={deletingUserId !== null}
                 onOpenChange={() => setDeletingUserId(null)}
                 onConfirm={handleConfirmDelete}
-                title="Delete User"
-                description="Are you sure you want to delete this user? This action cannot be undone."
+                title="Xóa người dùng"
+                description="Bạn có chắc chắn muốn xóa người dùng này? Hành động này không thể hoàn tác."
                 variant="destructive"
                 loading={deleteMutation.isPending}
             />

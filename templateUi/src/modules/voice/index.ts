@@ -1,4 +1,7 @@
 export * from './types'
 export * from './hooks'
 export * from './api'
+export * from './utils/voice-parser'
 export { VoiceBookingPanel } from './components/VoiceBookingPanel'
+export { VoiceCandidateCard } from './components/voice-candidate-card'
+export { VoiceTripForm } from './components/voice-trip-form'

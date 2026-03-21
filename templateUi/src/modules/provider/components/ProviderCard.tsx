@@ -29,11 +29,11 @@ export function ProviderCard({ provider, onEdit, onToggleActive, onDelete }: Pro
                                 </h3>
                                 {provider.isActive ? (
                                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20">
-                                        Active
+                                        Hoạt động
                                     </span>
                                 ) : (
                                     <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-gray-500/10 text-gray-600 border border-gray-500/20">
-                                        Inactive
+                                        Ngưng hoạt động
                                     </span>
                                 )}
                             </div>
@@ -48,7 +48,7 @@ export function ProviderCard({ provider, onEdit, onToggleActive, onDelete }: Pro
                             size="icon"
                             className={`h-8 w-8 ${provider.isActive ? 'hover:bg-emerald-500/10 text-emerald-500' : 'hover:bg-gray-500/10 text-gray-400'}`}
                             onClick={() => onToggleActive(provider.id)}
-                            title={provider.isActive ? 'Deactivate' : 'Activate'}
+                            title={provider.isActive ? 'Ngừng hoạt động' : 'Kích hoạt'}
                         >
                             <Power className="h-4 w-4" />
                         </Button>
@@ -74,7 +74,7 @@ export function ProviderCard({ provider, onEdit, onToggleActive, onDelete }: Pro
                 
                 {provider.hotline && (
                     <div className="mt-3 pt-3 border-t border-border/50">
-                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Hotline</p>
+                        <p className="text-xs text-muted-foreground uppercase tracking-wider">Số hotline</p>
                         <p className="text-sm font-medium mt-0.5">{provider.hotline}</p>
                     </div>
                 )}

@@ -200,7 +200,7 @@ export function TripForm({
         <Dialog open={isOpen} onOpenChange={onClose}>
             <DialogContent className="max-h-[90vh] max-w-4xl overflow-hidden p-0">
                 <DialogHeader className="border-b px-6 py-4">
-                    <DialogTitle>{isEditMode ? 'Cập nhật chuyến đi' : 'Create New Trip'}</DialogTitle>
+                    <DialogTitle>{isEditMode ? 'Cập nhật chuyến đi' : 'Tạo chuyến đi mới'}</DialogTitle>
                     <DialogDescription>
                         {isEditMode
                             ? 'Cập nhật thông tin chuyến đi, điểm đón và điểm trả.'
@@ -216,7 +216,7 @@ export function TripForm({
                             name="providerId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Provider</FormLabel>
+                                    <FormLabel>Nhà xe</FormLabel>
                                     <Select
                                         onValueChange={(val) => field.onChange(Number(val))}
                                         value={field.value ? field.value.toString() : ''}
@@ -224,7 +224,7 @@ export function TripForm({
                                     >
                                         <FormControl>
                                             <SelectTrigger>
-                                                <SelectValue placeholder="Select provider..." />
+                                                <SelectValue placeholder="Chọn nhà xe..." />
                                             </SelectTrigger>
                                         </FormControl>
                                         <SelectContent>
@@ -246,12 +246,12 @@ export function TripForm({
                             name="originId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Origin</FormLabel>
+                                    <FormLabel>Điểm đi</FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
                                             onSelect={field.onChange}
-                                            placeholder="Select origin location..."
+                                            placeholder="Chọn điểm đi..."
                                             selectedLabel={initialTrip && field.value === initialTrip.originId
                                                 ? `${initialTrip.originName} - ${initialTrip.originCity}`
                                                 : undefined}
@@ -268,12 +268,12 @@ export function TripForm({
                             name="destinationId"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Destination</FormLabel>
+                                    <FormLabel>Điểm đến</FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
                                             onSelect={field.onChange}
-                                            placeholder="Select destination location..."
+                                            placeholder="Chọn điểm đến..."
                                             selectedLabel={initialTrip && field.value === initialTrip.destinationId
                                                 ? `${initialTrip.destinationName} - ${initialTrip.destinationCity}`
                                                 : undefined}
@@ -291,14 +291,14 @@ export function TripForm({
                                 name="departureTime"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Departure Time</FormLabel>
+                                        <FormLabel>Thời gian khởi hành</FormLabel>
                                         <FormControl>
                                             <DateTimePicker
                                                 value={field.value ? new Date(field.value) : undefined}
                                                 onChange={(date) =>
                                                     field.onChange(date ? date.toISOString() : '')
                                                 }
-                                                placeholder="Select departure..."
+                                                placeholder="Chọn thời gian khởi hành..."
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -310,14 +310,14 @@ export function TripForm({
                                 name="arrivalTime"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Arrival Time</FormLabel>
+                                        <FormLabel>Thời gian đến</FormLabel>
                                         <FormControl>
                                             <DateTimePicker
                                                 value={field.value ? new Date(field.value) : undefined}
                                                 onChange={(date) =>
                                                     field.onChange(date ? date.toISOString() : '')
                                                 }
-                                                placeholder="Select arrival..."
+                                                placeholder="Chọn thời gian đến..."
                                             />
                                         </FormControl>
                                         <FormMessage />
@@ -333,7 +333,7 @@ export function TripForm({
                                 name="basePrice"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Base Price (VND)</FormLabel>
+                                        <FormLabel>Giá gốc (VND)</FormLabel>
                                         <FormControl>
                                             <Input type="number" min={0} step={1000} {...field} />
                                         </FormControl>
@@ -346,7 +346,7 @@ export function TripForm({
                                 name="availableSeats"
                                 render={({ field }) => (
                                     <FormItem>
-                                        <FormLabel>Available Seats</FormLabel>
+                                        <FormLabel>Số ghế còn trống</FormLabel>
                                         <FormControl>
                                             <Input type="number" min={1} max={100} {...field} />
                                         </FormControl>
@@ -385,7 +385,7 @@ export function TripForm({
                         <div className="border-t bg-background px-6 py-4">
                         <Button type="submit" className="w-full" disabled={isLoading}>
                             {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            {isEditMode ? 'Lưu thay đổi' : 'Create Trip'}
+                            {isEditMode ? 'Lưu thay đổi' : 'Tạo chuyến đi'}
                         </Button>
                         </div>
                     </form>

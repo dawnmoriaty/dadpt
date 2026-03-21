@@ -49,7 +49,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
                         (table.getIsSomePageRowsSelected() && 'indeterminate')
                     }
                     onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
-                    aria-label="Select all"
+                    aria-label="Chọn tất cả"
                     className="translate-y-0.5"
                 />
             ),
@@ -57,7 +57,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
                 <Checkbox
                     checked={row.getIsSelected()}
                     onCheckedChange={(value) => row.toggleSelected(!!value)}
-                    aria-label="Select row"
+                    aria-label="Chọn hàng"
                     className="translate-y-0.5"
                 />
             ),
@@ -67,14 +67,14 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         {
             accessorKey: 'status',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Status" />
+                <DataTableColumnHeader column={column} title="Trạng thái" />
             ),
             cell: ({ row }) => <TripStatusBadge status={row.getValue('status')} />,
             filterFn: (row, id, value: string[]) => value.includes(row.getValue(id)),
         },
         {
             id: 'route',
-            header: 'Route',
+            header: 'Tuyến đường',
             cell: ({ row }) => (
                 <div className="flex items-center gap-2 font-medium">
                     <span className="truncate max-w-[120px]">{row.original.originName}</span>
@@ -87,7 +87,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         {
             accessorKey: 'providerName',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Provider" />
+                <DataTableColumnHeader column={column} title="Nhà xe" />
             ),
             cell: ({ row }) => (
                 <Badge variant="secondary">{row.getValue('providerName')}</Badge>
@@ -96,7 +96,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         {
             accessorKey: 'departureTime',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Departure" />
+                <DataTableColumnHeader column={column} title="Khởi hành" />
             ),
             cell: ({ row }) => (
                 <span className="text-sm">{formatDate(row.getValue('departureTime'))}</span>
@@ -105,7 +105,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         {
             accessorKey: 'finalPrice',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Price" />
+                <DataTableColumnHeader column={column} title="Giá vé" />
             ),
             cell: ({ row }) => (
                 <span className="font-semibold text-primary">
@@ -116,7 +116,7 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         {
             accessorKey: 'availableSeats',
             header: ({ column }) => (
-                <DataTableColumnHeader column={column} title="Seats" />
+                <DataTableColumnHeader column={column} title="Số ghế" />
             ),
             cell: ({ row }) => {
                 const seats = row.getValue('availableSeats') as number
@@ -129,14 +129,14 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
         },
         {
             id: 'actions',
-            header: 'Actions',
+            header: 'Thao tác',
             cell: ({ row }) => {
                 const trip = row.original
                 return (
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button variant="ghost" className="h-8 w-8 p-0">
-                                <span className="sr-only">Open menu</span>
+                                <span className="sr-only">Mở menu</span>
                                 <MoreHorizontal className="h-4 w-4" />
                             </Button>
                         </DropdownMenuTrigger>
@@ -149,13 +149,13 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
                                         onClick={() => onUpdateStatus(trip.id, 'departed')}
                                         className="text-yellow-600"
                                     >
-                                        Mark as Departed
+                                        Đánh dấu đã xuất bến
                                     </DropdownMenuItem>
                                     <DropdownMenuItem
                                         onClick={() => onUpdateStatus(trip.id, 'cancelled')}
                                         className="text-red-600"
                                     >
-                                        Cancel Trip
+                                        Hủy chuyến
                                     </DropdownMenuItem>
                                 </>
                             )}
@@ -164,16 +164,16 @@ export function getTripsColumns({ onUpdateStatus, onViewDetails, onEdit }: Trips
                                     onClick={() => onUpdateStatus(trip.id, 'completed')}
                                     className="text-emerald-600"
                                 >
-                                    Mark as Completed
+                                    Đánh dấu đã hoàn thành
                                 </DropdownMenuItem>
                             )}
                             {(trip.status === 'completed' || trip.status === 'cancelled') && (
                                 <DropdownMenuItem disabled className="text-muted-foreground">
-                                    No actions available
+                                    Không có thao tác khả dụng
                                 </DropdownMenuItem>
                             )}
                             <DropdownMenuSeparator />
-                            <DropdownMenuItem onClick={() => onViewDetails(trip)}>View Details</DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => onViewDetails(trip)}>Xem chi tiết</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
                 )

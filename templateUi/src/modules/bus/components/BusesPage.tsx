@@ -63,7 +63,7 @@ export function BusesPage(): React.ReactElement {
     }
 
     if (error) {
-        return <div className="text-destructive">Error loading buses</div>
+        return <div className="text-destructive">Không thể tải danh sách xe</div>
     }
 
     const buses = data?.items ?? []
@@ -73,12 +73,12 @@ export function BusesPage(): React.ReactElement {
         <div className="space-y-6">
             <div className="flex items-center justify-between">
                 <div>
-                    <h1 className="text-2xl font-bold">Buses</h1>
-                    <p className="text-muted-foreground">Manage your fleet of {data?.total ?? 0} buses</p>
+                    <h1 className="text-2xl font-bold">Xe</h1>
+                    <p className="text-muted-foreground">Quản lý đội xe gồm {data?.total ?? 0} xe</p>
                 </div>
                 <Button onClick={handleCreate}>
                     <PlusCircle className="mr-2 h-4 w-4" />
-                    Add Bus
+                    Thêm xe
                 </Button>
             </div>
 
@@ -111,8 +111,8 @@ export function BusesPage(): React.ReactElement {
                 open={deletingBusId !== null}
                 onOpenChange={() => setDeletingBusId(null)}
                 onConfirm={handleConfirmDelete}
-                title="Delete Bus"
-                description="Are you sure you want to delete this bus? This action cannot be undone."
+                title="Xóa xe"
+                description="Bạn có chắc chắn muốn xóa xe này? Hành động này không thể hoàn tác."
                 variant="destructive"
                 loading={deleteMutation.isPending}
             />

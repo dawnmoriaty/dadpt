@@ -53,7 +53,7 @@ export function TripDetailsModal({ trip, isOpen, onClose }: TripDetailsModalProp
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <div className="flex items-center justify-between pr-8">
-                        <DialogTitle className="text-2xl font-bold">Trip Details</DialogTitle>
+                        <DialogTitle className="text-2xl font-bold">Chi tiết chuyến đi</DialogTitle>
                         <TripStatusBadge status={trip.status} />
                     </div>
                     <DialogDescription>
@@ -93,11 +93,11 @@ export function TripDetailsModal({ trip, isOpen, onClose }: TripDetailsModalProp
                         <div className="space-y-4">
                             <div>
                                 <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Building2 className="w-4 h-4" /> Provider Info
+                                    <Building2 className="w-4 h-4" /> Thông tin nhà xe
                                 </h4>
                                 <div className="space-y-2 pl-6">
-                                    <p className="text-sm"><span className="text-muted-foreground">Name:</span> <span className="font-medium">{trip.providerName}</span></p>
-                                    <p className="text-sm"><span className="text-muted-foreground">Bus Type:</span> <Badge variant="outline" className="ml-2">{trip.busTypeName || 'Standard'}</Badge></p>
+                                    <p className="text-sm"><span className="text-muted-foreground">Tên:</span> <span className="font-medium">{trip.providerName}</span></p>
+                                    <p className="text-sm"><span className="text-muted-foreground">Loại xe:</span> <Badge variant="outline" className="ml-2">{trip.busTypeName || 'Tiêu chuẩn'}</Badge></p>
                                 </div>
                             </div>
                         </div>
@@ -105,11 +105,11 @@ export function TripDetailsModal({ trip, isOpen, onClose }: TripDetailsModalProp
                         <div className="space-y-4">
                             <div>
                                 <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                                    <Ticket className="w-4 h-4" /> Booking Info
+                                    <Ticket className="w-4 h-4" /> Thông tin vé
                                 </h4>
                                 <div className="space-y-2 pl-6">
-                                    <p className="text-sm"><span className="text-muted-foreground">Available Seats:</span> <Badge variant={trip.availableSeats > 10 ? 'success' : 'warning'} className="ml-2">{trip.availableSeats}</Badge></p>
-                                    <p className="text-sm"><span className="text-muted-foreground">Booked Seats:</span> <span className="font-medium ml-2">{trip.bookedSeats?.length || 0}</span></p>
+                                    <p className="text-sm"><span className="text-muted-foreground">Ghế còn trống:</span> <Badge variant={trip.availableSeats > 10 ? 'success' : 'warning'} className="ml-2">{trip.availableSeats}</Badge></p>
+                                    <p className="text-sm"><span className="text-muted-foreground">Ghế đã đặt:</span> <span className="font-medium ml-2">{trip.bookedSeats?.length || 0}</span></p>
                                 </div>
                             </div>
                         </div>
@@ -120,22 +120,22 @@ export function TripDetailsModal({ trip, isOpen, onClose }: TripDetailsModalProp
                     {/* Price Info */}
                     <div>
                         <h4 className="text-sm font-medium text-muted-foreground mb-3 flex items-center gap-2">
-                            <CreditCard className="w-4 h-4" /> Pricing Details
+                            <CreditCard className="w-4 h-4" /> Thông tin giá vé
                         </h4>
                         <div className="grid grid-cols-2 gap-4 bg-muted/30 p-4 rounded-xl border">
                             <div>
-                                <p className="text-sm text-muted-foreground">Base Price</p>
+                                <p className="text-sm text-muted-foreground">Giá gốc</p>
                                 <p className="text-lg font-medium">{formatPrice(trip.basePrice)}</p>
                             </div>
                             <div>
-                                <p className="text-sm text-muted-foreground mb-1">Final Price {trip.isHotDeal && <Badge variant="destructive" className="ml-2">Hot Deal</Badge>}</p>
+                                <p className="text-sm text-muted-foreground mb-1">Giá cuối {trip.isHotDeal && <Badge variant="destructive" className="ml-2">Ưu đãi</Badge>}</p>
                                 <p className="text-lg font-bold text-primary">{formatPrice(trip.finalPrice)}</p>
                             </div>
                         </div>
                     </div>
 
                     <div className="flex justify-end pt-4">
-                        <Button variant="outline" onClick={onClose}>Close</Button>
+                        <Button variant="outline" onClick={onClose}>Đóng</Button>
                     </div>
                 </div>
             </DialogContent>
