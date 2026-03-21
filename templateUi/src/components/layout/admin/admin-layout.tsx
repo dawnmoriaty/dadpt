@@ -1,3 +1,5 @@
+'use client'
+
 import { Outlet } from '@tanstack/react-router'
 import { useState } from 'react'
 
@@ -7,7 +9,6 @@ import { Header } from './header'
 import { Sidebar } from './sidebar'
 
 export function AdminLayout() {
-    // TODO: sync với sidebar state nếu cần
     const [sidebarCollapsed] = useState(false)
 
     return (

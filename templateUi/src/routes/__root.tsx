@@ -20,7 +20,15 @@ function RootComponent() {
     return (
         <QueryClientProvider client={queryClient}>
             <ThemeProvider defaultTheme="light" storageKey="vite-ui-theme">
-                <Toaster richColors position="top-right" />
+                <Toaster
+                    richColors
+                    position="top-right"
+                    expand
+                    duration={4000}
+                    visibleToasts={3}
+                    closeButton
+                    theme="light"
+                />
                 <Outlet />
                 {import.meta.env.DEV && (
                     <>

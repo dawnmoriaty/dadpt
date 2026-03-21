@@ -1,3 +1,5 @@
+'use client'
+
 import { createFileRoute } from '@tanstack/react-router'
 import { Bot, Loader2, MessageSquare, Send, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
@@ -9,10 +11,14 @@ import { cn } from '@/lib/utils'
 import { type ChatMessage, useChatStore } from '@/modules/chat'
 
 export const Route = createFileRoute('/_public/chat')({
-    component: ChatPage,
+    component: ChatPageWrapper,
 })
 
-// ── Chat Page ──────────────────────────────────────────────────────────────
+// ── Main Chat Page Component ───────────────────────────────────────────────
+
+function ChatPageWrapper() {
+    return <ChatPage />
+}
 
 function ChatPage() {
     const { messages, isLoading, sendMessage, clearChat } = useChatStore()
@@ -32,14 +38,14 @@ function ChatPage() {
         inputRef.current?.focus()
     }, [])
 
-    const handleSend = () => {
+    const handleSend = async () => {
         const text = input.trim()
         if (!text || isLoading) return
         setInput('')
-        sendMessage(text)
+        await sendMessage(text)
     }
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault()
             handleSend()
@@ -47,31 +53,39 @@ function ChatPage() {
     }
 
     return (
-        <div className="container max-w-3xl mx-auto py-6 px-4 flex flex-col h-[calc(100vh-4rem)]">
+        <div className="container mx-auto max-w-4xl flex flex-col gap-6 py-6 px-4 h-[calc(100vh-6rem)]">
             {/* Header */}
-            <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                    <Bot className="h-6 w-6 text-primary" />
-                    <h1 className="text-xl font-bold">AI đặt vé chuyến đi</h1>
+            <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2">
+                        <Bot className="h-6 w-6 text-primary" />
+                    </div>
+                    <div>
+                        <h1 className="text-2xl font-bold">AI hỗ trợ đặt vé</h1>
+                        <p className="text-sm text-muted-foreground">Đặt vé bằng giọng nói hoặc văn bản</p>
+                    </div>
                 </div>
                 {messages.length > 0 && (
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={clearChat}
-                        className="text-muted-foreground"
+                        className="gap-2"
                     >
-                        <Trash2 className="h-4 w-4 mr-1" />
-                        Xóa hội thoại
+                        <Trash2 className="h-4 w-4" />
+                        Xóa
                     </Button>
                 )}
             </div>
 
+            {/* Voice Panel */}
+            <VoiceBookingPanel onTranscript={sendMessage} disabled={isLoading} />
+
             {/* Messages Area */}
-            <Card className="flex-1 flex flex-col overflow-hidden">
-                <div className="flex-1 overflow-y-auto p-4" ref={scrollRef}>
+            <Card className="flex flex-1 flex-col overflow-hidden">
+                <div className="flex-1 overflow-y-auto p-6" ref={scrollRef}>
                     {messages.length === 0 ? (
-                        <EmptyState />
+                        <EmptyState sendMessage={sendMessage} isLoading={isLoading} />
                     ) : (
                         <div className="space-y-4">
                             {messages.map((msg) => (
@@ -83,14 +97,14 @@ function ChatPage() {
                 </div>
 
                 {/* Input Area */}
-                <div className="border-t p-4">
+                <div className="border-t bg-background p-4">
                     <div className="flex gap-2">
                         <Input
                             ref={inputRef}
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            placeholder="Nhập yêu cầu... (VD: Đặt cho tôi 2 vé từ Sài Gòn đến Nha Trang ngày mai)"
+                            placeholder="Nhập yêu cầu... (VD: Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21)"
                             disabled={isLoading}
                             className="flex-1"
                         />
@@ -98,6 +112,7 @@ function ChatPage() {
                             onClick={handleSend}
                             disabled={!input.trim() || isLoading}
                             size="icon"
+                            className="h-10 w-10"
                         >
                             {isLoading ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -114,31 +129,43 @@ function ChatPage() {
 
 // ── Sub-components ─────────────────────────────────────────────────────────
 
-function EmptyState() {
+interface EmptyStateProps {
+    sendMessage: (text: string) => Promise<void>
+    isLoading: boolean
+}
+
+function EmptyState({ sendMessage, isLoading }: EmptyStateProps) {
     return (
-        <div className="flex flex-col items-center justify-center h-full min-h-[300px] text-muted-foreground">
-            <MessageSquare className="h-12 w-12 mb-4 opacity-50" />
-            <p className="text-lg font-medium">Xin chào! Tôi có thể hỗ trợ tìm chuyến và đặt vé cho bạn.</p>
-            <p className="text-sm mt-2">Bạn có thể thử các câu như:</p>
-            <div className="mt-3 space-y-1 text-sm">
-                <Suggestion text="Đặt cho tôi 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21" />
-                <Suggestion text="Tìm chuyến xe từ Hà Nội đi Đà Nẵng ngày mai" />
-                <Suggestion text="Kiểm tra vé BK-ABC123" />
-                <Suggestion text="Chính sách hoàn vé như thế nào?" />
+        <div className="flex h-full flex-col items-center justify-center min-h-96 text-muted-foreground">
+            <div className="mb-4 rounded-full bg-primary/10 p-3">
+                <MessageSquare className="h-8 w-8 text-primary" />
+            </div>
+            <p className="text-center text-lg font-semibold text-foreground">Xin chào!</p>
+            <p className="mt-1 text-center text-sm">Tôi có thể giúp bạn tìm chuyến và đặt vé</p>
+            <p className="mt-4 text-sm">Bạn có thể thử các câu như:</p>
+            <div className="mt-4 space-y-2">
+                <SuggestionButton text="Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21" onClick={() => sendMessage('Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21')} disabled={isLoading} />
+                <SuggestionButton text="Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai" onClick={() => sendMessage('Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai')} disabled={isLoading} />
+                <SuggestionButton text="Kiểm tra booking của tôi" onClick={() => sendMessage('Kiểm tra booking của tôi')} disabled={isLoading} />
             </div>
         </div>
     )
 }
 
-function Suggestion({ text }: { text: string }) {
-    const { sendMessage, isLoading } = useChatStore()
+interface SuggestionButtonProps {
+    text: string
+    onClick: () => void
+    disabled?: boolean
+}
 
+function SuggestionButton({ text, onClick, disabled }: SuggestionButtonProps) {
     return (
         <button
-            onClick={() => !isLoading && sendMessage(text)}
-            className="block w-full text-left px-3 py-2 rounded-md hover:bg-accent transition-colors text-primary cursor-pointer"
+            onClick={onClick}
+            disabled={disabled}
+            className="w-full rounded-lg border border-primary/20 bg-primary/5 px-4 py-2 text-center text-sm text-primary transition-colors hover:bg-primary/10 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-            &ldquo;{text}&rdquo;
+            {`"${text}"`}
         </button>
     )
 }
@@ -148,30 +175,32 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     const isError = message.status === 'error'
 
     return (
-        <div className={cn('flex', isUser ? 'justify-end' : 'justify-start')}>
+        <div className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
             <div
                 className={cn(
-                    'max-w-[80%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed',
+                    'max-w-[70%] rounded-lg px-4 py-3 text-sm leading-relaxed',
                     isUser
-                        ? 'bg-primary text-primary-foreground rounded-br-md'
+                        ? 'rounded-br-none bg-primary text-primary-foreground'
                         : isError
-                          ? 'bg-destructive/10 text-destructive border border-destructive/20 rounded-bl-md'
-                          : 'bg-muted rounded-bl-md',
+                          ? 'rounded-bl-none border border-destructive/30 bg-destructive/10 text-destructive'
+                          : 'rounded-bl-none bg-muted text-foreground',
                 )}
             >
-                <div className="whitespace-pre-wrap wrap-break-word">{message.content}</div>
+                <div className="space-y-2">
+                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
 
-                {/* Workflow / tool info */}
-                {message.workflowSlug && (
-                    <div className="mt-1.5 text-xs opacity-60">
-                        workflow: {message.workflowSlug}
-                    </div>
-                )}
-                {message.toolCalls && message.toolCalls.length > 0 && (
-                    <div className="mt-1.5 text-xs opacity-60">
-                        🔧 {message.toolCalls.map((tc) => tc.tool_name).join(', ')}
-                    </div>
-                )}
+                    {/* Workflow / tool info */}
+                    {message.workflowSlug && (
+                        <div className="mt-2 border-t pt-2 text-xs opacity-70">
+                            <span className="font-medium">workflow:</span> {message.workflowSlug}
+                        </div>
+                    )}
+                    {message.toolCalls && message.toolCalls.length > 0 && (
+                        <div className="mt-2 border-t pt-2 text-xs opacity-70">
+                            <span className="font-medium">tools:</span> {message.toolCalls.map((tc) => tc.tool_name).join(', ')}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     )
@@ -179,12 +208,12 @@ function MessageBubble({ message }: { message: ChatMessage }) {
 
 function TypingIndicator() {
     return (
-        <div className="flex justify-start">
-            <div className="bg-muted rounded-2xl rounded-bl-md px-4 py-3">
-                <div className="flex gap-1">
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce [animation-delay:150ms]" />
-                    <span className="w-2 h-2 bg-foreground/40 rounded-full animate-bounce [animation-delay:300ms]" />
+        <div className="flex justify-start gap-3">
+            <div className="rounded-lg rounded-bl-none bg-muted px-4 py-3">
+                <div className="flex gap-1.5">
+                    <span className="h-2 w-2 rounded-full bg-foreground/40 animate-bounce [animation-delay:0ms]" />
+                    <span className="h-2 w-2 rounded-full bg-foreground/40 animate-bounce [animation-delay:150ms]" />
+                    <span className="h-2 w-2 rounded-full bg-foreground/40 animate-bounce [animation-delay:300ms]" />
                 </div>
             </div>
         </div>

@@ -369,7 +369,20 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                 type="submit"
                                 size="lg"
                                 disabled={createBooking.isPending || selectedSeats.length === 0}
-                                className="min-w-40"
+                                className="min-w-40 h-12 font-bold rounded-lg border-2 text-gray-900 active:scale-95 transition-all duration-300"
+                                style={{
+                                    backgroundColor: '#FFF541',
+                                    borderColor: '#FFE81C',
+                                    color: '#1F2937'
+                                }}
+                                onMouseEnter={(e) => {
+                                    if (!createBooking.isPending && selectedSeats.length > 0) {
+                                        e.currentTarget.style.backgroundColor = '#FFED4F'
+                                    }
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFF541'
+                                }}
                             >
                                 {createBooking.isPending ? (
                                     <>

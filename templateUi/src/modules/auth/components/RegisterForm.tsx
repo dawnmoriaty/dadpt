@@ -135,15 +135,29 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                 />
 
                 {registerMutation.error !== null && (
-                    <p className="text-sm text-red-500 font-medium">
-                        {registerMutation.error.message}
-                    </p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium">
+                        <span className="block">❌ Đăng ký thất bại</span>
+                        <span className="text-xs text-red-600 mt-1">{registerMutation.error.message}</span>
+                    </div>
                 )}
 
                 <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full h-11 font-bold rounded-lg border-2 text-gray-900 active:scale-95 transition-all duration-300"
+                    style={{
+                        backgroundColor: '#FFF541',
+                        borderColor: '#FFE81C',
+                        color: '#1F2937'
+                    }}
                     disabled={registerMutation.isPending}
+                    onMouseEnter={(e) => {
+                        if (!registerMutation.isPending) {
+                            e.currentTarget.style.backgroundColor = '#FFED4F'
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#FFF541'
+                    }}
                 >
                     {registerMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

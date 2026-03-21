@@ -40,74 +40,87 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
     })
 
     return (
-        <Card className={cn('w-full shadow-[0_8px_30px_rgb(0,0,0,0.08)] border-border/50 bg-background/80 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60 rounded-2xl overflow-hidden', compact ? 'max-w-full' : 'max-w-5xl mx-auto')}>
-            <CardContent className="p-4 md:p-6">
+        <Card className={cn('w-full shadow-2xl border-0 bg-white rounded-2xl overflow-hidden', compact ? 'max-w-full' : 'max-w-5xl mx-auto')}>
+            <CardContent className={cn('p-5 md:p-6', compact && 'px-6 py-5')}>
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSearch)}
-                        className={`grid gap-4 ${compact ? 'md:grid-cols-5' : 'md:grid-cols-4'} items-end`}
+                        className={cn('flex flex-wrap md:flex-nowrap gap-3 md:gap-2 items-start md:items-end', compact ? 'md:flex-nowrap' : 'md:grid md:grid-cols-4')}
                     >
                         {/* Origin */}
                         <FormField
                             control={form.control}
                             name="originId"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-sm font-medium flex items-center gap-1.5">
-                                        <div className="h-3 w-3 rounded-full border-2 border-primary/60" />
-                                        {t('searchPage.from')}
+                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                        Nơi khởi phát
                                     </FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(id) => {
+                                                setOriginId(id)
+                                                setErrors(prev => ({ ...prev, origin: '' }))
+                                            }}
                                             placeholder={t('searchPage.selectOrigin')}
                                         />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage className="text-xs mt-1 h-5" />
+                                </FormItem>
+                            )}
+                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs mt-1" />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Swap button (visual only on large layout) */}
-                        {!compact && (
-                            <div className="hidden md:flex items-end justify-center pb-2">
-                                <Button
-                                    type="button"
-                                    variant="outline"
-                                    size="icon"
-                                    className="rounded-full shadow-sm hover:shadow-md transition-all duration-300 hover:rotate-180 bg-background z-10"
-                                    onClick={(e) => {
-                                        e.preventDefault()
-                                        const originId = form.getValues('originId')
-                                        const destId = form.getValues('destinationId')
-                                        form.setValue('originId', destId)
-                                        form.setValue('destinationId', originId)
-                                    }}
-                                >
-                                    <ArrowRightLeft className="h-4 w-4" />
-                                </Button>
-                            </div>
-                        )}
+                        {/* Swap button */}
+                        <div className={cn('hidden md:flex items-end justify-center', compact && 'md:block')}>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="icon"
+                                className="rounded-lg h-10 w-10 hover:bg-gray-100 transition-colors"
+                                onClick={(e) => {
+                                    e.preventDefault()
+                                    const originId = form.getValues('originId')
+                                    const destId = form.getValues('destinationId')
+                                    form.setValue('originId', destId)
+                                    form.setValue('destinationId', originId)
+                                }}
+                                title="Đổi chỗ"
+                            >
+                                <ArrowRightLeft className="h-5 w-5" />
+                            </Button>
+                        </div>
 
                         {/* Destination */}
                         <FormField
                             control={form.control}
                             name="destinationId"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-sm font-medium flex items-center gap-1.5">
-                                        <div className="h-3 w-3 rounded-full bg-primary/60" />
-                                        {t('searchPage.to')}
+                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                        Nơi đến
                                     </FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(id) => {
+                                                setDestinationId(id)
+                                                setErrors(prev => ({ ...prev, destination: '' }))
+                                            }}
                                             placeholder={t('searchPage.selectDest')}
                                         />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage className="text-xs mt-1 h-5" />
+                                </FormItem>
+                            )}
+                        />
+                                    </FormControl>
+                                    <FormMessage className="text-xs mt-1" />
                                 </FormItem>
                             )}
                         />
@@ -117,9 +130,9 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             control={form.control}
                             name="departureDate"
                             render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel className="text-sm font-medium flex items-center gap-1.5">
-                                        {t('searchPage.date')}
+                                <FormItem className={cn('flex-1 min-w-[160px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                        Ngày đi
                                     </FormLabel>
                                     <FormControl>
                                         <DatePicker
@@ -131,7 +144,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                             minDate={new Date()}
                                         />
                                     </FormControl>
-                                    <FormMessage />
+                                    <FormMessage className="text-xs mt-1 h-5" />
                                 </FormItem>
                             )}
                         />
@@ -141,30 +154,38 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                 control={form.control}
                                 name="passengers"
                                 render={({ field }) => (
-                                    <FormItem>
-                                        <FormLabel className="text-sm font-medium flex items-center gap-1.5">
-                                            <Users className="h-3.5 w-3.5" />
-                                            {t('field.passengers')}
+                                    <FormItem className="flex-1 min-w-[120px] md:flex-none h-min">
+                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                            Hành khách
                                         </FormLabel>
                                         <FormControl>
-                                            <Input type="number" min={1} max={10} {...field} />
+                                            <Input type="number" min={1} max={10} {...field} className="h-11" />
                                         </FormControl>
-                                        <FormMessage />
+                                        <FormMessage className="text-xs mt-1 h-5" />
                                     </FormItem>
                                 )}
                             />
                         )}
 
-                        <div className="flex items-end justify-center w-full">
-                            <Button 
-                                type="submit" 
-                                size="lg" 
-                                className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-primary to-primary/90"
-                            >
-                                <Search className="h-5 w-5 mr-2" />
-                                {t('searchPage.searchBtn')}
-                            </Button>
-                        </div>
+                        <Button 
+                            type="submit" 
+                            size="lg" 
+                            className={cn('h-11 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg border-2 text-gray-900 active:scale-95', compact ? 'w-full md:w-auto md:px-8' : 'w-full')}
+                            style={{
+                                backgroundColor: '#FFF541',
+                                borderColor: '#FFE81C',
+                                color: '#1F2937'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFED4F'
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFF541'
+                            }}
+                        >
+                            <Search className="h-5 w-5 mr-2" />
+                            {t('searchPage.searchBtn')}
+                        </Button>
                     </form>
                 </Form>
             </CardContent>

@@ -1,5 +1,7 @@
+'use client'
+
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bus, LogOut, Menu, Settings, Ticket, User, X } from 'lucide-react'
+import { Bus, LogOut, Menu, Ticket, User, X, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -13,6 +15,7 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/use-auth-store'
+import { cn } from '@/lib/utils'
 
 export function Header() {
     const { user, isAuthenticated, logout } = useAuthStore()
@@ -25,140 +28,176 @@ export function Header() {
         navigate({ to: '/login' })
     }
 
-    return (
-        <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
-                <div className="flex items-center gap-6">
-                    <Link to="/" className="flex items-center gap-2 font-bold text-xl text-primary">
-                        <Bus className="h-6 w-6" />
-                        {t('nav.brand')}
-                    </Link>
-                    <nav className="hidden md:flex items-center gap-1">
-                        <Link to="/" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
-                            {t('nav.home')}
-                        </Link>
-                        <Link to="/search" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
-                            {t('nav.search')}
-                        </Link>
-                        {isAuthenticated && (
-                            <Link to="/my-bookings" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
-                                {t('nav.myBookings')}
-                            </Link>
-                        )}
-                    </nav>
-                </div>
+    const navLinks = [
+        { label: 'Trang chủ', to: '/' },
+        { label: 'Tìm kiếm vé', to: '/search' },
+        { label: 'Chat AI', to: '/chat', icon: MessageCircle },
+    ]
 
-                <nav className="flex items-center gap-2">
-                    {/* Desktop user menu */}
-                    <div className="hidden md:flex items-center">
+    return (
+        <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-white to-blue-50/30 backdrop-blur supports-backdrop-filter:bg-white/80">
+            <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
+                {/* Logo */}
+                <Link to="/" className="flex items-center gap-2.5 font-bold text-lg text-primary transition-transform hover:scale-105">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
+                        <Bus className="h-6 w-6 text-white" />
+                    </div>
+                    <span className="hidden sm:inline">Đặt Vé Xe</span>
+                </Link>
+
+                {/* Desktop Navigation */}
+                <nav className="hidden md:flex items-center gap-1">
+                    {navLinks.map((link) => (
+                        <Link
+                            key={link.to}
+                            to={link.to}
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground rounded-lg transition-all hover:bg-primary/10 hover:text-primary active:scale-95"
+                        >
+                            {link.icon && <link.icon className="h-4 w-4" />}
+                            {link.label}
+                        </Link>
+                    ))}
+                    {isAuthenticated && (
+                        <Link
+                            to="/my-bookings"
+                            className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground rounded-lg transition-all hover:bg-primary/10 hover:text-primary active:scale-95"
+                        >
+                            <Ticket className="h-4 w-4" />
+                            Đơn hàng
+                        </Link>
+                    )}
+                </nav>
+
+                {/* Right Section */}
+                <div className="flex items-center gap-3">
+                    {/* Desktop User Menu */}
+                    <div className="hidden md:block">
                         {isAuthenticated && user ? (
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
-                                    <Button variant="ghost" className="relative h-8 w-8 rounded-full">
-                                        <div className="flex h-full w-full items-center justify-center rounded-full bg-primary/10 text-primary">
-                                            <User className="h-4 w-4" />
+                                    <Button
+                                        variant="ghost"
+                                        className="relative h-10 w-10 rounded-full bg-primary/10 hover:bg-primary/20 transition-colors"
+                                    >
+                                        <div className="flex h-full w-full items-center justify-center text-primary font-semibold">
+                                            {user.fullName?.charAt(0)?.toUpperCase() || 'U'}
                                         </div>
                                     </Button>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="w-56" align="end" forceMount>
                                     <DropdownMenuLabel className="font-normal">
                                         <div className="flex flex-col space-y-1">
-                                            <p className="text-sm font-medium leading-none">{user.fullName}</p>
-                                            <p className="text-xs leading-none text-muted-foreground">
+                                            <p className="text-sm font-semibold text-foreground">{user.fullName}</p>
+                                            <p className="text-xs text-muted-foreground">
                                                 {user.email || user.username}
                                             </p>
                                         </div>
                                     </DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     <DropdownMenuItem asChild>
-                                        <Link to="/my-bookings">
+                                        <Link to="/my-bookings" className="cursor-pointer">
                                             <Ticket className="mr-2 h-4 w-4" />
-                                            <span>{t('nav.myBookings')}</span>
+                                            <span>Đơn hàng của tôi</span>
                                         </Link>
                                     </DropdownMenuItem>
-                                    <DropdownMenuItem>
-                                        <Settings className="mr-2 h-4 w-4" />
-                                        <span>{t('auth.settings')}</span>
-                                    </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={logout} className="text-red-600">
+                                    <DropdownMenuItem
+                                        onClick={logout}
+                                        className="text-red-600 cursor-pointer focus:text-red-600 focus:bg-red-50"
+                                    >
                                         <LogOut className="mr-2 h-4 w-4" />
-                                        <span>{t('auth.logout')}</span>
+                                        <span>Đăng xuất</span>
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
-                            <Button onClick={handleLogin}>{t('auth.loginOrRegister')}</Button>
+                            <Button
+                                onClick={handleLogin}
+                                className="h-10 font-bold rounded-lg border-2 text-gray-900 active:scale-95 transition-all duration-300"
+                                style={{
+                                    backgroundColor: '#FFF541',
+                                    borderColor: '#FFE81C',
+                                    color: '#1F2937'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFED4F'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFF541'
+                                }}
+                            >
+                                Đăng nhập
+                            </Button>
                         )}
                     </div>
 
-                    {/* Mobile hamburger button */}
+                    {/* Mobile Menu Button */}
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="md:hidden"
+                        className="md:hidden h-10 w-10 rounded-lg hover:bg-primary/10"
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        aria-label={t('header.menu')}
+                        aria-label="Menu"
                     >
-                        {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                        {mobileMenuOpen ? (
+                            <X className="h-5 w-5" />
+                        ) : (
+                            <Menu className="h-5 w-5" />
+                        )}
                     </Button>
-                </nav>
+                </div>
             </div>
 
-            {/* Mobile menu overlay */}
+            {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="md:hidden border-t bg-background">
-                    <nav className="container py-4 space-y-1">
-                        <Link
-                            to="/"
-                            className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            {t('nav.home')}
-                        </Link>
-                        <Link
-                            to="/search"
-                            className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            {t('nav.search')}
-                        </Link>
+                <div className="md:hidden border-t bg-white/95 backdrop-blur animate-in fade-in slide-in-from-top-2">
+                    <nav className="container mx-auto flex max-w-7xl flex-col px-4 py-3 gap-1">
+                        {navLinks.map((link) => (
+                            <Link
+                                key={link.to}
+                                to={link.to}
+                                className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 transition-colors"
+                                onClick={() => setMobileMenuOpen(false)}
+                            >
+                                {link.icon && <link.icon className="h-4 w-4 text-primary" />}
+                                {link.label}
+                            </Link>
+                        ))}
                         {isAuthenticated && (
                             <Link
                                 to="/my-bookings"
-                                className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
+                                className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 transition-colors"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                {t('nav.myBookings')}
+                                <Ticket className="h-4 w-4 text-primary" />
+                                Đơn hàng
                             </Link>
                         )}
 
-                        <div className="pt-3 border-t mt-3">
+                        <div className="border-t mt-2 pt-2">
                             {isAuthenticated && user ? (
-                                <div className="space-y-1">
-                                    <div className="px-3 py-2">
-                                        <p className="text-sm font-medium">{user.fullName}</p>
-                                        <p className="text-xs text-muted-foreground">{user.email || user.username}</p>
+                                <div className="space-y-2">
+                                    <div className="px-4 py-2 bg-primary/5 rounded-lg">
+                                        <p className="text-sm font-semibold text-foreground">{user.fullName}</p>
+                                        <p className="text-xs text-muted-foreground mt-0.5">{user.email || user.username}</p>
                                     </div>
-                                    <Link
-                                        to="/my-bookings"
-                                        className="flex items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
-                                        onClick={() => setMobileMenuOpen(false)}
-                                    >
-                                        <Ticket className="h-4 w-4" />
-                                        {t('nav.myBookings')}
-                                    </Link>
                                     <button
-                                        onClick={() => { logout(); setMobileMenuOpen(false) }}
-                                        className="flex w-full items-center gap-2 px-3 py-2.5 text-sm font-medium rounded-md text-red-600 hover:bg-accent transition-colors"
+                                        onClick={() => {
+                                            logout()
+                                            setMobileMenuOpen(false)
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-3 text-sm font-medium text-red-600 rounded-lg hover:bg-red-50 transition-colors"
                                     >
                                         <LogOut className="h-4 w-4" />
-                                        {t('auth.logout')}
+                                        Đăng xuất
                                     </button>
                                 </div>
                             ) : (
-                                <Button onClick={handleLogin} className="w-full">
-                                    {t('auth.loginOrRegister')}
+                                <Button
+                                    onClick={handleLogin}
+                                    className="w-full bg-gradient-to-r from-primary to-primary/80"
+                                >
+                                    Đăng nhập
                                 </Button>
                             )}
                         </div>
