@@ -45,23 +45,31 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                 <Form {...form}>
                     <form
                         onSubmit={form.handleSubmit(onSearch)}
-                        className={cn('flex flex-wrap md:flex-nowrap gap-3 md:gap-2 items-end', compact ? 'md:flex-nowrap' : 'md:grid md:grid-cols-4')}
+                        className={cn('flex flex-wrap md:flex-nowrap gap-3 md:gap-2 items-start md:items-end', compact ? 'md:flex-nowrap' : 'md:grid md:grid-cols-4')}
                     >
                         {/* Origin */}
                         <FormField
                             control={form.control}
                             name="originId"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[180px]', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block">
+                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
                                         Nơi khởi phát
                                     </FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(id) => {
+                                                setOriginId(id)
+                                                setErrors(prev => ({ ...prev, origin: '' }))
+                                            }}
                                             placeholder={t('searchPage.selectOrigin')}
                                         />
+                                    </FormControl>
+                                    <FormMessage className="text-xs mt-1 h-5" />
+                                </FormItem>
+                            )}
+                        />
                                     </FormControl>
                                     <FormMessage className="text-xs mt-1" />
                                 </FormItem>
@@ -93,16 +101,24 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             control={form.control}
                             name="destinationId"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[180px]', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block">
+                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
                                         Nơi đến
                                     </FormLabel>
                                     <FormControl>
                                         <LocationCombobox
                                             value={field.value}
-                                            onSelect={field.onChange}
+                                            onSelect={(id) => {
+                                                setDestinationId(id)
+                                                setErrors(prev => ({ ...prev, destination: '' }))
+                                            }}
                                             placeholder={t('searchPage.selectDest')}
                                         />
+                                    </FormControl>
+                                    <FormMessage className="text-xs mt-1 h-5" />
+                                </FormItem>
+                            )}
+                        />
                                     </FormControl>
                                     <FormMessage className="text-xs mt-1" />
                                 </FormItem>
@@ -114,8 +130,8 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             control={form.control}
                             name="departureDate"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[160px]', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block">
+                                <FormItem className={cn('flex-1 min-w-[160px] h-min', compact && 'md:flex-1')}>
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
                                         Ngày đi
                                     </FormLabel>
                                     <FormControl>
@@ -128,7 +144,7 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                             minDate={new Date()}
                                         />
                                     </FormControl>
-                                    <FormMessage className="text-xs mt-1" />
+                                    <FormMessage className="text-xs mt-1 h-5" />
                                 </FormItem>
                             )}
                         />
@@ -138,14 +154,14 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                                 control={form.control}
                                 name="passengers"
                                 render={({ field }) => (
-                                    <FormItem className="flex-1 min-w-[120px] md:flex-none">
-                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block">
+                                    <FormItem className="flex-1 min-w-[120px] md:flex-none h-min">
+                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
                                             Hành khách
                                         </FormLabel>
                                         <FormControl>
                                             <Input type="number" min={1} max={10} {...field} className="h-11" />
                                         </FormControl>
-                                        <FormMessage className="text-xs mt-1" />
+                                        <FormMessage className="text-xs mt-1 h-5" />
                                     </FormItem>
                                 )}
                             />

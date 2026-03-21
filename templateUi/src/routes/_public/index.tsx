@@ -50,24 +50,24 @@ function HomePage() {
             </section>
 
             {/* Benefits Bar - Vexere Style */}
-            <section className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-8">
+            <section className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white py-12">
                 <div className="container mx-auto max-w-7xl px-4">
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="text-center">
-                            <div className="text-2xl mb-2">✓</div>
-                            <p className="font-semibold text-sm">Chắc chắn có chỗ</p>
+                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
+                            <div className="text-3xl mb-3 font-bold">✓</div>
+                            <p className="font-bold text-sm">Chắc chắn có chỗ</p>
                         </div>
-                        <div className="text-center">
-                            <div className="text-2xl mb-2">📞</div>
-                            <p className="font-semibold text-sm">Hỗ trợ 24/7</p>
+                        <div className="text-center opacity-80 hover:opacity-100 transition-opacity duration-300">
+                            <div className="text-3xl mb-3 font-bold">📞</div>
+                            <p className="font-bold text-sm">Hỗ trợ 24/7</p>
                         </div>
-                        <div className="text-center">
-                            <div className="text-2xl mb-2">🎁</div>
-                            <p className="font-semibold text-sm">Nhiều ưu đãi</p>
+                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
+                            <div className="text-3xl mb-3 font-bold">🎁</div>
+                            <p className="font-bold text-sm">Nhiều ưu đãi</p>
                         </div>
-                        <div className="text-center">
-                            <div className="text-2xl mb-2">💳</div>
-                            <p className="font-semibold text-sm">Thanh toán an toàn</p>
+                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
+                            <div className="text-3xl mb-3 font-bold">💳</div>
+                            <p className="font-bold text-sm">Thanh toán an toàn</p>
                         </div>
                     </div>
                 </div>
