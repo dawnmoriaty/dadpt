@@ -425,6 +425,10 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 		booking.GuestInfo.Name, booking.GuestInfo.Email,
 		booking.Code, booking.GuestInfo.Name, booking.Code, booking.TotalAmount)
 
+	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingRefundApproved, domain.NewBookingEventEnvelope(TopicBookingRefundApproved, refunded, getCorrelationIDFromContext(ctx))); err != nil {
+		logger.Error("Failed to create outbox event for refund approval: %v", err)
+	}
+
 	logger.Info("Refund approved: id=%d, code=%s, amount=%.2f", booking.ID, booking.Code, booking.TotalAmount)
 	return refunded, nil
 }
@@ -455,6 +459,10 @@ func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundR
 	logger.Info("[SIMULATED EMAIL] To: %s <%s> | Subject: Yêu cầu hoàn tiền vé %s bị từ chối | Body: Kính gửi %s, yêu cầu hoàn tiền cho vé %s đã bị từ chối. Lý do: %s. Vé của bạn vẫn ở trạng thái đã thanh toán.",
 		booking.GuestInfo.Name, booking.GuestInfo.Email,
 		booking.Code, booking.GuestInfo.Name, booking.Code, reason)
+
+	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingRefundRejected, domain.NewBookingEventEnvelope(TopicBookingRefundRejected, reverted, getCorrelationIDFromContext(ctx))); err != nil {
+		logger.Error("Failed to create outbox event for refund rejection: %v", err)
+	}
 
 	logger.Info("Refund rejected: id=%d, code=%s, reason=%s", booking.ID, booking.Code, input.Reason)
 	return reverted, nil

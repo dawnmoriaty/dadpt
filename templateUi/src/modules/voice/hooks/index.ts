@@ -2,11 +2,23 @@ import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 
 import { voiceApi } from '../api'
-import type { VoiceTranscribeResponse } from '../types'
+import type { VoiceExecuteRequest, VoiceExecuteResponse, VoicePlanRequest, VoicePlanResponse, VoiceTranscribeResponse } from '../types'
 
 export function useTranscribeVoice() {
     return useMutation<VoiceTranscribeResponse, Error, File>({
         mutationFn: (file: File) => voiceApi.transcribe(file),
+    })
+}
+
+export function useVoicePlan() {
+    return useMutation<VoicePlanResponse, Error, VoicePlanRequest>({
+        mutationFn: (payload: VoicePlanRequest) => voiceApi.plan(payload),
+    })
+}
+
+export function useVoiceExecute() {
+    return useMutation<VoiceExecuteResponse, Error, VoiceExecuteRequest>({
+        mutationFn: (payload: VoiceExecuteRequest) => voiceApi.execute(payload),
     })
 }
 

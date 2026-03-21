@@ -2,6 +2,7 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { Loader2 } from 'lucide-react'
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 import { Button } from '@/components/ui/button'
 import {
@@ -20,8 +21,11 @@ import {
 } from '@/components/ui/form'
 import { Input } from '@/components/ui/input'
 
-import { createBusTypeSchema, updateBusTypeSchema, type CreateBusTypeFormData, type UpdateBusTypeFormData } from '../schemas'
+import { createBusTypeSchema } from '../schemas'
 import type { BusType, CreateBusTypeRequest, UpdateBusTypeRequest } from '../types'
+
+type BusTypeFormInput = z.input<typeof createBusTypeSchema>
+type BusTypeFormOutput = z.output<typeof createBusTypeSchema>
 
 interface BusTypeFormDialogProps {
     isOpen: boolean
@@ -40,11 +44,12 @@ export function BusTypeFormDialog({
 }: BusTypeFormDialogProps): React.ReactElement {
     const isEditing = !!busType
 
-    const form = useForm<CreateBusTypeFormData | UpdateBusTypeFormData>({
-        resolver: zodResolver(isEditing ? updateBusTypeSchema : createBusTypeSchema),
+    const form = useForm<BusTypeFormInput, unknown, BusTypeFormOutput>({
+        resolver: zodResolver(createBusTypeSchema),
         defaultValues: {
             name: busType?.name ?? '',
             totalSeats: busType?.totalSeats ?? 40,
+            seatLayout: busType?.seatLayout ?? {},
         },
     })
 
@@ -53,11 +58,12 @@ export function BusTypeFormDialog({
             form.reset({
                 name: busType?.name ?? '',
                 totalSeats: busType?.totalSeats ?? 40,
+                seatLayout: busType?.seatLayout ?? {},
             })
         }
     }, [isOpen, busType, form])
 
-    const handleFormSubmit = (values: CreateBusTypeFormData | UpdateBusTypeFormData): void => {
+    const handleFormSubmit = (values: BusTypeFormOutput): void => {
         if (isEditing && busType) {
             onSubmit({
                 ...values,
@@ -106,7 +112,11 @@ export function BusTypeFormDialog({
                                             type="number"
                                             min={1}
                                             max={100}
-                                            {...field}
+                                            value={field.value}
+                                            onChange={(event) => field.onChange(Number(event.target.value) || 0)}
+                                            onBlur={field.onBlur}
+                                            name={field.name}
+                                            ref={field.ref}
                                         />
                                     </FormControl>
                                     <FormMessage />

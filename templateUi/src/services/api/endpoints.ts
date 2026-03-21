@@ -49,4 +49,8 @@ export const API_ENDPOINTS = {
         LIST: '/bus-types',
     },
     BROWSE: '/trips/browse',
+    VOICE_BOOKING: {
+        PLAN: '/bookings/voice/plan',
+        EXECUTE: '/bookings/voice/execute',
+    },
 } as const

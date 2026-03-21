@@ -24,6 +24,7 @@ func Routes(
 	cfg *configs.Config,
 	cache redis.IRedis,
 	paymentGw paymentDomain.PaymentGateway,
+	sseHub *infrastructure.SSEHub,
 ) {
 	repo := repository.NewBookingRepository(database)
 	tripLocker := repository.NewTripLocker(database)
@@ -38,7 +39,7 @@ func Routes(
 	tripRepository := tripRepo.NewTripRepository(database)
 	tripUC := tripUc.NewTripUseCase(tripRepository)
 
-	handler := NewBookingHandler(uc)
+	handler := NewBookingHandler(uc, sseHub)
 	paymentHandler := NewPaymentHandler(uc, paymentGw)
 	voiceHandler := NewVoiceBookingHandler(uc, userRepo, locUC, tripUC)
 
@@ -48,8 +49,10 @@ func Routes(
 	public.GET("/payments/:orderCode/status", paymentHandler.GetPaymentStatus)
 
 	authenticated.GET("/my", handler.ListUserBookings)
+	authenticated.GET("/events", handler.StreamMyEvents)
 	authenticated.GET("/:id", handler.GetBooking)
 	authenticated.POST("/:id/cancel", handler.CancelBooking)
+	authenticated.POST("/voice/plan", voiceHandler.Plan)
 	authenticated.POST("/voice/execute", voiceHandler.Execute)
 }
 

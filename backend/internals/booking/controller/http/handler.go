@@ -1,11 +1,14 @@
 package http
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 
 	"backend/internals/booking/controller/dto"
 	"backend/internals/booking/domain"
+	"backend/internals/booking/infrastructure"
 	"backend/internals/booking/usecase"
 	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/response"
@@ -14,12 +17,13 @@ import (
 )
 
 type BookingHandler struct {
-	uc usecase.IBookingUseCase
+	uc     usecase.IBookingUseCase
+	sseHub *infrastructure.SSEHub
 }
 
 // NewBookingHandler creates a new booking handler
-func NewBookingHandler(uc usecase.IBookingUseCase) *BookingHandler {
-	return &BookingHandler{uc: uc}
+func NewBookingHandler(uc usecase.IBookingUseCase, sseHub *infrastructure.SSEHub) *BookingHandler {
+	return &BookingHandler{uc: uc, sseHub: sseHub}
 }
 
 // CreateBooking POST /bookings
@@ -137,6 +141,60 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(booking))
 }
 
+// StreamMyEvents GET /bookings/events (SSE endpoint)
+func (h *BookingHandler) StreamMyEvents(c *gin.Context) {
+	if h.sseHub == nil {
+		response.HandleError(c, pkgErrors.Wrap(errors.New("sse unavailable"), 500, pkgErrors.ErrCodeInternal))
+		return
+	}
+
+	userIDRaw, exists := c.Get("userID")
+	if !exists {
+		response.HandleError(c, pkgErrors.ErrUnauthorized)
+		return
+	}
+
+	userID, ok := userIDRaw.(int64)
+	if !ok {
+		response.HandleError(c, pkgErrors.ErrUnauthorized)
+		return
+	}
+
+	c.Header("Content-Type", "text/event-stream")
+	c.Header("Cache-Control", "no-cache")
+	c.Header("Connection", "keep-alive")
+	c.Header("Access-Control-Allow-Origin", "*")
+
+	clientCh := make(chan []byte, 20)
+	h.sseHub.Register(clientCh)
+	defer h.sseHub.Unregister(clientCh)
+
+	c.SSEvent("connected", `{"message":"connected"}`)
+	c.Writer.Flush()
+
+	ctx := c.Request.Context()
+	c.Stream(func(w io.Writer) bool {
+		select {
+		case <-ctx.Done():
+			return false
+		case data, ok := <-clientCh:
+			if !ok {
+				return false
+			}
+
+			targetUserID, hasUserID := parseEventUserID(data)
+			if !hasUserID || targetUserID != userID {
+				return true
+			}
+
+			c.SSEvent(getBookingSSEEventName(data), string(data))
+			c.Writer.Flush()
+			fmt.Fprint(w, "")
+			return true
+		}
+	})
+}
+
 // =============================================================================
 // HELPERS
 // =============================================================================
@@ -204,5 +262,47 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrRefundAlreadyProcessed
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
+	}
+}
+
+func parseEventUserID(data []byte) (int64, bool) {
+	var envelope domain.EventEnvelope
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return 0, false
+	}
+
+	var payload domain.BookingEventPayload
+	if err := json.Unmarshal(envelope.Payload, &payload); err != nil {
+		return 0, false
+	}
+
+	if payload.UserID == nil {
+		return 0, false
+	}
+
+	return *payload.UserID, true
+}
+
+func getBookingSSEEventName(data []byte) string {
+	var envelope domain.EventEnvelope
+	if err := json.Unmarshal(data, &envelope); err != nil {
+		return "booking_event"
+	}
+
+	switch envelope.EventType {
+	case usecase.TopicBookingPaid:
+		return "booking_paid"
+	case usecase.TopicBookingCancelled:
+		return "booking_cancelled"
+	case usecase.TopicBookingRefundRequested:
+		return "refund_requested"
+	case usecase.TopicBookingRefundApproved:
+		return "refund_approved"
+	case usecase.TopicBookingRefundRejected:
+		return "refund_rejected"
+	case usecase.TopicBookingExpired:
+		return "booking_expired"
+	default:
+		return "booking_event"
 	}
 }

@@ -6,8 +6,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
-import { VoiceBookingPanel } from '@/modules/voice'
-import { useChatStore, type ChatMessage } from '@/stores/use-chat-store'
+import { type ChatMessage, useChatStore } from '@/modules/chat'
 
 export const Route = createFileRoute('/_public/chat')({
     component: ChatPage,
@@ -66,10 +65,6 @@ function ChatPage() {
                         Xóa hội thoại
                     </Button>
                 )}
-            </div>
-
-            <div className="mb-4">
-                <VoiceBookingPanel onTranscript={sendMessage} disabled={isLoading} />
             </div>
 
             {/* Messages Area */}

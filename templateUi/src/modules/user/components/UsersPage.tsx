@@ -18,7 +18,7 @@ export function UsersPage(): React.ReactElement {
     const [editingUser, setEditingUser] = useState<User | null>(null)
     const [deletingUserId, setDeletingUserId] = useState<number | null>(null)
 
-    const { data, isLoading, error } = useUsers(page + 1, pageSize)
+    const { data, error } = useUsers(page + 1, pageSize)
     const deleteMutation = useDeleteUser()
     const createMutation = useCreateUser()
     const updateMutation = useUpdateUser()
@@ -91,7 +91,6 @@ export function UsersPage(): React.ReactElement {
                     setPage(newPage)
                     setPageSize(newSize)
                 }}
-                isLoading={isLoading}
                 toolbar={(table) => (
                     <div className="flex items-center justify-end">
                         <DataTableViewOptions table={table} />

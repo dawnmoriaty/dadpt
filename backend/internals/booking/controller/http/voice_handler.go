@@ -18,12 +18,35 @@ import (
 )
 
 type VoiceExecuteRequest struct {
+	TripID              *int64   `json:"tripId"`
+	Origin              string   `json:"origin"`
+	Destination         string   `json:"destination"`
+	TravelDate          string   `json:"travelDate"`
+	SeatCount           int      `json:"seatCount" binding:"required,min=1,max=4"`
+	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
+	PaymentMethod       string   `json:"paymentMethod" binding:"omitempty,oneof=bank_transfer cod visa"`
+}
+
+type VoicePlanRequest struct {
 	Origin              string   `json:"origin" binding:"required"`
 	Destination         string   `json:"destination" binding:"required"`
 	TravelDate          string   `json:"travelDate" binding:"required"`
 	SeatCount           int      `json:"seatCount" binding:"required,min=1,max=4"`
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
-	PaymentMethod       string   `json:"paymentMethod" binding:"omitempty,oneof=bank_transfer cod visa"`
+}
+
+type voiceTripCandidate struct {
+	TripID             int64    `json:"tripId"`
+	ProviderName       string   `json:"providerName,omitempty"`
+	BusTypeName        string   `json:"busTypeName,omitempty"`
+	OriginName         string   `json:"originName,omitempty"`
+	DestinationName    string   `json:"destinationName,omitempty"`
+	DepartureTime      string   `json:"departureTime"`
+	ArrivalTime        string   `json:"arrivalTime"`
+	FinalPrice         float64  `json:"finalPrice"`
+	AvailableSeats     int32    `json:"availableSeats"`
+	Status             string   `json:"status"`
+	SuggestedSeatCodes []string `json:"suggestedSeatCodes,omitempty"`
 }
 
 type VoiceBookingHandler struct {
@@ -55,45 +78,19 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
-
-	userIDVal, ok := c.Get("userID")
-	if !ok {
-		response.HandleError(c, pkgErrors.ErrUnauthorized)
+	if err := validateExecuteRequest(&req); err != nil {
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
-	userID := userIDVal.(int64)
 
-	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	userID, user, err := h.requireActiveUser(c)
 	if err != nil {
-		response.HandleError(c, pkgErrors.ErrUserNotFound)
-		return
-	}
-	if err := user.CanLogin(); err != nil {
-		response.HandleError(c, pkgErrors.ErrUserInactive)
+		response.HandleError(c, err)
 		return
 	}
 
-	origin, destination, err := h.resolveLocations(c, req.Origin, req.Destination)
+	trip, err := h.selectTripForExecute(c, &req)
 	if err != nil {
-		response.HandleError(c, pkgErrors.ErrBadRequest)
-		return
-	}
-
-	trips, _, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
-		OriginID:      int32(origin.ID),
-		DestinationID: int32(destination.ID),
-		DepartureDate: req.TravelDate,
-		MinSeats:      req.SeatCount,
-		Page:          1,
-		Limit:         20,
-	})
-	if err != nil {
-		response.HandleError(c, pkgErrors.ErrTripNotFound)
-		return
-	}
-
-	trip := selectBestTrip(trips)
-	if trip == nil {
 		response.HandleError(c, pkgErrors.ErrTripNotFound)
 		return
 	}
@@ -142,6 +139,127 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 		"destination":   fallbackName(trip.DestinationName, req.Destination),
 		"bookingResult": bookingDto.ToCreateBookingResponse(out),
 	})
+}
+
+// Plan handles POST /bookings/voice/plan.
+// Returns AI-ready trip candidates so user can choose before execute.
+func (h *VoiceBookingHandler) Plan(c *gin.Context) {
+	var req VoicePlanRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
+		return
+	}
+
+	_, _, err := h.requireActiveUser(c)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	origin, destination, err := h.resolveLocations(c, req.Origin, req.Destination)
+	if err != nil {
+		response.HandleError(c, pkgErrors.ErrBadRequest)
+		return
+	}
+
+	trips, _, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+		OriginID:      int32(origin.ID),
+		DestinationID: int32(destination.ID),
+		DepartureDate: req.TravelDate,
+		MinSeats:      req.SeatCount,
+		Page:          1,
+		Limit:         5,
+	})
+	if err != nil || len(trips) == 0 {
+		response.HandleError(c, pkgErrors.ErrTripNotFound)
+		return
+	}
+
+	recommended := selectBestTrip(trips)
+	candidates := make([]voiceTripCandidate, 0, len(trips))
+	for _, trip := range trips {
+		suggestedSeats, _ := allocateSeats(trip.BookedSeats, normalizeSeatPreference(req.SeatPreferenceOrder), req.SeatCount)
+		candidates = append(candidates, voiceTripCandidate{
+			TripID:             trip.ID,
+			ProviderName:       trip.ProviderName,
+			BusTypeName:        trip.BusTypeName,
+			OriginName:         trip.OriginName,
+			DestinationName:    trip.DestinationName,
+			DepartureTime:      trip.DepartureTime.Format("2006-01-02T15:04:05Z07:00"),
+			ArrivalTime:        trip.ArrivalTime.Format("2006-01-02T15:04:05Z07:00"),
+			FinalPrice:         trip.FinalPrice(),
+			AvailableSeats:     trip.AvailableSeats,
+			Status:             trip.Status.String(),
+			SuggestedSeatCodes: suggestedSeats,
+		})
+	}
+
+	response.Success(c, gin.H{
+		"flow":              "voice-plan",
+		"origin":            fallbackName(recommended.OriginName, req.Origin),
+		"destination":       fallbackName(recommended.DestinationName, req.Destination),
+		"travelDate":        req.TravelDate,
+		"seatCount":         req.SeatCount,
+		"recommendedTripId": recommended.ID,
+		"candidates":        candidates,
+	})
+}
+
+func (h *VoiceBookingHandler) requireActiveUser(c *gin.Context) (int64, *authDomain.User, error) {
+	userIDVal, ok := c.Get("userID")
+	if !ok {
+		return 0, nil, pkgErrors.ErrUnauthorized
+	}
+	userID := userIDVal.(int64)
+	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
+	if err != nil {
+		return 0, nil, pkgErrors.ErrUserNotFound
+	}
+	if err := user.CanLogin(); err != nil {
+		return 0, nil, pkgErrors.ErrUserInactive
+	}
+	return userID, user, nil
+}
+
+func (h *VoiceBookingHandler) selectTripForExecute(c *gin.Context, req *VoiceExecuteRequest) (*tripDomain.Trip, error) {
+	if req.TripID != nil {
+		return h.tripUC.GetByID(c.Request.Context(), *req.TripID)
+	}
+
+	origin, destination, err := h.resolveLocations(c, req.Origin, req.Destination)
+	if err != nil {
+		return nil, err
+	}
+
+	trips, _, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+		OriginID:      int32(origin.ID),
+		DestinationID: int32(destination.ID),
+		DepartureDate: req.TravelDate,
+		MinSeats:      req.SeatCount,
+		Page:          1,
+		Limit:         20,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	return selectBestTrip(trips), nil
+}
+
+func validateExecuteRequest(req *VoiceExecuteRequest) error {
+	if req.TripID != nil {
+		return nil
+	}
+	if strings.TrimSpace(req.Origin) == "" {
+		return fmt.Errorf("origin is required")
+	}
+	if strings.TrimSpace(req.Destination) == "" {
+		return fmt.Errorf("destination is required")
+	}
+	if strings.TrimSpace(req.TravelDate) == "" {
+		return fmt.Errorf("travelDate is required")
+	}
+	return nil
 }
 
 func (h *VoiceBookingHandler) resolveLocations(c *gin.Context, originText, destinationText string) (*locationResult, *locationResult, error) {
@@ -244,24 +362,22 @@ func scanFallbackConsecutive(booked map[string]bool, seatCount int) ([]string, b
 		return nil, false
 	}
 
-	for row := 'A'; row <= 'Z'; row++ {
-		for start := 1; start <= 60-seatCount; start++ {
-			window := make([]string, 0, seatCount)
-			blocked := false
-			for i := 0; i < seatCount; i++ {
-				seat := fmt.Sprintf("%c%d", row, start+i)
-				if booked[seat] {
-					blocked = true
-					break
-				}
-				window = append(window, seat)
-			}
-			if blocked {
+	for number := 1; number <= 60; number++ {
+		window := make([]string, 0, seatCount)
+		for row := 'A'; row <= 'Z' && len(window) < seatCount; row++ {
+			seat := fmt.Sprintf("%c%d", row, number)
+			if booked[seat] {
 				continue
 			}
-			if err := bookingDomain.ValidateConsecutiveSeats(window); err == nil {
-				return window, true
-			}
+			window = append(window, seat)
+		}
+
+		if len(window) < seatCount {
+			continue
+		}
+
+		if err := bookingDomain.ValidateConsecutiveSeats(window); err == nil {
+			return window, true
 		}
 	}
 

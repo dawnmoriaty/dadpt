@@ -1,5 +1,6 @@
 import { Outlet } from '@tanstack/react-router'
 
+import { ChatFab } from '@/components/common/chat-fab'
 import { Header } from '@/components/common/header'
 
 export function PublicLayout() {
@@ -9,6 +10,7 @@ export function PublicLayout() {
             <main className="flex-1">
                 <Outlet />
             </main>
+            <ChatFab />
         </div>
     )
 }

@@ -128,7 +128,7 @@ func (s *Server) MapRoutes() {
 	bookingGroup := v1.Group("/bookings")
 	authBooking := bookingGroup.Group("")
 	authBooking.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
-	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache, paymentGw)
+	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache, paymentGw, s.sseHub)
 
 	// AI Agent routes (public — chatbot endpoint)
 	if s.chatHandler != nil {

@@ -50,28 +50,6 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
 
     const uploadMutation = useUploadImage()
 
-    const { data: provinces = [], isLoading: loadingProvinces } = useProvinces()
-    const { data: districts = [], isLoading: loadingDistricts } = useDistricts(selectedProvinceCode)
-    const { data: wards = [], isLoading: loadingWards } = useWards(selectedDistrictCode)
-
-    const filteredProvinces = useMemo(() => {
-        if (!provinceSearch) return provinces
-        const q = provinceSearch.toLowerCase()
-        return provinces.filter((p) => p.name.toLowerCase().includes(q))
-    }, [provinces, provinceSearch])
-
-    const filteredDistricts = useMemo(() => {
-        if (!districtSearch) return districts
-        const q = districtSearch.toLowerCase()
-        return districts.filter((d) => d.name.toLowerCase().includes(q))
-    }, [districts, districtSearch])
-
-    const filteredWards = useMemo(() => {
-        if (!wardSearch) return wards
-        const q = wardSearch.toLowerCase()
-        return wards.filter((w) => w.name.toLowerCase().includes(q))
-    }, [wards, wardSearch])
-
     const form = useForm<CreateLocationFormData>({
         resolver: zodResolver(createLocationSchema),
         defaultValues: {
@@ -94,6 +72,28 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
     const selectedWardCode = useWatch({ control: form.control, name: 'wardCode' })
     const watchedWardName = useWatch({ control: form.control, name: 'wardName' })
     const watchedStreetAddress = useWatch({ control: form.control, name: 'streetAddress' })
+
+    const { data: provinces = [], isLoading: loadingProvinces } = useProvinces()
+    const { data: districts = [], isLoading: loadingDistricts } = useDistricts(selectedProvinceCode)
+    const { data: wards = [], isLoading: loadingWards } = useWards(selectedDistrictCode)
+
+    const filteredProvinces = useMemo(() => {
+        if (!provinceSearch) return provinces
+        const q = provinceSearch.toLowerCase()
+        return provinces.filter((p) => p.name.toLowerCase().includes(q))
+    }, [provinces, provinceSearch])
+
+    const filteredDistricts = useMemo(() => {
+        if (!districtSearch) return districts
+        const q = districtSearch.toLowerCase()
+        return districts.filter((d) => d.name.toLowerCase().includes(q))
+    }, [districts, districtSearch])
+
+    const filteredWards = useMemo(() => {
+        if (!wardSearch) return wards
+        const q = wardSearch.toLowerCase()
+        return wards.filter((w) => w.name.toLowerCase().includes(q))
+    }, [wards, wardSearch])
 
     const imageUrl = useWatch({ control: form.control, name: 'imageUrl' })
 

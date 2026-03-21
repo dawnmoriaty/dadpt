@@ -40,9 +40,6 @@ export function Header() {
                         <Link to="/search" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
                             {t('nav.search')}
                         </Link>
-                        <Link to="/chat" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
-                            Chat AI
-                        </Link>
                         {isAuthenticated && (
                             <Link to="/my-bookings" className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors">
                                 {t('nav.myBookings')}
@@ -125,13 +122,6 @@ export function Header() {
                             onClick={() => setMobileMenuOpen(false)}
                         >
                             {t('nav.search')}
-                        </Link>
-                        <Link
-                            to="/chat"
-                            className="block px-3 py-2.5 text-sm font-medium rounded-md hover:bg-accent transition-colors"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            Chat AI
                         </Link>
                         {isAuthenticated && (
                             <Link

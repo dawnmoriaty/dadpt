@@ -15,6 +15,7 @@ const (
 
 type BookingEventPayload struct {
 	BookingID  int64    `json:"bookingId"`
+	UserID     *int64   `json:"userId,omitempty"`
 	Code       string   `json:"code"`
 	TripID     int64    `json:"tripId"`
 	SeatCodes  []string `json:"seatCodes"`
@@ -39,6 +40,7 @@ type EventEnvelope struct {
 func NewBookingEventEnvelope(eventType string, booking *Booking, correlationID string) []byte {
 	payload, _ := json.Marshal(BookingEventPayload{
 		BookingID:  booking.ID,
+		UserID:     booking.UserID,
 		Code:       string(booking.Code),
 		TripID:     booking.TripID,
 		SeatCodes:  booking.SeatCodes,
