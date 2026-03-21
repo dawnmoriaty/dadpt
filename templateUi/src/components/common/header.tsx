@@ -1,3 +1,5 @@
+'use client'
+
 import { Link, useNavigate } from '@tanstack/react-router'
 import { Bus, LogOut, Menu, Settings, Ticket, User, X } from 'lucide-react'
 import { useState } from 'react'

@@ -1,6 +1,9 @@
+'use client'
+
 import { format } from 'date-fns'
 import { Search } from 'lucide-react'
 import { useState } from 'react'
+import { useNavigate } from '@tanstack/react-router'
 
 import { DatePicker } from '@/components/common/date-picker'
 import { LocationCombobox } from '@/components/common/location-combobox'
@@ -18,6 +21,7 @@ export function SearchForm(): React.ReactElement {
     const [originId, setOriginId] = useState<number>(0)
     const [destinationId, setDestinationId] = useState<number>(0)
     const [date, setDate] = useState<Date | undefined>(undefined)
+    const navigate = useNavigate()
 
     const handleSubmit = (e: React.FormEvent): void => {
         e.preventDefault()
@@ -28,8 +32,10 @@ export function SearchForm(): React.ReactElement {
             destinationId,
             date: format(date, 'yyyy-MM-dd'),
         }
-        console.log('Search params:', params)
-        // TODO: Navigate to search results page with params
+        navigate({
+            to: '/search',
+            search: params,
+        })
     }
 
     return (

@@ -1,3 +1,5 @@
+'use client'
+
 import { AudioLines, Loader2, Mic, Square, Upload } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
@@ -126,39 +128,64 @@ export function VoiceBookingPanel({ onTranscript, disabled = false }: VoiceBooki
     }
 
     return (
-        <Card className="border-primary/15 bg-gradient-to-br from-primary/5 via-background to-emerald-50/60 p-4">
+        <Card className="border border-primary/20 bg-gradient-to-br from-primary/5 to-background p-5">
             <div className="flex flex-col gap-4">
+                {/* Header */}
                 <div className="flex items-start gap-3">
-                    <div className="rounded-xl bg-primary/10 p-2 text-primary">
+                    <div className="rounded-lg bg-primary/10 p-2.5 text-primary">
                         <AudioLines className="h-5 w-5" />
                     </div>
-                    <div className="space-y-1">
-                        <h2 className="font-semibold">Đặt vé bằng giọng nói</h2>
-                        <p className="text-sm text-muted-foreground">
-                            Tải file audio lên hoặc ghi âm trực tiếp. Hệ thống sẽ tự nhận diện nội dung và xử lý đặt vé.
+                    <div className="flex-1">
+                        <h3 className="font-semibold text-foreground">Đặt vé bằng giọng nói</h3>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                            Tải file hoặc ghi âm trực tiếp. Hệ thống sẽ nhận diện và xử lý đơn đặt vé.
                         </p>
                     </div>
                 </div>
 
-                <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" variant="outline" onClick={handleChooseFile} disabled={isBusy} className="sm:flex-1">
-                        {transcribeMutation.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Upload className="mr-2 h-4 w-4" />}
-                        Tải audio lên
+                {/* Action Buttons */}
+                <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
+                    <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={handleChooseFile} 
+                        disabled={isBusy} 
+                        className="gap-2"
+                    >
+                        {transcribeMutation.isPending ? (
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                            <Upload className="h-4 w-4" />
+                        )}
+                        <span className="hidden sm:inline">Tải audio</span>
+                        <span className="sm:hidden">Tải</span>
                     </Button>
 
                     {isRecording ? (
-                        <Button type="button" variant="destructive" onClick={stopRecording} disabled={isBusy} className="sm:flex-1">
-                            <Square className="mr-2 h-4 w-4" />
-                            Dừng ghi âm
+                        <Button 
+                            type="button" 
+                            variant="destructive" 
+                            onClick={stopRecording} 
+                            disabled={isBusy} 
+                            className="gap-2"
+                        >
+                            <Square className="h-4 w-4" />
+                            <span className="hidden sm:inline">Dừng</span>
                         </Button>
                     ) : (
-                        <Button type="button" onClick={startRecording} disabled={!canRecord || isBusy} className="sm:flex-1">
-                            <Mic className="mr-2 h-4 w-4" />
-                            Ghi âm trực tiếp
+                        <Button 
+                            type="button" 
+                            onClick={startRecording} 
+                            disabled={!canRecord || isBusy} 
+                            className="gap-2"
+                        >
+                            <Mic className="h-4 w-4" />
+                            <span className="hidden sm:inline">Ghi âm</span>
                         </Button>
                     )}
                 </div>
 
+                {/* Hidden file input */}
                 <input
                     ref={fileInputRef}
                     type="file"
@@ -167,25 +194,28 @@ export function VoiceBookingPanel({ onTranscript, disabled = false }: VoiceBooki
                     onChange={handleFileChange}
                 />
 
+                {/* Browser warning */}
                 {!canRecord && (
-                    <p className="text-xs text-amber-700">
-                        Trình duyệt hiện tại chưa hỗ trợ ghi âm trực tiếp. Bạn vẫn có thể tải file audio lên để xử lý.
-                    </p>
-                )}
-
-                {audioUrl && (
-                    <div className="rounded-xl border bg-background/80 p-3">
-                        <p className="mb-2 text-sm font-medium">Audio gần nhất: {audioName}</p>
-                        <audio controls src={audioUrl} className="w-full" />
+                    <div className="rounded-lg bg-amber-50/50 p-3 text-xs text-amber-700 border border-amber-200/50">
+                        Trình duyệt chưa hỗ trợ ghi âm. Bạn vẫn có thể tải file audio.
                     </div>
                 )}
 
+                {/* Audio preview */}
+                {audioUrl && (
+                    <div className="rounded-lg border bg-muted/50 p-3">
+                        <p className="mb-2 text-xs font-medium text-foreground">📁 {audioName}</p>
+                        <audio controls src={audioUrl} className="w-full h-8" />
+                    </div>
+                )}
+
+                {/* Transcript display */}
                 {lastTranscript && (
-                    <div className="rounded-xl border border-dashed bg-background/80 p-3">
-                        <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                            Transcript
+                    <div className="rounded-lg border border-dashed bg-muted/30 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                            📝 Nhận diện
                         </p>
-                        <p className="text-sm leading-relaxed">{lastTranscript}</p>
+                        <p className="text-sm leading-relaxed text-foreground">{lastTranscript}</p>
                     </div>
                 )}
             </div>

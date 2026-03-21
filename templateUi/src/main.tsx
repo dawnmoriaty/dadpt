@@ -7,6 +7,9 @@ import ReactDOM from "react-dom/client";
 // Initialize i18n before any component renders
 import "./lib/i18n";
 
+// Initialize auth store
+import "@/stores/use-auth-store";
+
 import "./index.css";
 
 // Import the generated route tree
