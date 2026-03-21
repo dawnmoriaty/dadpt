@@ -55,33 +55,32 @@ export function DatePicker({
                 <Button
                     variant="outline"
                     className={cn(
-                        'w-full justify-start text-left font-normal h-10',
+                        'w-full justify-start text-left font-normal h-11 px-4 rounded-lg border-blue-100 hover:border-primary/30 hover:bg-blue-50/50 transition-all duration-200',
                         !value && 'text-muted-foreground',
+                        value && 'border-primary/20 bg-primary/5 text-foreground font-medium',
                         className,
                     )}
                     disabled={disabled}
                 >
-                    <CalendarDays className="mr-2 h-4 w-4 text-primary/70" />
-                    {value ? (
-                        <span className="truncate">{formatDisplayDate(value)}</span>
-                    ) : (
-                        <span>{placeholder ?? t('datePicker.placeholder')}</span>
-                    )}
+                    <CalendarDays className="mr-3 h-4 w-4 text-primary flex-shrink-0" />
+                    <span className="truncate">
+                        {value ? formatDisplayDate(value) : (placeholder ?? 'Chọn ngày...')}
+                    </span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent
-                className="w-auto p-0 rounded-xl shadow-xl border-border/50"
+                className="w-auto p-0 rounded-xl shadow-xl border-blue-100/50 bg-white"
                 align="start"
             >
-                <div className="p-3 pb-1 flex items-center justify-between border-b">
-                    <span className="text-sm font-semibold text-foreground">{t('datePicker.selectDate')}</span>
+                <div className="p-4 pb-2 flex items-center justify-between border-b border-blue-100">
+                    <span className="text-sm font-semibold text-foreground">Chọn ngày khởi hành</span>
                     <Button
                         variant="ghost"
                         size="sm"
-                        className="h-7 text-xs text-primary hover:text-primary hover:bg-primary/10"
+                        className="h-8 text-xs font-medium text-primary hover:text-primary hover:bg-primary/10 rounded-md transition-colors"
                         onClick={handleSelectToday}
                     >
-                        {t('datePicker.today')}
+                        Hôm nay
                     </Button>
                 </div>
                 <Calendar

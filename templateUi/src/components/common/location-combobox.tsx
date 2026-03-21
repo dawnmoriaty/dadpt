@@ -126,7 +126,7 @@ export function LocationCombobox({
     return (
         <div ref={containerRef} className={cn('relative', className)}>
             <div className="relative">
-                <MapPin className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+                <MapPin className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50 pointer-events-none" />
                 <Input
                     ref={inputRef}
                     value={inputValue}
@@ -134,7 +134,6 @@ export function LocationCombobox({
                         setInputValue(e.target.value)
                         setIsOpen(true)
                         setHighlightIndex(-1)
-                        // If user clears text, clear selection
                         if (e.target.value === '') {
                             onSelect(0)
                         }
@@ -145,23 +144,24 @@ export function LocationCombobox({
                         }
                     }}
                     onKeyDown={handleKeyDown}
-                    placeholder={placeholder ?? t('location.placeholder')}
+                    placeholder={placeholder ?? 'Chọn địa điểm...'}
                     disabled={disabled}
-                    className="pl-9 pr-8"
+                    className="pl-10 pr-10 h-11 rounded-lg border-blue-100 bg-blue-50/30 hover:bg-blue-50 focus:bg-white transition-colors"
                     autoComplete="off"
                 />
                 {value > 0 && (
                     <button
                         type="button"
                         onClick={handleClear}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-0.5 text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+                        className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:text-foreground hover:bg-red-50 transition-all"
                         tabIndex={-1}
+                        title="Xóa"
                     >
-                        <X className="h-3.5 w-3.5" />
+                        <X className="h-4 w-4" />
                     </button>
                 )}
                 {isLoading && (
-                    <Loader2 className="absolute right-2 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                    <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-primary" />
                 )}
             </div>
 
@@ -169,7 +169,7 @@ export function LocationCombobox({
                 <ul
                     ref={listRef}
                     role="listbox"
-                    className="absolute z-50 mt-1 w-full max-h-60 overflow-auto rounded-lg border bg-popover shadow-lg animate-in fade-in-0 zoom-in-95"
+                    className="absolute z-50 mt-2 w-full max-h-72 overflow-auto rounded-xl border border-blue-100/50 bg-white shadow-xl animate-in fade-in-0 zoom-in-95"
                 >
                     {items.map((loc, index) => (
                         <li
@@ -177,9 +177,9 @@ export function LocationCombobox({
                             role="option"
                             aria-selected={value === loc.id}
                             className={cn(
-                                'flex items-center gap-2 px-3 py-2.5 cursor-pointer text-sm transition-colors',
-                                highlightIndex === index && 'bg-accent',
-                                value === loc.id && 'text-primary font-medium',
+                                'flex items-center gap-3 px-4 py-3 cursor-pointer text-sm transition-all duration-200',
+                                highlightIndex === index && 'bg-primary/10 border-l-2 border-primary',
+                                value === loc.id && 'bg-primary/20 text-primary font-semibold border-l-4 border-primary',
                             )}
                             onMouseEnter={() => setHighlightIndex(index)}
                             onMouseDown={(e) => {
@@ -189,14 +189,14 @@ export function LocationCombobox({
                         >
                             <Check
                                 className={cn(
-                                    'h-4 w-4 shrink-0',
-                                    value === loc.id ? 'opacity-100 text-primary' : 'opacity-0',
+                                    'h-4 w-4 shrink-0 text-primary',
+                                    value === loc.id ? 'opacity-100' : 'opacity-0',
                                 )}
                             />
-                            <div className="flex flex-col min-w-0">
-                                <span className="truncate font-medium">{loc.name}</span>
-                                <span className="truncate text-xs text-muted-foreground">
-                                    {loc.city} — {loc.address}
+                            <div className="flex flex-col min-w-0 flex-1">
+                                <span className="truncate font-medium text-foreground">{loc.name}</span>
+                                <span className="truncate text-xs text-muted-foreground mt-0.5">
+                                    {loc.city}
                                 </span>
                             </div>
                         </li>
@@ -205,8 +205,8 @@ export function LocationCombobox({
             )}
 
             {isOpen && !isLoading && debouncedQuery.length > 0 && items.length === 0 && (
-                <div className="absolute z-50 mt-1 w-full rounded-lg border bg-popover p-4 shadow-lg text-center text-sm text-muted-foreground">
-                    {t('location.noResults')}
+                <div className="absolute z-50 mt-2 w-full rounded-xl border border-blue-100/50 bg-blue-50 p-4 shadow-lg text-center text-sm text-muted-foreground">
+                    Không tìm thấy địa điểm
                 </div>
             )}
         </div>
