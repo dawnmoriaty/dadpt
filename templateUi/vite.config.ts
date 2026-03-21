@@ -14,6 +14,10 @@ export default defineConfig({
             return;
           }
 
+          if (id.includes("lucide-react")) {
+            return "vendor-icons";
+          }
+
           if (id.includes("react") || id.includes("scheduler")) {
             return "vendor-react";
           }
@@ -48,10 +52,6 @@ export default defineConfig({
 
           if (id.includes("axios") || id.includes("zustand") || id.includes("sonner")) {
             return "vendor-data";
-          }
-
-          if (id.includes("lucide-react")) {
-            return "vendor-icons";
           }
 
           return "vendor-misc";
