@@ -126,7 +126,7 @@ export function LocationCombobox({
     return (
         <div ref={containerRef} className={cn('relative', className)}>
             <div className="relative">
-                <MapPin className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-primary/50 pointer-events-none" />
+                <MapPin className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400 pointer-events-none" />
                 <Input
                     ref={inputRef}
                     value={inputValue}
@@ -146,7 +146,7 @@ export function LocationCombobox({
                     onKeyDown={handleKeyDown}
                     placeholder={placeholder ?? 'Chọn địa điểm...'}
                     disabled={disabled}
-                    className="pl-10 pr-10 h-11 rounded-lg border-blue-100 bg-blue-50/30 hover:bg-blue-50 focus:bg-white transition-colors"
+                    className="pl-10 pr-10 h-11 rounded-lg border border-gray-300 bg-gray-50 hover:bg-white focus:bg-white focus:border-gray-400 focus:ring-1 focus:ring-gray-300 transition-all"
                     autoComplete="off"
                 />
                 {value > 0 && (
@@ -169,7 +169,7 @@ export function LocationCombobox({
                 <ul
                     ref={listRef}
                     role="listbox"
-                    className="absolute z-50 mt-2 w-full max-h-72 overflow-auto rounded-xl border border-blue-100/50 bg-white shadow-xl animate-in fade-in-0 zoom-in-95"
+                    className="absolute z-50 mt-2 w-full max-h-72 overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg animate-in fade-in-0 zoom-in-95"
                 >
                     {items.map((loc, index) => (
                         <li
@@ -177,9 +177,9 @@ export function LocationCombobox({
                             role="option"
                             aria-selected={value === loc.id}
                             className={cn(
-                                'flex items-center gap-3 px-4 py-3 cursor-pointer text-sm transition-all duration-200',
-                                highlightIndex === index && 'bg-primary/10 border-l-2 border-primary',
-                                value === loc.id && 'bg-primary/20 text-primary font-semibold border-l-4 border-primary',
+                                'flex items-center gap-3 px-4 py-3 cursor-pointer text-sm transition-colors duration-150',
+                                highlightIndex === index && 'bg-gray-100',
+                                value === loc.id && 'bg-yellow-50 font-medium border-l-4 border-yellow-400',
                             )}
                             onMouseEnter={() => setHighlightIndex(index)}
                             onMouseDown={(e) => {
@@ -189,13 +189,13 @@ export function LocationCombobox({
                         >
                             <Check
                                 className={cn(
-                                    'h-4 w-4 shrink-0 text-primary',
-                                    value === loc.id ? 'opacity-100' : 'opacity-0',
+                                    'h-4 w-4 shrink-0',
+                                    value === loc.id ? 'opacity-100 text-yellow-500' : 'opacity-0',
                                 )}
                             />
                             <div className="flex flex-col min-w-0 flex-1">
-                                <span className="truncate font-medium text-foreground">{loc.name}</span>
-                                <span className="truncate text-xs text-muted-foreground mt-0.5">
+                                <span className="truncate font-medium text-gray-900">{loc.name}</span>
+                                <span className="truncate text-xs text-gray-500 mt-0.5">
                                     {loc.city}
                                 </span>
                             </div>
@@ -205,7 +205,7 @@ export function LocationCombobox({
             )}
 
             {isOpen && !isLoading && debouncedQuery.length > 0 && items.length === 0 && (
-                <div className="absolute z-50 mt-2 w-full rounded-xl border border-blue-100/50 bg-blue-50 p-4 shadow-lg text-center text-sm text-muted-foreground">
+                <div className="absolute z-50 mt-2 w-full rounded-lg border border-gray-200 bg-gray-50 p-4 shadow-lg text-center text-sm text-gray-600">
                     Không tìm thấy địa điểm
                 </div>
             )}

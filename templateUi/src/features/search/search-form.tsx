@@ -69,14 +69,14 @@ export function SearchForm(): React.ReactElement {
     }
 
     return (
-        <Card className="w-full max-w-4xl shadow-2xl bg-white backdrop-blur-sm border border-gray-200 rounded-3xl overflow-hidden">
-            <CardContent className="p-6 md:p-8">
+        <Card className="w-full max-w-4xl shadow-2xl bg-white/95 backdrop-blur-xl border-0 rounded-3xl overflow-hidden">
+            <CardContent className="p-7 md:p-9">
                 <form onSubmit={handleSubmitWithValidation} className="space-y-5">
                     {/* Main Grid */}
                     <div className="grid gap-3 md:gap-4 md:grid-cols-4 md:items-end">
                         {/* From Location */}
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-gray-700">
                                 Từ đâu
                             </Label>
                             <LocationCombobox
@@ -87,7 +87,7 @@ export function SearchForm(): React.ReactElement {
                                 }}
                                 placeholder="Chọn nơi khởi hành..."
                             />
-                            {errors.origin && <p className="text-xs text-red-500 font-medium mt-1">{errors.origin}</p>}
+                            {errors.origin && <p className="text-xs text-red-600 font-medium mt-1">✕ {errors.origin}</p>}
                         </div>
 
                         {/* Swap Button - Desktop Only */}
@@ -97,7 +97,7 @@ export function SearchForm(): React.ReactElement {
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleSwapLocations}
-                                className="rounded-full h-11 w-11 hover:bg-yellow-100 hover:text-yellow-700 transition-all"
+                                className="rounded-full h-11 w-11 hover:bg-gray-200 hover:text-gray-700 transition-all"
                                 title="Đổi chỗ"
                             >
                                 <ArrowRight className="h-5 w-5 rotate-90" />
@@ -106,7 +106,7 @@ export function SearchForm(): React.ReactElement {
 
                         {/* To Location */}
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-gray-700">
                                 Đến đâu
                             </Label>
                             <LocationCombobox
@@ -117,12 +117,12 @@ export function SearchForm(): React.ReactElement {
                                 }}
                                 placeholder="Chọn điểm đến..."
                             />
-                            {errors.destination && <p className="text-xs text-red-500 font-medium mt-1">{errors.destination}</p>}
+                            {errors.destination && <p className="text-xs text-red-600 font-medium mt-1">✕ {errors.destination}</p>}
                         </div>
 
                         {/* Departure Date */}
                         <div className="space-y-2">
-                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
+                            <Label className="text-xs font-bold uppercase tracking-wider text-gray-700">
                                 Ngày khởi hành
                             </Label>
                             <DatePicker
@@ -134,7 +134,7 @@ export function SearchForm(): React.ReactElement {
                                 placeholder="Chọn ngày..."
                                 minDate={new Date()}
                             />
-                            {errors.date && <p className="text-xs text-red-500 font-medium mt-1">{errors.date}</p>}
+                            {errors.date && <p className="text-xs text-red-600 font-medium mt-1">✕ {errors.date}</p>}
                         </div>
                     </div>
 
@@ -151,14 +151,22 @@ export function SearchForm(): React.ReactElement {
                             type="submit"
                             size="lg"
                             className={cn(
-                                'flex-1 md:flex-none md:w-48 h-12 text-base font-bold transition-all duration-300 rounded-lg',
-                                'bg-yellow-400 hover:bg-yellow-500 text-gray-900 hover:shadow-xl hover:scale-105 active:scale-95',
-                                'border-2 border-yellow-500 hover:border-yellow-600',
+                                'flex-1 md:flex-none md:w-48 h-12 text-base font-bold transition-all duration-300 rounded-lg shadow-md hover:shadow-lg',
+                                'text-gray-900 hover:scale-105 active:scale-95',
+                                'border-2',
                                 !isFormValid && 'opacity-50 cursor-not-allowed hover:scale-100'
                             )}
                             style={{
                                 backgroundColor: '#FFF541',
                                 borderColor: '#FFE81C'
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!isLoading && isFormValid) {
+                                    e.currentTarget.style.backgroundColor = '#FFED4F'
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.backgroundColor = '#FFF541'
                             }}
                             disabled={!isFormValid || isLoading}
                         >
@@ -177,7 +185,7 @@ export function SearchForm(): React.ReactElement {
                     </div>
 
                     {/* Helper Text */}
-                    <div className="text-xs text-gray-500 text-center">
+                    <div className="text-xs text-gray-600 text-center">
                         Tìm và đặt vé xe một cách nhanh chóng, an toàn
                     </div>
                 </form>
