@@ -151,9 +151,10 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             />
                         )}
 
-                        type="submit" 
+                        <Button 
+                            type="submit" 
                             size="lg" 
-                            className={cn('h-11 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg border-2 text-gray-900 active:scale-95', compact ? 'w-full md:w-auto md:px-8 ml-auto' : 'w-full')}
+                            className={cn('h-11 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg border-2 text-gray-900 active:scale-95', compact ? 'w-full md:w-auto md:px-8' : 'w-full')}
                             style={{
                                 backgroundColor: '#FFF541',
                                 borderColor: '#FFE81C',
