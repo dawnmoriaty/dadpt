@@ -22,58 +22,52 @@ function HomePage() {
 
     return (
         <div className="flex flex-col">
-            {/* Hero Section */}
-            <section className="relative min-h-[580px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-blue-50 to-white">
+            {/* Hero Section with Blue Gradient Background */}
+            <section className="relative min-h-[600px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-blue-400 via-blue-300 to-blue-200">
                 <div
-                    className="absolute inset-0 bg-cover bg-center z-0"
+                    className="absolute inset-0 bg-cover bg-center z-0 opacity-30"
                     style={{
                         backgroundImage: 'url("https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?q=80&w=2069&auto=format&fit=crop")',
-                        filter: 'brightness(0.35)',
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-b from-primary/40 via-primary/30 to-transparent z-[1]" />
-
-                <div className="relative z-10 container mx-auto max-w-6xl px-4 py-20 flex flex-col items-center text-center">
-                    <div className="mb-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                        <div className="inline-flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-full px-4 py-2 border border-white/20 mb-6">
-                            <Bus className="h-5 w-5 text-white" />
-                            <span className="text-sm font-semibold text-white">Đặt vé xe trực tuyến</span>
-                        </div>
+                
+                <div className="relative z-10 container mx-auto max-w-7xl px-4 flex flex-col items-center text-center py-12">
+                    {/* Promotional Banner */}
+                    <div className="mb-8 animate-in fade-in slide-in-from-top-4 duration-700">
+                        <h2 className="text-3xl md:text-5xl font-black text-white drop-shadow-lg mb-2 leading-tight">
+                            Thứ 3 Hàng Tuần<br />Flash Sale Từng Bùng
+                        </h2>
+                        <p className="text-2xl md:text-4xl font-black text-white drop-shadow-lg">
+                            GIẢM ĐẾN <span className="bg-yellow-400 px-3 py-1 rounded-lg text-gray-900">50%</span>
+                        </p>
                     </div>
-                    
-                    <h1 className="text-4xl md:text-6xl font-extrabold text-white drop-shadow-xl mb-4 leading-tight max-w-3xl">
-                        Tìm và Đặt Vé Xe <span className="text-blue-200">Một Cách Dễ Dàng</span>
-                    </h1>
-                    
-                    <p className="text-lg md:text-xl text-gray-100 mb-12 max-w-2xl drop-shadow-md leading-relaxed">
-                        Hàng ngàn chuyến xe, giá tốt nhất, thanh toán an toàn. Đặt vé trong 2 phút, nhận xác nhận tức thì.
-                    </p>
 
-                    <div className="w-full animate-in fade-in slide-in-from-bottom-8 duration-1000">
-                        <SearchForm onSearch={handleSearch} />
+                    {/* Search Form - Horizontal Layout */}
+                    <div className="w-full max-w-6xl animate-in fade-in slide-in-from-bottom-6 duration-1000">
+                        <SearchForm onSearch={handleSearch} compact={true} />
                     </div>
                 </div>
             </section>
 
-            {/* Stats Bar */}
-            <section className="bg-gradient-to-r from-primary to-primary/80 text-primary-foreground">
-                <div className="container mx-auto max-w-6xl px-4 py-8">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-                        <div>
-                            <p className="text-4xl md:text-3xl font-bold mb-1">2000+</p>
-                            <p className="text-sm opacity-90">Chuyến xe mỗi ngày</p>
+            {/* Benefits Bar - Vexere Style */}
+            <section className="bg-gradient-to-r from-blue-700 to-blue-800 text-white py-8">
+                <div className="container mx-auto max-w-7xl px-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="text-center">
+                            <div className="text-2xl mb-2">✓</div>
+                            <p className="font-semibold text-sm">Chắc chắn có chỗ</p>
                         </div>
-                        <div>
-                            <p className="text-4xl md:text-3xl font-bold mb-1">500+</p>
-                            <p className="text-sm opacity-90">Tuyến đường</p>
+                        <div className="text-center">
+                            <div className="text-2xl mb-2">📞</div>
+                            <p className="font-semibold text-sm">Hỗ trợ 24/7</p>
                         </div>
-                        <div>
-                            <p className="text-4xl md:text-3xl font-bold mb-1">150+</p>
-                            <p className="text-sm opacity-90">Nhà cung cấp</p>
+                        <div className="text-center">
+                            <div className="text-2xl mb-2">🎁</div>
+                            <p className="font-semibold text-sm">Nhiều ưu đãi</p>
                         </div>
-                        <div>
-                            <p className="text-4xl md:text-3xl font-bold mb-1">100K+</p>
-                            <p className="text-sm opacity-90">Khách hàng tin tưởng</p>
+                        <div className="text-center">
+                            <div className="text-2xl mb-2">💳</div>
+                            <p className="font-semibold text-sm">Thanh toán an toàn</p>
                         </div>
                     </div>
                 </div>
