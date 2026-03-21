@@ -71,18 +71,9 @@ export const notifications = {
     }
   ) => {
     return toast.promise(promise, {
-      loading: {
-        title: messages.loading,
-        icon: '⏳',
-      },
-      success: {
-        title: messages.success,
-        icon: '✅',
-      },
-      error: {
-        title: messages.error,
-        icon: '❌',
-      },
+      loading: messages.loading,
+      success: messages.success,
+      error: messages.error,
     })
   },
 }

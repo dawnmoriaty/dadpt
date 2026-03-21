@@ -7,23 +7,6 @@ interface LunarDate {
   year: number
 }
 
-// Approximate conversion from Gregorian to Lunar
-// Note: This is a simplified version. For production, consider using a library like 'jalaali-js' or 'lunar-calendar'
-const LUNAR_DATA = [
-  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], // Placeholder
-] as const
-
-// Get the number of days in a lunar month
-function getDaysInLunarMonth(lunarMonth: number, lunarYear: number): number {
-  // Lunar months have either 29 or 30 days
-  // This is simplified - real implementation would use lunar calendar tables
-  const isLeapMonth = lunarMonth === 13
-  const baseMonth = isLeapMonth ? 12 : lunarMonth
-
-  // Rough estimation: most months have 29 or 30 days
-  return (lunarYear + lunarMonth) % 2 === 0 ? 30 : 29
-}
-
 // Convert Gregorian date to approximate Lunar date
 export function gregorianToLunar(date: Date): LunarDate {
   const gYear = date.getFullYear()
@@ -84,7 +67,7 @@ export function getLunarInfoForMonth(
   const startDate = new Date(year, month - 1, 1)
   const endDate = new Date(year, month, 0)
 
-  let current = new Date(startDate)
+  const current = new Date(startDate)
   while (current <= endDate) {
     const day = current.getDate()
     const lunar = gregorianToLunar(current)

@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 import { type ChatMessage, useChatStore } from '@/modules/chat'
+import { VoiceBookingPanel } from '@/modules/voice'
 
 export const Route = createFileRoute('/_public/chat')({
     component: ChatPageWrapper,
@@ -79,7 +80,7 @@ function ChatPage() {
             </div>
 
             {/* Voice Panel */}
-            <VoiceBookingPanel onTranscript={sendMessage} disabled={isLoading} />
+            <VoiceBookingPanel disabled={isLoading} />
 
             {/* Messages Area */}
             <Card className="flex flex-1 flex-col overflow-hidden">

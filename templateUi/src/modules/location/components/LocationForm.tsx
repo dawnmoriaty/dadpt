@@ -134,9 +134,11 @@ export function LocationForm({ location, isOpen, onClose, onSubmit, isLoading }:
                 imageUrl: '',
             })
         }
-        setProvinceSearch('')
-        setDistrictSearch('')
-        setWardSearch('')
+        queueMicrotask(() => {
+            setProvinceSearch('')
+            setDistrictSearch('')
+            setWardSearch('')
+        })
     }, [isOpen, location, form, provinces])
 
     const composeAddress = (

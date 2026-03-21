@@ -1,4 +1,4 @@
-import { ArrowRightLeft, Search, Users } from 'lucide-react'
+import { CalendarPlus2, Search } from 'lucide-react'
 import { useForm } from 'react-hook-form'
 import { useTranslation } from 'react-i18next'
 
@@ -14,7 +14,6 @@ import {
     FormLabel,
     FormMessage,
 } from '@/components/ui/form'
-import { Input } from '@/components/ui/input'
 import { formResolver } from '@/lib/form/resolver'
 import { cn } from '@/lib/utils'
 
@@ -39,153 +38,177 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
         },
     })
 
+    const submitLabel = t('searchPage.searchBtn')
+
+    if (compact) {
+        return (
+            <Card className="w-full max-w-full border border-border/60 bg-white/95 shadow-2xl rounded-2xl overflow-visible relative z-[90]">
+                <CardContent className="p-3 md:p-4">
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSearch)} className="space-y-2">
+                            <div className="grid grid-cols-1 gap-2 md:grid-cols-[1.2fr_1.2fr_1fr_auto_auto] md:items-start">
+                                <FormField
+                                    control={form.control}
+                                    name="originId"
+                                    render={({ field }) => (
+                                        <FormItem className="relative space-y-1">
+                                            <FormLabel className="text-[11px] font-semibold text-muted-foreground min-h-4">
+                                                Nơi xuất phát
+                                            </FormLabel>
+                                            <FormControl>
+                                                <LocationCombobox
+                                                    value={field.value}
+                                                    onSelect={(id) => field.onChange(id)}
+                                                    placeholder={t('searchPage.selectOrigin')}
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="absolute -bottom-4 left-0 text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="destinationId"
+                                    render={({ field }) => (
+                                        <FormItem className="relative space-y-1">
+                                            <FormLabel className="text-[11px] font-semibold text-muted-foreground min-h-4">
+                                                Nơi đến
+                                            </FormLabel>
+                                            <FormControl>
+                                                <LocationCombobox
+                                                    value={field.value}
+                                                    onSelect={(id) => field.onChange(id)}
+                                                    placeholder={t('searchPage.selectDest')}
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="absolute -bottom-4 left-0 text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <FormField
+                                    control={form.control}
+                                    name="departureDate"
+                                    render={({ field }) => (
+                                        <FormItem className="relative space-y-1">
+                                            <FormLabel className="text-[11px] font-semibold text-muted-foreground min-h-4">
+                                                Ngày đi
+                                            </FormLabel>
+                                            <FormControl>
+                                                <DatePicker
+                                                    value={field.value ? new Date(field.value) : undefined}
+                                                    onChange={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
+                                                    placeholder={t('searchPage.date')}
+                                                    minDate={new Date()}
+                                                    className="h-10"
+                                                />
+                                            </FormControl>
+                                            <FormMessage className="absolute -bottom-4 left-0 text-[10px]" />
+                                        </FormItem>
+                                    )}
+                                />
+
+                                <div className="flex items-end pt-5">
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-10 w-full rounded-lg border border-dashed border-primary/40 text-primary hover:bg-primary/10"
+                                    >
+                                        <CalendarPlus2 className="h-4 w-4 mr-1" />
+                                        Thêm ngày về
+                                    </Button>
+                                </div>
+
+                                <div className="flex items-end pt-5">
+                                    <Button
+                                        type="submit"
+                                        size="lg"
+                                        className="h-10 w-full rounded-lg border border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90 px-6"
+                                    >
+                                        <Search className="h-4 w-4 mr-2" />
+                                        {submitLabel}
+                                    </Button>
+                                </div>
+                            </div>
+                        </form>
+                    </Form>
+                </CardContent>
+            </Card>
+        )
+    }
+
     return (
-        <Card className={cn('w-full shadow-2xl border-0 bg-white rounded-2xl overflow-hidden', compact ? 'max-w-full' : 'max-w-5xl mx-auto')}>
-            <CardContent className={cn('p-5 md:p-6', compact && 'px-6 py-5')}>
+        <Card className="w-full shadow-2xl border-0 bg-white rounded-2xl overflow-visible max-w-5xl mx-auto">
+            <CardContent className="p-5 md:p-6">
                 <Form {...form}>
-                    <form
-                        onSubmit={form.handleSubmit(onSearch)}
-                        className={cn('flex flex-wrap md:flex-nowrap gap-3 md:gap-2 items-start md:items-end', compact ? 'md:flex-nowrap' : 'md:grid md:grid-cols-4')}
-                    >
-                        {/* Origin */}
+                    <form onSubmit={form.handleSubmit(onSearch)} className="grid grid-cols-1 gap-3 md:grid-cols-4 md:items-start">
                         <FormField
                             control={form.control}
                             name="originId"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                <FormItem className="space-y-1">
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground min-h-4">
                                         Nơi khởi phát
                                     </FormLabel>
                                     <FormControl>
-                                        <LocationCombobox
-                                            value={field.value}
-                                            onSelect={(id) => {
-                                                setOriginId(id)
-                                                setErrors(prev => ({ ...prev, origin: '' }))
-                                            }}
-                                            placeholder={t('searchPage.selectOrigin')}
-                                        />
+                                        <LocationCombobox value={field.value} onSelect={(id) => field.onChange(id)} placeholder={t('searchPage.selectOrigin')} />
                                     </FormControl>
-                                    <FormMessage className="text-xs mt-1 h-5" />
-                                </FormItem>
-                            )}
-                        />
-                                    </FormControl>
-                                    <FormMessage className="text-xs mt-1" />
+                                    <FormMessage className="text-xs min-h-4" />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Swap button */}
-                        <div className={cn('hidden md:flex items-end justify-center', compact && 'md:block')}>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                className="rounded-lg h-10 w-10 hover:bg-gray-100 transition-colors"
-                                onClick={(e) => {
-                                    e.preventDefault()
-                                    const originId = form.getValues('originId')
-                                    const destId = form.getValues('destinationId')
-                                    form.setValue('originId', destId)
-                                    form.setValue('destinationId', originId)
-                                }}
-                                title="Đổi chỗ"
-                            >
-                                <ArrowRightLeft className="h-5 w-5" />
-                            </Button>
-                        </div>
-
-                        {/* Destination */}
                         <FormField
                             control={form.control}
                             name="destinationId"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[180px] h-min', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                <FormItem className="space-y-1">
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground min-h-4">
                                         Nơi đến
                                     </FormLabel>
                                     <FormControl>
-                                        <LocationCombobox
-                                            value={field.value}
-                                            onSelect={(id) => {
-                                                setDestinationId(id)
-                                                setErrors(prev => ({ ...prev, destination: '' }))
-                                            }}
-                                            placeholder={t('searchPage.selectDest')}
-                                        />
+                                        <LocationCombobox value={field.value} onSelect={(id) => field.onChange(id)} placeholder={t('searchPage.selectDest')} />
                                     </FormControl>
-                                    <FormMessage className="text-xs mt-1 h-5" />
-                                </FormItem>
-                            )}
-                        />
-                                    </FormControl>
-                                    <FormMessage className="text-xs mt-1" />
+                                    <FormMessage className="text-xs min-h-4" />
                                 </FormItem>
                             )}
                         />
 
-                        {/* Date */}
                         <FormField
                             control={form.control}
                             name="departureDate"
                             render={({ field }) => (
-                                <FormItem className={cn('flex-1 min-w-[160px] h-min', compact && 'md:flex-1')}>
-                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
+                                <FormItem className="space-y-1">
+                                    <FormLabel className="text-xs font-bold uppercase tracking-wider text-muted-foreground min-h-4">
                                         Ngày đi
                                     </FormLabel>
                                     <FormControl>
                                         <DatePicker
                                             value={field.value ? new Date(field.value) : undefined}
-                                            onChange={(date) =>
-                                                field.onChange(date ? date.toISOString().split('T')[0] : '')
-                                            }
+                                            onChange={(date) => field.onChange(date ? date.toISOString().split('T')[0] : '')}
                                             placeholder={t('searchPage.date')}
                                             minDate={new Date()}
+                                            className="h-11"
                                         />
                                     </FormControl>
-                                    <FormMessage className="text-xs mt-1 h-5" />
+                                    <FormMessage className="text-xs min-h-4" />
                                 </FormItem>
                             )}
                         />
 
-                        {compact && (
-                            <FormField
-                                control={form.control}
-                                name="passengers"
-                                render={({ field }) => (
-                                    <FormItem className="flex-1 min-w-[120px] md:flex-none h-min">
-                                        <FormLabel className="text-xs font-bold uppercase tracking-wider text-gray-700 mb-1 block h-4">
-                                            Hành khách
-                                        </FormLabel>
-                                        <FormControl>
-                                            <Input type="number" min={1} max={10} {...field} className="h-11" />
-                                        </FormControl>
-                                        <FormMessage className="text-xs mt-1 h-5" />
-                                    </FormItem>
+                        <div className="flex items-end">
+                            <Button
+                                type="submit"
+                                size="lg"
+                                className={cn(
+                                    'h-11 w-full text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg border border-primary/30 bg-primary text-primary-foreground hover:bg-primary/90',
                                 )}
-                            />
-                        )}
-
-                        <Button 
-                            type="submit" 
-                            size="lg" 
-                            className={cn('h-11 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 rounded-lg border-2 text-gray-900 active:scale-95', compact ? 'w-full md:w-auto md:px-8' : 'w-full')}
-                            style={{
-                                backgroundColor: '#FFF541',
-                                borderColor: '#FFE81C',
-                                color: '#1F2937'
-                            }}
-                            onMouseEnter={(e) => {
-                                e.currentTarget.style.backgroundColor = '#FFED4F'
-                            }}
-                            onMouseLeave={(e) => {
-                                e.currentTarget.style.backgroundColor = '#FFF541'
-                            }}
-                        >
-                            <Search className="h-5 w-5 mr-2" />
-                            {t('searchPage.searchBtn')}
-                        </Button>
+                            >
+                                <Search className="h-5 w-5 mr-2" />
+                                {submitLabel}
+                            </Button>
+                        </div>
                     </form>
                 </Form>
             </CardContent>

@@ -1,7 +1,7 @@
 'use client'
 
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bus, LogOut, Menu, Ticket, User, X, MessageCircle } from 'lucide-react'
+import { Bus, LogOut, Menu, Ticket, X, MessageCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -15,12 +15,11 @@ import {
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { useAuthStore } from '@/stores/use-auth-store'
-import { cn } from '@/lib/utils'
 
 export function Header() {
     const { user, isAuthenticated, logout } = useAuthStore()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-    const { t } = useTranslation()
+    useTranslation()
     const navigate = useNavigate()
 
     const handleLogin = () => {

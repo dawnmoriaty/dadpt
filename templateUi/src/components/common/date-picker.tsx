@@ -30,6 +30,7 @@ export function DatePicker({
             placeholder={placeholder}
             minDate={minDate}
             maxDate={maxDate}
+            className={className}
             disabled={disabled}
         />
     )

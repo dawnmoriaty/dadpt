@@ -1,10 +1,11 @@
 'use client'
 
 import { Calendar, ChevronLeft, ChevronRight } from 'lucide-react'
-import React, { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+
 import { Button } from '@/components/ui/button'
-import { cn } from '@/lib/utils'
 import { getLunarInfoForMonth } from '@/lib/lunar-calendar'
+import { cn } from '@/lib/utils'
 
 interface AdvancedDatePickerProps {
   value?: Date
@@ -13,6 +14,7 @@ interface AdvancedDatePickerProps {
   maxDate?: Date
   placeholder?: string
   disabled?: boolean
+  className?: string
 }
 
 const VIETNAMESE_DAYS = ['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7']
@@ -28,11 +30,37 @@ export function AdvancedDatePicker({
   minDate,
   maxDate,
   placeholder = 'Chọn ngày...',
-  disabled = false
+  disabled = false,
+  className,
 }: AdvancedDatePickerProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [currentDate, setCurrentDate] = useState(value || new Date())
+  const [currentDate, setCurrentDate] = useState(new Date())
   const [showLunar, setShowLunar] = useState(true)
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!isOpen) return
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false)
+      }
+    }
+
+    const onClickOutside = (event: MouseEvent) => {
+      if (!containerRef.current) return
+      if (!containerRef.current.contains(event.target as Node)) {
+        setIsOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    document.addEventListener('mousedown', onClickOutside)
+    return () => {
+      window.removeEventListener('keydown', onKeyDown)
+      document.removeEventListener('mousedown', onClickOutside)
+    }
+  }, [isOpen])
 
   const handlePrevMonth = () => {
     setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))
@@ -112,8 +140,8 @@ export function AdvancedDatePicker({
               month.getFullYear() === value?.getFullYear()
 
             const isDisabled = day === null ||
-              (minDate && new Date(month.getFullYear(), month.getMonth(), day) < minDate) ||
-              (maxDate && new Date(month.getFullYear(), month.getMonth(), day) > maxDate)
+              (minDate && new Date(month.getFullYear(), month.getMonth(), day) < new Date(minDate.getFullYear(), minDate.getMonth(), minDate.getDate())) ||
+              (maxDate && new Date(month.getFullYear(), month.getMonth(), day) > new Date(maxDate.getFullYear(), maxDate.getMonth(), maxDate.getDate()))
 
             const lunarDate = day && lunarInfo ? lunarInfo.get(day) : null
 
@@ -133,7 +161,9 @@ export function AdvancedDatePicker({
               >
                 <span>{day}</span>
                 {lunarDate && (
-                  <span className="text-xs text-gray-500 absolute bottom-1">{lunarDate.split('/')[0]}</span>
+                  <span className="text-[10px] leading-none text-gray-500/80 absolute bottom-0 left-1/2 -translate-x-1/2">
+                    {lunarDate.split('/')[0]}
+                  </span>
                 )}
               </button>
             )
@@ -144,92 +174,82 @@ export function AdvancedDatePicker({
   }
 
   return (
-    <div className="relative w-full">
-      {/* Trigger Button */}
+    <div className="relative w-full" ref={containerRef}>
       <Button
+        type="button"
         variant="outline"
+        onClick={() => {
+          setCurrentDate(value ? new Date(value.getFullYear(), value.getMonth(), 1) : new Date())
+          setIsOpen((prev) => !prev)
+        }}
         className={cn(
-          'w-full justify-start text-left font-normal h-11 px-4 rounded-lg border border-gray-300 hover:border-gray-400 hover:bg-white transition-all duration-200',
-          !value && 'text-gray-500 bg-gray-50',
-          value && 'border-gray-400 bg-yellow-50 text-gray-900 font-medium'
+          'w-full justify-start text-left font-normal h-11 px-4 rounded-lg border border-border hover:border-primary/40 hover:bg-white transition-all duration-200',
+          !value && 'text-muted-foreground bg-background',
+          value && 'border-primary/40 bg-primary/10 text-foreground font-medium',
+          className,
         )}
         disabled={disabled}
-        onClick={() => setIsOpen(!isOpen)}
       >
-        <Calendar className="mr-3 h-4 w-4 text-gray-400 flex-shrink-0" />
-        <span className="truncate">
-          {value ? formatDisplayDate(value) : placeholder}
-        </span>
+        <Calendar className="mr-3 h-4 w-4 text-muted-foreground flex-shrink-0" />
+        <span className="truncate">{value ? formatDisplayDate(value) : placeholder}</span>
       </Button>
 
-      {/* Popover */}
       {isOpen && (
-        <div className="absolute top-full left-0 mt-3 bg-white border border-gray-200 rounded-lg shadow-2xl z-50 p-6 w-max">
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handlePrevMonth}
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
+          <div className="absolute left-1/2 top-[calc(100%+0.5rem)] z-[9999] w-[min(94vw,760px)] -translate-x-1/2 rounded-xl border border-border bg-background p-4 shadow-2xl md:p-6">
+              <div className="mb-6 flex items-center justify-between">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handlePrevMonth}
+                  className="h-8 w-8"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
 
-            <div className="flex-1 text-center">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 text-xs font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-                onClick={handleSelectToday}
-              >
-                Hôm nay
-              </Button>
-            </div>
+                <div className="flex-1 text-center">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 text-xs font-medium"
+                    onClick={handleSelectToday}
+                  >
+                    Hôm nay
+                  </Button>
+                </div>
 
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNextMonth}
-              className="h-8 w-8"
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleNextMonth}
+                  className="h-8 w-8"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="mb-4 grid grid-cols-1 gap-6 md:grid-cols-2">
+                {renderMonth(0)}
+                {renderMonth(1)}
+              </div>
+
+              <div className="flex items-center justify-center border-t border-border pt-4">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="lunar-toggle"
+                    checked={showLunar}
+                    onChange={(e) => setShowLunar(e.target.checked)}
+                    className="h-4 w-4 rounded accent-primary"
+                  />
+                  <label htmlFor="lunar-toggle" className="cursor-pointer text-sm font-medium text-foreground">
+                    Hiển thị lịch âm
+                  </label>
+                </div>
+              </div>
           </div>
-
-          {/* Two-month calendar view */}
-          <div className="flex gap-6 mb-4">
-            {renderMonth(0)}
-            {renderMonth(1)}
-          </div>
-
-          {/* Lunar calendar toggle */}
-          <div className="flex items-center justify-center pt-4 border-t border-gray-200">
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="lunar-toggle"
-                checked={showLunar}
-                onChange={(e) => setShowLunar(e.target.checked)}
-                className="w-4 h-4 rounded accent-yellow-400"
-              />
-              <label
-                htmlFor="lunar-toggle"
-                className="text-sm font-medium text-gray-700 cursor-pointer"
-              >
-                Hiển thị lịch âm
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Close on outside click */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 z-40"
-          onClick={() => setIsOpen(false)}
-        />
       )}
     </div>
   )

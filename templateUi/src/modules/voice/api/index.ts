@@ -1,6 +1,6 @@
+import { aiApi } from '@/services/api/ai-client'
 import { api } from '@/services/api/client'
 import { API_ENDPOINTS } from '@/services/api/endpoints'
-import { aiApi } from '@/services/api/ai-client'
 
 import type { VoiceExecuteRequest, VoiceExecuteResponse, VoicePlanRequest, VoicePlanResponse, VoiceTranscribeResponse } from '../types'
 

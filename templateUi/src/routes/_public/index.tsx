@@ -1,12 +1,12 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Bus, Clock, Shield, Star, Users } from 'lucide-react'
+import { Clock, Shield, Star, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
 import { SearchForm, UpcomingTrips, type SearchTripsFormData } from '@/modules/booking'
 
 function HomePage() {
     const navigate = useNavigate()
-    const { t } = useTranslation()
+    useTranslation()
 
     const handleSearch = (data: SearchTripsFormData) => {
         navigate({
@@ -23,7 +23,7 @@ function HomePage() {
     return (
         <div className="flex flex-col">
             {/* Hero Section with Blue Gradient Background */}
-            <section className="relative min-h-[600px] flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-blue-400 via-blue-300 to-blue-200">
+            <section className="relative min-h-[600px] flex flex-col items-center justify-center bg-gradient-to-b from-blue-400 via-blue-300 to-blue-200">
                 <div
                     className="absolute inset-0 bg-cover bg-center z-0 opacity-30"
                     style={{
@@ -45,30 +45,6 @@ function HomePage() {
                     {/* Search Form - Horizontal Layout */}
                     <div className="w-full max-w-6xl animate-in fade-in slide-in-from-bottom-6 duration-1000">
                         <SearchForm onSearch={handleSearch} compact={true} />
-                    </div>
-                </div>
-            </section>
-
-            {/* Benefits Bar - Vexere Style */}
-            <section className="bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700 text-white py-12">
-                <div className="container mx-auto max-w-7xl px-4">
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
-                            <div className="text-3xl mb-3 font-bold">✓</div>
-                            <p className="font-bold text-sm">Chắc chắn có chỗ</p>
-                        </div>
-                        <div className="text-center opacity-80 hover:opacity-100 transition-opacity duration-300">
-                            <div className="text-3xl mb-3 font-bold">📞</div>
-                            <p className="font-bold text-sm">Hỗ trợ 24/7</p>
-                        </div>
-                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
-                            <div className="text-3xl mb-3 font-bold">🎁</div>
-                            <p className="font-bold text-sm">Nhiều ưu đãi</p>
-                        </div>
-                        <div className="text-center opacity-95 hover:opacity-100 transition-opacity duration-300">
-                            <div className="text-3xl mb-3 font-bold">💳</div>
-                            <p className="font-bold text-sm">Thanh toán an toàn</p>
-                        </div>
                     </div>
                 </div>
             </section>

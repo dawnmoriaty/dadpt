@@ -23,7 +23,7 @@ export function LocationCombobox({
     className,
     disabled,
 }: LocationComboboxProps) {
-    const { t } = useTranslation()
+    useTranslation()
     const [inputValue, setInputValue] = useState('')
     const [isOpen, setIsOpen] = useState(false)
     const [highlightIndex, setHighlightIndex] = useState(-1)

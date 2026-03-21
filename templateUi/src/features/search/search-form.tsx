@@ -1,9 +1,9 @@
 'use client'
 
+import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
 import { ArrowRight, Search } from 'lucide-react'
 import { useState } from 'react'
-import { useNavigate } from '@tanstack/react-router'
 
 import { DatePicker } from '@/components/common/date-picker'
 import { LocationCombobox } from '@/components/common/location-combobox'
