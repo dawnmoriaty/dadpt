@@ -79,15 +79,29 @@ export function LoginForm({ redirectTo, onSuccess }: LoginFormProps) {
                 />
 
                 {loginMutation.error !== null && (
-                    <p className="text-sm text-red-500 font-medium">
-                        {loginMutation.error.message}
-                    </p>
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700 font-medium">
+                        <span className="block">❌ Đăng nhập thất bại</span>
+                        <span className="text-xs text-red-600 mt-1">{loginMutation.error.message}</span>
+                    </div>
                 )}
 
                 <Button 
                     type="submit" 
-                    className="w-full" 
+                    className="w-full h-11 font-bold rounded-lg border-2 text-gray-900 active:scale-95 transition-all duration-300"
+                    style={{
+                        backgroundColor: '#FFF541',
+                        borderColor: '#FFE81C',
+                        color: '#1F2937'
+                    }}
                     disabled={loginMutation.isPending}
+                    onMouseEnter={(e) => {
+                        if (!loginMutation.isPending) {
+                            e.currentTarget.style.backgroundColor = '#FFED4F'
+                        }
+                    }}
+                    onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = '#FFF541'
+                    }}
                 >
                     {loginMutation.isPending && (
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />

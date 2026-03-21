@@ -159,7 +159,18 @@ export function SearchForm({ onSearch, defaultValues, compact }: SearchFormProps
                             <Button 
                                 type="submit" 
                                 size="lg" 
-                                className="w-full h-11 text-base font-semibold shadow-lg shadow-primary/25 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 bg-gradient-to-r from-primary to-primary/90"
+                                className="w-full h-11 text-base font-bold shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300 rounded-lg border-2 text-gray-900 active:scale-95"
+                                style={{
+                                    backgroundColor: '#FFF541',
+                                    borderColor: '#FFE81C',
+                                    color: '#1F2937'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFED4F'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFF541'
+                                }}
                             >
                                 <Search className="h-5 w-5 mr-2" />
                                 {t('searchPage.searchBtn')}

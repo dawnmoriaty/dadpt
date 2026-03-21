@@ -48,23 +48,46 @@ export function SearchForm(): React.ReactElement {
     }
 
     const isFormValid = originId && destinationId && date
+    const [errors, setErrors] = useState<Record<string, string>>({})
+
+    const validateForm = () => {
+        const newErrors: Record<string, string> = {}
+        if (!originId) newErrors.origin = 'Vui lòng chọn nơi khởi hành'
+        if (!destinationId) newErrors.destination = 'Vui lòng chọn điểm đến'
+        if (!date) newErrors.date = 'Vui lòng chọn ngày khởi hành'
+        if (originId && destinationId && originId === destinationId) {
+            newErrors.swap = 'Điểm đi và điểm đến không được giống nhau'
+        }
+        setErrors(newErrors)
+        return Object.keys(newErrors).length === 0
+    }
+
+    const handleSubmitWithValidation = async (e: React.FormEvent): Promise<void> => {
+        e.preventDefault()
+        if (!validateForm()) return
+        await handleSubmit(e)
+    }
 
     return (
-        <Card className="w-full max-w-4xl shadow-2xl bg-white/98 backdrop-blur-sm border border-blue-100/50 rounded-2xl overflow-hidden">
-            <CardContent className="p-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
+        <Card className="w-full max-w-4xl shadow-2xl bg-white backdrop-blur-sm border border-gray-200 rounded-3xl overflow-hidden">
+            <CardContent className="p-6 md:p-8">
+                <form onSubmit={handleSubmitWithValidation} className="space-y-5">
                     {/* Main Grid */}
-                    <div className="grid gap-4 md:gap-6 md:grid-cols-4 md:items-end">
+                    <div className="grid gap-3 md:gap-4 md:grid-cols-4 md:items-end">
                         {/* From Location */}
-                        <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
                                 Từ đâu
                             </Label>
                             <LocationCombobox
                                 value={originId}
-                                onSelect={setOriginId}
+                                onSelect={(id) => {
+                                    setOriginId(id)
+                                    setErrors(prev => ({ ...prev, origin: '' }))
+                                }}
                                 placeholder="Chọn nơi khởi hành..."
                             />
+                            {errors.origin && <p className="text-xs text-red-500 font-medium mt-1">{errors.origin}</p>}
                         </div>
 
                         {/* Swap Button - Desktop Only */}
@@ -74,49 +97,69 @@ export function SearchForm(): React.ReactElement {
                                 variant="ghost"
                                 size="icon"
                                 onClick={handleSwapLocations}
-                                className="rounded-full h-10 w-10 hover:bg-primary/10 hover:text-primary transition-all"
+                                className="rounded-full h-11 w-11 hover:bg-yellow-100 hover:text-yellow-700 transition-all"
                                 title="Đổi chỗ"
                             >
-                                <ArrowRight className="h-4 w-4 rotate-90" />
+                                <ArrowRight className="h-5 w-5 rotate-90" />
                             </Button>
                         </div>
 
                         {/* To Location */}
-                        <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
                                 Đến đâu
                             </Label>
                             <LocationCombobox
                                 value={destinationId}
-                                onSelect={setDestinationId}
+                                onSelect={(id) => {
+                                    setDestinationId(id)
+                                    setErrors(prev => ({ ...prev, destination: '' }))
+                                }}
                                 placeholder="Chọn điểm đến..."
                             />
+                            {errors.destination && <p className="text-xs text-red-500 font-medium mt-1">{errors.destination}</p>}
                         </div>
 
                         {/* Departure Date */}
-                        <div className="space-y-2.5">
-                            <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        <div className="space-y-2">
+                            <Label className="text-xs font-bold uppercase tracking-wide text-gray-700">
                                 Ngày khởi hành
                             </Label>
                             <DatePicker
                                 value={date}
-                                onChange={setDate}
+                                onChange={(d) => {
+                                    setDate(d)
+                                    setErrors(prev => ({ ...prev, date: '' }))
+                                }}
                                 placeholder="Chọn ngày..."
                                 minDate={new Date()}
                             />
+                            {errors.date && <p className="text-xs text-red-500 font-medium mt-1">{errors.date}</p>}
                         </div>
                     </div>
 
+                    {/* Swap error message */}
+                    {errors.swap && (
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-xs text-red-700 font-medium">
+                            ⚠️ {errors.swap}
+                        </div>
+                    )}
+
                     {/* Search Button */}
-                    <div className="flex gap-3 md:gap-4">
+                    <div className="flex gap-2 md:gap-3 pt-2">
                         <Button
                             type="submit"
                             size="lg"
                             className={cn(
-                                'flex-1 md:flex-none md:w-48 h-12 text-base font-semibold transition-all duration-300',
-                                'bg-gradient-to-r from-primary to-primary/80 hover:shadow-xl hover:scale-105',
+                                'flex-1 md:flex-none md:w-48 h-12 text-base font-bold transition-all duration-300 rounded-lg',
+                                'bg-yellow-400 hover:bg-yellow-500 text-gray-900 hover:shadow-xl hover:scale-105 active:scale-95',
+                                'border-2 border-yellow-500 hover:border-yellow-600',
                                 !isFormValid && 'opacity-50 cursor-not-allowed hover:scale-100'
                             )}
+                            style={{
+                                backgroundColor: '#FFF541',
+                                borderColor: '#FFE81C'
+                            }}
                             disabled={!isFormValid || isLoading}
                         >
                             {isLoading ? (
@@ -134,7 +177,7 @@ export function SearchForm(): React.ReactElement {
                     </div>
 
                     {/* Helper Text */}
-                    <div className="text-xs text-muted-foreground text-center">
+                    <div className="text-xs text-gray-500 text-center">
                         Tìm và đặt vé xe một cách nhanh chóng, an toàn
                     </div>
                 </form>

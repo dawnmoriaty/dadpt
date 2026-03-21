@@ -113,7 +113,18 @@ export function Header() {
                         ) : (
                             <Button
                                 onClick={handleLogin}
-                                className="bg-gradient-to-r from-primary to-primary/80 hover:shadow-lg transition-all"
+                                className="h-10 font-bold rounded-lg border-2 text-gray-900 active:scale-95 transition-all duration-300"
+                                style={{
+                                    backgroundColor: '#FFF541',
+                                    borderColor: '#FFE81C',
+                                    color: '#1F2937'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFED4F'
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.backgroundColor = '#FFF541'
+                                }}
                             >
                                 Đăng nhập
                             </Button>
