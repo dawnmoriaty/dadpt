@@ -25,6 +25,7 @@ export function RefundRequestsPage() {
         confirmAction,
         refundReference,
         refundNote,
+        confirmCode,
         canConfirmApprove,
         isConfirmPending,
         goToPreviousPage,
@@ -34,6 +35,7 @@ export function RefundRequestsPage() {
         closeConfirm,
         setRefundReference,
         setRefundNote,
+        setConfirmCode,
         handleConfirm,
     } = useRefundRequestsPage()
 
@@ -97,27 +99,43 @@ export function RefundRequestsPage() {
                 variant={confirmAction?.type === 'reject' ? 'destructive' : 'default'}
                 onConfirm={handleConfirm}
                 loading={isConfirmPending}
-                disabled={confirmAction?.type === 'approve' && !canConfirmApprove}
+                disabled={!canConfirmApprove}
                 content={
-                    confirmAction?.type === 'approve' ? (
+                    confirmAction ? (
                         <div className="space-y-3 pt-1">
+                            {confirmAction.type === 'approve' && (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="refund-reference">{t('refundRequests.refundReference')}</Label>
+                                    <Input
+                                        id="refund-reference"
+                                        value={refundReference}
+                                        onChange={(event) => setRefundReference(event.target.value)}
+                                        placeholder={t('refundRequests.refundReferencePlaceholder')}
+                                    />
+                                </div>
+                            )}
+                            {confirmAction.type === 'approve' && (
+                                <div className="space-y-1.5">
+                                    <Label htmlFor="refund-note">{t('refundRequests.refundNote')}</Label>
+                                    <Input
+                                        id="refund-note"
+                                        value={refundNote}
+                                        onChange={(event) => setRefundNote(event.target.value)}
+                                        placeholder={t('refundRequests.refundNotePlaceholder')}
+                                    />
+                                </div>
+                            )}
                             <div className="space-y-1.5">
-                                <Label htmlFor="refund-reference">{t('refundRequests.refundReference')}</Label>
+                                <Label htmlFor="confirm-code">{t('refundRequests.confirmCode')}</Label>
                                 <Input
-                                    id="refund-reference"
-                                    value={refundReference}
-                                    onChange={(event) => setRefundReference(event.target.value)}
-                                    placeholder={t('refundRequests.refundReferencePlaceholder')}
+                                    id="confirm-code"
+                                    value={confirmCode}
+                                    onChange={(event) => setConfirmCode(event.target.value)}
+                                    placeholder={confirmAction.booking.code}
                                 />
-                            </div>
-                            <div className="space-y-1.5">
-                                <Label htmlFor="refund-note">{t('refundRequests.refundNote')}</Label>
-                                <Input
-                                    id="refund-note"
-                                    value={refundNote}
-                                    onChange={(event) => setRefundNote(event.target.value)}
-                                    placeholder={t('refundRequests.refundNotePlaceholder')}
-                                />
+                                <p className="text-xs text-muted-foreground">
+                                    {t('refundRequests.confirmCodeHint', { code: confirmAction.booking.code })}
+                                </p>
                             </div>
                         </div>
                     ) : null

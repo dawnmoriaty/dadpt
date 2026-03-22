@@ -10,7 +10,17 @@ interface SeatMapProps {
     bookedSeats: string[]
     selectedSeats: string[]
     maxSeats: number
+    requiredSeats?: string[]
     onSelectionChange: (seats: string[]) => void
+}
+
+function normalizeSeatCode(code: string): string {
+    const value = code.trim().toUpperCase()
+    const match = value.match(/^([A-Z]+)(\d+)$/)
+    if (!match) return value
+    const prefix = match[1]
+    const number = match[2].padStart(2, '0')
+    return `${prefix}${number}`
 }
 
 /**
@@ -38,26 +48,50 @@ function parseSeatCode(code: string): { prefix: string; number: number } | null 
     return { prefix: match[1], number: parseInt(match[2], 10) }
 }
 
-/**
- * Check if a set of seat codes forms a valid same-row selection:
- * All seats must share the same row number (e.g. A01, B01, C01 — same physical row).
- */
-function isSameRowSet(seatCodes: string[]): boolean {
-    if (seatCodes.length <= 1) return true
+function getSeatLinearIndex(layout: SeatLayout, seatCode: string): number | null {
+    const parsed = parseSeatCode(normalizeSeatCode(seatCode))
+    if (!parsed) return null
 
-    const parsed = seatCodes.map(parseSeatCode).filter(Boolean) as { prefix: string; number: number }[]
-    if (parsed.length !== seatCodes.length) return false
+    const orderedColumns = layout.columns.filter((column) => column !== '')
+    const columnIndex = orderedColumns.indexOf(parsed.prefix)
+    if (columnIndex < 0) return null
 
-    const baseNumber = parsed[0].number
-    return parsed.every((p) => p.number === baseNumber)
+    return (parsed.number - 1) * orderedColumns.length + columnIndex
 }
 
-/**
- * Check if adding a specific seat to the current selection would still be valid.
- */
-function canAddSeat(seatCode: string, currentSelection: string[]): boolean {
+function isConsecutiveSeatSet(layout: SeatLayout, seatCodes: string[]): boolean {
+    if (seatCodes.length <= 1) return true
+
+    const indices = seatCodes
+        .map((seatCode) => getSeatLinearIndex(layout, seatCode))
+        .filter((index): index is number => index !== null)
+        .sort((a, b) => a - b)
+
+    if (indices.length !== seatCodes.length) return false
+
+    for (let i = 1; i < indices.length; i += 1) {
+        if (indices[i] - indices[i - 1] !== 1) {
+            return false
+        }
+    }
+
+    return true
+}
+
+function isConsecutiveSeatSetWithRequiredSeats(layout: SeatLayout, selectedSeats: string[], requiredSeats: string[]): boolean {
+    const combined = new Set<string>()
+    for (const seat of requiredSeats) {
+        combined.add(normalizeSeatCode(seat))
+    }
+    for (const seat of selectedSeats) {
+        combined.add(normalizeSeatCode(seat))
+    }
+    return isConsecutiveSeatSet(layout, Array.from(combined))
+}
+
+function canAddSeat(layout: SeatLayout, seatCode: string, currentSelection: string[]): boolean {
     if (currentSelection.length === 0) return true
-    return isSameRowSet([...currentSelection, seatCode])
+    return isConsecutiveSeatSet(layout, [...currentSelection, seatCode])
 }
 
 /**
@@ -155,6 +189,7 @@ function FloorGrid({
     bookedSeats,
     selectedSeats,
     maxSeats,
+    requiredSeats,
     onSelectionChange,
 }: {
     layout: SeatLayout
@@ -162,11 +197,14 @@ function FloorGrid({
     bookedSeats: string[]
     selectedSeats: string[]
     maxSeats: number
+    requiredSeats?: string[]
     onSelectionChange: (seats: string[]) => void
 }) {
     const { t } = useTranslation()
     const { rows } = buildSeatGrid(layout, seats)
     const sortedRowNumbers = Array.from(rows.keys()).sort((a, b) => a - b)
+    const normalizedBookedSeats = bookedSeats.map(normalizeSeatCode)
+    const normalizedSelectedSeats = selectedSeats.map(normalizeSeatCode)
 
     // Build the column template including aisle gaps
     const columnTemplate = layout.columns.map((c) =>
@@ -174,9 +212,10 @@ function FloorGrid({
     )
 
     const handleSeatClick = (seatCode: string) => {
-        const isSelected = selectedSeats.includes(seatCode)
+        const normalizedSeatCode = normalizeSeatCode(seatCode)
+        const isSelected = normalizedSelectedSeats.includes(normalizedSeatCode)
         if (isSelected) {
-            onSelectionChange(selectedSeats.filter((s) => s !== seatCode))
+            onSelectionChange(selectedSeats.filter((s) => normalizeSeatCode(s) !== normalizedSeatCode))
             return
         }
 
@@ -185,8 +224,14 @@ function FloorGrid({
             return
         }
 
-        const newSelection = [...selectedSeats, seatCode]
-        if (!isSameRowSet(newSelection)) {
+        const nextSelection = [...selectedSeats, seatCode]
+        if (!isConsecutiveSeatSetWithRequiredSeats(layout, nextSelection, requiredSeats ?? [])) {
+            toast.error(t('booking.errorSeatsNotSameRow'))
+            return
+        }
+
+        const newSelection = nextSelection
+        if (!isConsecutiveSeatSet(layout, newSelection)) {
             toast.error(t('booking.errorSeatsNotSameRow'))
             return
         }
@@ -232,13 +277,14 @@ function FloorGrid({
                                 )
                             }
 
-                            const isBooked = bookedSeats.includes(seatCode)
-                            const isSelected = selectedSeats.includes(seatCode)
+                            const normalizedSeatCode = normalizeSeatCode(seatCode)
+                            const isBooked = normalizedBookedSeats.includes(normalizedSeatCode)
+                            const isSelected = normalizedSelectedSeats.includes(normalizedSeatCode)
                             const isDisabled =
                                 !isBooked &&
                                 !isSelected &&
                                 selectedSeats.length > 0 &&
-                                !canAddSeat(seatCode, selectedSeats)
+                                !canAddSeat(layout, seatCode, selectedSeats)
                             const status = isBooked
                                 ? 'booked'
                                 : isSelected
@@ -269,6 +315,7 @@ export function SeatMap({
     bookedSeats,
     selectedSeats,
     maxSeats,
+    requiredSeats,
     onSelectionChange,
 }: SeatMapProps) {
     const { t } = useTranslation()
@@ -284,6 +331,7 @@ export function SeatMap({
                     bookedSeats={bookedSeats}
                     selectedSeats={selectedSeats}
                     maxSeats={maxSeats}
+                    requiredSeats={requiredSeats}
                     onSelectionChange={onSelectionChange}
                 />
             </div>
@@ -311,6 +359,7 @@ export function SeatMap({
                         bookedSeats={bookedSeats}
                         selectedSeats={selectedSeats}
                         maxSeats={maxSeats}
+                        requiredSeats={requiredSeats}
                         onSelectionChange={onSelectionChange}
                     />
                 </TabsContent>
@@ -321,6 +370,7 @@ export function SeatMap({
                         bookedSeats={bookedSeats}
                         selectedSeats={selectedSeats}
                         maxSeats={maxSeats}
+                        requiredSeats={requiredSeats}
                         onSelectionChange={onSelectionChange}
                     />
                 </TabsContent>

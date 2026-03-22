@@ -127,9 +127,11 @@ func (h *PaymentHandler) GetPaymentStatus(c *gin.Context) {
 		if err == nil {
 			status, err := h.paymentGw.GetPaymentStatus(c.Request.Context(), orderCodeInt)
 			if err == nil {
+				mapped := mapGatewayStatus(status)
+				h.reconcileSuccessIfNeeded(c, orderCode, mapped)
 				response.Success(c, PaymentStatusResponse{
 					OrderCode: orderCode,
-					Status:    mapGatewayStatus(status),
+					Status:    mapped,
 				})
 				return
 			}
@@ -143,10 +145,29 @@ func (h *PaymentHandler) GetPaymentStatus(c *gin.Context) {
 		return
 	}
 
+	h.reconcileSuccessIfNeeded(c, orderCode, payment.Status)
+
 	response.Success(c, PaymentStatusResponse{
 		OrderCode: orderCode,
 		Status:    payment.Status,
 	})
+}
+
+func (h *PaymentHandler) reconcileSuccessIfNeeded(c *gin.Context, orderCode string, status string) {
+	if status != "success" {
+		return
+	}
+
+	_, err := h.uc.ConfirmPayment(c.Request.Context(), &domain.ConfirmPaymentInput{
+		OrderCode:   orderCode,
+		Status:      "success",
+		WebhookData: []byte(`{"source":"status_poll"}`),
+	})
+	if err != nil {
+		if errors.Is(err, domain.ErrPaymentAlreadyDone) || errors.Is(err, domain.ErrBookingNotPending) {
+			return
+		}
+	}
 }
 
 // mapGatewayStatus maps gateway-specific status to internal status.

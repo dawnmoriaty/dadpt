@@ -192,8 +192,8 @@
     "viewMyBookings": "View My Bookings",
     "completeBooking": "Complete Your Booking",
     "errorTooManySeats": "You can only select up to {{max}} seats",
-    "errorSeatsNotSameRow": "Please select seats in the same row (e.g. A01, B01, C01)",
-    "seatSameRowHint": "Select seats in the same row to sit together"
+    "errorSeatsNotSameRow": "Please select consecutive seats (e.g. A01, B01, C01, D01 or C03, D03, A04, B04)",
+    "seatSameRowHint": "Select up to 4 consecutive seats for your group"
   },
   "myBookings": {
     "title": "My Bookings",
@@ -236,6 +236,7 @@
     "refundReference": "Refund reference",
     "refundNote": "Refund note",
     "resumePayment": "Resume payment",
+    "reopenQrPayment": "Reopen QR payment",
     "copyPaymentLink": "Copy payment link"
   },
   "refundRequests": {
@@ -263,6 +264,8 @@
     "refundReferencePlaceholder": "Example: REF-20260321-001",
     "refundNote": "Refund note",
     "refundNotePlaceholder": "Example: Refunded via bank transfer",
+    "confirmCode": "Enter booking code to confirm",
+    "confirmCodeHint": "Type exact booking code {{code}} to proceed",
     "newRequest": "New refund request: {{code}} - {{name}} ({{amount}})",
     "bookingCancelled": "Customer {{name}} cancelled booking {{code}}",
     "departure": "Departure",

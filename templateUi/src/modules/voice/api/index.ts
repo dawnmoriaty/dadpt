@@ -19,6 +19,7 @@ export const voiceApi = {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 120_000,
         })
 
         return response.data.data
@@ -34,6 +35,7 @@ export const voiceApi = {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
+            timeout: 120_000,
         })
 
         return response.data.data

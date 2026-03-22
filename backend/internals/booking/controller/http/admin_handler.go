@@ -77,6 +77,7 @@ func (h *AdminBookingHandler) ApproveRefund(c *gin.Context) {
 		Reason:          req.Reason,
 		RefundReference: req.RefundReference,
 		RefundNote:      req.RefundNote,
+		ConfirmCode:     req.ConfirmCode,
 	})
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
@@ -98,8 +99,9 @@ func (h *AdminBookingHandler) RejectRefund(c *gin.Context) {
 	_ = c.ShouldBindJSON(&req)
 
 	booking, err := h.uc.RejectRefund(c.Request.Context(), &domain.RefundRequestInput{
-		BookingID: id,
-		Reason:    req.Reason,
+		BookingID:   id,
+		Reason:      req.Reason,
+		ConfirmCode: req.ConfirmCode,
 	})
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))

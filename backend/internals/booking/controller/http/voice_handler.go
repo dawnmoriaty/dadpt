@@ -100,6 +100,20 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 		return
 	}
 
+	reusable := h.findReusablePendingBooking(c, userID, trip.ID)
+	if reusable != nil {
+		response.Success(c, gin.H{
+			"flow":          "voice-e2e-reuse",
+			"tripId":        trip.ID,
+			"seatCodes":     reusable.Booking.SeatCodes,
+			"travelDate":    req.TravelDate,
+			"origin":        fallbackName(trip.OriginName, req.Origin),
+			"destination":   fallbackName(trip.DestinationName, req.Destination),
+			"bookingResult": bookingDto.ToCreateBookingResponse(reusable),
+		})
+		return
+	}
+
 	seatCodes, err := allocateSeats(trip.BookedSeats, normalizeSeatPreference(req.SeatPreferenceOrder), req.SeatCount)
 	if err != nil {
 		response.HandleError(c, pkgErrors.ErrSeatsNotAvailable)
@@ -144,6 +158,48 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 		"destination":   fallbackName(trip.DestinationName, req.Destination),
 		"bookingResult": bookingDto.ToCreateBookingResponse(out),
 	})
+}
+
+func (h *VoiceBookingHandler) findReusablePendingBooking(c *gin.Context, userID int64, tripID int64) *bookingDomain.BookingOutput {
+	list, err := h.bookingUC.ListUserBookings(c.Request.Context(), &bookingDomain.ListBookingsInput{
+		UserID:   userID,
+		Page:     1,
+		PageSize: 20,
+	})
+	if err != nil || list == nil {
+		return nil
+	}
+
+	for _, booking := range list.Bookings {
+		if booking == nil {
+			continue
+		}
+		if booking.TripID != tripID || booking.Status != bookingDomain.StatusPending {
+			continue
+		}
+
+		output := &bookingDomain.BookingOutput{Booking: booking}
+		paymentTx, txErr := h.bookingUC.GetPendingPaymentByBookingID(c.Request.Context(), booking.ID)
+		if txErr != nil || paymentTx == nil {
+			return output
+		}
+
+		output.OrderCode = paymentTx.OrderCode
+		output.PaymentURL = strings.TrimSpace(paymentTx.CheckoutURL)
+		output.QRCode = strings.TrimSpace(paymentTx.QRCode)
+
+		if h.bookingUC.GatewayAvailable() {
+			regen, regenErr := h.bookingUC.RegeneratePaymentLink(c.Request.Context(), booking, paymentTx)
+			if regenErr == nil && regen != nil {
+				output.PaymentURL = strings.TrimSpace(regen.PaymentURL)
+				output.QRCode = strings.TrimSpace(regen.QRCode)
+			}
+		}
+
+		return output
+	}
+
+	return nil
 }
 
 // Plan handles POST /bookings/voice/plan.
@@ -293,7 +349,7 @@ func (h *VoiceBookingHandler) searchTripsForVoice(c *gin.Context, originID, dest
 		return nil, 0, fmt.Errorf("no upcoming trip found")
 	}
 
-	return h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+	trips, total, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
 		OriginID:      originID,
 		DestinationID: destinationID,
 		DepartureDate: travelDate,
@@ -301,6 +357,37 @@ func (h *VoiceBookingHandler) searchTripsForVoice(c *gin.Context, originID, dest
 		Page:          1,
 		Limit:         limit,
 	})
+	if err != nil {
+		return nil, 0, err
+	}
+	if len(trips) > 0 {
+		return trips, total, nil
+	}
+
+	requestedDate, parseErr := time.Parse("2006-01-02", strings.TrimSpace(travelDate))
+	if parseErr != nil {
+		return trips, total, nil
+	}
+
+	for dayOffset := 1; dayOffset <= 14; dayOffset++ {
+		nextDate := requestedDate.AddDate(0, 0, dayOffset).Format("2006-01-02")
+		nextTrips, nextTotal, nextErr := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+			OriginID:      originID,
+			DestinationID: destinationID,
+			DepartureDate: nextDate,
+			MinSeats:      minSeats,
+			Page:          1,
+			Limit:         limit,
+		})
+		if nextErr != nil {
+			continue
+		}
+		if len(nextTrips) > 0 {
+			return nextTrips, nextTotal, nil
+		}
+	}
+
+	return trips, total, nil
 }
 
 func validateExecuteRequest(req *VoiceExecuteRequest) error {

@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { CheckCircle, Clock, XCircle } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import { useEffect, useState } from 'react'
@@ -7,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
 import { usePaymentStatus } from '../hooks'
+import { bookingKeys } from '../hooks/query-keys'
 import { formatVndCurrency } from '../utils'
 
 interface PaymentQRProps {
@@ -19,6 +21,7 @@ interface PaymentQRProps {
 }
 
 export function PaymentQR({ qrCode, orderCode, amount, paymentUrl, expiresAt, onPaymentSuccess }: PaymentQRProps) {
+    const queryClient = useQueryClient()
     const [timeLeft, setTimeLeft] = useState<number | null>(null)
     const isPending = timeLeft === null || timeLeft > 0
     const { data: paymentStatus } = usePaymentStatus(orderCode, isPending)
@@ -42,7 +45,10 @@ export function PaymentQR({ qrCode, orderCode, amount, paymentUrl, expiresAt, on
         if (paymentStatus?.status === 'success') {
             onPaymentSuccess?.()
         }
-    }, [paymentStatus?.status, onPaymentSuccess])
+        if (paymentStatus?.status === 'success' || paymentStatus?.status === 'failed') {
+            queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+        }
+    }, [paymentStatus?.status, onPaymentSuccess, queryClient])
 
     const formatTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60)

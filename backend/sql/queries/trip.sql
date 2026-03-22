@@ -26,7 +26,7 @@ JOIN locations o ON t.origin_id = o.id
 JOIN locations d ON t.destination_id = d.id
 WHERE t.origin_id = $1
   AND t.destination_id = $2
-  AND DATE(t.departure_time) = $3::date
+  AND DATE(t.departure_time AT TIME ZONE 'Asia/Ho_Chi_Minh') = $3::date
   AND t.available_seats >= $4
   AND t.status = 'scheduled'
 ORDER BY t.departure_time
@@ -36,7 +36,7 @@ LIMIT $5 OFFSET $6;
 SELECT COUNT(*) FROM trips
 WHERE origin_id = $1
   AND destination_id = $2
-  AND DATE(departure_time) = $3::date
+  AND DATE(departure_time AT TIME ZONE 'Asia/Ho_Chi_Minh') = $3::date
   AND available_seats >= $4
   AND status = 'scheduled';
 

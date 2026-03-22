@@ -114,6 +114,17 @@ func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 		return
 	}
 
+	for _, booking := range result.Bookings {
+		if booking == nil {
+			continue
+		}
+		paymentTx, txErr := h.uc.GetLatestPaymentByBookingID(c.Request.Context(), booking.ID)
+		if txErr != nil || paymentTx == nil {
+			continue
+		}
+		booking.OrderCode = paymentTx.OrderCode
+	}
+
 	response.Success(c, dto.ToBookingListResponse(result))
 }
 
@@ -265,6 +276,10 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrRefundAlreadyProcessed
 	case errors.Is(err, domain.ErrRefundReferenceRequired):
 		return pkgErrors.ValidationError("refund reference is required")
+	case errors.Is(err, domain.ErrInvalidRefundReference):
+		return pkgErrors.ValidationError("invalid refund reference")
+	case errors.Is(err, domain.ErrRefundConfirmCodeMismatch):
+		return pkgErrors.ValidationError("confirm code does not match booking code")
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
@@ -335,23 +350,34 @@ func resolveClientBaseURL(c *gin.Context) string {
 
 func (h *BookingHandler) buildBookingViewOutput(c *gin.Context, booking *domain.Booking) *domain.BookingOutput {
 	output := &domain.BookingOutput{Booking: booking}
-	if booking == nil || booking.Status != domain.StatusPending {
+	if booking == nil {
 		return output
 	}
 
-	paymentTx, err := h.uc.GetPendingPaymentByBookingID(c.Request.Context(), booking.ID)
+	paymentTx, err := h.uc.GetLatestPaymentByBookingID(c.Request.Context(), booking.ID)
 	if err != nil || paymentTx == nil {
 		return output
 	}
 
 	output.OrderCode = paymentTx.OrderCode
+
+	if booking.Status != domain.StatusPending {
+		return output
+	}
+
 	output.ResumeURL = buildPaymentResumeURL(resolveClientBaseURL(c), booking.Code, paymentTx.OrderCode)
+	output.PaymentURL = strings.TrimSpace(paymentTx.CheckoutURL)
+	output.QRCode = strings.TrimSpace(paymentTx.QRCode)
 
 	if h.uc.GatewayAvailable() {
 		resume, err := h.uc.RegeneratePaymentLink(c.Request.Context(), booking, paymentTx)
 		if err == nil && resume != nil {
-			output.PaymentURL = resume.PaymentURL
-			output.QRCode = resume.QRCode
+			if strings.TrimSpace(resume.PaymentURL) != "" {
+				output.PaymentURL = strings.TrimSpace(resume.PaymentURL)
+			}
+			if strings.TrimSpace(resume.QRCode) != "" {
+				output.QRCode = strings.TrimSpace(resume.QRCode)
+			}
 		}
 	}
 

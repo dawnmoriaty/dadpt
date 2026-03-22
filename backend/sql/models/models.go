@@ -77,6 +77,8 @@ type PaymentTransaction struct {
 	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
 	PaidAt        pgtype.Timestamptz `json:"paidAt"`
 	RefundedAt    pgtype.Timestamptz `json:"refundedAt"`
+	CheckoutUrl   *string            `json:"checkoutUrl"`
+	QrCode        *string            `json:"qrCode"`
 }
 
 type Provider struct {

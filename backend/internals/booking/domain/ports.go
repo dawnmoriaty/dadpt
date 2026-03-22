@@ -10,6 +10,7 @@ type Repository interface {
 	Create(ctx context.Context, booking *Booking) (*Booking, error)
 	GetByID(ctx context.Context, id int64) (*Booking, error)
 	GetByCode(ctx context.Context, code BookingCode) (*Booking, error)
+	ListActiveSeatCodesByUserTrip(ctx context.Context, userID int64, tripID int64) ([]string, error)
 	ListByUser(ctx context.Context, userID int64, limit, offset int32) ([]*Booking, int64, error)
 	UpdateStatus(ctx context.Context, id int64, status BookingStatus) (*Booking, error)
 	GetExpiredPending(ctx context.Context, limit int32) ([]*Booking, error)
@@ -45,6 +46,7 @@ type OutboxRepository interface {
 type PaymentRepository interface {
 	CreateTransaction(ctx context.Context, tx *PaymentTransaction) (*PaymentTransaction, error)
 	GetByOrderCode(ctx context.Context, orderCode string) (*PaymentTransaction, error)
+	GetLatestByBookingID(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 	GetPendingByBookingID(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 	GetSuccessByBookingID(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 	MarkSuccess(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)

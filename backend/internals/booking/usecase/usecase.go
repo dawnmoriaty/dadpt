@@ -7,6 +7,8 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"time"
 
@@ -21,6 +23,8 @@ const (
 	lockTTL        = 30 * time.Second // Redis lock TTL
 	bookingCodeLen = 8                // Length of booking code
 )
+
+var seatCodePattern = regexp.MustCompile(`^([A-Za-z]+)(\d+)$`)
 
 // Outbox event topics
 const (
@@ -40,6 +44,7 @@ type IBookingUseCase interface {
 	GetBooking(ctx context.Context, id int64) (*domain.Booking, error)
 	GetBookingByCode(ctx context.Context, code string) (*domain.Booking, error)
 	GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error)
+	GetLatestPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error)
 	ListUserBookings(ctx context.Context, input *domain.ListBookingsInput) (*domain.BookingListOutput, error)
 	CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error)
 	ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error)
@@ -86,13 +91,65 @@ func NewBookingUseCase(
 
 // CreateBooking creates a new booking with race condition protection
 func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error) {
+	if len(input.SeatCodes) == 0 {
+		return nil, domain.ErrInvalidSeatCode
+	}
+	for i, seat := range input.SeatCodes {
+		input.SeatCodes[i] = normalizeSeatCode(seat)
+	}
+
 	// 0. Validate consecutive seats (max 4, same row, sequential numbers)
 	if err := domain.ValidateConsecutiveSeats(input.SeatCodes); err != nil {
 		return nil, err
 	}
 
+	if input.UserID != nil {
+		activeSeatCodes, err := u.repo.ListActiveSeatCodesByUserTrip(ctx, *input.UserID, input.TripID)
+		if err != nil {
+			return nil, fmt.Errorf("listing active seats per user trip: %w", err)
+		}
+
+		activeSeatSet := make(map[string]struct{}, len(activeSeatCodes))
+		for _, seatCode := range activeSeatCodes {
+			activeSeatSet[normalizeSeatCode(seatCode)] = struct{}{}
+		}
+
+		requestedNewSeats := 0
+		for _, seatCode := range input.SeatCodes {
+			if _, exists := activeSeatSet[seatCode]; exists {
+				continue
+			}
+			requestedNewSeats += 1
+		}
+
+		if len(activeSeatSet)+requestedNewSeats > domain.MaxSeatsPerBooking {
+			return nil, fmt.Errorf(
+				"%w: maximum %d seats allowed per user per trip, current=%d, requested=%d",
+				domain.ErrTooManySeats,
+				domain.MaxSeatsPerBooking,
+				len(activeSeatSet),
+				requestedNewSeats,
+			)
+		}
+
+		combinedSeatCodes := make([]string, 0, len(activeSeatSet)+len(input.SeatCodes))
+		for seatCode := range activeSeatSet {
+			combinedSeatCodes = append(combinedSeatCodes, seatCode)
+		}
+		for _, seatCode := range input.SeatCodes {
+			if _, exists := activeSeatSet[seatCode]; exists {
+				continue
+			}
+			combinedSeatCodes = append(combinedSeatCodes, seatCode)
+		}
+
+		if err := domain.ValidateConsecutiveSeats(combinedSeatCodes); err != nil {
+			return nil, err
+		}
+	}
+
 	// 1. Acquire Redis distributed lock - prevent thundering herd
-	lockKey := fmt.Sprintf("booking:trip:%d:seats:%s", input.TripID, strings.Join(input.SeatCodes, ","))
+	lockKey := fmt.Sprintf("booking:trip:%d", input.TripID)
 	acquired, err := u.lock.Acquire(ctx, lockKey, lockTTL)
 	if err != nil {
 		logger.Error("Failed to acquire lock: %v", err)
@@ -166,19 +223,7 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		return nil, fmt.Errorf("creating booking: %w", err)
 	}
 
-	// 9. Create payment transaction
-	_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
-		BookingID:     created.ID,
-		OrderCode:     orderCode,
-		Amount:        totalAmount,
-		PaymentMethod: input.PaymentMethod,
-	})
-	if err != nil {
-		logger.Error("Failed to create payment transaction: %v", err)
-		// Don't rollback booking — payment can be retried
-	}
-
-	// 10. Create payment link via gateway (if configured and method requires it)
+	// 9. Create payment link via gateway (if configured and method requires it)
 	var checkoutURL, qrCode string
 	if u.paymentGw != nil {
 		orderCodeInt := orderCodeToInt64(orderCode)
@@ -203,6 +248,20 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		return nil, domain.ErrPaymentLinkUnavailable
 	}
 
+	// 10. Create payment transaction (persist payment link data for resume flow)
+	_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
+		BookingID:     created.ID,
+		OrderCode:     orderCode,
+		Amount:        totalAmount,
+		PaymentMethod: input.PaymentMethod,
+		CheckoutURL:   checkoutURL,
+		QRCode:        qrCode,
+	})
+	if err != nil {
+		logger.Error("Failed to create payment transaction: %v", err)
+		// Don't rollback booking — payment can be retried
+	}
+
 	// 11. Create outbox event (transactional outbox pattern)
 	correlationID := getCorrelationIDFromContext(ctx)
 	eventPayload := domain.NewBookingEventEnvelope(TopicBookingCreated, created, correlationID)
@@ -221,6 +280,21 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 	}, nil
 }
 
+func normalizeSeatCode(code string) string {
+	trimmed := strings.TrimSpace(strings.ToUpper(code))
+	matches := seatCodePattern.FindStringSubmatch(trimmed)
+	if matches == nil {
+		return trimmed
+	}
+
+	num, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return trimmed
+	}
+
+	return fmt.Sprintf("%s%02d", matches[1], num)
+}
+
 func (u *bookingUseCase) resolvePayOSRedirectURLs(ctx context.Context) (string, string) {
 	clientBaseURL := getClientBaseURL(ctx)
 	if clientBaseURL == "" {
@@ -235,6 +309,13 @@ func (u *bookingUseCase) resolvePayOSRedirectURLs(ctx context.Context) (string, 
 	}
 	if parsedCancelURL, err := url.Parse(u.cfg.PayOSCancelURL); err == nil && parsedCancelURL.Path != "" {
 		cancelPath = parsedCancelURL.Path
+	}
+
+	if returnPath == "/payment/success" {
+		returnPath = "/my-bookings"
+	}
+	if cancelPath == "/payment/cancel" {
+		cancelPath = "/my-bookings"
 	}
 
 	return strings.TrimRight(clientBaseURL, "/") + returnPath,
@@ -301,52 +382,26 @@ func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.Cancel
 	// 3. Route to appropriate flow based on booking status
 	switch booking.Status {
 	case domain.StatusPending:
-		return u.cancelPendingBooking(ctx, booking)
+		return u.requestRefundForBooking(ctx, booking)
 	case domain.StatusPaid:
-		return u.refundPaidBooking(ctx, booking)
+		return u.requestRefundForBooking(ctx, booking)
 	default:
 		return nil, domain.ErrBookingCannotCancel
 	}
 }
 
-// cancelPendingBooking cancels a booking that has not been paid yet.
-func (u *bookingUseCase) cancelPendingBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
-	// Release seats
-	seatCount := int32(len(booking.SeatCodes))
-	if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
-		logger.Warn("Failed to release seats for booking %d: %v", booking.ID, err)
-		// Continue with cancellation
-	}
-
-	// Update booking status
-	cancelled, err := u.repo.UpdateStatus(ctx, booking.ID, domain.StatusCancelled)
-	if err != nil {
-		return nil, fmt.Errorf("cancelling booking: %w", err)
-	}
-
-	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingCancelled, domain.NewBookingEventEnvelope(TopicBookingCancelled, cancelled, getCorrelationIDFromContext(ctx))); err != nil {
-		logger.Error("Failed to create outbox event for booking cancellation: %v", err)
-	}
-
-	logger.Info("Booking cancelled: id=%d, code=%s", booking.ID, booking.Code)
-	return cancelled, nil
-}
-
-// refundPaidBooking creates a refund request for a paid booking within the refund window.
-// The actual refund is processed when admin approves via ApproveRefund.
-func (u *bookingUseCase) refundPaidBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
-	// 1. Check refund eligibility (paid + within 5 min window)
-	if !booking.CanRequestRefund() {
+// requestRefundForBooking marks booking as refund_pending for both pending and paid bookings.
+// Actual cancellation/refund is finalized only after admin ApproveRefund.
+func (u *bookingUseCase) requestRefundForBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
+	if booking.Status == domain.StatusPaid && !booking.CanRequestRefund() {
 		return nil, domain.ErrRefundWindowExpired
 	}
 
-	// 2. Mark booking as refund_pending (awaiting admin approval)
 	pending, err := u.repo.MarkRefundPending(ctx, booking.ID)
 	if err != nil {
-		return nil, fmt.Errorf("uc.refundPaidBooking: marking refund pending: %w", err)
+		return nil, fmt.Errorf("uc.requestRefundForBooking: marking refund pending: %w", err)
 	}
 
-	// 3. Create outbox event for booking.refund.requested (admin notification)
 	eventPayload := domain.NewBookingEventEnvelope(TopicBookingRefundRequested, pending, getCorrelationIDFromContext(ctx))
 	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingRefundRequested, eventPayload); err != nil {
 		logger.Error("Failed to create outbox event for refund request: %v", err)
@@ -416,31 +471,47 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 		return nil, domain.ErrBookingNotRefundPending
 	}
 
-	if strings.TrimSpace(input.RefundReference) == "" {
+	if strings.TrimSpace(input.ConfirmCode) != "" && strings.TrimSpace(strings.ToUpper(input.ConfirmCode)) != strings.TrimSpace(strings.ToUpper(string(booking.Code))) {
+		return nil, domain.ErrRefundConfirmCodeMismatch
+	}
+
+	input.RefundReference = strings.TrimSpace(input.RefundReference)
+	if input.RefundReference == "" {
 		return nil, domain.ErrRefundReferenceRequired
 	}
-
-	// 2. Get the successful payment transaction
-	payment, err := u.paymentRepo.GetSuccessByBookingID(ctx, booking.ID)
-	if err != nil {
-		return nil, fmt.Errorf("uc.ApproveRefund: %w", err)
+	if len(input.RefundReference) < 6 {
+		return nil, domain.ErrInvalidRefundReference
+	}
+	if strings.EqualFold(input.RefundReference, string(booking.Code)) {
+		return nil, domain.ErrInvalidRefundReference
 	}
 
-	// 3. Simulate PayOS cancel (no sandbox available — log and skip real call)
-	if u.paymentGw != nil && booking.PaymentMethod == "bank_transfer" {
-		orderCodeInt := orderCodeToInt64(payment.OrderCode)
-		reason := fmt.Sprintf("Admin approved refund for booking %s", booking.Code)
-		logger.Info("[SIMULATED] PayOS CancelPaymentLink: orderCode=%d, reason=%s (skipped — no sandbox)", orderCodeInt, reason)
-		// In production with real PayOS sandbox, uncomment the following:
-		// if err := u.paymentGw.CancelPaymentLink(ctx, orderCodeInt, reason); err != nil {
-		//     logger.Error("Failed to cancel payment link for booking %d: %v", booking.ID, err)
-		//     return nil, fmt.Errorf("uc.ApproveRefund: cancelling payment: %w", err)
-		// }
-	}
+	// 2. Handle payment transaction if booking was paid
+	if booking.Status == domain.StatusPaid {
+		payment, err := u.paymentRepo.GetSuccessByBookingID(ctx, booking.ID)
+		if err != nil {
+			return nil, fmt.Errorf("uc.ApproveRefund: %w", err)
+		}
+		if strings.EqualFold(input.RefundReference, payment.OrderCode) {
+			return nil, domain.ErrInvalidRefundReference
+		}
 
-	// 4. Mark payment transaction as refunded
-	if _, err := u.paymentRepo.MarkRefunded(ctx, booking.ID); err != nil {
-		logger.Error("Failed to mark payment refunded for booking %d: %v", booking.ID, err)
+		// 3. Simulate PayOS cancel (no sandbox available — log and skip real call)
+		if u.paymentGw != nil && booking.PaymentMethod == "bank_transfer" {
+			orderCodeInt := orderCodeToInt64(payment.OrderCode)
+			reason := fmt.Sprintf("Admin approved refund for booking %s", booking.Code)
+			logger.Info("[SIMULATED] PayOS CancelPaymentLink: orderCode=%d, reason=%s (skipped — no sandbox)", orderCodeInt, reason)
+			// In production with real PayOS sandbox, uncomment the following:
+			// if err := u.paymentGw.CancelPaymentLink(ctx, orderCodeInt, reason); err != nil {
+			//     logger.Error("Failed to cancel payment link for booking %d: %v", booking.ID, err)
+			//     return nil, fmt.Errorf("uc.ApproveRefund: cancelling payment: %w", err)
+			// }
+		}
+
+		// 4. Mark payment transaction as refunded
+		if _, err := u.paymentRepo.MarkRefunded(ctx, booking.ID); err != nil {
+			logger.Error("Failed to mark payment refunded for booking %d: %v", booking.ID, err)
+		}
 	}
 
 	// 5. Release seats
@@ -478,6 +549,10 @@ func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundR
 
 	if !booking.IsRefundPending() {
 		return nil, domain.ErrBookingNotRefundPending
+	}
+
+	if strings.TrimSpace(input.ConfirmCode) != "" && strings.TrimSpace(strings.ToUpper(input.ConfirmCode)) != strings.TrimSpace(strings.ToUpper(string(booking.Code))) {
+		return nil, domain.ErrRefundConfirmCodeMismatch
 	}
 
 	// 2. Revert booking to paid
@@ -583,6 +658,10 @@ func (u *bookingUseCase) GetPaymentByOrderCode(ctx context.Context, orderCode st
 
 func (u *bookingUseCase) GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
 	return u.paymentRepo.GetPendingByBookingID(ctx, bookingID)
+}
+
+func (u *bookingUseCase) GetLatestPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	return u.paymentRepo.GetLatestByBookingID(ctx, bookingID)
 }
 
 func (u *bookingUseCase) GatewayAvailable() bool {

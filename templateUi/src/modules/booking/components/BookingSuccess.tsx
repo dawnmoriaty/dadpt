@@ -1,7 +1,8 @@
+import { useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import { format } from 'date-fns'
-import { CheckCircle, Clock, CreditCard, ExternalLink } from 'lucide-react'
-import { useCallback, useRef } from 'react'
+import { CheckCircle, Clock, Copy, CreditCard, ExternalLink } from 'lucide-react'
+import { useCallback, useEffect, useRef } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -10,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 
 import { usePaymentStatus } from '../hooks'
+import { bookingKeys } from '../hooks/query-keys'
 import type { CreateBookingResponse } from '../types'
 import { formatVndCurrency } from '../utils'
 
@@ -22,6 +24,7 @@ interface BookingSuccessProps {
 export function BookingSuccess({ data }: BookingSuccessProps) {
     const { t } = useTranslation()
     const navigate = useNavigate()
+    const queryClient = useQueryClient()
     const { booking, orderCode, paymentUrl, qrCode } = data
 
     const requiresOnlinePayment = booking.paymentMethod === 'bank_transfer' || booking.paymentMethod === 'visa'
@@ -30,6 +33,12 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
     // Derive isPaid from server state, not local state
     const needsPolling = requiresOnlinePayment && booking.status !== 'paid' && orderCode.length > 0
     const { data: paymentStatus } = usePaymentStatus(orderCode, needsPolling)
+
+    useEffect(() => {
+        if (paymentStatus?.status === 'success' || paymentStatus?.status === 'failed') {
+            queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+        }
+    }, [paymentStatus?.status, queryClient])
 
     const isPaid = !requiresOnlinePayment
         || booking.status === 'paid'
@@ -58,6 +67,14 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
             toast.success('Thanh toán thành công! Vé của bạn đã được xác nhận.')
         }
     }, [])
+
+    const copyOrderCode = async () => {
+        if (!orderCode) {
+            return
+        }
+        await navigator.clipboard.writeText(orderCode)
+        toast.success('Đã copy mã giao dịch thanh toán')
+    }
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500 pb-20">
@@ -98,6 +115,10 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                             <p className="text-xl font-mono font-semibold text-muted-foreground tracking-wide">
                                 {orderCode}
                             </p>
+                            <Button type="button" variant="ghost" size="sm" className="mt-2 h-7 px-2" onClick={copyOrderCode}>
+                                <Copy className="mr-1 h-3.5 w-3.5" />
+                                Copy mã giao dịch
+                            </Button>
                         </div>
                     </div>
                 </CardContent>

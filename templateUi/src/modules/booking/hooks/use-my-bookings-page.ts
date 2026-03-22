@@ -88,6 +88,8 @@ export function useMyBookingsPage(): UseMyBookingsPageResult {
             return
         }
 
+        toast.info('Đã mở lại màn hình QR thanh toán')
+
         void navigate({
             to: '/payment/$bookingCode',
             params: { bookingCode: targetCode },

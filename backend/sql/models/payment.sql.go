@@ -12,9 +12,9 @@ import (
 )
 
 const createPaymentTransaction = `-- name: CreatePaymentTransaction :one
-INSERT INTO payment_transactions (booking_id, order_code, amount, payment_method)
-VALUES ($1, $2, $3, $4)
-RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at
+INSERT INTO payment_transactions (booking_id, order_code, amount, payment_method, checkout_url, qr_code)
+VALUES ($1, $2, $3, $4, $5, $6)
+RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code
 `
 
 type CreatePaymentTransactionParams struct {
@@ -22,6 +22,8 @@ type CreatePaymentTransactionParams struct {
 	OrderCode     string         `json:"orderCode"`
 	Amount        pgtype.Numeric `json:"amount"`
 	PaymentMethod *string        `json:"paymentMethod"`
+	CheckoutUrl   *string        `json:"checkoutUrl"`
+	QrCode        *string        `json:"qrCode"`
 }
 
 func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymentTransactionParams) (PaymentTransaction, error) {
@@ -30,6 +32,8 @@ func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymen
 		arg.OrderCode,
 		arg.Amount,
 		arg.PaymentMethod,
+		arg.CheckoutUrl,
+		arg.QrCode,
 	)
 	var i PaymentTransaction
 	err := row.Scan(
@@ -43,12 +47,14 @@ func (q *Queries) CreatePaymentTransaction(ctx context.Context, arg CreatePaymen
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
 
 const getPaymentByOrderCode = `-- name: GetPaymentByOrderCode :one
-SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE order_code = $1
+SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code FROM payment_transactions WHERE order_code = $1
 `
 
 func (q *Queries) GetPaymentByOrderCode(ctx context.Context, orderCode string) (PaymentTransaction, error) {
@@ -65,12 +71,14 @@ func (q *Queries) GetPaymentByOrderCode(ctx context.Context, orderCode string) (
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
 
 const getPaymentsByBookingID = `-- name: GetPaymentsByBookingID :many
-SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE booking_id = $1 ORDER BY created_at DESC
+SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code FROM payment_transactions WHERE booking_id = $1 ORDER BY created_at DESC
 `
 
 func (q *Queries) GetPaymentsByBookingID(ctx context.Context, bookingID int64) ([]PaymentTransaction, error) {
@@ -93,6 +101,8 @@ func (q *Queries) GetPaymentsByBookingID(ctx context.Context, bookingID int64) (
 			&i.CreatedAt,
 			&i.PaidAt,
 			&i.RefundedAt,
+			&i.CheckoutUrl,
+			&i.QrCode,
 		); err != nil {
 			return nil, err
 		}
@@ -105,7 +115,7 @@ func (q *Queries) GetPaymentsByBookingID(ctx context.Context, bookingID int64) (
 }
 
 const getPendingPaymentByBookingID = `-- name: GetPendingPaymentByBookingID :one
-SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE booking_id = $1 AND status = 'pending' LIMIT 1
+SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code FROM payment_transactions WHERE booking_id = $1 AND status = 'pending' LIMIT 1
 `
 
 func (q *Queries) GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error) {
@@ -122,12 +132,14 @@ func (q *Queries) GetPendingPaymentByBookingID(ctx context.Context, bookingID in
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
 
 const getSuccessPaymentByBookingID = `-- name: GetSuccessPaymentByBookingID :one
-SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE booking_id = $1 AND status = 'success' LIMIT 1
+SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code FROM payment_transactions WHERE booking_id = $1 AND status = 'success' LIMIT 1
 `
 
 func (q *Queries) GetSuccessPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error) {
@@ -144,6 +156,8 @@ func (q *Queries) GetSuccessPaymentByBookingID(ctx context.Context, bookingID in
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
@@ -153,7 +167,7 @@ UPDATE payment_transactions SET
     status = 'failed',
     webhook_data = $2
 WHERE order_code = $1 AND status = 'pending'
-RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at
+RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code
 `
 
 type UpdatePaymentFailedParams struct {
@@ -175,6 +189,8 @@ func (q *Queries) UpdatePaymentFailed(ctx context.Context, arg UpdatePaymentFail
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
@@ -184,7 +200,7 @@ UPDATE payment_transactions SET
     status = 'refunded',
     refunded_at = NOW()
 WHERE booking_id = $1 AND status = 'success'
-RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at
+RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code
 `
 
 func (q *Queries) UpdatePaymentRefunded(ctx context.Context, bookingID int64) (PaymentTransaction, error) {
@@ -201,6 +217,8 @@ func (q *Queries) UpdatePaymentRefunded(ctx context.Context, bookingID int64) (P
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }
@@ -211,7 +229,7 @@ UPDATE payment_transactions SET
     webhook_data = $2,
     paid_at = NOW()
 WHERE order_code = $1 AND status = 'pending'
-RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at
+RETURNING id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at, checkout_url, qr_code
 `
 
 type UpdatePaymentSuccessParams struct {
@@ -233,6 +251,8 @@ func (q *Queries) UpdatePaymentSuccess(ctx context.Context, arg UpdatePaymentSuc
 		&i.CreatedAt,
 		&i.PaidAt,
 		&i.RefundedAt,
+		&i.CheckoutUrl,
+		&i.QrCode,
 	)
 	return i, err
 }

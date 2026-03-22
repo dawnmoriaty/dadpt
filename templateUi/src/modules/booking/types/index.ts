@@ -18,6 +18,7 @@ export interface PointInfo {
 export interface Booking {
     id: number
     code: string
+    orderCode?: string
     tripId: number
     userId?: number
     guestInfo: GuestInfo
@@ -78,6 +79,7 @@ export interface RefundActionRequest {
     reason?: string
     refundReference?: string
     refundNote?: string
+    confirmCode?: string
 }
 
 export interface RefundRequestListResponse {

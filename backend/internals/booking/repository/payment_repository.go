@@ -32,6 +32,8 @@ func (r *paymentRepository) CreateTransaction(ctx context.Context, tx *domain.Pa
 		OrderCode:     tx.OrderCode,
 		Amount:        utils.Float64ToNumeric(tx.Amount),
 		PaymentMethod: utils.StringToPtr(tx.PaymentMethod),
+		CheckoutUrl:   utils.StringToPtr(tx.CheckoutURL),
+		QrCode:        utils.StringToPtr(tx.QRCode),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating payment transaction: %w", err)
@@ -48,6 +50,17 @@ func (r *paymentRepository) GetByOrderCode(ctx context.Context, orderCode string
 		return nil, fmt.Errorf("getting payment by order code: %w", err)
 	}
 	return paymentToEntity(result), nil
+}
+
+func (r *paymentRepository) GetLatestByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	items, err := r.queries.GetPaymentsByBookingID(ctx, bookingID)
+	if err != nil {
+		return nil, fmt.Errorf("getting payments by booking id: %w", err)
+	}
+	if len(items) == 0 {
+		return nil, domain.ErrPaymentNotFound
+	}
+	return paymentToEntity(items[0]), nil
 }
 
 func (r *paymentRepository) MarkSuccess(ctx context.Context, orderCode string, webhookData []byte) (*domain.PaymentTransaction, error) {
@@ -119,6 +132,8 @@ func paymentToEntity(m models.PaymentTransaction) *domain.PaymentTransaction {
 		Amount:        utils.NumericToFloat64(m.Amount),
 		Status:        utils.PtrToString(m.Status),
 		PaymentMethod: utils.PtrToString(m.PaymentMethod),
+		CheckoutURL:   utils.PtrToString(m.CheckoutUrl),
+		QRCode:        utils.PtrToString(m.QrCode),
 		WebhookData:   m.WebhookData,
 		CreatedAt:     utils.TimestamptzToTime(m.CreatedAt),
 		PaidAt:        utils.TimestamptzToTime(m.PaidAt),

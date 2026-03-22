@@ -15,18 +15,13 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 	return func(c *gin.Context) {
 		var token string
 
-		// 1. Try Authorization header first
+		// Use Authorization header only.
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
 			if len(parts) == 2 && strings.ToLower(parts[0]) == "bearer" {
 				token = parts[1]
 			}
-		}
-
-		// 2. Fallback: query param "token" (for SSE / EventSource which can't set headers)
-		if token == "" {
-			token = c.Query("token")
 		}
 
 		if token == "" {

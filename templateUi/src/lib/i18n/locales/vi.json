@@ -202,8 +202,8 @@
     "paymentSimulated": "Đã gửi yêu cầu giả lập thanh toán!",
     "simulationFailed": "Giả lập thanh toán thất bại",
     "errorTooManySeats": "Bạn chỉ có thể chọn tối đa {{max}} ghế",
-    "errorSeatsNotSameRow": "Vui lòng chọn các ghế cùng hàng ngang (ví dụ: A01, B01, C01)",
-    "seatSameRowHint": "Chọn ghế cùng hàng ngang để ngồi cạnh nhau"
+    "errorSeatsNotSameRow": "Vui lòng chọn các ghế liên tiếp (ví dụ: A01, B01, C01, D01 hoặc C03, D03, A04, B04)",
+    "seatSameRowHint": "Chọn tối đa 4 ghế liên tiếp để ngồi cùng nhóm"
   },
   "myBookings": {
     "title": "Vé của tôi",
@@ -246,6 +246,7 @@
     "refundReference": "Mã giao dịch hoàn tiền",
     "refundNote": "Ghi chú hoàn tiền",
     "resumePayment": "Tiếp tục thanh toán",
+    "reopenQrPayment": "Mở lại QR thanh toán",
     "copyPaymentLink": "Copy link thanh toán"
   },
   "refundRequests": {
@@ -273,6 +274,8 @@
     "refundReferencePlaceholder": "Ví dụ: REF-20260321-001",
     "refundNote": "Ghi chú hoàn tiền",
     "refundNotePlaceholder": "Ví dụ: Hoàn qua chuyển khoản ngân hàng",
+    "confirmCode": "Nhập mã vé để xác nhận",
+    "confirmCodeHint": "Nhập chính xác mã vé {{code}} để tiếp tục",
     "newRequest": "Yêu cầu hoàn tiền mới: {{code}} - {{name}} ({{amount}})",
     "bookingCancelled": "Khách {{name}} đã hủy vé {{code}}",
     "departure": "Khởi hành",

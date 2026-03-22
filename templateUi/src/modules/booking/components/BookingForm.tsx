@@ -30,11 +30,15 @@ import type { Point, Trip } from '@/modules/trip'
 import { useAuthStore } from '@/stores/use-auth-store'
 
 import { useCreateBooking } from '../hooks'
+import { useMyBookings } from '../hooks/use-booking-hooks'
+import { useBookingSeatRules } from '../hooks/use-booking-seat-rules'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
 import type { CreateBookingResponse } from '../types'
 import { formatVndCurrency, upsertPendingBookingHistory } from '../utils'
 
 import { SeatMap } from './SeatMap'
+
+const MAX_BOOKING_SEATS = 4
 
 interface BookingFormProps {
     trip: Trip
@@ -47,6 +51,7 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const { t } = useTranslation()
     const navigate = useNavigate()
     const { isAuthenticated, user } = useAuthStore()
+    const myBookingsQuery = useMyBookings(1, 50, isAuthenticated)
 
     const form = useForm<CreateBookingFormData>({
         resolver: formResolver(createBookingSchema),
@@ -67,6 +72,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
     const selectedSeats = useWatch({ control: form.control, name: 'seatCodes' })
     const selectedPickupName = useWatch({ control: form.control, name: 'pickupInfo.name' })
     const selectedDropoffName = useWatch({ control: form.control, name: 'dropoffInfo.name' })
+    const seatRules = useBookingSeatRules(trip.id, myBookingsQuery.data?.items)
+    const seatLimit = Math.min(MAX_BOOKING_SEATS, seatRules.maxAdditionalSeats || MAX_BOOKING_SEATS)
+    const requestedPassengers = Math.max(passengers, 1)
     const totalAmount = selectedSeats.length * trip.finalPrice
 
     const draftKey = `booking_draft_${trip.id}`
@@ -176,8 +184,17 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg">{t('booking.selectSeats')}</CardTitle>
                         <p className="text-sm text-muted-foreground">
-                            {t('booking.selectSeatsHint', { count: passengers })}
+                            {t('booking.selectSeatsHint', { count: seatLimit })}
                         </p>
+                        {isAuthenticated && seatRules.userExistingSeats.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                                {t('booking.selected', {
+                                    current: seatRules.userExistingSeats.length,
+                                    total: MAX_BOOKING_SEATS,
+                                    defaultValue: 'Da co {{current}}/{{total}} ghe tren chuyen nay',
+                                })}
+                            </p>
+                        )}
                         {trip.seatLayout && (
                             <p className="text-xs text-muted-foreground capitalize">
                                 {trip.busTypeName}
@@ -195,7 +212,8 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                             layout={trip.seatLayout}
                                             bookedSeats={trip.bookedSeats ?? []}
                                             selectedSeats={field.value}
-                                            maxSeats={4}
+                                            maxSeats={seatLimit}
+                                            requiredSeats={seatRules.userExistingSeats}
                                             onSelectionChange={field.onChange}
                                         />
                                     ) : (
@@ -204,7 +222,13 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
                                         </p>
                                     )}
                                     <FormDescription>
-                                        {t('booking.selected', { current: selectedSeats.length, total: passengers })}
+                                        {t('booking.selected', { current: selectedSeats.length, total: seatLimit })}
+                                        <span className="ml-2 text-xs text-muted-foreground">
+                                            {t('booking.passengerCount', {
+                                                count: requestedPassengers,
+                                                defaultValue: 'So hanh khach: {{count}}',
+                                            })}
+                                        </span>
                                         {selectedSeats.length > 0 && (
                                             <span className="ml-2">
                                                 ({selectedSeats.map((s: string) => (

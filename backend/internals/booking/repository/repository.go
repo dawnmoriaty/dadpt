@@ -172,6 +172,17 @@ func (r *bookingRepository) GetByCode(ctx context.Context, code domain.BookingCo
 	return sqlcToEntity(result), nil
 }
 
+func (r *bookingRepository) ListActiveSeatCodesByUserTrip(ctx context.Context, userID int64, tripID int64) ([]string, error) {
+	seatCodes, err := r.queries.ListActiveSeatCodesByUserTrip(ctx, models.ListActiveSeatCodesByUserTripParams{
+		UserID: &userID,
+		TripID: tripID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("listing active seat codes by user trip: %w", err)
+	}
+	return seatCodes, nil
+}
+
 func (r *bookingRepository) ListByUser(ctx context.Context, userID int64, limit, offset int32) ([]*domain.Booking, int64, error) {
 	rows, err := r.queries.ListBookingsByUser(ctx, models.ListBookingsByUserParams{
 		UserID: &userID,

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -14,27 +16,29 @@ import (
 // =============================================================================
 
 var (
-	ErrSeatsNotAvailable       = errors.New("seats not available")
-	ErrSeatsBeingBooked        = errors.New("seats being booked")
-	ErrTripLocked              = errors.New("trip locked")
-	ErrConcurrentModification  = errors.New("concurrent modification")
-	ErrBookingNotFound         = errors.New("booking not found")
-	ErrBookingExpired          = errors.New("booking expired")
-	ErrInvalidSeatCode         = errors.New("invalid seat code")
-	ErrTripNotBookable         = errors.New("trip not bookable")
-	ErrInvalidGuestInfo        = errors.New("invalid guest info")
-	ErrBookingCannotCancel     = errors.New("booking cannot cancel")
-	ErrTooManySeats            = errors.New("too many seats")
-	ErrSeatsNotConsecutive     = errors.New("seats not consecutive")
-	ErrPaymentNotFound         = errors.New("payment not found")
-	ErrPaymentAlreadyDone      = errors.New("payment already processed")
-	ErrBookingNotPending       = errors.New("booking not pending")
-	ErrRefundWindowExpired     = errors.New("refund window expired")
-	ErrBookingNotPaid          = errors.New("booking not paid")
-	ErrBookingNotRefundPending = errors.New("booking not refund pending")
-	ErrRefundAlreadyProcessed  = errors.New("refund already processed")
-	ErrRefundReferenceRequired = errors.New("refund reference required")
-	ErrPaymentLinkUnavailable  = errors.New("payment link unavailable")
+	ErrSeatsNotAvailable         = errors.New("seats not available")
+	ErrSeatsBeingBooked          = errors.New("seats being booked")
+	ErrTripLocked                = errors.New("trip locked")
+	ErrConcurrentModification    = errors.New("concurrent modification")
+	ErrBookingNotFound           = errors.New("booking not found")
+	ErrBookingExpired            = errors.New("booking expired")
+	ErrInvalidSeatCode           = errors.New("invalid seat code")
+	ErrTripNotBookable           = errors.New("trip not bookable")
+	ErrInvalidGuestInfo          = errors.New("invalid guest info")
+	ErrBookingCannotCancel       = errors.New("booking cannot cancel")
+	ErrTooManySeats              = errors.New("too many seats")
+	ErrSeatsNotConsecutive       = errors.New("seats not consecutive")
+	ErrPaymentNotFound           = errors.New("payment not found")
+	ErrPaymentAlreadyDone        = errors.New("payment already processed")
+	ErrBookingNotPending         = errors.New("booking not pending")
+	ErrRefundWindowExpired       = errors.New("refund window expired")
+	ErrBookingNotPaid            = errors.New("booking not paid")
+	ErrBookingNotRefundPending   = errors.New("booking not refund pending")
+	ErrRefundAlreadyProcessed    = errors.New("refund already processed")
+	ErrRefundReferenceRequired   = errors.New("refund reference required")
+	ErrInvalidRefundReference    = errors.New("invalid refund reference")
+	ErrPaymentLinkUnavailable    = errors.New("payment link unavailable")
+	ErrRefundConfirmCodeMismatch = errors.New("refund confirm code mismatch")
 )
 
 // =============================================================================
@@ -98,6 +102,7 @@ type Booking struct {
 	ArrivalTime     time.Time
 	OriginName      string
 	DestinationName string
+	OrderCode       string
 }
 
 type GuestInfo struct {
@@ -203,11 +208,13 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 
 	// Parse all seat codes
 	numbers := make([]int, 0, len(seatCodes))
+	prefixes := make([]string, 0, len(seatCodes))
 	for _, code := range seatCodes {
 		matches := seatPattern.FindStringSubmatch(code)
 		if matches == nil {
 			return fmt.Errorf("%w: %s", ErrInvalidSeatCode, code)
 		}
+		prefixes = append(prefixes, strings.ToUpper(matches[1]))
 		num, _ := strconv.Atoi(matches[2])
 		numbers = append(numbers, num)
 	}
@@ -217,6 +224,19 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 	for _, n := range numbers[1:] {
 		if n != baseNumber {
 			return fmt.Errorf("%w: seats must be in the same row", ErrSeatsNotConsecutive)
+		}
+	}
+
+	// Seat columns must be adjacent (A,B,C...) without gaps.
+	sort.Strings(prefixes)
+	for i := 1; i < len(prefixes); i++ {
+		if prefixes[i] == prefixes[i-1] {
+			return fmt.Errorf("%w: duplicated seat column", ErrInvalidSeatCode)
+		}
+		prev := []rune(prefixes[i-1])
+		curr := []rune(prefixes[i])
+		if len(prev) != 1 || len(curr) != 1 || curr[0]-prev[0] != 1 {
+			return fmt.Errorf("%w: seats must be adjacent", ErrSeatsNotConsecutive)
 		}
 	}
 
@@ -231,14 +251,26 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 func SeatsAvailable(bookedSeats, requestedSeats []string) bool {
 	bookedMap := make(map[string]bool)
 	for _, seat := range bookedSeats {
-		bookedMap[seat] = true
+		bookedMap[normalizeSeatCode(seat)] = true
 	}
 	for _, seat := range requestedSeats {
-		if bookedMap[seat] {
+		if bookedMap[normalizeSeatCode(seat)] {
 			return false
 		}
 	}
 	return true
+}
+
+func normalizeSeatCode(code string) string {
+	matches := seatPattern.FindStringSubmatch(strings.TrimSpace(strings.ToUpper(code)))
+	if matches == nil {
+		return strings.TrimSpace(strings.ToUpper(code))
+	}
+	num, err := strconv.Atoi(matches[2])
+	if err != nil {
+		return strings.TrimSpace(strings.ToUpper(code))
+	}
+	return fmt.Sprintf("%s%02d", strings.ToUpper(matches[1]), num)
 }
 
 // CalculatePrice calculates total price for seats

@@ -5,14 +5,17 @@ import { toast } from 'sonner'
 import { getApiErrorMessage } from '@/services/api/client'
 
 import { bookingApi } from '../api'
-import type { Booking, CreateBookingRequest, CreateBookingResponse } from '../types'
+import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatusResponse } from '../types'
 
 import { bookingKeys } from './query-keys'
 
-export function useMyBookings(page = 1, pageSize = 20) {
+export function useMyBookings(page = 1, pageSize = 20, enabled = true) {
     return useQuery({
         queryKey: bookingKeys.mine(page, pageSize),
         queryFn: () => bookingApi.listMine(page, pageSize),
+        enabled,
+        refetchInterval: 5000,
+        refetchOnWindowFocus: true,
     })
 }
 
@@ -98,7 +101,7 @@ export function useBrowseTrips(params?: {
 }
 
 export function usePaymentStatus(orderCode: string, enabled: boolean) {
-    return useQuery({
+    return useQuery<PaymentStatusResponse>({
         queryKey: bookingKeys.paymentStatus(orderCode),
         queryFn: () => bookingApi.getPaymentStatus(orderCode),
         enabled: enabled && orderCode.length > 0,

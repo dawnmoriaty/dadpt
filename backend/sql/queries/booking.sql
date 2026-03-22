@@ -42,7 +42,7 @@ SELECT * FROM trips WHERE id = $1 FOR UPDATE NOWAIT;
 -- name: UpdateTripSeatsAtomic :one
 -- Optimistic locking: only update if version matches and seats available
 UPDATE trips SET
-    booked_seats = array_cat(booked_seats, $2::text[]),
+    booked_seats = array_cat(COALESCE(booked_seats, '{}'::text[]), $2::text[]),
     available_seats = available_seats - $3,
     version = version + 1
 WHERE id = $1 
@@ -53,7 +53,7 @@ RETURNING *;
 -- name: ReleaseTripSeats :one
 -- Release seats when booking cancelled/expired (using array subtraction)
 UPDATE trips SET
-    booked_seats = ARRAY(SELECT unnest(booked_seats) EXCEPT SELECT unnest($2::text[])),
+    booked_seats = ARRAY(SELECT unnest(COALESCE(booked_seats, '{}'::text[])) EXCEPT SELECT unnest($2::text[])),
     available_seats = available_seats + $3,
     version = version + 1
 WHERE id = $1
@@ -104,6 +104,14 @@ RETURNING *;
 -- name: CountBookingsByUser :one
 SELECT COUNT(*) FROM bookings WHERE user_id = $1;
 
+-- name: ListActiveSeatCodesByUserTrip :many
+SELECT DISTINCT seat_codes.seat_code::text AS seat_code
+FROM bookings b
+CROSS JOIN LATERAL unnest(COALESCE(b.seat_codes, '{}'::text[])) AS seat_codes(seat_code)
+WHERE b.user_id = $1
+  AND b.trip_id = $2
+  AND b.status IN ('pending', 'paid', 'refund_pending');
+
 -- ============================================================================
 -- REFUND FLOW QUERIES
 -- ============================================================================
@@ -127,7 +135,7 @@ UPDATE bookings SET
     status = 'refund_pending',
     refunded_at = NULL,
     updated_at = NOW()
-WHERE id = $1 AND status = 'paid'
+WHERE id = $1 AND status IN ('paid', 'pending')
 RETURNING *;
 
 -- name: ListRefundPendingBookings :many

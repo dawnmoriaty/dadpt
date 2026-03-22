@@ -1,4 +1,3 @@
-import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 
@@ -15,7 +14,6 @@ interface UseVoiceBookingOptions {
 
 export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const { disabled = false } = options
-    const navigate = useNavigate()
 
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [audioName, setAudioName] = useState('')
@@ -37,6 +35,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const mediaRecorderRef = useRef<MediaRecorder | null>(null)
     const streamRef = useRef<MediaStream | null>(null)
     const chunksRef = useRef<Blob[]>([])
+    const executeLockRef = useRef(false)
 
     const isBusy = disabled || pipelineMutation.isPending || planMutation.isPending || executeMutation.isPending
     const canRecord =
@@ -77,9 +76,8 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             if (executeFromPipeline?.bookingResult?.booking?.code) {
                 const paymentUrl = executeFromPipeline.bookingResult.paymentUrl
                 const bookingCode = executeFromPipeline.bookingResult.booking.code
-                const orderCode = executeFromPipeline.bookingResult.orderCode
 
-                upsertPendingBookingHistory(bookingCode, orderCode)
+                upsertPendingBookingHistory(bookingCode, executeFromPipeline.bookingResult.orderCode)
 
                 setOrigin(executeFromPipeline.origin ?? '')
                 setDestination(executeFromPipeline.destination ?? '')
@@ -90,15 +88,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 toast.success('Đã đặt vé tự động từ giọng nói.')
 
                 if (paymentUrl) {
-                    if (bookingCode) {
-                        void navigate({
-                            to: '/payment/$bookingCode',
-                            params: { bookingCode },
-                            search: { orderCode },
-                        })
-                        return
-                    }
-                    window.location.href = paymentUrl
+                    await copyPaymentLink(paymentUrl)
                     return
                 }
             }
@@ -137,6 +127,17 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const handleChooseFile = () => {
         if (isBusy) return
         fileInputRef.current?.click()
+    }
+
+    const copyPaymentLink = async (paymentUrl: string) => {
+        const normalizedUrl = paymentUrl.trim()
+        if (!/^https:\/\/pay\.payos\.vn\/web\//i.test(normalizedUrl)) {
+            toast.error('Link thanh toán không hợp lệ. Vui lòng mở lại QR thanh toán trong Vé của tôi.')
+            return
+        }
+
+        await navigator.clipboard.writeText(normalizedUrl)
+        toast.success('Đã copy link thanh toán. Dán vào tab mới để thanh toán.')
     }
 
     const startRecording = async () => {
@@ -206,12 +207,16 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     }
 
     const executeBooking = async () => {
+        if (executeLockRef.current) {
+            return
+        }
         if (!selectedTripId) {
             toast.error('Vui long chon mot chuyen truoc khi dat.')
             return
         }
 
         try {
+            executeLockRef.current = true
             const result = await executeMutation.mutateAsync({
                 tripId: selectedTripId,
                 seatCount,
@@ -220,25 +225,17 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             })
 
             const paymentUrl = result.bookingResult.paymentUrl
-            const resumeUrl = result.bookingResult.resumeUrl
             upsertPendingBookingHistory(result.bookingResult.booking.code, result.bookingResult.orderCode)
             if (paymentUrl) {
-                toast.success('Đặt vé thành công. Chuyển sang trang thanh toán.')
-                if (resumeUrl && result.bookingResult.booking?.code) {
-                    void navigate({
-                        to: '/payment/$bookingCode',
-                        params: { bookingCode: result.bookingResult.booking.code },
-                        search: { orderCode: result.bookingResult.orderCode },
-                    })
-                    return
-                }
-                window.location.href = paymentUrl
+                await copyPaymentLink(paymentUrl)
                 return
             }
 
             toast.success('Dat ve thanh cong.')
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
+        } finally {
+            executeLockRef.current = false
         }
     }
 

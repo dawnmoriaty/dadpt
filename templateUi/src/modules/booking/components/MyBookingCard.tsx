@@ -111,7 +111,21 @@ export function MyBookingCard({ booking, onCancel, onRefund, onResumePayment, on
                                         <div className="text-xs text-muted-foreground space-y-0.5">
                                             <p>{t('myBookings.refundedMessage')}</p>
                                             {booking.refundReference && (
-                                                <p>{t('myBookings.refundReference')}: {booking.refundReference}</p>
+                                                <div className="flex items-center gap-2">
+                                                    <p>{t('myBookings.refundReference')}: {booking.refundReference}</p>
+                                                    <Button
+                                                        type="button"
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="h-5 w-5"
+                                                        onClick={async () => {
+                                                            await navigator.clipboard.writeText(booking.refundReference ?? '')
+                                                            toast.success('Đã copy mã giao dịch hoàn tiền')
+                                                        }}
+                                                    >
+                                                        <Copy className="h-3 w-3" />
+                                                    </Button>
+                                                </div>
                                             )}
                                             {booking.refundNote && (
                                                 <p>{t('myBookings.refundNote')}: {booking.refundNote}</p>
@@ -135,6 +149,24 @@ export function MyBookingCard({ booking, onCancel, onRefund, onResumePayment, on
                                 <span className="mx-1">•</span>
                                 <span>{booking.guestInfo.phone}</span>
                             </div>
+
+                            {booking.orderCode && (
+                                <div className="text-xs text-muted-foreground flex items-center gap-2">
+                                    <span>Mã giao dịch: {booking.orderCode}</span>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-5 w-5"
+                                        onClick={async () => {
+                                            await navigator.clipboard.writeText(booking.orderCode ?? '')
+                                            toast.success('Đã copy mã giao dịch thanh toán')
+                                        }}
+                                    >
+                                        <Copy className="h-3 w-3" />
+                                    </Button>
+                                </div>
+                            )}
                         </div>
 
                         <div className="flex flex-row sm:flex-col items-center sm:items-end justify-between gap-3">
@@ -162,7 +194,7 @@ export function MyBookingCard({ booking, onCancel, onRefund, onResumePayment, on
                             {canResumePayment && (
                                 <div className="flex flex-col gap-2 w-full sm:w-auto">
                                     <Button variant="default" size="sm" onClick={() => onResumePayment(booking.code)}>
-                                        {t('myBookings.resumePayment')}
+                                        {t('myBookings.reopenQrPayment')}
                                     </Button>
                                     <Button variant="outline" size="sm" onClick={() => onCopyPaymentLink(booking.code)}>
                                         {t('myBookings.copyPaymentLink')}

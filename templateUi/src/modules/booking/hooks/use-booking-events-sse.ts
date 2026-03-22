@@ -28,42 +28,102 @@ export function useBookingEventsSSE() {
             return
         }
 
-        const es = new EventSource(`${SSE_BASE_URL}/bookings/events?token=${encodeURIComponent(token)}`)
+        const controller = new AbortController()
+        let closed = false
 
-        const handleEvent = (event: MessageEvent) => {
-            try {
-                const data = JSON.parse(event.data) as BookingEventEnvelope
-                queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+        const connect = async () => {
+            while (!closed) {
+                try {
+                    const response = await fetch(`${SSE_BASE_URL}/bookings/events`, {
+                        method: 'GET',
+                        headers: {
+                            Accept: 'text/event-stream',
+                            Authorization: `Bearer ${token}`,
+                        },
+                        signal: controller.signal,
+                    })
 
-                switch (data.eventType) {
-                    case 'booking.refund.approved':
-                        toast.success(t('myBookings.eventRefundApproved', { code: data.payload.code }))
+                    if (!response.ok || !response.body) {
+                        throw new Error(`SSE failed: ${response.status}`)
+                    }
+
+                    const reader = response.body.getReader()
+                    const decoder = new TextDecoder()
+                    let buffer = ''
+
+                    while (!closed) {
+                        const { value, done } = await reader.read()
+                        if (done) break
+                        buffer += decoder.decode(value, { stream: true })
+
+                        let splitIndex = buffer.indexOf('\n\n')
+                        while (splitIndex !== -1) {
+                            const rawEvent = buffer.slice(0, splitIndex)
+                            buffer = buffer.slice(splitIndex + 2)
+
+                            const lines = rawEvent.split('\n')
+                            let eventType = ''
+                            const dataLines: string[] = []
+                            for (const line of lines) {
+                                if (line.startsWith('event:')) {
+                                    eventType = line.slice(6).trim()
+                                } else if (line.startsWith('data:')) {
+                                    dataLines.push(line.slice(5).trim())
+                                }
+                            }
+
+                            if (eventType === 'connected') {
+                                splitIndex = buffer.indexOf('\n\n')
+                                continue
+                            }
+
+                            const rawData = dataLines.join('\n')
+                            if (!rawData) {
+                                splitIndex = buffer.indexOf('\n\n')
+                                continue
+                            }
+
+                            try {
+                                const data = JSON.parse(rawData) as BookingEventEnvelope
+                                queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+
+                                switch (data.eventType) {
+                                    case 'booking.refund.approved':
+                                        toast.success(t('myBookings.eventRefundApproved', { code: data.payload.code }))
+                                        break
+                                    case 'booking.refund.rejected':
+                                        toast.warning(t('myBookings.eventRefundRejected', { code: data.payload.code }))
+                                        break
+                                    case 'booking.expired':
+                                        toast.warning(t('myBookings.eventExpired', { code: data.payload.code }))
+                                        break
+                                    case 'booking.cancelled':
+                                        toast.info(t('myBookings.eventCancelled', { code: data.payload.code }))
+                                        break
+                                    default:
+                                        break
+                                }
+                            } catch {
+                                queryClient.invalidateQueries({ queryKey: bookingKeys.all })
+                            }
+
+                            splitIndex = buffer.indexOf('\n\n')
+                        }
+                    }
+                } catch {
+                    if (closed) {
                         break
-                    case 'booking.refund.rejected':
-                        toast.warning(t('myBookings.eventRefundRejected', { code: data.payload.code }))
-                        break
-                    case 'booking.expired':
-                        toast.warning(t('myBookings.eventExpired', { code: data.payload.code }))
-                        break
-                    case 'booking.cancelled':
-                        toast.info(t('myBookings.eventCancelled', { code: data.payload.code }))
-                        break
-                    default:
-                        break
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 1500))
                 }
-            } catch {
-                queryClient.invalidateQueries({ queryKey: bookingKeys.all })
             }
         }
 
-        es.addEventListener('booking_cancelled', handleEvent)
-        es.addEventListener('refund_requested', handleEvent)
-        es.addEventListener('refund_approved', handleEvent)
-        es.addEventListener('refund_rejected', handleEvent)
-        es.addEventListener('booking_expired', handleEvent)
+        void connect()
 
         return () => {
-            es.close()
+            closed = true
+            controller.abort()
         }
     }, [queryClient, t, token])
 }

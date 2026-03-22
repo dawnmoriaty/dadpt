@@ -299,6 +299,40 @@ func (q *Queries) GetExpiredPendingBookings(ctx context.Context, limit int32) ([
 	return items, nil
 }
 
+const listActiveSeatCodesByUserTrip = `-- name: ListActiveSeatCodesByUserTrip :many
+SELECT DISTINCT seat_codes.seat_code::text AS seat_code
+FROM bookings b
+CROSS JOIN LATERAL unnest(COALESCE(b.seat_codes, '{}'::text[])) AS seat_codes(seat_code)
+WHERE b.user_id = $1
+  AND b.trip_id = $2
+  AND b.status IN ('pending', 'paid', 'refund_pending')
+`
+
+type ListActiveSeatCodesByUserTripParams struct {
+	UserID *int64 `json:"userId"`
+	TripID int64  `json:"tripId"`
+}
+
+func (q *Queries) ListActiveSeatCodesByUserTrip(ctx context.Context, arg ListActiveSeatCodesByUserTripParams) ([]string, error) {
+	rows, err := q.db.Query(ctx, listActiveSeatCodesByUserTrip, arg.UserID, arg.TripID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var seat_code string
+		if err := rows.Scan(&seat_code); err != nil {
+			return nil, err
+		}
+		items = append(items, seat_code)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listBookingsByUser = `-- name: ListBookingsByUser :many
 SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, b.refund_reference, b.refund_note, t.departure_time, t.arrival_time,
        o.name as origin_name, d.name as destination_name
@@ -573,7 +607,7 @@ UPDATE bookings SET
     status = 'refund_pending',
     refunded_at = NULL,
     updated_at = NOW()
-WHERE id = $1 AND status = 'paid'
+WHERE id = $1 AND status IN ('paid', 'pending')
 RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
@@ -653,7 +687,7 @@ func (q *Queries) MarkBookingRefunded(ctx context.Context, arg MarkBookingRefund
 
 const releaseTripSeats = `-- name: ReleaseTripSeats :one
 UPDATE trips SET
-    booked_seats = ARRAY(SELECT unnest(booked_seats) EXCEPT SELECT unnest($2::text[])),
+    booked_seats = ARRAY(SELECT unnest(COALESCE(booked_seats, '{}'::text[])) EXCEPT SELECT unnest($2::text[])),
     available_seats = available_seats + $3,
     version = version + 1
 WHERE id = $1
@@ -766,7 +800,7 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 
 const updateTripSeatsAtomic = `-- name: UpdateTripSeatsAtomic :one
 UPDATE trips SET
-    booked_seats = array_cat(booked_seats, $2::text[]),
+    booked_seats = array_cat(COALESCE(booked_seats, '{}'::text[]), $2::text[]),
     available_seats = available_seats - $3,
     version = version + 1
 WHERE id = $1 

@@ -75,6 +75,7 @@ type RefundRequestInput struct {
 	Reason          string
 	RefundReference string
 	RefundNote      string
+	ConfirmCode     string
 }
 
 // RefundRequestListInput is the input for listing refund requests

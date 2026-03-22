@@ -67,3 +67,16 @@ func TestSelectBestTrip_PrefersEarliestDepartureAmongScheduled(t *testing.T) {
 		t.Fatalf("expected earliest scheduled trip id 2, got %+v", best)
 	}
 }
+
+func TestSelectBestTrip_FallbackEarliestWhenNoScheduled(t *testing.T) {
+	now := time.Now()
+	items := []*tripDomain.Trip{
+		{ID: 1, Status: tripDomain.TripStatusDeparted, DepartureTime: now.Add(4 * time.Hour)},
+		{ID: 2, Status: tripDomain.TripStatusCancelled, DepartureTime: now.Add(2 * time.Hour)},
+	}
+
+	best := selectBestTrip(items)
+	if best == nil || best.ID != 2 {
+		t.Fatalf("expected earliest fallback trip id 2, got %+v", best)
+	}
+}

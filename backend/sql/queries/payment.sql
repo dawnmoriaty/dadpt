@@ -1,6 +1,6 @@
 -- name: CreatePaymentTransaction :one
-INSERT INTO payment_transactions (booking_id, order_code, amount, payment_method)
-VALUES ($1, $2, $3, $4)
+INSERT INTO payment_transactions (booking_id, order_code, amount, payment_method, checkout_url, qr_code)
+VALUES ($1, $2, $3, $4, $5, $6)
 RETURNING *;
 
 -- name: GetPaymentByOrderCode :one

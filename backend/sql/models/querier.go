@@ -67,6 +67,7 @@ type Querier interface {
 	GetUserByIdentity(ctx context.Context, phone string) (User, error)
 	GetUserByPhone(ctx context.Context, phone string) (User, error)
 	GetUserByUsername(ctx context.Context, username *string) (User, error)
+	ListActiveSeatCodesByUserTrip(ctx context.Context, arg ListActiveSeatCodesByUserTripParams) ([]string, error)
 	ListBookingsByUser(ctx context.Context, arg ListBookingsByUserParams) ([]ListBookingsByUserRow, error)
 	ListBusTypes(ctx context.Context, arg ListBusTypesParams) ([]BusType, error)
 	ListBusTypesPublic(ctx context.Context) ([]BusType, error)

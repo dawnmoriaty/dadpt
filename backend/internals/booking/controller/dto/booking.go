@@ -46,6 +46,7 @@ type BookingResponse struct {
 	ID              int64        `json:"id"`
 	Code            string       `json:"code"`
 	TripID          int64        `json:"tripId"`
+	OrderCode       string       `json:"orderCode,omitempty"`
 	SeatCodes       []string     `json:"seatCodes"`
 	GuestInfo       GuestInfoDTO `json:"guestInfo"`
 	PickupInfo      PointInfoDTO `json:"pickupInfo"`
@@ -121,6 +122,7 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 		ID:        b.ID,
 		Code:      string(b.Code),
 		TripID:    b.TripID,
+		OrderCode: b.OrderCode,
 		SeatCodes: b.SeatCodes,
 		GuestInfo: GuestInfoDTO{
 			Name:  b.GuestInfo.Name,
@@ -205,6 +207,7 @@ type RefundActionRequest struct {
 	Reason          string `json:"reason" binding:"omitempty,max=500"`
 	RefundReference string `json:"refundReference" binding:"omitempty,max=100"`
 	RefundNote      string `json:"refundNote" binding:"omitempty,max=500"`
+	ConfirmCode     string `json:"confirmCode" binding:"omitempty,max=20"`
 }
 
 type RefundRequestListResponse struct {

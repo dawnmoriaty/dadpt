@@ -1,5 +1,5 @@
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useRef } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
 
@@ -32,63 +32,115 @@ export function useRefundSSE() {
     const queryClient = useQueryClient()
     const { t } = useTranslation()
     const token = useAuthStore((s) => s.token)
-    const eventSourceRef = useRef<EventSource | null>(null)
 
     useEffect(() => {
         if (!token) return
 
-        const url = `${SSE_BASE_URL}/admin/bookings/refund-events?token=${encodeURIComponent(token)}`
-        const es = new EventSource(url)
-        eventSourceRef.current = es
+        const controller = new AbortController()
+        let closed = false
 
-        es.addEventListener('connected', () => {
-            console.log('[SSE] Connected to refund events stream')
-        })
+        const connect = async () => {
+            while (!closed) {
+                try {
+                    const response = await fetch(`${SSE_BASE_URL}/admin/bookings/refund-events`, {
+                        method: 'GET',
+                        headers: {
+                            Accept: 'text/event-stream',
+                            Authorization: `Bearer ${token}`,
+                        },
+                        signal: controller.signal,
+                    })
 
-        es.addEventListener('refund_requested', (event) => {
-            try {
-                const data: RefundRequestEvent = JSON.parse(event.data)
-                console.log('[SSE] Received refund event:', data)
+                    if (!response.ok || !response.body) {
+                        throw new Error(`SSE failed: ${response.status}`)
+                    }
 
-                // Invalidate queries to auto-refresh the admin refund list and badge
-                queryClient.invalidateQueries({ queryKey: refundRequestKeys.root })
-                queryClient.invalidateQueries({ queryKey: refundRequestKeys.pendingCount })
+                    const reader = response.body.getReader()
+                    const decoder = new TextDecoder()
+                    let buffer = ''
 
-                // Show toast notification
-                const amountFormatted = new Intl.NumberFormat('vi-VN', {
-                    style: 'currency',
-                    currency: 'VND',
-                }).format(data.amount)
+                    while (!closed) {
+                        const { value, done } = await reader.read()
+                        if (done) break
+                        buffer += decoder.decode(value, { stream: true })
 
-                toast.info(
-                    t('refundRequests.newRequest', {
-                        code: data.code,
-                        name: data.guestName,
-                        amount: amountFormatted,
-                        defaultValue: `Yêu cầu hoàn tiền mới: ${data.code} - ${data.guestName} (${amountFormatted})`,
-                    }),
-                    { duration: 8000 },
-                )
+                        let splitIndex = buffer.indexOf('\n\n')
+                        while (splitIndex !== -1) {
+                            const rawEvent = buffer.slice(0, splitIndex)
+                            buffer = buffer.slice(splitIndex + 2)
 
-                pushRefundRequestEvent(queryClient, {
-                    type: 'refund_requested',
-                    code: data.code,
-                    guestName: data.guestName,
-                    amount: data.amount,
-                })
-            } catch (err) {
-                console.error('[SSE] Failed to parse refund event:', err)
+                            const lines = rawEvent.split('\n')
+                            let eventType = ''
+                            const dataLines: string[] = []
+
+                            for (const line of lines) {
+                                if (line.startsWith('event:')) {
+                                    eventType = line.slice(6).trim()
+                                } else if (line.startsWith('data:')) {
+                                    dataLines.push(line.slice(5).trim())
+                                }
+                            }
+
+                            if (eventType === 'connected') {
+                                splitIndex = buffer.indexOf('\n\n')
+                                continue
+                            }
+
+                            const rawData = dataLines.join('\n')
+                            if (!rawData) {
+                                splitIndex = buffer.indexOf('\n\n')
+                                continue
+                            }
+
+                            try {
+                                const data: RefundRequestEvent = JSON.parse(rawData)
+
+                                queryClient.invalidateQueries({ queryKey: refundRequestKeys.root })
+                                queryClient.invalidateQueries({ queryKey: refundRequestKeys.pendingCount })
+
+                                const amountFormatted = new Intl.NumberFormat('vi-VN', {
+                                    style: 'currency',
+                                    currency: 'VND',
+                                }).format(data.amount)
+
+                                toast.info(
+                                    t('refundRequests.newRequest', {
+                                        code: data.code,
+                                        name: data.guestName,
+                                        amount: amountFormatted,
+                                        defaultValue: `Yêu cầu hoàn tiền mới: ${data.code} - ${data.guestName} (${amountFormatted})`,
+                                    }),
+                                    { duration: 8000 },
+                                )
+
+                                pushRefundRequestEvent(queryClient, {
+                                    type: 'refund_requested',
+                                    code: data.code,
+                                    guestName: data.guestName,
+                                    amount: data.amount,
+                                })
+                            } catch {
+                                queryClient.invalidateQueries({ queryKey: refundRequestKeys.root })
+                            }
+
+                            splitIndex = buffer.indexOf('\n\n')
+                        }
+                    }
+                } catch (err) {
+                    if (closed) {
+                        break
+                    }
+                    console.warn('[SSE] Connection error, will retry:', err)
+                    await new Promise((resolve) => setTimeout(resolve, 1500))
+                }
             }
-        })
-
-        es.onerror = (err) => {
-            console.warn('[SSE] Connection error, will retry:', err)
         }
 
+        void connect()
+
         return () => {
-            es.close()
-            eventSourceRef.current = null
-            console.log('[SSE] Disconnected from refund events stream')
+            closed = true
+            controller.abort()
         }
     }, [token, queryClient, t])
 }
