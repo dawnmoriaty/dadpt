@@ -24,10 +24,10 @@ export function useBooking(id: number) {
     })
 }
 
-export function useBookingByCode(code: string) {
+export function useBookingByCode(code: string, orderCode?: string) {
     return useQuery({
-        queryKey: bookingKeys.code(code),
-        queryFn: () => bookingApi.getByCode(code),
+        queryKey: [...bookingKeys.code(code), orderCode] as const,
+        queryFn: () => bookingApi.getByCode(code, orderCode),
         enabled: code.length > 0,
     })
 }

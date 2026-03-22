@@ -13,22 +13,25 @@ import { useRefundCountdown } from '../hooks/use-refund-countdown'
 import type { Booking } from '../types'
 import { formatVndCurrency } from '../utils'
 
-import { MyBookingsRefundCountdownBadge } from './my-bookings-refund-countdown-badge'
-import { MyBookingsStatusBadge } from './my-bookings-status-badge'
+import { MyBookingsRefundCountdownBadge } from './MyBookingsRefundCountdownBadge'
+import { MyBookingsStatusBadge } from './MyBookingsStatusBadge'
 
 interface MyBookingCardProps {
     booking: Booking
     onCancel: (id: number) => void
     onRefund: (id: number) => void
+    onResumePayment: (code: string) => void
+    onCopyPaymentLink: (code: string) => void
 }
 
-export function MyBookingCard({ booking, onCancel, onRefund }: MyBookingCardProps) {
+export function MyBookingCard({ booking, onCancel, onRefund, onResumePayment, onCopyPaymentLink }: MyBookingCardProps) {
     const [showConfirm, setShowConfirm] = useState(false)
     const { t } = useTranslation()
     const refundRemainingMs = useRefundCountdown(booking)
 
     const canCancel = booking.status === 'pending'
     const canRefund = booking.status === 'paid' && refundRemainingMs > 0
+    const canResumePayment = booking.status === 'pending'
     const showAction = canCancel || canRefund
     const isRefund = canRefund && !canCancel
 
@@ -154,6 +157,17 @@ export function MyBookingCard({ booking, onCancel, onRefund }: MyBookingCardProp
                                     {isRefund && <Undo2 className="mr-1.5 h-3.5 w-3.5" />}
                                     {isRefund ? t('myBookings.refundBooking') : t('myBookings.cancelBooking')}
                                 </Button>
+                            )}
+
+                            {canResumePayment && (
+                                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                                    <Button variant="default" size="sm" onClick={() => onResumePayment(booking.code)}>
+                                        {t('myBookings.resumePayment')}
+                                    </Button>
+                                    <Button variant="outline" size="sm" onClick={() => onCopyPaymentLink(booking.code)}>
+                                        {t('myBookings.copyPaymentLink')}
+                                    </Button>
+                                </div>
                             )}
                         </div>
                     </div>

@@ -6,8 +6,8 @@ import { Form } from '@/components/ui/form'
 import { useSearchForm } from '../hooks/use-search-form'
 import type { SearchTripsFormData } from '../schemas'
 
-import { SearchFormCompact } from './search-form-compact'
-import { SearchFormDefault } from './search-form-default'
+import { SearchFormCompact } from './SearchFormCompact'
+import { SearchFormDefault } from './SearchFormDefault'
 
 interface SearchFormProps {
     onSearch: (data: SearchTripsFormData) => void

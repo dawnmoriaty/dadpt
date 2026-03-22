@@ -33,3 +33,6 @@ RETURNING *;
 
 -- name: GetSuccessPaymentByBookingID :one
 SELECT * FROM payment_transactions WHERE booking_id = $1 AND status = 'success' LIMIT 1;
+
+-- name: GetPendingPaymentByBookingID :one
+SELECT * FROM payment_transactions WHERE booking_id = $1 AND status = 'pending' LIMIT 1;

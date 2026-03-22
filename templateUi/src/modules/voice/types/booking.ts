@@ -59,5 +59,6 @@ export interface VoiceExecuteResponse {
         orderCode: string
         paymentUrl?: string
         qrCode?: string
+        resumeUrl?: string
     }
 }

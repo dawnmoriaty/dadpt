@@ -104,6 +104,28 @@ func (q *Queries) GetPaymentsByBookingID(ctx context.Context, bookingID int64) (
 	return items, nil
 }
 
+const getPendingPaymentByBookingID = `-- name: GetPendingPaymentByBookingID :one
+SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE booking_id = $1 AND status = 'pending' LIMIT 1
+`
+
+func (q *Queries) GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error) {
+	row := q.db.QueryRow(ctx, getPendingPaymentByBookingID, bookingID)
+	var i PaymentTransaction
+	err := row.Scan(
+		&i.ID,
+		&i.BookingID,
+		&i.OrderCode,
+		&i.Amount,
+		&i.Status,
+		&i.PaymentMethod,
+		&i.WebhookData,
+		&i.CreatedAt,
+		&i.PaidAt,
+		&i.RefundedAt,
+	)
+	return i, err
+}
+
 const getSuccessPaymentByBookingID = `-- name: GetSuccessPaymentByBookingID :one
 SELECT id, booking_id, order_code, amount, status, payment_method, webhook_data, created_at, paid_at, refunded_at FROM payment_transactions WHERE booking_id = $1 AND status = 'success' LIMIT 1
 `

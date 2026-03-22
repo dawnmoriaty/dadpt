@@ -56,6 +56,7 @@ type Querier interface {
 	GetPaymentByOrderCode(ctx context.Context, orderCode string) (PaymentTransaction, error)
 	GetPaymentsByBookingID(ctx context.Context, bookingID int64) ([]PaymentTransaction, error)
 	GetPendingOutboxEvents(ctx context.Context, limit int32) ([]OutboxEvent, error)
+	GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error)
 	GetProviderByID(ctx context.Context, id int32) (Provider, error)
 	GetProviderBySlug(ctx context.Context, slug *string) (Provider, error)
 	GetSuccessPaymentByBookingID(ctx context.Context, bookingID int64) (PaymentTransaction, error)

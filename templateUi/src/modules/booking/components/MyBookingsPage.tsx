@@ -2,10 +2,10 @@ import { useTranslation } from 'react-i18next'
 
 import { useMyBookingsPage } from '../hooks'
 
-import { MyBookingCard } from './my-booking-card'
-import { MyBookingsEmpty } from './my-bookings-empty'
-import { MyBookingsLoading } from './my-bookings-loading'
-import { MyBookingsPagination } from './my-bookings-pagination'
+import { MyBookingCard } from './MyBookingCard'
+import { MyBookingsEmpty } from './MyBookingsEmpty'
+import { MyBookingsLoading } from './MyBookingsLoading'
+import { MyBookingsPagination } from './MyBookingsPagination'
 
 export function MyBookingsPage() {
     const { t } = useTranslation()
@@ -21,6 +21,8 @@ export function MyBookingsPage() {
         goToNextPage,
         cancelBooking,
         refundBooking,
+        resumePayment,
+        copyPaymentLink,
     } = useMyBookingsPage()
 
     return (
@@ -41,7 +43,14 @@ export function MyBookingsPage() {
             ) : (
                 <div className="space-y-3">
                     {bookings.map((booking) => (
-                        <MyBookingCard key={booking.id} booking={booking} onCancel={cancelBooking} onRefund={refundBooking} />
+                        <MyBookingCard
+                            key={booking.id}
+                            booking={booking}
+                            onCancel={cancelBooking}
+                            onRefund={refundBooking}
+                            onResumePayment={resumePayment}
+                            onCopyPaymentLink={copyPaymentLink}
+                        />
                     ))}
 
                     {showPagination && (

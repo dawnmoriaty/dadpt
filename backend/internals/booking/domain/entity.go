@@ -34,6 +34,7 @@ var (
 	ErrBookingNotRefundPending = errors.New("booking not refund pending")
 	ErrRefundAlreadyProcessed  = errors.New("refund already processed")
 	ErrRefundReferenceRequired = errors.New("refund reference required")
+	ErrPaymentLinkUnavailable  = errors.New("payment link unavailable")
 )
 
 // =============================================================================
@@ -119,6 +120,8 @@ type PaymentTransaction struct {
 	Amount        float64
 	Status        string
 	PaymentMethod string
+	CheckoutURL   string
+	QRCode        string
 	WebhookData   []byte
 	CreatedAt     time.Time
 	PaidAt        time.Time

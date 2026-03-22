@@ -1,7 +1,10 @@
+import { useNavigate } from '@tanstack/react-router'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { toast } from 'sonner'
 
-import type { VoicePlanResponse } from '../types'
+import { upsertPendingBookingHistory } from '@/modules/booking'
+
+import type { VoiceExecuteResponse, VoicePlanResponse } from '../types'
 import { parseSeatPreferenceOrder, parseTranscriptToPlanInput } from '../utils/voice-parser'
 
 import { getVoiceErrorMessage, useVoiceExecute, useVoicePipeline, useVoicePlan } from './index'
@@ -12,6 +15,7 @@ interface UseVoiceBookingOptions {
 
 export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const { disabled = false } = options
+    const navigate = useNavigate()
 
     const [audioUrl, setAudioUrl] = useState<string | null>(null)
     const [audioName, setAudioName] = useState('')
@@ -68,6 +72,36 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             updateAudioPreview(file)
             const result = await pipelineMutation.mutateAsync(file)
             setLastTranscript(result.transcript)
+
+            const executeFromPipeline = result.execute as VoiceExecuteResponse | undefined
+            if (executeFromPipeline?.bookingResult?.booking?.code) {
+                const paymentUrl = executeFromPipeline.bookingResult.paymentUrl
+                const bookingCode = executeFromPipeline.bookingResult.booking.code
+                const orderCode = executeFromPipeline.bookingResult.orderCode
+
+                upsertPendingBookingHistory(bookingCode, orderCode)
+
+                setOrigin(executeFromPipeline.origin ?? '')
+                setDestination(executeFromPipeline.destination ?? '')
+                setTravelDate(executeFromPipeline.travelDate ?? '')
+                setSeatCount(executeFromPipeline.seatCodes?.length || 1)
+                setSeatPreferenceOrder(executeFromPipeline.seatCodes?.join(', ') ?? '')
+
+                toast.success('Đã đặt vé tự động từ giọng nói.')
+
+                if (paymentUrl) {
+                    if (bookingCode) {
+                        void navigate({
+                            to: '/payment/$bookingCode',
+                            params: { bookingCode },
+                            search: { orderCode },
+                        })
+                        return
+                    }
+                    window.location.href = paymentUrl
+                    return
+                }
+            }
 
             const command = result.parse?.command
             if (command) {
@@ -186,9 +220,19 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             })
 
             const paymentUrl = result.bookingResult.paymentUrl
+            const resumeUrl = result.bookingResult.resumeUrl
+            upsertPendingBookingHistory(result.bookingResult.booking.code, result.bookingResult.orderCode)
             if (paymentUrl) {
-                toast.success('Dat ve thanh cong. Chuyen den trang thanh toan.')
-                window.open(paymentUrl, '_blank', 'noopener,noreferrer')
+                toast.success('Đặt vé thành công. Chuyển sang trang thanh toán.')
+                if (resumeUrl && result.bookingResult.booking?.code) {
+                    void navigate({
+                        to: '/payment/$bookingCode',
+                        params: { bookingCode: result.bookingResult.booking.code },
+                        search: { orderCode: result.bookingResult.orderCode },
+                    })
+                    return
+                }
+                window.location.href = paymentUrl
                 return
             }
 

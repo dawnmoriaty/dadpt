@@ -124,7 +124,7 @@ export function PaymentQR({ qrCode, orderCode, amount, paymentUrl, expiresAt, on
                         {/* PayOS checkout redirect */}
                         {paymentUrl && (
                             <Button asChild className="w-full" variant="outline">
-                                <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                                <a href={paymentUrl}>
                                     Hoặc thanh toán qua trang PayOS
                                 </a>
                             </Button>

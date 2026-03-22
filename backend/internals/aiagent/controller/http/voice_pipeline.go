@@ -114,6 +114,9 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	if planPayload.SeatCount <= 0 {
 		planPayload.SeatCount = 1
 	}
+	if planPayload.TravelDate == "" {
+		planPayload.TravelDate = "auto"
+	}
 
 	planResp, planErr := h.callInternalJSON(c, http.MethodPost, "/api/v1/bookings/voice/plan", planPayload)
 	if planErr != nil {

@@ -89,6 +89,17 @@ func (r *paymentRepository) GetSuccessByBookingID(ctx context.Context, bookingID
 	return paymentToEntity(result), nil
 }
 
+func (r *paymentRepository) GetPendingByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	result, err := r.queries.GetPendingPaymentByBookingID(ctx, bookingID)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrPaymentNotFound
+		}
+		return nil, fmt.Errorf("getting pending payment by booking id: %w", err)
+	}
+	return paymentToEntity(result), nil
+}
+
 func (r *paymentRepository) MarkRefunded(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
 	result, err := r.queries.UpdatePaymentRefunded(ctx, bookingID)
 	if err != nil {

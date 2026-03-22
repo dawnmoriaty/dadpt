@@ -12,7 +12,7 @@ import {
 
 import type { Booking } from '../types'
 
-import { RefundRequestRow } from './refund-request-row'
+import { RefundRequestRow } from './RefundRequestRow'
 
 interface AdminRefundRequestsTableProps {
     bookings: Booking[]

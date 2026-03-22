@@ -15,8 +15,10 @@ export const bookingApi = {
         return response.data.data
     },
 
-    getByCode: async (code: string): Promise<Booking> => {
-        const response = await api.get(`/bookings/code/${code}`)
+    getByCode: async (code: string, orderCode?: string): Promise<CreateBookingResponse> => {
+        const response = await api.get(`/bookings/code/${code}`, {
+            params: orderCode ? { orderCode } : undefined,
+        })
         return response.data.data
     },
 

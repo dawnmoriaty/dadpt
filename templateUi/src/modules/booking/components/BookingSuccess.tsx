@@ -24,13 +24,14 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
     const navigate = useNavigate()
     const { booking, orderCode, paymentUrl, qrCode } = data
 
-    const hasOnlinePayment = !!(paymentUrl || qrCode)
+    const requiresOnlinePayment = booking.paymentMethod === 'bank_transfer' || booking.paymentMethod === 'visa'
+    const hasPaymentAccess = !!(paymentUrl || qrCode)
 
     // Derive isPaid from server state, not local state
-    const needsPolling = hasOnlinePayment && booking.status !== 'paid'
+    const needsPolling = requiresOnlinePayment && booking.status !== 'paid' && orderCode.length > 0
     const { data: paymentStatus } = usePaymentStatus(orderCode, needsPolling)
 
-    const isPaid = !hasOnlinePayment
+    const isPaid = !requiresOnlinePayment
         || booking.status === 'paid'
         || paymentStatus?.status === 'success'
 
@@ -188,7 +189,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                         {/* Checkout URL only (no QR) */}
                         {paymentUrl && !qrCode && (
                             <Button className="w-full h-12 text-lg shadow-lg shadow-primary/20" asChild>
-                                <a href={paymentUrl} target="_blank" rel="noopener noreferrer">
+                                <a href={paymentUrl}>
                                     {t('booking.payNow')}
                                     <ExternalLink className="ml-2 h-5 w-5" />
                                 </a>
@@ -196,7 +197,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                         )}
 
                         {/* COD - no online payment */}
-                        {!hasOnlinePayment && booking.paymentMethod === 'cod' && (
+                        {!requiresOnlinePayment && booking.paymentMethod === 'cod' && (
                             <div className="flex gap-3 bg-blue-50 border border-blue-200 text-blue-800 p-4 rounded-lg">
                                 <CreditCard className="h-5 w-5 text-blue-600 shrink-0" />
                                 <div>
@@ -205,6 +206,12 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                                         Bạn sẽ thanh toán trực tiếp cho nhà xe khi lên xe. Vui lòng đến đúng giờ.
                                     </p>
                                 </div>
+                            </div>
+                        )}
+
+                        {requiresOnlinePayment && !hasPaymentAccess && (
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+                                Không tải được link thanh toán lúc này. Bạn có thể vào "Vé của tôi" và bấm "Tiếp tục thanh toán" để lấy lại link.
                             </div>
                         )}
                     </CardContent>

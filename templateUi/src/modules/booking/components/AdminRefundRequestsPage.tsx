@@ -8,9 +8,9 @@ import { getApiErrorMessage } from '@/services/api/client'
  
 import { useAdminRefundRequestsPage } from '../hooks'
 
-import { AdminRefundRequestsEmpty } from './admin-refund-requests-empty'
-import { AdminRefundRequestsLoading } from './admin-refund-requests-loading'
-import { AdminRefundRequestsTable } from './admin-refund-requests-table'
+import { AdminRefundRequestsEmpty } from './AdminRefundRequestsEmpty'
+import { AdminRefundRequestsLoading } from './AdminRefundRequestsLoading'
+import { AdminRefundRequestsTable } from './AdminRefundRequestsTable'
 
 export function AdminRefundRequestsPage() {
     const { t } = useTranslation()

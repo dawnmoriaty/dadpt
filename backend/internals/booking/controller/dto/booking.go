@@ -81,6 +81,7 @@ type CreateBookingResponse struct {
 	OrderCode  string           `json:"orderCode"`
 	PaymentURL string           `json:"paymentUrl,omitempty"`
 	QRCode     string           `json:"qrCode,omitempty"`
+	ResumeURL  string           `json:"resumeUrl,omitempty"`
 }
 
 // =============================================================================
@@ -187,6 +188,7 @@ func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingRespons
 		OrderCode:  output.OrderCode,
 		PaymentURL: output.PaymentURL,
 		QRCode:     output.QRCode,
+		ResumeURL:  output.ResumeURL,
 	}
 }
 

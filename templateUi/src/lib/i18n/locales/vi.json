@@ -244,7 +244,9 @@
     "eventRefundRejected": "Yêu cầu hoàn vé {{code}} đã bị từ chối.",
     "eventExpired": "Vé {{code}} đã hết hạn thanh toán.",
     "refundReference": "Mã giao dịch hoàn tiền",
-    "refundNote": "Ghi chú hoàn tiền"
+    "refundNote": "Ghi chú hoàn tiền",
+    "resumePayment": "Tiếp tục thanh toán",
+    "copyPaymentLink": "Copy link thanh toán"
   },
   "adminRefund": {
     "title": "Yêu cầu hoàn vé",

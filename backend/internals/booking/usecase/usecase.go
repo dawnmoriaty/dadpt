@@ -39,10 +39,13 @@ type IBookingUseCase interface {
 	CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error)
 	GetBooking(ctx context.Context, id int64) (*domain.Booking, error)
 	GetBookingByCode(ctx context.Context, code string) (*domain.Booking, error)
+	GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error)
 	ListUserBookings(ctx context.Context, input *domain.ListBookingsInput) (*domain.BookingListOutput, error)
 	CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error)
 	ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error)
 	GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error)
+	RegeneratePaymentLink(ctx context.Context, booking *domain.Booking, paymentTx *domain.PaymentTransaction) (*domain.BookingOutput, error)
+	GatewayAvailable() bool
 	// Admin refund flow
 	ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error)
 	CountRefundPending(ctx context.Context) (int64, error)
@@ -192,6 +195,12 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 			qrCode = linkResult.QRCode
 			logger.Info("Payment link created: orderCode=%s, checkoutUrl=%s", orderCode, checkoutURL)
 		}
+	}
+
+	if input.PaymentMethod == "bank_transfer" && strings.TrimSpace(checkoutURL) == "" {
+		_ = u.tripLocker.ReleaseSeats(ctx, input.TripID, input.SeatCodes, seatCount)
+		_, _ = u.repo.UpdateStatus(ctx, created.ID, domain.StatusExpired)
+		return nil, domain.ErrPaymentLinkUnavailable
 	}
 
 	// 11. Create outbox event (transactional outbox pattern)
@@ -570,6 +579,47 @@ func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.Confi
 // GetPaymentByOrderCode retrieves payment transaction by order code
 func (u *bookingUseCase) GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error) {
 	return u.paymentRepo.GetByOrderCode(ctx, orderCode)
+}
+
+func (u *bookingUseCase) GetPendingPaymentByBookingID(ctx context.Context, bookingID int64) (*domain.PaymentTransaction, error) {
+	return u.paymentRepo.GetPendingByBookingID(ctx, bookingID)
+}
+
+func (u *bookingUseCase) GatewayAvailable() bool {
+	return u.paymentGw != nil
+}
+
+func (u *bookingUseCase) RegeneratePaymentLink(ctx context.Context, booking *domain.Booking, paymentTx *domain.PaymentTransaction) (*domain.BookingOutput, error) {
+	if booking == nil || paymentTx == nil {
+		return nil, domain.ErrPaymentNotFound
+	}
+	if booking.Status != domain.StatusPending {
+		return nil, domain.ErrBookingNotPending
+	}
+	if u.paymentGw == nil {
+		return nil, domain.ErrPaymentLinkUnavailable
+	}
+
+	returnURL, cancelURL := u.resolvePayOSRedirectURLs(ctx)
+	linkResult, err := u.paymentGw.CreatePaymentLink(
+		ctx,
+		orderCodeToInt64(paymentTx.OrderCode),
+		int(paymentTx.Amount),
+		fmt.Sprintf("VE XE %s", booking.Code),
+		booking.ExpiresAt.Unix(),
+		returnURL,
+		cancelURL,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("regenerating payment link: %w", err)
+	}
+
+	return &domain.BookingOutput{
+		Booking:    booking,
+		OrderCode:  paymentTx.OrderCode,
+		PaymentURL: linkResult.CheckoutURL,
+		QRCode:     linkResult.QRCode,
+	}, nil
 }
 
 // =============================================================================

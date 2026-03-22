@@ -234,7 +234,9 @@
     "eventRefundRejected": "Refund request for booking {{code}} was rejected.",
     "eventExpired": "Booking {{code}} has expired.",
     "refundReference": "Refund reference",
-    "refundNote": "Refund note"
+    "refundNote": "Refund note",
+    "resumePayment": "Resume payment",
+    "copyPaymentLink": "Copy payment link"
   },
   "adminRefund": {
     "title": "Refund Requests",

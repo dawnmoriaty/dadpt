@@ -10,16 +10,20 @@ from datetime import datetime, timedelta
 
 _ROUTE_PATTERNS = [
     re.compile(
-        r"(?:^|\s)từ\s+(.+?)\s+(?:đến|tới)\s+(.+?)(?=\s+(?:ngày|vào|lúc|cho|hôm nay|ngày mai|mai|mốt|ngày kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
+        r"(?:^|\s)(?:từ|tu)\s+(.+?)\s+(?:đến|den|tới|toi|về|ve)\s+(.+?)(?=\s+(?:ngày|ngay|vào|vao|lúc|luc|cho|hôm nay|hom nay|ngày mai|ngay mai|mai|mốt|mot|ngày kia|ngay kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
         re.IGNORECASE,
     ),
     re.compile(
-        r"(?:đi|đặt vé|book vé|mua vé)\s+từ\s+(.+?)\s+(?:đến|tới)\s+(.+?)(?=\s+(?:ngày|vào|lúc|cho|hôm nay|ngày mai|mai|mốt|ngày kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
+        r"(?:đi|di|đặt vé|dat ve|book vé|book ve|mua vé|mua ve|đặt chuyến xe|dat chuyen xe)\s+(?:từ|tu)\s+(.+?)\s+(?:đến|den|tới|toi|về|ve)\s+(.+?)(?=\s+(?:ngày|ngay|vào|vao|lúc|luc|cho|hôm nay|hom nay|ngày mai|ngay mai|mai|mốt|mot|ngày kia|ngay kia|\d{1,2}/\d{1,2}/\d{4}|\d{4}-\d{2}-\d{2})\b|$)",
         re.IGNORECASE,
     ),
 ]
 _DATE_ISO_PATTERN = re.compile(r"\b(\d{4}-\d{2}-\d{2})\b")
 _DATE_VN_PATTERN = re.compile(r"\b(\d{1,2})/(\d{1,2})/(\d{4})\b")
+_DATE_VN_TEXT_PATTERN = re.compile(
+    r"\b(?:ngày\s*)?(\d{1,2})\s*(?:tháng|thang)\s*(\d{1,2})(?:\s*(?:năm|nam)?\s*(\d{4}))?\b",
+    re.IGNORECASE,
+)
 _SEAT_COUNT_PATTERN = re.compile(r"\b(\d+)\s*(ghế|ve|vé|chỗ)\b", re.IGNORECASE)
 _SEAT_COUNT_WORD_PATTERN = re.compile(r"\b(một|mot|hai|ba|bốn|bon|tư|tu)\s*(ghế|ve|vé|chỗ)\b", re.IGNORECASE)
 _SEAT_CODE_PATTERN = re.compile(r"\b([A-Za-z]\d{1,2})\b")
@@ -43,7 +47,7 @@ _RELATIVE_DATES = {
 
 
 def build_parse_result(transcript: str) -> dict:
-    text = " ".join(transcript.strip().split())
+    text = _normalize_transcript(transcript)
 
     origin = None
     destination = None
@@ -82,9 +86,6 @@ def build_parse_result(transcript: str) -> dict:
         missing.append("origin")
     if not destination:
         missing.append("destination")
-    if not travel_date:
-        missing.append("travel_date")
-
     confidence = 0.35
     if origin:
         confidence += 0.2
@@ -105,6 +106,20 @@ def build_parse_result(transcript: str) -> dict:
             "message": "Transcript thiếu thông tin cần thiết, cần hỏi lại người dùng.",
         }
 
+    if not travel_date:
+        return {
+            "command": {
+                "origin": origin,
+                "destination": destination,
+                "travel_date": "",
+                "seat_count": seat_count,
+                "seat_preference_order": dedup_seats,
+            },
+            "confidence": confidence,
+            "missing_fields": ["travel_date"],
+            "message": "Không nêu ngày đi, hệ thống sẽ chọn chuyến gần nhất còn chỗ.",
+        }
+
     return {
         "command": {
             "origin": origin,
@@ -121,9 +136,10 @@ def build_parse_result(transcript: str) -> dict:
 
 def _extract_date(text: str) -> str | None:
     lowered = text.lower()
+    now = datetime.now()
     for phrase, offset in _RELATIVE_DATES.items():
         if phrase in lowered:
-            return (datetime.now() + timedelta(days=offset)).strftime("%Y-%m-%d")
+            return (now + timedelta(days=offset)).strftime("%Y-%m-%d")
 
     iso_match = _DATE_ISO_PATTERN.search(text)
     if iso_match:
@@ -140,6 +156,18 @@ def _extract_date(text: str) -> str | None:
         except ValueError:
             return None
 
+    vn_text_match = _DATE_VN_TEXT_PATTERN.search(text)
+    if vn_text_match:
+        day, month, year = vn_text_match.groups()
+        year_value = int(year) if year else now.year
+        try:
+            dt = datetime(year_value, int(month), int(day))
+            if not year and dt.date() < now.date():
+                dt = datetime(year_value + 1, int(month), int(day))
+            return dt.strftime("%Y-%m-%d")
+        except ValueError:
+            return None
+
     return None
 
 
@@ -149,3 +177,9 @@ def _is_valid_iso_date(value: str) -> bool:
         return True
     except ValueError:
         return False
+
+
+def _normalize_transcript(transcript: str) -> str:
+    text = " ".join(transcript.strip().split())
+    text = re.sub(r"\bbên\s+xe\b", "bến xe", text, flags=re.IGNORECASE)
+    return text

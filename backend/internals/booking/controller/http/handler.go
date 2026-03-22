@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"net/url"
 	"strings"
 
 	"backend/internals/booking/controller/dto"
@@ -83,7 +84,7 @@ func (h *BookingHandler) GetBookingByCode(c *gin.Context) {
 		return
 	}
 
-	response.Success(c, dto.ToBookingResponse(booking))
+	response.Success(c, dto.ToCreateBookingResponse(h.buildBookingViewOutput(c, booking)))
 }
 
 // ListUserBookings GET /bookings/my
@@ -330,4 +331,39 @@ func resolveClientBaseURL(c *gin.Context) string {
 	}
 
 	return ""
+}
+
+func (h *BookingHandler) buildBookingViewOutput(c *gin.Context, booking *domain.Booking) *domain.BookingOutput {
+	output := &domain.BookingOutput{Booking: booking}
+	if booking == nil || booking.Status != domain.StatusPending {
+		return output
+	}
+
+	paymentTx, err := h.uc.GetPendingPaymentByBookingID(c.Request.Context(), booking.ID)
+	if err != nil || paymentTx == nil {
+		return output
+	}
+
+	output.OrderCode = paymentTx.OrderCode
+	output.ResumeURL = buildPaymentResumeURL(resolveClientBaseURL(c), booking.Code, paymentTx.OrderCode)
+
+	if h.uc.GatewayAvailable() {
+		resume, err := h.uc.RegeneratePaymentLink(c.Request.Context(), booking, paymentTx)
+		if err == nil && resume != nil {
+			output.PaymentURL = resume.PaymentURL
+			output.QRCode = resume.QRCode
+		}
+	}
+
+	return output
+}
+
+func buildPaymentResumeURL(clientBaseURL string, bookingCode domain.BookingCode, orderCode string) string {
+	base := strings.TrimRight(strings.TrimSpace(clientBaseURL), "/")
+	if base == "" || strings.TrimSpace(orderCode) == "" || strings.TrimSpace(string(bookingCode)) == "" {
+		return ""
+	}
+	v := url.Values{}
+	v.Set("orderCode", strings.TrimSpace(orderCode))
+	return base + "/payment/" + strings.TrimSpace(string(bookingCode)) + "?" + v.Encode()
 }

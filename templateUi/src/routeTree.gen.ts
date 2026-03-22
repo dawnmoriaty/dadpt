@@ -28,6 +28,7 @@ import { Route as AdminLocationsIndexRouteImport } from './routes/admin/location
 import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
 import { Route as AdminBusTypesIndexRouteImport } from './routes/admin/bus-types/index'
 import { Route as PublicTripsTripIdRouteImport } from './routes/_public/trips.$tripId'
+import { Route as PublicPaymentBookingCodeRouteImport } from './routes/_public/payment.$bookingCode'
 
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
@@ -123,6 +124,12 @@ const PublicTripsTripIdRoute = PublicTripsTripIdRouteImport.update({
   path: '/trips/$tripId',
   getParentRoute: () => PublicRoute,
 } as any)
+const PublicPaymentBookingCodeRoute =
+  PublicPaymentBookingCodeRouteImport.update({
+    id: '/payment/$bookingCode',
+    path: '/payment/$bookingCode',
+    getParentRoute: () => PublicRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
@@ -134,6 +141,7 @@ export interface FileRoutesByFullPath {
   '/voice-booking': typeof PublicVoiceBookingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
+  '/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
@@ -153,6 +161,7 @@ export interface FileRoutesByTo {
   '/voice-booking': typeof PublicVoiceBookingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/': typeof PublicIndexRoute
+  '/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
@@ -175,6 +184,7 @@ export interface FileRoutesById {
   '/_public/voice-booking': typeof PublicVoiceBookingRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/_public/': typeof PublicIndexRoute
+  '/_public/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/_public/trips/$tripId': typeof PublicTripsTripIdRoute
   '/admin/bus-types/': typeof AdminBusTypesIndexRoute
   '/admin/buses/': typeof AdminBusesIndexRoute
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/voice-booking'
     | '/admin/dashboard'
     | '/'
+    | '/payment/$bookingCode'
     | '/trips/$tripId'
     | '/admin/bus-types'
     | '/admin/buses'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/voice-booking'
     | '/admin/dashboard'
     | '/'
+    | '/payment/$bookingCode'
     | '/trips/$tripId'
     | '/admin/bus-types'
     | '/admin/buses'
@@ -236,6 +248,7 @@ export interface FileRouteTypes {
     | '/_public/voice-booking'
     | '/admin/dashboard'
     | '/_public/'
+    | '/_public/payment/$bookingCode'
     | '/_public/trips/$tripId'
     | '/admin/bus-types/'
     | '/admin/buses/'
@@ -387,6 +400,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicTripsTripIdRouteImport
       parentRoute: typeof PublicRoute
     }
+    '/_public/payment/$bookingCode': {
+      id: '/_public/payment/$bookingCode'
+      path: '/payment/$bookingCode'
+      fullPath: '/payment/$bookingCode'
+      preLoaderRoute: typeof PublicPaymentBookingCodeRouteImport
+      parentRoute: typeof PublicRoute
+    }
   }
 }
 
@@ -408,6 +428,7 @@ interface PublicRouteChildren {
   PublicSearchRoute: typeof PublicSearchRoute
   PublicVoiceBookingRoute: typeof PublicVoiceBookingRoute
   PublicIndexRoute: typeof PublicIndexRoute
+  PublicPaymentBookingCodeRoute: typeof PublicPaymentBookingCodeRoute
   PublicTripsTripIdRoute: typeof PublicTripsTripIdRoute
 }
 
@@ -417,6 +438,7 @@ const PublicRouteChildren: PublicRouteChildren = {
   PublicSearchRoute: PublicSearchRoute,
   PublicVoiceBookingRoute: PublicVoiceBookingRoute,
   PublicIndexRoute: PublicIndexRoute,
+  PublicPaymentBookingCodeRoute: PublicPaymentBookingCodeRoute,
   PublicTripsTripIdRoute: PublicTripsTripIdRoute,
 }
 

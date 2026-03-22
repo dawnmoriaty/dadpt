@@ -55,6 +55,7 @@ export interface CreateBookingResponse {
     orderCode: string
     paymentUrl?: string
     qrCode?: string
+    resumeUrl?: string
 }
 
 export interface PaymentStatusResponse {

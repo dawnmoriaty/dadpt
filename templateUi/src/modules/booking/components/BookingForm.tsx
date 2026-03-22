@@ -32,7 +32,7 @@ import { useAuthStore } from '@/stores/use-auth-store'
 import { useCreateBooking } from '../hooks'
 import { createBookingSchema, type CreateBookingFormData } from '../schemas'
 import type { CreateBookingResponse } from '../types'
-import { formatVndCurrency } from '../utils'
+import { formatVndCurrency, upsertPendingBookingHistory } from '../utils'
 
 import { SeatMap } from './SeatMap'
 
@@ -97,6 +97,9 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
         createBooking.mutate(data, {
             onSuccess: (response) => {
                 sessionStorage.removeItem(draftKey)
+                if (response.booking?.status === 'pending') {
+                    upsertPendingBookingHistory(response.booking.code, response.orderCode)
+                }
                 onSuccess(response)
             },
         })

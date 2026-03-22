@@ -2,12 +2,16 @@ package http
 
 import (
 	"fmt"
+	"sort"
 	"strings"
+	"time"
+	"unicode"
 
 	authDomain "backend/internals/auth/domain"
 	bookingDto "backend/internals/booking/controller/dto"
 	bookingDomain "backend/internals/booking/domain"
 	bookingUsecase "backend/internals/booking/usecase"
+	locationDomain "backend/internals/location/domain"
 	locationUsecase "backend/internals/location/usecase"
 	tripDomain "backend/internals/trip/domain"
 	tripUsecase "backend/internals/trip/usecase"
@@ -15,6 +19,7 @@ import (
 	"backend/pkgs/response"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/text/unicode/norm"
 )
 
 type VoiceExecuteRequest struct {
@@ -162,17 +167,19 @@ func (h *VoiceBookingHandler) Plan(c *gin.Context) {
 		return
 	}
 
-	trips, _, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
-		OriginID:      int32(origin.ID),
-		DestinationID: int32(destination.ID),
-		DepartureDate: req.TravelDate,
-		MinSeats:      req.SeatCount,
-		Page:          1,
-		Limit:         5,
-	})
+	travelDate := strings.TrimSpace(req.TravelDate)
+	if travelDate == "" {
+		travelDate = "auto"
+	}
+
+	trips, _, err := h.searchTripsForVoice(c, int32(origin.ID), int32(destination.ID), travelDate, req.SeatCount, 5)
 	if err != nil || len(trips) == 0 {
 		response.HandleError(c, pkgErrors.ErrTripNotFound)
 		return
+	}
+
+	if req.TravelDate == "" {
+		req.TravelDate = trips[0].DepartureTime.Format("2006-01-02")
 	}
 
 	recommended := selectBestTrip(trips)
@@ -243,19 +250,57 @@ func (h *VoiceBookingHandler) selectTripForExecute(c *gin.Context, req *VoiceExe
 		return nil, err
 	}
 
-	trips, _, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
-		OriginID:      int32(origin.ID),
-		DestinationID: int32(destination.ID),
-		DepartureDate: req.TravelDate,
-		MinSeats:      req.SeatCount,
-		Page:          1,
-		Limit:         20,
-	})
+	travelDate := strings.TrimSpace(req.TravelDate)
+	if travelDate == "" {
+		travelDate = "auto"
+	}
+
+	trips, _, err := h.searchTripsForVoice(c, int32(origin.ID), int32(destination.ID), travelDate, req.SeatCount, 20)
 	if err != nil {
 		return nil, err
 	}
+	if len(trips) == 0 {
+		return nil, fmt.Errorf("trip not found")
+	}
 
 	return selectBestTrip(trips), nil
+}
+
+func (h *VoiceBookingHandler) searchTripsForVoice(c *gin.Context, originID, destinationID int32, travelDate string, minSeats int, limit int) ([]*tripDomain.Trip, int64, error) {
+	if minSeats <= 0 {
+		minSeats = 1
+	}
+
+	if strings.EqualFold(strings.TrimSpace(travelDate), "auto") {
+		start := time.Now()
+		for dayOffset := 0; dayOffset <= 14; dayOffset++ {
+			date := start.AddDate(0, 0, dayOffset).Format("2006-01-02")
+			trips, total, err := h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+				OriginID:      originID,
+				DestinationID: destinationID,
+				DepartureDate: date,
+				MinSeats:      minSeats,
+				Page:          1,
+				Limit:         limit,
+			})
+			if err != nil {
+				continue
+			}
+			if len(trips) > 0 {
+				return trips, total, nil
+			}
+		}
+		return nil, 0, fmt.Errorf("no upcoming trip found")
+	}
+
+	return h.tripUC.Search(c.Request.Context(), &tripDomain.SearchTripsInput{
+		OriginID:      originID,
+		DestinationID: destinationID,
+		DepartureDate: travelDate,
+		MinSeats:      minSeats,
+		Page:          1,
+		Limit:         limit,
+	})
 }
 
 func validateExecuteRequest(req *VoiceExecuteRequest) error {
@@ -275,22 +320,206 @@ func validateExecuteRequest(req *VoiceExecuteRequest) error {
 }
 
 func (h *VoiceBookingHandler) resolveLocations(c *gin.Context, originText, destinationText string) (*locationResult, *locationResult, error) {
-	origins, err := h.locUC.Search(c.Request.Context(), strings.TrimSpace(originText))
-	if err != nil || len(origins) == 0 {
+	origin, err := h.resolveLocation(c, originText)
+	if err != nil {
 		return nil, nil, fmt.Errorf("origin not found")
 	}
-	dests, err := h.locUC.Search(c.Request.Context(), strings.TrimSpace(destinationText))
-	if err != nil || len(dests) == 0 {
+
+	destination, err := h.resolveLocation(c, destinationText)
+	if err != nil {
 		return nil, nil, fmt.Errorf("destination not found")
 	}
-
-	origin := &locationResult{ID: int(origins[0].ID), Name: origins[0].Name}
-	destination := &locationResult{ID: int(dests[0].ID), Name: dests[0].Name}
 	if origin.ID == destination.ID {
 		return nil, nil, fmt.Errorf("same location")
 	}
 
 	return origin, destination, nil
+}
+
+func (h *VoiceBookingHandler) resolveLocation(c *gin.Context, text string) (*locationResult, error) {
+	queries := buildLocationQueries(text)
+	candidatesByID := make(map[int32]*locationDomain.Location)
+
+	for _, query := range queries {
+		locations, err := h.locUC.Search(c.Request.Context(), query)
+		if err != nil {
+			continue
+		}
+		for _, loc := range locations {
+			if loc == nil {
+				continue
+			}
+			if _, exists := candidatesByID[loc.ID]; !exists {
+				candidatesByID[loc.ID] = loc
+			}
+		}
+	}
+
+	candidates := make([]*locationDomain.Location, 0, len(candidatesByID))
+	for _, loc := range candidatesByID {
+		candidates = append(candidates, loc)
+	}
+
+	if len(candidates) == 0 {
+		allLocations, _, err := h.locUC.List(c.Request.Context(), &locationDomain.LocationFilter{Limit: 1000, Offset: 0})
+		if err != nil {
+			return nil, err
+		}
+		candidates = allLocations
+	}
+
+	best := pickBestLocationMatch(text, candidates)
+	if best == nil {
+		return nil, fmt.Errorf("location not found")
+	}
+
+	return &locationResult{ID: int(best.ID), Name: best.Name}, nil
+}
+
+func buildLocationQueries(text string) []string {
+	raw := strings.TrimSpace(text)
+	if raw == "" {
+		return nil
+	}
+
+	normalized := normalizeLocationText(raw)
+	stripped := stripLocationNoise(normalized)
+
+	queries := []string{raw}
+	if stripped != "" && !strings.EqualFold(stripped, raw) {
+		queries = append(queries, stripped)
+	}
+	if normalized != "" && !strings.EqualFold(normalized, raw) && !strings.EqualFold(normalized, stripped) {
+		queries = append(queries, normalized)
+	}
+
+	out := make([]string, 0, len(queries))
+	seen := make(map[string]bool)
+	for _, item := range queries {
+		key := strings.ToLower(strings.TrimSpace(item))
+		if key == "" || seen[key] {
+			continue
+		}
+		seen[key] = true
+		out = append(out, strings.TrimSpace(item))
+	}
+
+	return out
+}
+
+func pickBestLocationMatch(target string, candidates []*locationDomain.Location) *locationDomain.Location {
+	normTarget := stripLocationNoise(normalizeLocationText(target))
+	if normTarget == "" {
+		return nil
+	}
+
+	type scored struct {
+		loc   *locationDomain.Location
+		score int
+	}
+	scoredCandidates := make([]scored, 0, len(candidates))
+
+	for _, loc := range candidates {
+		if loc == nil {
+			continue
+		}
+		score := scoreLocationMatch(normTarget, loc)
+		if score > 0 {
+			scoredCandidates = append(scoredCandidates, scored{loc: loc, score: score})
+		}
+	}
+
+	if len(scoredCandidates) == 0 {
+		return nil
+	}
+
+	sort.Slice(scoredCandidates, func(i, j int) bool {
+		if scoredCandidates[i].score == scoredCandidates[j].score {
+			return scoredCandidates[i].loc.ID < scoredCandidates[j].loc.ID
+		}
+		return scoredCandidates[i].score > scoredCandidates[j].score
+	})
+
+	if scoredCandidates[0].score < 30 {
+		return nil
+	}
+
+	return scoredCandidates[0].loc
+}
+
+func scoreLocationMatch(target string, location *locationDomain.Location) int {
+	name := stripLocationNoise(normalizeLocationText(location.Name))
+	if name == "" {
+		return 0
+	}
+
+	if name == target {
+		return 100
+	}
+
+	if strings.Contains(name, target) || strings.Contains(target, name) {
+		return 90
+	}
+
+	targetTokens := strings.Fields(target)
+	nameTokens := strings.Fields(name)
+	if len(targetTokens) == 0 || len(nameTokens) == 0 {
+		return 0
+	}
+
+	set := make(map[string]bool, len(nameTokens))
+	for _, token := range nameTokens {
+		set[token] = true
+	}
+
+	overlap := 0
+	for _, token := range targetTokens {
+		if set[token] {
+			overlap++
+		}
+	}
+
+	score := overlap * 20
+	if strings.Contains(normalizeLocationText(location.City), target) {
+		score += 10
+	}
+	if strings.Contains(normalizeLocationText(location.Keywords), target) {
+		score += 20
+	}
+
+	return score
+}
+
+func stripLocationNoise(text string) string {
+	value := strings.TrimSpace(strings.ToLower(text))
+	value = strings.ReplaceAll(value, "ben xe", "")
+	value = strings.ReplaceAll(value, "bx", "")
+	value = strings.ReplaceAll(value, "tram", "")
+	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
+}
+
+func normalizeLocationText(text string) string {
+	trimmed := strings.TrimSpace(strings.ToLower(text))
+	if trimmed == "" {
+		return ""
+	}
+
+	normValue := norm.NFD.String(trimmed)
+	builder := strings.Builder{}
+	builder.Grow(len(normValue))
+	for _, r := range normValue {
+		if unicode.Is(unicode.Mn, r) {
+			continue
+		}
+		switch r {
+		case 'đ':
+			builder.WriteRune('d')
+		default:
+			builder.WriteRune(r)
+		}
+	}
+
+	return strings.Join(strings.Fields(builder.String()), " ")
 }
 
 type locationResult struct {
@@ -303,12 +532,27 @@ func selectBestTrip(trips []*tripDomain.Trip) *tripDomain.Trip {
 		return nil
 	}
 
+	var bestScheduled *tripDomain.Trip
 	for _, trip := range trips {
-		if trip.Status == tripDomain.TripStatusScheduled {
-			return trip
+		if trip.Status != tripDomain.TripStatusScheduled {
+			continue
+		}
+		if bestScheduled == nil || trip.DepartureTime.Before(bestScheduled.DepartureTime) {
+			bestScheduled = trip
 		}
 	}
-	return trips[0]
+	if bestScheduled != nil {
+		return bestScheduled
+	}
+
+	best := trips[0]
+	for _, trip := range trips[1:] {
+		if trip.DepartureTime.Before(best.DepartureTime) {
+			best = trip
+		}
+	}
+
+	return best
 }
 
 func allocateSeats(bookedSeats []string, preferred []string, seatCount int) ([]string, error) {

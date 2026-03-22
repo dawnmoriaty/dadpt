@@ -2,6 +2,7 @@ package http
 
 import (
 	"testing"
+	"time"
 
 	tripDomain "backend/internals/trip/domain"
 )
@@ -51,5 +52,18 @@ func TestSelectBestTrip_PrefersScheduled(t *testing.T) {
 	best := selectBestTrip(items)
 	if best == nil || best.ID != 2 {
 		t.Fatalf("expected trip id 2, got %+v", best)
+	}
+}
+
+func TestSelectBestTrip_PrefersEarliestDepartureAmongScheduled(t *testing.T) {
+	now := time.Now()
+	items := []*tripDomain.Trip{
+		{ID: 1, Status: tripDomain.TripStatusScheduled, DepartureTime: now.Add(5 * time.Hour)},
+		{ID: 2, Status: tripDomain.TripStatusScheduled, DepartureTime: now.Add(2 * time.Hour)},
+	}
+
+	best := selectBestTrip(items)
+	if best == nil || best.ID != 2 {
+		t.Fatalf("expected earliest scheduled trip id 2, got %+v", best)
 	}
 }

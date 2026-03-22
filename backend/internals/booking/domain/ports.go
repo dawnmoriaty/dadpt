@@ -45,6 +45,7 @@ type OutboxRepository interface {
 type PaymentRepository interface {
 	CreateTransaction(ctx context.Context, tx *PaymentTransaction) (*PaymentTransaction, error)
 	GetByOrderCode(ctx context.Context, orderCode string) (*PaymentTransaction, error)
+	GetPendingByBookingID(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 	GetSuccessByBookingID(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 	MarkSuccess(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)
 	MarkFailed(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)
