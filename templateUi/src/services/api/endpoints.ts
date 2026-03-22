@@ -50,6 +50,8 @@ export const API_ENDPOINTS = {
     },
     BROWSE: '/trips/browse',
     VOICE_BOOKING: {
+        TRANSCRIBE: '/ai/voice/booking/transcribe',
+        PIPELINE: '/ai/voice/booking/pipeline',
         PLAN: '/bookings/voice/plan',
         EXECUTE: '/bookings/voice/execute',
     },

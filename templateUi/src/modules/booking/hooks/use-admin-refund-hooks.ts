@@ -39,7 +39,7 @@ export function useApproveRefund() {
     return useMutation<Booking, Error, { id: number; data?: RefundActionRequest }>({
         mutationFn: ({ id, data }) => adminBookingApi.approveRefund(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-refund-requests'] })
+            queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundRequestsRoot })
             queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundPendingCount })
             queryClient.invalidateQueries({ queryKey: bookingKeys.all })
             toast.success(t('adminRefund.approveSuccess'))
@@ -57,7 +57,7 @@ export function useRejectRefund() {
     return useMutation<Booking, Error, { id: number; data?: RefundActionRequest }>({
         mutationFn: ({ id, data }) => adminBookingApi.rejectRefund(id, data),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['admin-refund-requests'] })
+            queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundRequestsRoot })
             queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundPendingCount })
             queryClient.invalidateQueries({ queryKey: bookingKeys.all })
             toast.success(t('adminRefund.rejectSuccess'))

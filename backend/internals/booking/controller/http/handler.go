@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 
 	"backend/internals/booking/controller/dto"
 	"backend/internals/booking/domain"
@@ -41,7 +42,8 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		userID = &uid
 	}
 
-	result, err := h.uc.CreateBooking(c.Request.Context(), req.ToInput(userID))
+	ctx := usecase.WithClientBaseURL(c.Request.Context(), resolveClientBaseURL(c))
+	result, err := h.uc.CreateBooking(ctx, req.ToInput(userID))
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return
@@ -260,6 +262,8 @@ func mapDomainError(err error) error {
 		return pkgErrors.ErrBookingNotRefundPending
 	case errors.Is(err, domain.ErrRefundAlreadyProcessed):
 		return pkgErrors.ErrRefundAlreadyProcessed
+	case errors.Is(err, domain.ErrRefundReferenceRequired):
+		return pkgErrors.ValidationError("refund reference is required")
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
@@ -305,4 +309,25 @@ func getBookingSSEEventName(data []byte) string {
 	default:
 		return "booking_event"
 	}
+}
+
+func resolveClientBaseURL(c *gin.Context) string {
+	origin := strings.TrimSpace(c.GetHeader("Origin"))
+	if origin != "" {
+		return strings.TrimRight(origin, "/")
+	}
+
+	referer := strings.TrimSpace(c.GetHeader("Referer"))
+	if referer != "" {
+		if idx := strings.Index(referer, "://"); idx > -1 {
+			start := idx + 3
+			end := strings.Index(referer[start:], "/")
+			if end > -1 {
+				return referer[:start+end]
+			}
+			return strings.TrimRight(referer, "/")
+		}
+	}
+
+	return ""
 }

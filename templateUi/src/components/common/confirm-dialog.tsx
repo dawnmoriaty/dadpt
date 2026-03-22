@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react'
+
 import {
     AlertDialog,
     AlertDialogAction,
@@ -19,6 +21,8 @@ interface ConfirmDialogProps {
     variant?: 'default' | 'destructive'
     onConfirm: () => void
     loading?: boolean
+    disabled?: boolean
+    content?: ReactNode
 }
 
 export function ConfirmDialog({
@@ -31,6 +35,8 @@ export function ConfirmDialog({
     variant = 'destructive',
     onConfirm,
     loading = false,
+    disabled = false,
+    content,
 }: ConfirmDialogProps) {
     return (
         <AlertDialog open={open} onOpenChange={onOpenChange}>
@@ -39,11 +45,12 @@ export function ConfirmDialog({
                     <AlertDialogTitle>{title}</AlertDialogTitle>
                     <AlertDialogDescription>{description}</AlertDialogDescription>
                 </AlertDialogHeader>
+                {content}
                 <AlertDialogFooter>
                     <AlertDialogCancel disabled={loading}>{cancelLabel}</AlertDialogCancel>
                     <AlertDialogAction
                         onClick={onConfirm}
-                        disabled={loading}
+                        disabled={loading || disabled}
                         className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
                     >
                         {loading ? 'Processing...' : confirmLabel}

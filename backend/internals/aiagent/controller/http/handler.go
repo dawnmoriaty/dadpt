@@ -1,10 +1,15 @@
 package http
 
 import (
+	"bytes"
+	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 
 	authDomain "backend/internals/auth/domain"
+	bookingHttp "backend/internals/booking/controller/http"
 	"backend/pkgs/aiagent"
+	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/logger"
 	"backend/pkgs/response"
 
@@ -13,13 +18,14 @@ import (
 
 // ChatHandler handles AI agent chat HTTP requests.
 type ChatHandler struct {
-	client   aiagent.Client
-	userRepo authDomain.Repository
+	client       aiagent.Client
+	userRepo     authDomain.Repository
+	voiceHandler *bookingHttp.VoiceBookingHandler
 }
 
 // NewChatHandler creates a new ChatHandler.
-func NewChatHandler(client aiagent.Client, userRepo authDomain.Repository) *ChatHandler {
-	return &ChatHandler{client: client, userRepo: userRepo}
+func NewChatHandler(client aiagent.Client, userRepo authDomain.Repository, voiceHandler *bookingHttp.VoiceBookingHandler) *ChatHandler {
+	return &ChatHandler{client: client, userRepo: userRepo, voiceHandler: voiceHandler}
 }
 
 // ChatRequest is the HTTP request body for /chat.
@@ -28,6 +34,65 @@ type ChatRequest struct {
 	SessionID  string `json:"session_id"`
 	Message    string `json:"message" binding:"required"`
 	UserID     string `json:"user_id"`
+}
+
+type VoicePipelineResponse struct {
+	Transcript string      `json:"transcript"`
+	Parse      interface{} `json:"parse"`
+	Plan       interface{} `json:"plan,omitempty"`
+	Execute    interface{} `json:"execute,omitempty"`
+}
+
+func (h *ChatHandler) callInternalJSON(c *gin.Context, method, path string, payload any) (map[string]any, error) {
+	if h.voiceHandler == nil {
+		return nil, pkgErrors.Wrap(nil, 500, pkgErrors.ErrCodeInternal)
+	}
+
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
+	}
+
+	req, err := http.NewRequestWithContext(c.Request.Context(), method, path, bytes.NewReader(body))
+	if err != nil {
+		return nil, pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	recorder := httptest.NewRecorder()
+	ctx, _ := gin.CreateTestContext(recorder)
+	ctx.Request = req
+	userID, ok := c.Get("userID")
+	if !ok {
+		return nil, pkgErrors.ErrUnauthorized
+	}
+	ctx.Set("userID", userID)
+
+	switch path {
+	case "/api/v1/bookings/voice/plan":
+		h.voiceHandler.Plan(ctx)
+	case "/api/v1/bookings/voice/execute":
+		h.voiceHandler.Execute(ctx)
+	default:
+		return nil, pkgErrors.ErrBadRequest
+	}
+
+	if recorder.Code >= 400 {
+		var errPayload struct {
+			Status string `json:"status"`
+		}
+		_ = json.Unmarshal(recorder.Body.Bytes(), &errPayload)
+		if errPayload.Status != "" {
+			return nil, pkgErrors.NewAppError(recorder.Code, errPayload.Status)
+		}
+		return nil, pkgErrors.Wrap(nil, recorder.Code, pkgErrors.ErrCodeInternal)
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {
+		return nil, pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
+	}
+	return result, nil
 }
 
 // Chat handles POST /api/v1/ai/chat — forwards to AI agent via gRPC.

@@ -116,6 +116,10 @@ const (
 	ErrCodePaymentNotFound         ErrorCode = "PAYMENT_NOT_FOUND"
 	ErrCodePaymentAlreadyProcessed ErrorCode = "PAYMENT_ALREADY_PROCESSED"
 
+	// Voice/STT
+	ErrCodeVoiceTranscribeUnavailable ErrorCode = "VOICE_TRANSCRIBE_UNAVAILABLE"
+	ErrCodeVoiceAudioInvalid          ErrorCode = "VOICE_AUDIO_INVALID"
+
 	// Upload
 	ErrCodeUploadUnavailable ErrorCode = "UPLOAD_UNAVAILABLE"
 	ErrCodeInvalidFile       ErrorCode = "INVALID_FILE"
@@ -284,6 +288,10 @@ var (
 	// Payment
 	ErrPaymentNotFound         = NewAppError(http.StatusNotFound, ErrCodePaymentNotFound)
 	ErrPaymentAlreadyProcessed = NewAppError(http.StatusConflict, ErrCodePaymentAlreadyProcessed)
+
+	// Voice/STT
+	ErrVoiceTranscribeUnavailable = NewAppError(http.StatusNotImplemented, ErrCodeVoiceTranscribeUnavailable)
+	ErrVoiceAudioInvalid          = NewAppError(http.StatusBadRequest, ErrCodeVoiceAudioInvalid)
 
 	// Upload
 	ErrUploadUnavailable = NewAppError(http.StatusInternalServerError, ErrCodeUploadUnavailable)

@@ -284,6 +284,7 @@ class _VoiceGenericHandler(grpc.GenericRpcHandler):
     def __init__(self, servicer: VoiceBookingServicer) -> None:
         self._methods: dict[str, Any] = {
             "ParseCommand": servicer.ParseCommand,
+            "TranscribeAudio": servicer.TranscribeAudio,
             "HealthCheck": servicer.HealthCheck,
         }
 

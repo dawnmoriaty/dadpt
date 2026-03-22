@@ -12,21 +12,23 @@ import (
 )
 
 type Booking struct {
-	ID            int64              `json:"id"`
-	Code          string             `json:"code"`
-	TripID        int64              `json:"tripId"`
-	UserID        *int64             `json:"userId"`
-	GuestInfo     json.RawMessage    `json:"guestInfo"`
-	PickupInfo    json.RawMessage    `json:"pickupInfo"`
-	DropoffInfo   json.RawMessage    `json:"dropoffInfo"`
-	SeatCodes     []string           `json:"seatCodes"`
-	TotalAmount   pgtype.Numeric     `json:"totalAmount"`
-	Status        *string            `json:"status"`
-	PaymentMethod *string            `json:"paymentMethod"`
-	CreatedAt     pgtype.Timestamptz `json:"createdAt"`
-	UpdatedAt     pgtype.Timestamptz `json:"updatedAt"`
-	ExpiresAt     pgtype.Timestamptz `json:"expiresAt"`
-	RefundedAt    pgtype.Timestamptz `json:"refundedAt"`
+	ID              int64              `json:"id"`
+	Code            string             `json:"code"`
+	TripID          int64              `json:"tripId"`
+	UserID          *int64             `json:"userId"`
+	GuestInfo       json.RawMessage    `json:"guestInfo"`
+	PickupInfo      json.RawMessage    `json:"pickupInfo"`
+	DropoffInfo     json.RawMessage    `json:"dropoffInfo"`
+	SeatCodes       []string           `json:"seatCodes"`
+	TotalAmount     pgtype.Numeric     `json:"totalAmount"`
+	Status          *string            `json:"status"`
+	PaymentMethod   *string            `json:"paymentMethod"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
+	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
+	RefundedAt      pgtype.Timestamptz `json:"refundedAt"`
+	RefundReference *string            `json:"refundReference"`
+	RefundNote      *string            `json:"refundNote"`
 }
 
 type Bus struct {

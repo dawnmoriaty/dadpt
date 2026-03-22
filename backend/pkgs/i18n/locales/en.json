@@ -95,5 +95,8 @@
   "INVALID_FILE": "Only image files are allowed (jpeg, png, gif, webp)",
   "UPLOAD_FAILED": "Failed to upload file",
   "DELETE_FAILED": "Failed to delete file",
-  "FILE_NOT_FOUND": "File not found"
+  "FILE_NOT_FOUND": "File not found",
+
+  "VOICE_TRANSCRIBE_UNAVAILABLE": "Voice transcription service is not available. Please install STT engine on AI service.",
+  "VOICE_AUDIO_INVALID": "Invalid or unreadable audio file."
 }

@@ -33,21 +33,23 @@ func NewBookingRepository(database *db.Database) domain.Repository {
 
 func sqlcToEntity(m models.Booking) *domain.Booking {
 	return &domain.Booking{
-		ID:            m.ID,
-		Code:          domain.BookingCode(m.Code),
-		TripID:        m.TripID,
-		UserID:        m.UserID,
-		GuestInfo:     jsonToGuestInfo(m.GuestInfo),
-		PickupInfo:    jsonToPointInfo(m.PickupInfo),
-		DropoffInfo:   jsonToPointInfo(m.DropoffInfo),
-		SeatCodes:     m.SeatCodes,
-		TotalAmount:   utils.NumericToFloat64(m.TotalAmount),
-		Status:        domain.BookingStatus(utils.PtrToString(m.Status)),
-		PaymentMethod: utils.PtrToString(m.PaymentMethod),
-		ExpiresAt:     m.ExpiresAt.Time,
-		RefundedAt:    m.RefundedAt.Time,
-		CreatedAt:     m.CreatedAt.Time,
-		UpdatedAt:     m.UpdatedAt.Time,
+		ID:              m.ID,
+		Code:            domain.BookingCode(m.Code),
+		TripID:          m.TripID,
+		UserID:          m.UserID,
+		GuestInfo:       jsonToGuestInfo(m.GuestInfo),
+		PickupInfo:      jsonToPointInfo(m.PickupInfo),
+		DropoffInfo:     jsonToPointInfo(m.DropoffInfo),
+		SeatCodes:       m.SeatCodes,
+		TotalAmount:     utils.NumericToFloat64(m.TotalAmount),
+		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
+		ExpiresAt:       m.ExpiresAt.Time,
+		RefundedAt:      m.RefundedAt.Time,
+		RefundReference: utils.PtrToString(m.RefundReference),
+		RefundNote:      utils.PtrToString(m.RefundNote),
+		CreatedAt:       m.CreatedAt.Time,
+		UpdatedAt:       m.UpdatedAt.Time,
 	}
 }
 
@@ -66,6 +68,8 @@ func listRowToEntity(m models.ListBookingsByUserRow) *domain.Booking {
 		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:       m.ExpiresAt.Time,
 		RefundedAt:      m.RefundedAt.Time,
+		RefundReference: utils.PtrToString(m.RefundReference),
+		RefundNote:      utils.PtrToString(m.RefundNote),
 		CreatedAt:       m.CreatedAt.Time,
 		UpdatedAt:       m.UpdatedAt.Time,
 		DepartureTime:   m.DepartureTime.Time,
@@ -90,6 +94,8 @@ func refundPendingRowToEntity(m models.ListRefundPendingBookingsRow) *domain.Boo
 		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
 		ExpiresAt:       m.ExpiresAt.Time,
 		RefundedAt:      m.RefundedAt.Time,
+		RefundReference: utils.PtrToString(m.RefundReference),
+		RefundNote:      utils.PtrToString(m.RefundNote),
 		CreatedAt:       m.CreatedAt.Time,
 		UpdatedAt:       m.UpdatedAt.Time,
 		DepartureTime:   m.DepartureTime.Time,
@@ -240,12 +246,29 @@ func (r *bookingRepository) MarkExpired(ctx context.Context, id int64) (*domain.
 }
 
 func (r *bookingRepository) MarkRefunded(ctx context.Context, id int64) (*domain.Booking, error) {
-	result, err := r.queries.MarkBookingRefunded(ctx, id)
+	result, err := r.queries.MarkBookingRefunded(ctx, models.MarkBookingRefundedParams{
+		ID: id,
+	})
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, domain.ErrBookingNotRefundPending
 		}
 		return nil, fmt.Errorf("marking booking refunded: %w", err)
+	}
+	return sqlcToEntity(result), nil
+}
+
+func (r *bookingRepository) MarkRefundedWithMeta(ctx context.Context, id int64, refundReference, refundNote string) (*domain.Booking, error) {
+	result, err := r.queries.MarkBookingRefunded(ctx, models.MarkBookingRefundedParams{
+		ID:              id,
+		RefundReference: utils.StringToPtr(refundReference),
+		RefundNote:      utils.StringToPtr(refundNote),
+	})
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, domain.ErrBookingNotRefundPending
+		}
+		return nil, fmt.Errorf("marking booking refunded with meta: %w", err)
 	}
 	return sqlcToEntity(result), nil
 }

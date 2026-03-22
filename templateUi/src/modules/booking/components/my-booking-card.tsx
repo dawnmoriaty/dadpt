@@ -1,5 +1,5 @@
 import { format } from 'date-fns'
-import { ArrowRight, Calendar, Clock, Copy, MapPin, Ticket, Undo2 } from 'lucide-react'
+import { ArrowRight, Calendar, Clock, Copy, MapPin, Ticket, Undo2, XCircle } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { toast } from 'sonner'
@@ -95,10 +95,27 @@ export function MyBookingCard({ booking, onCancel, onRefund }: MyBookingCardProp
                                 </span>
                             )}
 
-                            {booking.status === 'refunded' && (
-                                <span className="inline-flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400 font-medium">
-                                    {t('myBookings.refundedMessage')}
-                                </span>
+                            {booking.status === 'cancelled' && (
+                                <div className="space-y-1">
+                                    <span className="inline-flex items-center gap-1.5 text-xs text-red-600 dark:text-red-400 font-medium bg-red-50 dark:bg-red-950/30 px-2.5 py-1 rounded-full">
+                                        <XCircle className="h-3 w-3" />
+                                        {t('myBookings.cancelledAt', {
+                                            time: format(new Date(booking.updatedAt), 'dd/MM/yyyy HH:mm'),
+                                            defaultValue: `Đã hủy lúc ${format(new Date(booking.updatedAt), 'dd/MM/yyyy HH:mm')}`,
+                                        })}
+                                    </span>
+                                    {booking.refundedAt && (
+                                        <div className="text-xs text-muted-foreground space-y-0.5">
+                                            <p>{t('myBookings.refundedMessage')}</p>
+                                            {booking.refundReference && (
+                                                <p>{t('myBookings.refundReference')}: {booking.refundReference}</p>
+                                            )}
+                                            {booking.refundNote && (
+                                                <p>{t('myBookings.refundNote')}: {booking.refundNote}</p>
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             <div className="flex items-center gap-2 flex-wrap">

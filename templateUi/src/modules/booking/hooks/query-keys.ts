@@ -10,6 +10,7 @@ export const bookingKeys = {
 }
 
 export const adminBookingKeys = {
+    refundRequestsRoot: ['admin-refund-requests'] as const,
     refundRequests: (page: number, pageSize: number) => ['admin-refund-requests', page, pageSize] as const,
     refundPendingCount: ['admin-refund-pending-count'] as const,
     eventFeed: ['admin-booking-event-feed'] as const,

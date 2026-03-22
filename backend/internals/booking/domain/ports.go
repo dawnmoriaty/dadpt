@@ -17,6 +17,7 @@ type Repository interface {
 	MarkExpired(ctx context.Context, id int64) (*Booking, error)
 	MarkRefundPending(ctx context.Context, id int64) (*Booking, error)
 	MarkRefunded(ctx context.Context, id int64) (*Booking, error)
+	MarkRefundedWithMeta(ctx context.Context, id int64, refundReference, refundNote string) (*Booking, error)
 	ListRefundPending(ctx context.Context, limit, offset int32) ([]*Booking, int64, error)
 	CountRefundPending(ctx context.Context) (int64, error)
 	RevertToPaid(ctx context.Context, id int64) (*Booking, error)

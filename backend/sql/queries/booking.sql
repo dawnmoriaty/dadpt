@@ -110,8 +110,10 @@ SELECT COUNT(*) FROM bookings WHERE user_id = $1;
 
 -- name: MarkBookingRefunded :one
 UPDATE bookings SET
-    status = 'refunded',
+    status = 'cancelled',
     refunded_at = NOW(),
+    refund_reference = $2,
+    refund_note = $3,
     updated_at = NOW()
 WHERE id = $1 AND status = 'refund_pending'
 RETURNING *;

@@ -96,5 +96,8 @@
   "INVALID_FILE": "Chỉ cho phép file ảnh (jpeg, png, gif, webp)",
   "UPLOAD_FAILED": "Tải lên thất bại",
   "DELETE_FAILED": "Xóa file thất bại",
-  "FILE_NOT_FOUND": "Không tìm thấy file"
+  "FILE_NOT_FOUND": "Không tìm thấy file",
+
+  "VOICE_TRANSCRIBE_UNAVAILABLE": "Dịch vụ nhận diện giọng nói chưa sẵn sàng. Vui lòng cài STT cho AI service.",
+  "VOICE_AUDIO_INVALID": "File âm thanh không hợp lệ hoặc không đọc được."
 }

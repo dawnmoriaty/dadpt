@@ -50,6 +50,38 @@ type SyncDataResponse struct {
 	Message       string `json:"message"`
 }
 
+// VoiceTranscribeRequest represents audio data for transcription over gRPC.
+type VoiceTranscribeRequest struct {
+	Filename    string `json:"filename"`
+	ContentType string `json:"content_type"`
+	AudioBase64 string `json:"audio_base64"`
+}
+
+// VoiceTranscribeResponse represents STT output from AI service.
+type VoiceTranscribeResponse struct {
+	Transcript string `json:"transcript"`
+	Engine     string `json:"engine"`
+}
+
+type VoiceParseRequest struct {
+	Transcript string `json:"transcript"`
+}
+
+type VoiceParseCommand struct {
+	Origin              string   `json:"origin"`
+	Destination         string   `json:"destination"`
+	TravelDate          string   `json:"travel_date"`
+	SeatCount           int      `json:"seat_count"`
+	SeatPreferenceOrder []string `json:"seat_preference_order"`
+}
+
+type VoiceParseResponse struct {
+	Command       *VoiceParseCommand `json:"command"`
+	Confidence    float64            `json:"confidence"`
+	MissingFields []string           `json:"missing_fields"`
+	Message       string             `json:"message"`
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Port — interface for communicating with the AI agent service
 // ─────────────────────────────────────────────────────────────────────────────
@@ -59,6 +91,8 @@ type SyncDataResponse struct {
 type Client interface {
 	Chat(ctx context.Context, req *ChatRequest) (*ChatResponse, error)
 	SyncData(ctx context.Context, req *SyncDataRequest) (*SyncDataResponse, error)
+	TranscribeAudio(ctx context.Context, req *VoiceTranscribeRequest) (*VoiceTranscribeResponse, error)
+	ParseVoiceCommand(ctx context.Context, req *VoiceParseRequest) (*VoiceParseResponse, error)
 	Close() error
 }
 
@@ -113,6 +147,47 @@ func (c *GRPCClient) SyncData(ctx context.Context, req *SyncDataRequest) (*SyncD
 	var resp SyncDataResponse
 	if err := json.Unmarshal(respBytes, &resp); err != nil {
 		return nil, fmt.Errorf("failed to unmarshal sync response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+// TranscribeAudio sends voice bytes to AI service VoiceBookingService over gRPC.
+func (c *GRPCClient) TranscribeAudio(ctx context.Context, req *VoiceTranscribeRequest) (*VoiceTranscribeResponse, error) {
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal transcribe request: %w", err)
+	}
+
+	var respBytes []byte
+	err = c.conn.Invoke(ctx, "/aiagent.VoiceBookingService/TranscribeAudio", reqBytes, &respBytes)
+	if err != nil {
+		return nil, fmt.Errorf("voice transcribe RPC failed: %w", err)
+	}
+
+	var resp VoiceTranscribeResponse
+	if err := json.Unmarshal(respBytes, &resp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal transcribe response: %w", err)
+	}
+
+	return &resp, nil
+}
+
+func (c *GRPCClient) ParseVoiceCommand(ctx context.Context, req *VoiceParseRequest) (*VoiceParseResponse, error) {
+	reqBytes, err := json.Marshal(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to marshal parse voice request: %w", err)
+	}
+
+	var respBytes []byte
+	err = c.conn.Invoke(ctx, "/aiagent.VoiceBookingService/ParseCommand", reqBytes, &respBytes)
+	if err != nil {
+		return nil, fmt.Errorf("voice parse RPC failed: %w", err)
+	}
+
+	var resp VoiceParseResponse
+	if err := json.Unmarshal(respBytes, &resp); err != nil {
+		return nil, fmt.Errorf("failed to unmarshal parse voice response: %w", err)
 	}
 
 	return &resp, nil

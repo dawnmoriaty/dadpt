@@ -4,7 +4,7 @@ import { toast } from 'sonner'
 import type { VoicePlanResponse } from '../types'
 import { parseSeatPreferenceOrder, parseTranscriptToPlanInput } from '../utils/voice-parser'
 
-import { getVoiceErrorMessage, useTranscribeVoice, useVoiceExecute, useVoicePlan } from './index'
+import { getVoiceErrorMessage, useVoiceExecute, useVoicePipeline, useVoicePlan } from './index'
 
 interface UseVoiceBookingOptions {
     disabled?: boolean
@@ -25,7 +25,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const [selectedTripId, setSelectedTripId] = useState<number | null>(null)
     const [isRecording, setIsRecording] = useState(false)
 
-    const transcribeMutation = useTranscribeVoice()
+    const pipelineMutation = useVoicePipeline()
     const planMutation = useVoicePlan()
     const executeMutation = useVoiceExecute()
 
@@ -34,7 +34,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const streamRef = useRef<MediaStream | null>(null)
     const chunksRef = useRef<Blob[]>([])
 
-    const isBusy = disabled || transcribeMutation.isPending || planMutation.isPending || executeMutation.isPending
+    const isBusy = disabled || pipelineMutation.isPending || planMutation.isPending || executeMutation.isPending
     const canRecord =
         typeof window !== 'undefined' &&
         typeof navigator !== 'undefined' &&
@@ -66,16 +66,27 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
     const processAudioFile = async (file: File) => {
         try {
             updateAudioPreview(file)
-            const result = await transcribeMutation.mutateAsync(file)
+            const result = await pipelineMutation.mutateAsync(file)
             setLastTranscript(result.transcript)
-            toast.success(`Da nhan dien giong noi bang ${result.engine}.`)
 
-            const extracted = parseTranscriptToPlanInput(result.transcript)
-            if (extracted) {
-                setOrigin(extracted.origin)
-                setDestination(extracted.destination)
-                setTravelDate(extracted.travelDate)
-                setSeatCount(extracted.seatCount)
+            const command = result.parse?.command
+            if (command) {
+                setOrigin(command.origin)
+                setDestination(command.destination)
+                setTravelDate(command.travel_date)
+                setSeatCount(command.seat_count)
+                setSeatPreferenceOrder((command.seat_preference_order ?? []).join(', '))
+                toast.success('Đã nhận diện và phân tích giọng nói.')
+            } else {
+                toast.warning(result.parse?.message || 'Chưa nhận diện đủ thông tin chuyến đi.')
+
+                const extracted = parseTranscriptToPlanInput(result.transcript)
+                if (extracted) {
+                    setOrigin(extracted.origin)
+                    setDestination(extracted.destination)
+                    setTravelDate(extracted.travelDate)
+                    setSeatCount(extracted.seatCount)
+                }
             }
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
@@ -204,7 +215,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         fileInputRef,
         planPending: planMutation.isPending,
         executePending: executeMutation.isPending,
-        transcribePending: transcribeMutation.isPending,
+        transcribePending: pipelineMutation.isPending,
         setOrigin,
         setDestination,
         setTravelDate,

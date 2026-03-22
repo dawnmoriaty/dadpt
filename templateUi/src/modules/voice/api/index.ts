@@ -1,21 +1,42 @@
-import { aiApi } from '@/services/api/ai-client'
 import { api } from '@/services/api/client'
 import { API_ENDPOINTS } from '@/services/api/endpoints'
 
-import type { VoiceExecuteRequest, VoiceExecuteResponse, VoicePlanRequest, VoicePlanResponse, VoiceTranscribeResponse } from '../types'
+import type {
+    VoiceExecuteRequest,
+    VoiceExecuteResponse,
+    VoicePipelineResponse,
+    VoicePlanRequest,
+    VoicePlanResponse,
+    VoiceTranscribeResponse,
+} from '../types'
 
 export const voiceApi = {
     transcribe: async (file: File): Promise<VoiceTranscribeResponse> => {
         const formData = new FormData()
         formData.append('file', file)
 
-        const response = await aiApi.post<VoiceTranscribeResponse>('/api/v2/voice/booking/transcribe', formData, {
+        const response = await api.post<{ data: VoiceTranscribeResponse }>(API_ENDPOINTS.VOICE_BOOKING.TRANSCRIBE, formData, {
             headers: {
                 'Content-Type': 'multipart/form-data',
             },
         })
 
-        return response.data
+        return response.data.data
+    },
+
+    pipeline: async (file: File, execute = false): Promise<VoicePipelineResponse> => {
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('execute', String(execute))
+        formData.append('paymentMethod', 'bank_transfer')
+
+        const response = await api.post<{ data: VoicePipelineResponse }>(API_ENDPOINTS.VOICE_BOOKING.PIPELINE, formData, {
+            headers: {
+                'Content-Type': 'multipart/form-data',
+            },
+        })
+
+        return response.data.data
     },
 
     plan: async (payload: VoicePlanRequest): Promise<VoicePlanResponse> => {

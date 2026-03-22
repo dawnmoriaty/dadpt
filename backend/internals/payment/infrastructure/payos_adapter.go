@@ -41,13 +41,22 @@ func NewPayOSAdapter(cfg *configs.Config) (*PayOSAdapter, error) {
 }
 
 // CreatePaymentLink creates a new payment link via PayOS.
-func (a *PayOSAdapter) CreatePaymentLink(ctx context.Context, orderCode int64, amount int, description string, expiresAt int64) (*paymentDomain.PaymentLinkResult, error) {
+func (a *PayOSAdapter) CreatePaymentLink(ctx context.Context, orderCode int64, amount int, description string, expiresAt int64, returnURL, cancelURL string) (*paymentDomain.PaymentLinkResult, error) {
+	finalReturnURL := a.returnURL
+	finalCancelURL := a.cancelURL
+	if returnURL != "" {
+		finalReturnURL = returnURL
+	}
+	if cancelURL != "" {
+		finalCancelURL = cancelURL
+	}
+
 	req := payos.CreatePaymentLinkRequest{
 		OrderCode:   orderCode,
 		Amount:      amount,
 		Description: description,
-		ReturnUrl:   a.returnURL,
-		CancelUrl:   a.cancelURL,
+		ReturnUrl:   finalReturnURL,
+		CancelUrl:   finalCancelURL,
 	}
 
 	if expiresAt > 0 {

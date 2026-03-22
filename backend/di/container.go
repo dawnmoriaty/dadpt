@@ -12,8 +12,17 @@ import (
 	authInfra "backend/internals/auth/infrastructure"
 	authRepo "backend/internals/auth/repository"
 	authUc "backend/internals/auth/usecase"
+	bookingHttp "backend/internals/booking/controller/http"
 	bookingInfra "backend/internals/booking/infrastructure"
+	bookingRepo "backend/internals/booking/repository"
+	bookingUc "backend/internals/booking/usecase"
+	locationRepo "backend/internals/location/repository"
+	locationUc "backend/internals/location/usecase"
+	paymentDomain "backend/internals/payment/domain"
+	paymentInfra "backend/internals/payment/infrastructure"
 	httpServer "backend/internals/server/http"
+	tripRepo "backend/internals/trip/repository"
+	tripUc "backend/internals/trip/usecase"
 	uploadHttp "backend/internals/upload/controller/http"
 	"backend/pkgs/aiagent"
 	grpcpkg "backend/pkgs/grpc"
@@ -50,6 +59,20 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		provideMinio,
 		provideJWTProvider,
 		provideGRPCConn,
+		providePaymentGateway,
+
+		// Booking voice deps for AI pipeline proxy
+		bookingRepo.NewBookingRepository,
+		bookingRepo.NewTripLocker,
+		bookingRepo.NewOutboxRepository,
+		bookingRepo.NewPaymentRepository,
+		bookingInfra.NewDistributedLock,
+		bookingUc.NewBookingUseCase,
+		locationRepo.NewLocationRepository,
+		locationUc.NewLocationUseCase,
+		tripRepo.NewTripRepository,
+		tripUc.NewTripUseCase,
+		bookingHttp.NewVoiceBookingHandler,
 
 		// Auth Module
 		authInfra.NewBcryptHasher,
@@ -153,6 +176,18 @@ func provideAIAgentClient(conn *grpcpkg.Conn) aiagent.Client {
 		return nil
 	}
 	return aiagent.NewGRPCClient(conn)
+}
+
+func providePaymentGateway(cfg *configs.Config) paymentDomain.PaymentGateway {
+	if cfg.PayOSClientID == "" || cfg.PayOSAPIKey == "" || cfg.PayOSChecksumKey == "" {
+		return nil
+	}
+	adapter, err := paymentInfra.NewPayOSAdapter(cfg)
+	if err != nil {
+		logger.Warn("PayOS adapter not initialized in DI: %v", err)
+		return nil
+	}
+	return adapter
 }
 
 func provideJWTProvider(cfg *configs.Config) jwt.JWTProvider {

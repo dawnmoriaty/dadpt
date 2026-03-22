@@ -52,7 +52,7 @@ INSERT INTO bookings (
     total_amount, payment_method
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 type CreateBookingParams struct {
@@ -96,6 +96,8 @@ func (q *Queries) CreateBooking(ctx context.Context, arg CreateBookingParams) (B
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -107,7 +109,7 @@ INSERT INTO bookings (
     total_amount, payment_method, expires_at
 )
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 type CreateBookingWithExpiryParams struct {
@@ -153,12 +155,14 @@ func (q *Queries) CreateBookingWithExpiry(ctx context.Context, arg CreateBooking
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
 
 const getBookingByCode = `-- name: GetBookingByCode :one
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at FROM bookings WHERE code = $1
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note FROM bookings WHERE code = $1
 `
 
 func (q *Queries) GetBookingByCode(ctx context.Context, code string) (Booking, error) {
@@ -180,12 +184,14 @@ func (q *Queries) GetBookingByCode(ctx context.Context, code string) (Booking, e
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
 
 const getBookingByID = `-- name: GetBookingByID :one
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at FROM bookings WHERE id = $1
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note FROM bookings WHERE id = $1
 `
 
 func (q *Queries) GetBookingByID(ctx context.Context, id int64) (Booking, error) {
@@ -207,13 +213,15 @@ func (q *Queries) GetBookingByID(ctx context.Context, id int64) (Booking, error)
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
 
 const getBookingForPayment = `-- name: GetBookingForPayment :one
 
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at FROM bookings WHERE id = $1 FOR UPDATE NOWAIT
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note FROM bookings WHERE id = $1 FOR UPDATE NOWAIT
 `
 
 // ============================================================================
@@ -239,12 +247,14 @@ func (q *Queries) GetBookingForPayment(ctx context.Context, id int64) (Booking, 
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
 
 const getExpiredPendingBookings = `-- name: GetExpiredPendingBookings :many
-SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at FROM bookings 
+SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note FROM bookings 
 WHERE status = 'pending' AND expires_at < NOW()
 FOR UPDATE SKIP LOCKED
 LIMIT $1
@@ -276,6 +286,8 @@ func (q *Queries) GetExpiredPendingBookings(ctx context.Context, limit int32) ([
 			&i.UpdatedAt,
 			&i.ExpiresAt,
 			&i.RefundedAt,
+			&i.RefundReference,
+			&i.RefundNote,
 		); err != nil {
 			return nil, err
 		}
@@ -288,7 +300,7 @@ func (q *Queries) GetExpiredPendingBookings(ctx context.Context, limit int32) ([
 }
 
 const listBookingsByUser = `-- name: ListBookingsByUser :many
-SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, t.departure_time, t.arrival_time,
+SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, b.refund_reference, b.refund_note, t.departure_time, t.arrival_time,
        o.name as origin_name, d.name as destination_name
 FROM bookings b
 JOIN trips t ON b.trip_id = t.id
@@ -321,6 +333,8 @@ type ListBookingsByUserRow struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
 	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
 	RefundedAt      pgtype.Timestamptz `json:"refundedAt"`
+	RefundReference *string            `json:"refundReference"`
+	RefundNote      *string            `json:"refundNote"`
 	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
 	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
 	OriginName      string             `json:"originName"`
@@ -352,6 +366,8 @@ func (q *Queries) ListBookingsByUser(ctx context.Context, arg ListBookingsByUser
 			&i.UpdatedAt,
 			&i.ExpiresAt,
 			&i.RefundedAt,
+			&i.RefundReference,
+			&i.RefundNote,
 			&i.DepartureTime,
 			&i.ArrivalTime,
 			&i.OriginName,
@@ -368,7 +384,7 @@ func (q *Queries) ListBookingsByUser(ctx context.Context, arg ListBookingsByUser
 }
 
 const listRefundPendingBookings = `-- name: ListRefundPendingBookings :many
-SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, t.departure_time, t.arrival_time,
+SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, b.refund_reference, b.refund_note, t.departure_time, t.arrival_time,
        o.name as origin_name, d.name as destination_name
 FROM bookings b
 JOIN trips t ON b.trip_id = t.id
@@ -400,6 +416,8 @@ type ListRefundPendingBookingsRow struct {
 	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
 	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
 	RefundedAt      pgtype.Timestamptz `json:"refundedAt"`
+	RefundReference *string            `json:"refundReference"`
+	RefundNote      *string            `json:"refundNote"`
 	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
 	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
 	OriginName      string             `json:"originName"`
@@ -431,6 +449,8 @@ func (q *Queries) ListRefundPendingBookings(ctx context.Context, arg ListRefundP
 			&i.UpdatedAt,
 			&i.ExpiresAt,
 			&i.RefundedAt,
+			&i.RefundReference,
+			&i.RefundNote,
 			&i.DepartureTime,
 			&i.ArrivalTime,
 			&i.OriginName,
@@ -485,7 +505,7 @@ UPDATE bookings SET
     status = 'expired',
     updated_at = NOW()
 WHERE id = $1 AND status = 'pending'
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 func (q *Queries) MarkBookingExpired(ctx context.Context, id int64) (Booking, error) {
@@ -507,6 +527,8 @@ func (q *Queries) MarkBookingExpired(ctx context.Context, id int64) (Booking, er
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -517,7 +539,7 @@ UPDATE bookings SET
     expires_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'pending'
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 func (q *Queries) MarkBookingPaid(ctx context.Context, id int64) (Booking, error) {
@@ -539,6 +561,8 @@ func (q *Queries) MarkBookingPaid(ctx context.Context, id int64) (Booking, error
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -550,7 +574,7 @@ UPDATE bookings SET
     refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'paid'
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 // ============================================================================
@@ -575,6 +599,8 @@ func (q *Queries) MarkBookingRefundPending(ctx context.Context, id int64) (Booki
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -582,18 +608,26 @@ func (q *Queries) MarkBookingRefundPending(ctx context.Context, id int64) (Booki
 const markBookingRefunded = `-- name: MarkBookingRefunded :one
 
 UPDATE bookings SET
-    status = 'refunded',
+    status = 'cancelled',
     refunded_at = NOW(),
+    refund_reference = $2,
+    refund_note = $3,
     updated_at = NOW()
 WHERE id = $1 AND status = 'refund_pending'
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
+
+type MarkBookingRefundedParams struct {
+	ID              int64   `json:"id"`
+	RefundReference *string `json:"refundReference"`
+	RefundNote      *string `json:"refundNote"`
+}
 
 // ============================================================================
 // REFUND FLOW QUERIES
 // ============================================================================
-func (q *Queries) MarkBookingRefunded(ctx context.Context, id int64) (Booking, error) {
-	row := q.db.QueryRow(ctx, markBookingRefunded, id)
+func (q *Queries) MarkBookingRefunded(ctx context.Context, arg MarkBookingRefundedParams) (Booking, error) {
+	row := q.db.QueryRow(ctx, markBookingRefunded, arg.ID, arg.RefundReference, arg.RefundNote)
 	var i Booking
 	err := row.Scan(
 		&i.ID,
@@ -611,6 +645,8 @@ func (q *Queries) MarkBookingRefunded(ctx context.Context, id int64) (Booking, e
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -662,7 +698,7 @@ UPDATE bookings SET
     refunded_at = NULL,
     updated_at = NOW()
 WHERE id = $1 AND status = 'refund_pending'
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 func (q *Queries) RevertBookingToPaid(ctx context.Context, id int64) (Booking, error) {
@@ -684,6 +720,8 @@ func (q *Queries) RevertBookingToPaid(ctx context.Context, id int64) (Booking, e
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }
@@ -693,7 +731,7 @@ UPDATE bookings SET
     status = $2,
     updated_at = NOW()
 WHERE id = $1
-RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at
+RETURNING id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note
 `
 
 type UpdateBookingStatusParams struct {
@@ -720,6 +758,8 @@ func (q *Queries) UpdateBookingStatus(ctx context.Context, arg UpdateBookingStat
 		&i.UpdatedAt,
 		&i.ExpiresAt,
 		&i.RefundedAt,
+		&i.RefundReference,
+		&i.RefundNote,
 	)
 	return i, err
 }

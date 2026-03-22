@@ -43,20 +43,22 @@ type ListBookingsRequest struct {
 // =============================================================================
 
 type BookingResponse struct {
-	ID            int64        `json:"id"`
-	Code          string       `json:"code"`
-	TripID        int64        `json:"tripId"`
-	SeatCodes     []string     `json:"seatCodes"`
-	GuestInfo     GuestInfoDTO `json:"guestInfo"`
-	PickupInfo    PointInfoDTO `json:"pickupInfo"`
-	DropoffInfo   PointInfoDTO `json:"dropoffInfo"`
-	TotalAmount   float64      `json:"totalAmount"`
-	Status        string       `json:"status"`
-	PaymentMethod string       `json:"paymentMethod"`
-	ExpiresAt     string       `json:"expiresAt,omitempty"`
-	RefundedAt    string       `json:"refundedAt,omitempty"`
-	CreatedAt     string       `json:"createdAt"`
-	UpdatedAt     string       `json:"updatedAt"`
+	ID              int64        `json:"id"`
+	Code            string       `json:"code"`
+	TripID          int64        `json:"tripId"`
+	SeatCodes       []string     `json:"seatCodes"`
+	GuestInfo       GuestInfoDTO `json:"guestInfo"`
+	PickupInfo      PointInfoDTO `json:"pickupInfo"`
+	DropoffInfo     PointInfoDTO `json:"dropoffInfo"`
+	TotalAmount     float64      `json:"totalAmount"`
+	Status          string       `json:"status"`
+	PaymentMethod   string       `json:"paymentMethod"`
+	ExpiresAt       string       `json:"expiresAt,omitempty"`
+	RefundedAt      string       `json:"refundedAt,omitempty"`
+	RefundReference string       `json:"refundReference,omitempty"`
+	RefundNote      string       `json:"refundNote,omitempty"`
+	CreatedAt       string       `json:"createdAt"`
+	UpdatedAt       string       `json:"updatedAt"`
 }
 
 type BookingDetailResponse struct {
@@ -146,6 +148,8 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 	if !b.RefundedAt.IsZero() {
 		resp.RefundedAt = b.RefundedAt.Format(time.RFC3339)
 	}
+	resp.RefundReference = b.RefundReference
+	resp.RefundNote = b.RefundNote
 	return resp
 }
 
@@ -196,7 +200,9 @@ type ListRefundRequestsParams struct {
 }
 
 type RefundActionRequest struct {
-	Reason string `json:"reason" binding:"omitempty,max=500"`
+	Reason          string `json:"reason" binding:"omitempty,max=500"`
+	RefundReference string `json:"refundReference" binding:"omitempty,max=100"`
+	RefundNote      string `json:"refundNote" binding:"omitempty,max=500"`
 }
 
 type RefundRequestListResponse struct {

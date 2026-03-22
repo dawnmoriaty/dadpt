@@ -33,6 +33,7 @@ var (
 	ErrBookingNotPaid          = errors.New("booking not paid")
 	ErrBookingNotRefundPending = errors.New("booking not refund pending")
 	ErrRefundAlreadyProcessed  = errors.New("refund already processed")
+	ErrRefundReferenceRequired = errors.New("refund reference required")
 )
 
 // =============================================================================
@@ -73,21 +74,23 @@ func (s BookingStatus) String() string {
 // =============================================================================
 
 type Booking struct {
-	ID            int64
-	Code          BookingCode
-	TripID        int64
-	UserID        *int64 // Nullable cho khách vãng lai
-	GuestInfo     GuestInfo
-	PickupInfo    PointInfo
-	DropoffInfo   PointInfo
-	SeatCodes     []string
-	TotalAmount   float64
-	Status        BookingStatus
-	PaymentMethod string
-	ExpiresAt     time.Time
-	RefundedAt    time.Time
-	CreatedAt     time.Time
-	UpdatedAt     time.Time
+	ID              int64
+	Code            BookingCode
+	TripID          int64
+	UserID          *int64 // Nullable cho khách vãng lai
+	GuestInfo       GuestInfo
+	PickupInfo      PointInfo
+	DropoffInfo     PointInfo
+	SeatCodes       []string
+	TotalAmount     float64
+	Status          BookingStatus
+	PaymentMethod   string
+	ExpiresAt       time.Time
+	RefundedAt      time.Time
+	RefundReference string
+	RefundNote      string
+	CreatedAt       time.Time
+	UpdatedAt       time.Time
 
 	// Joined fields (for list results)
 	DepartureTime   time.Time

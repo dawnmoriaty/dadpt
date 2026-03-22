@@ -3,6 +3,7 @@ export { useRefundSSE } from './useRefundSSE'
 export { useAdminRefundRequestsPage } from './use-admin-refund-requests-page'
 export { useMyBookingsPage } from './use-my-bookings-page'
 export { useRefundCountdown } from './use-refund-countdown'
+export { useBookingEventsSSE } from './use-booking-events-sse'
 
 export {
     bookingKeys,

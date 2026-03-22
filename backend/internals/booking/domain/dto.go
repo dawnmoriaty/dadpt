@@ -70,8 +70,10 @@ type PaymentConfirmOutput struct {
 
 // RefundRequestInput is the input for admin approve/reject refund
 type RefundRequestInput struct {
-	BookingID int64
-	Reason    string
+	BookingID       int64
+	Reason          string
+	RefundReference string
+	RefundNote      string
 }
 
 // RefundRequestListInput is the input for listing refund requests

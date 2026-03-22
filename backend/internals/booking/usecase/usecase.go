@@ -6,6 +6,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -182,7 +183,8 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		desc := fmt.Sprintf("VE XE %s", bookingCode)
 		expiresAt := booking.ExpiresAt.Unix()
 
-		linkResult, err := u.paymentGw.CreatePaymentLink(ctx, orderCodeInt, amountInt, desc, expiresAt)
+		returnURL, cancelURL := u.resolvePayOSRedirectURLs(ctx)
+		linkResult, err := u.paymentGw.CreatePaymentLink(ctx, orderCodeInt, amountInt, desc, expiresAt, returnURL, cancelURL)
 		if err != nil {
 			logger.Error("Failed to create payment link: %v", err)
 		} else {
@@ -208,6 +210,26 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		PaymentURL: checkoutURL,
 		QRCode:     qrCode,
 	}, nil
+}
+
+func (u *bookingUseCase) resolvePayOSRedirectURLs(ctx context.Context) (string, string) {
+	clientBaseURL := getClientBaseURL(ctx)
+	if clientBaseURL == "" {
+		return u.cfg.PayOSReturnURL, u.cfg.PayOSCancelURL
+	}
+
+	returnPath := "/payment/success"
+	cancelPath := "/payment/cancel"
+
+	if parsedReturnURL, err := url.Parse(u.cfg.PayOSReturnURL); err == nil && parsedReturnURL.Path != "" {
+		returnPath = parsedReturnURL.Path
+	}
+	if parsedCancelURL, err := url.Parse(u.cfg.PayOSCancelURL); err == nil && parsedCancelURL.Path != "" {
+		cancelPath = parsedCancelURL.Path
+	}
+
+	return strings.TrimRight(clientBaseURL, "/") + returnPath,
+		strings.TrimRight(clientBaseURL, "/") + cancelPath
 }
 
 func (u *bookingUseCase) GetBooking(ctx context.Context, id int64) (*domain.Booking, error) {
@@ -385,6 +407,10 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 		return nil, domain.ErrBookingNotRefundPending
 	}
 
+	if strings.TrimSpace(input.RefundReference) == "" {
+		return nil, domain.ErrRefundReferenceRequired
+	}
+
 	// 2. Get the successful payment transaction
 	payment, err := u.paymentRepo.GetSuccessByBookingID(ctx, booking.ID)
 	if err != nil {
@@ -414,8 +440,8 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 		logger.Warn("Failed to release seats for refunded booking %d: %v", booking.ID, err)
 	}
 
-	// 6. Mark booking as refunded
-	refunded, err := u.repo.MarkRefunded(ctx, booking.ID)
+	// 6. Mark booking as refunded with admin confirmation metadata
+	refunded, err := u.repo.MarkRefundedWithMeta(ctx, booking.ID, input.RefundReference, input.RefundNote)
 	if err != nil {
 		return nil, fmt.Errorf("uc.ApproveRefund: marking refunded: %w", err)
 	}

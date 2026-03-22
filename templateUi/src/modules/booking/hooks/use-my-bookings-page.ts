@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 
 import type { Booking } from '../types'
 
+import { useBookingEventsSSE } from './use-booking-events-sse'
 import { useCancelBooking, useMyBookings } from './use-booking-hooks'
 
 interface UseMyBookingsPageResult {
@@ -24,6 +25,8 @@ export function useMyBookingsPage(): UseMyBookingsPageResult {
     const [page, setPage] = useState(1)
     const { data, isLoading } = useMyBookings(page)
     const cancelMutation = useCancelBooking()
+
+    useBookingEventsSSE()
 
     const bookings = data?.items ?? []
     const total = data?.total ?? 0

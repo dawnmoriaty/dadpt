@@ -29,6 +29,8 @@ export interface Booking {
     paymentMethod: string
     expiresAt: string
     refundedAt?: string
+    refundReference?: string
+    refundNote?: string
     createdAt: string
     updatedAt: string
 
@@ -73,6 +75,8 @@ export interface RefundRequestListParams {
 
 export interface RefundActionRequest {
     reason?: string
+    refundReference?: string
+    refundNote?: string
 }
 
 export interface RefundRequestListResponse {

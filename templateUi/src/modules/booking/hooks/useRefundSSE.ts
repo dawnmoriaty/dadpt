@@ -81,31 +81,6 @@ export function useRefundSSE() {
             }
         })
 
-        es.addEventListener('booking_cancelled', (event) => {
-            try {
-                const data: AdminBookingEvent = JSON.parse(event.data)
-                console.log('[SSE] Received cancellation event:', data)
-
-                toast.warning(
-                    t('adminRefund.bookingCancelled', {
-                        code: data.code,
-                        name: data.guestName,
-                        defaultValue: `Khách ${data.guestName} đã hủy vé ${data.code}`,
-                    }),
-                    { duration: 8000 },
-                )
-
-                pushAdminBookingEvent(queryClient, {
-                    type: 'booking_cancelled',
-                    code: data.code,
-                    guestName: data.guestName,
-                    amount: data.amount,
-                })
-            } catch (err) {
-                console.error('[SSE] Failed to parse cancellation event:', err)
-            }
-        })
-
         es.onerror = (err) => {
             console.warn('[SSE] Connection error, will retry:', err)
         }

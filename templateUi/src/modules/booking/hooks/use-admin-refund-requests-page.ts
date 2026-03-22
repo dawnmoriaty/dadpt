@@ -17,21 +17,29 @@ interface UseAdminRefundRequestsPageResult {
     canGoNextPage: boolean
     data: ReturnType<typeof useRefundRequests>['data']
     isLoading: boolean
+    error: Error | null
     confirmAction: RefundConfirmAction | null
+    refundReference: string
+    refundNote: string
+    canConfirmApprove: boolean
     isConfirmPending: boolean
     goToPreviousPage: () => void
     goToNextPage: () => void
     openApproveConfirm: (booking: Booking) => void
     openRejectConfirm: (booking: Booking) => void
     closeConfirm: () => void
+    setRefundReference: (value: string) => void
+    setRefundNote: (value: string) => void
     handleConfirm: () => void
 }
 
 export function useAdminRefundRequestsPage(pageSize = 20): UseAdminRefundRequestsPageResult {
     const [page, setPage] = useState(1)
     const [confirmAction, setConfirmAction] = useState<RefundConfirmAction | null>(null)
+    const [refundReference, setRefundReference] = useState('')
+    const [refundNote, setRefundNote] = useState('')
 
-    const { data, isLoading } = useRefundRequests(page, pageSize)
+    const { data, isLoading, error } = useRefundRequests(page, pageSize)
     const approveMutation = useApproveRefund()
     const rejectMutation = useRejectRefund()
 
@@ -58,14 +66,20 @@ export function useAdminRefundRequestsPage(pageSize = 20): UseAdminRefundRequest
     }
 
     function openApproveConfirm(booking: Booking) {
+        setRefundReference('')
+        setRefundNote('')
         setConfirmAction({ type: 'approve', booking })
     }
 
     function openRejectConfirm(booking: Booking) {
+        setRefundReference('')
+        setRefundNote('')
         setConfirmAction({ type: 'reject', booking })
     }
 
     function closeConfirm() {
+        setRefundReference('')
+        setRefundNote('')
         setConfirmAction(null)
     }
 
@@ -78,7 +92,13 @@ export function useAdminRefundRequestsPage(pageSize = 20): UseAdminRefundRequest
 
         if (type === 'approve') {
             approveMutation.mutate(
-                { id: booking.id },
+                {
+                    id: booking.id,
+                    data: {
+                        refundReference: refundReference.trim(),
+                        refundNote: refundNote.trim(),
+                    },
+                },
                 {
                     onSettled: closeConfirm,
                 }
@@ -101,13 +121,19 @@ export function useAdminRefundRequestsPage(pageSize = 20): UseAdminRefundRequest
         canGoNextPage: totalPages > 0 && page < totalPages,
         data,
         isLoading,
+        error: (error as Error | null) ?? null,
         confirmAction,
+        refundReference,
+        refundNote,
+        canConfirmApprove: confirmAction?.type !== 'approve' || refundReference.trim().length > 0,
         isConfirmPending: approveMutation.isPending || rejectMutation.isPending,
         goToPreviousPage,
         goToNextPage,
         openApproveConfirm,
         openRejectConfirm,
         closeConfirm,
+        setRefundReference,
+        setRefundNote,
         handleConfirm,
     }
 }

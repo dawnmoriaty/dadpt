@@ -91,7 +91,7 @@ type Querier interface {
 	// ============================================================================
 	// REFUND FLOW QUERIES
 	// ============================================================================
-	MarkBookingRefunded(ctx context.Context, id int64) (Booking, error)
+	MarkBookingRefunded(ctx context.Context, arg MarkBookingRefundedParams) (Booking, error)
 	MarkOutboxEventFailed(ctx context.Context, id uuid.UUID) error
 	MarkOutboxEventProcessed(ctx context.Context, id uuid.UUID) error
 	// Release seats when booking cancelled/expired (using array subtraction)

@@ -2,7 +2,14 @@ import { useMutation } from '@tanstack/react-query'
 import axios from 'axios'
 
 import { voiceApi } from '../api'
-import type { VoiceExecuteRequest, VoiceExecuteResponse, VoicePlanRequest, VoicePlanResponse, VoiceTranscribeResponse } from '../types'
+import type {
+    VoiceExecuteRequest,
+    VoiceExecuteResponse,
+    VoicePipelineResponse,
+    VoicePlanRequest,
+    VoicePlanResponse,
+    VoiceTranscribeResponse,
+} from '../types'
 
 export function useTranscribeVoice() {
     return useMutation<VoiceTranscribeResponse, Error, File>({
@@ -22,6 +29,12 @@ export function useVoiceExecute() {
     })
 }
 
+export function useVoicePipeline() {
+    return useMutation<VoicePipelineResponse, Error, File>({
+        mutationFn: (file: File) => voiceApi.pipeline(file, false),
+    })
+}
+
 export function getVoiceErrorMessage(error: unknown): string {
     if (axios.isAxiosError(error)) {
         const payload = error.response?.data as Record<string, unknown> | undefined
@@ -30,6 +43,12 @@ export function getVoiceErrorMessage(error: unknown): string {
 
         if (typeof detail === 'string' && detail.length > 0) return detail
         if (typeof message === 'string' && message.length > 0) return message
+        if (typeof payload?.status === 'string' && payload.status === 'VOICE_TRANSCRIBE_UNAVAILABLE') {
+            return 'Dịch vụ nhận diện giọng nói chưa sẵn sàng trên AI service.'
+        }
+        if (typeof payload?.status === 'string' && payload.status === 'VOICE_AUDIO_INVALID') {
+            return 'File âm thanh không hợp lệ hoặc không đọc được.'
+        }
         if (typeof error.message === 'string' && error.message.length > 0) return error.message
     }
 

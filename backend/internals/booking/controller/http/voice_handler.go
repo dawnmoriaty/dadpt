@@ -210,7 +210,19 @@ func (h *VoiceBookingHandler) requireActiveUser(c *gin.Context) (int64, *authDom
 	if !ok {
 		return 0, nil, pkgErrors.ErrUnauthorized
 	}
-	userID := userIDVal.(int64)
+
+	var userID int64
+	switch v := userIDVal.(type) {
+	case int64:
+		userID = v
+	case int:
+		userID = int64(v)
+	case float64:
+		userID = int64(v)
+	default:
+		return 0, nil, pkgErrors.ErrUnauthorized
+	}
+
 	user, err := h.userRepo.GetByID(c.Request.Context(), userID)
 	if err != nil {
 		return 0, nil, pkgErrors.ErrUserNotFound

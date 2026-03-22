@@ -142,6 +142,8 @@ func (s *Server) MapRoutes() {
 		aiAuth.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 		{
 			aiAuth.POST("/voice/booking/validate", s.chatHandler.ValidateVoiceBookingCommand)
+			aiAuth.POST("/voice/booking/transcribe", s.chatHandler.VoiceTranscribe)
+			aiAuth.POST("/voice/booking/pipeline", s.chatHandler.VoicePipeline)
 		}
 
 		// AI sync (admin only — push data to vector DB)
