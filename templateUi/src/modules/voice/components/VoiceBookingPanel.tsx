@@ -7,8 +7,8 @@ import { Card } from '@/components/ui/card'
 
 import { useVoiceBooking } from '../hooks/use-voice-booking'
 
-import { VoiceCandidateCard } from './voice-candidate-card'
-import { VoiceTripForm } from './voice-trip-form'
+import { VoiceCandidateCard } from './VoiceCandidateCard'
+import { VoiceTripForm } from './VoiceTripForm'
 
 interface VoiceBookingPanelProps {
     disabled?: boolean

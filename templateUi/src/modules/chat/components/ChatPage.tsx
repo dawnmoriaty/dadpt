@@ -3,8 +3,8 @@ import { VoiceBookingPanel } from '@/modules/voice'
 import { useChatStore } from '../hooks'
 import { useChatInput } from '../hooks/use-chat-input'
 
-import { ChatHeader } from './chat-header'
-import { ChatMessages } from './chat-messages'
+import { ChatHeader } from './ChatHeader'
+import { ChatMessages } from './ChatMessages'
 
 export function ChatPage() {
     const { messages, isLoading, clearChat, sendMessage } = useChatStore()

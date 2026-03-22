@@ -65,7 +65,7 @@ export function RefundRequestRow({ booking, onApprove, onReject }: RefundRequest
                         onClick={onApprove}
                     >
                         <Check className="h-4 w-4 mr-1" />
-                        {t('adminRefund.approve')}
+                        {t('refundRequests.approve')}
                     </Button>
                     <Button
                         size="sm"
@@ -74,7 +74,7 @@ export function RefundRequestRow({ booking, onApprove, onReject }: RefundRequest
                         onClick={onReject}
                     >
                         <X className="h-4 w-4 mr-1" />
-                        {t('adminRefund.reject')}
+                        {t('refundRequests.reject')}
                     </Button>
                 </div>
             </TableCell>

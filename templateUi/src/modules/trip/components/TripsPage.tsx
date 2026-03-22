@@ -12,7 +12,7 @@ import type { TripStatus, CreateTripRequest, Trip, UpdateTripRequest } from '../
 
 import { TripDetailsModal } from './TripDetailsModal'
 import { TripForm } from './TripForm'
-import { getTripsColumns } from './trips-columns'
+import { getTripsColumns } from './TripsColumns'
 
 const statusTabs: { value: TripStatus | ''; label: string; color: string }[] = [
     { value: '', label: 'Tất cả chuyến', color: 'bg-muted' },

@@ -6,13 +6,13 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { getApiErrorMessage } from '@/services/api/client'
  
-import { useAdminRefundRequestsPage } from '../hooks'
+import { useRefundRequestsPage } from '../hooks'
 
-import { AdminRefundRequestsEmpty } from './AdminRefundRequestsEmpty'
-import { AdminRefundRequestsLoading } from './AdminRefundRequestsLoading'
-import { AdminRefundRequestsTable } from './AdminRefundRequestsTable'
+import { RefundRequestsEmpty } from './RefundRequestsEmpty'
+import { RefundRequestsLoading } from './RefundRequestsLoading'
+import { RefundRequestsTable } from './RefundRequestsTable'
 
-export function AdminRefundRequestsPage() {
+export function RefundRequestsPage() {
     const { t } = useTranslation()
     const {
         page,
@@ -35,10 +35,10 @@ export function AdminRefundRequestsPage() {
         setRefundReference,
         setRefundNote,
         handleConfirm,
-    } = useAdminRefundRequestsPage()
+    } = useRefundRequestsPage()
 
     if (isLoading) {
-        return <AdminRefundRequestsLoading />
+        return <RefundRequestsLoading />
     }
 
     const hasError = !!error
@@ -47,29 +47,29 @@ export function AdminRefundRequestsPage() {
         <div className="space-y-6">
             {/* Page Header */}
             <div>
-                <h1 className="text-3xl font-bold tracking-tight">{t('adminRefund.title')}</h1>
-                <p className="text-muted-foreground">{t('adminRefund.subtitle')}</p>
+                <h1 className="text-3xl font-bold tracking-tight">{t('refundRequests.title')}</h1>
+                <p className="text-muted-foreground">{t('refundRequests.subtitle')}</p>
             </div>
 
             {/* Stats */}
             {data && data.total > 0 && (
                 <Badge variant="secondary" className="text-sm">
-                    {t('adminRefund.found', { count: data.total })}
+                    {t('refundRequests.found', { count: data.total })}
                 </Badge>
             )}
 
             {hasError && (
                 <div className="rounded-md border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
-                    {getApiErrorMessage(error, t('adminRefund.loadError'))}
+                    {getApiErrorMessage(error, t('refundRequests.loadError'))}
                 </div>
             )}
 
-            {!hasError && (!data || data.items.length === 0) && <AdminRefundRequestsEmpty />}
+            {!hasError && (!data || data.items.length === 0) && <RefundRequestsEmpty />}
 
             {!hasError && data && data.items.length > 0 && (
-                <AdminRefundRequestsTable
+                <RefundRequestsTable
                     bookings={data.items}
-                    title={t('adminRefund.title')}
+                    title={t('refundRequests.title')}
                     page={page}
                     totalPages={totalPages}
                     canGoPreviousPage={canGoPreviousPage}
@@ -87,13 +87,13 @@ export function AdminRefundRequestsPage() {
                 onOpenChange={(open) => {
                     if (!open) closeConfirm()
                 }}
-                title={confirmAction?.type === 'approve' ? t('adminRefund.approve') : t('adminRefund.reject')}
+                title={confirmAction?.type === 'approve' ? t('refundRequests.approve') : t('refundRequests.reject')}
                 description={
                     confirmAction?.type === 'approve'
-                        ? t('adminRefund.approveConfirm', { code: confirmAction?.booking.code })
-                        : t('adminRefund.rejectConfirm', { code: confirmAction?.booking.code })
+                        ? t('refundRequests.approveConfirm', { code: confirmAction?.booking.code })
+                        : t('refundRequests.rejectConfirm', { code: confirmAction?.booking.code })
                 }
-                confirmLabel={confirmAction?.type === 'approve' ? t('adminRefund.approve') : t('adminRefund.reject')}
+                confirmLabel={confirmAction?.type === 'approve' ? t('refundRequests.approve') : t('refundRequests.reject')}
                 variant={confirmAction?.type === 'reject' ? 'destructive' : 'default'}
                 onConfirm={handleConfirm}
                 loading={isConfirmPending}
@@ -102,21 +102,21 @@ export function AdminRefundRequestsPage() {
                     confirmAction?.type === 'approve' ? (
                         <div className="space-y-3 pt-1">
                             <div className="space-y-1.5">
-                                <Label htmlFor="refund-reference">{t('adminRefund.refundReference')}</Label>
+                                <Label htmlFor="refund-reference">{t('refundRequests.refundReference')}</Label>
                                 <Input
                                     id="refund-reference"
                                     value={refundReference}
                                     onChange={(event) => setRefundReference(event.target.value)}
-                                    placeholder={t('adminRefund.refundReferencePlaceholder')}
+                                    placeholder={t('refundRequests.refundReferencePlaceholder')}
                                 />
                             </div>
                             <div className="space-y-1.5">
-                                <Label htmlFor="refund-note">{t('adminRefund.refundNote')}</Label>
+                                <Label htmlFor="refund-note">{t('refundRequests.refundNote')}</Label>
                                 <Input
                                     id="refund-note"
                                     value={refundNote}
                                     onChange={(event) => setRefundNote(event.target.value)}
-                                    placeholder={t('adminRefund.refundNotePlaceholder')}
+                                    placeholder={t('refundRequests.refundNotePlaceholder')}
                                 />
                             </div>
                         </div>

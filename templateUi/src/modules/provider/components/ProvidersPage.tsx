@@ -11,7 +11,7 @@ import { useProviders, useCreateProvider, useUpdateProvider, useToggleProviderAc
 import type { Provider } from '../types'
 
 import { ProviderForm } from './ProviderForm'
-import { getProvidersColumns } from './providers-columns'
+import { getProvidersColumns } from './ProvidersColumns'
 
 export function ProvidersPage() {
     const [isFormOpen, setIsFormOpen] = useState(false)

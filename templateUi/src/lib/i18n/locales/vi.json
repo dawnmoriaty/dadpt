@@ -248,7 +248,7 @@
     "resumePayment": "Tiếp tục thanh toán",
     "copyPaymentLink": "Copy link thanh toán"
   },
-  "adminRefund": {
+  "refundRequests": {
     "title": "Yêu cầu hoàn vé",
     "subtitle": "Quản lý các yêu cầu hoàn vé từ khách hàng",
     "noRequests": "Không có yêu cầu hoàn vé nào",

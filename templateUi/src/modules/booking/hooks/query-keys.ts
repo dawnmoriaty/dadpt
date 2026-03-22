@@ -9,14 +9,14 @@ export const bookingKeys = {
     paymentStatus: (orderCode: string) => [...bookingKeys.all, 'payment-status', orderCode] as const,
 }
 
-export const adminBookingKeys = {
-    refundRequestsRoot: ['admin-refund-requests'] as const,
-    refundRequests: (page: number, pageSize: number) => ['admin-refund-requests', page, pageSize] as const,
-    refundPendingCount: ['admin-refund-pending-count'] as const,
-    eventFeed: ['admin-booking-event-feed'] as const,
+export const refundRequestKeys = {
+    root: ['refund-requests'] as const,
+    list: (page: number, pageSize: number) => ['refund-requests', page, pageSize] as const,
+    pendingCount: ['refund-pending-count'] as const,
+    eventFeed: ['refund-request-event-feed'] as const,
 }
 
-export interface AdminBookingEventFeedItem {
+export interface RefundRequestEventFeedItem {
     id: string
     type: 'refund_requested' | 'booking_cancelled'
     code: string
@@ -27,14 +27,14 @@ export interface AdminBookingEventFeedItem {
 
 const MAX_EVENT_FEED_ITEMS = 20
 
-export function pushAdminBookingEvent(queryClient: QueryClient, event: Omit<AdminBookingEventFeedItem, 'id' | 'createdAt'>) {
-    const nextItem: AdminBookingEventFeedItem = {
+export function pushRefundRequestEvent(queryClient: QueryClient, event: Omit<RefundRequestEventFeedItem, 'id' | 'createdAt'>) {
+    const nextItem: RefundRequestEventFeedItem = {
         ...event,
         id: `${event.type}-${event.code}-${Date.now()}`,
         createdAt: new Date().toISOString(),
     }
 
-    queryClient.setQueryData<AdminBookingEventFeedItem[]>(adminBookingKeys.eventFeed, (prev = []) => {
+    queryClient.setQueryData<RefundRequestEventFeedItem[]>(refundRequestKeys.eventFeed, (prev = []) => {
         const next = [nextItem, ...prev]
         return next.slice(0, MAX_EVENT_FEED_ITEMS)
     })

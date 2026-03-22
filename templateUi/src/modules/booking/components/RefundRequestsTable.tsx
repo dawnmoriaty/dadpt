@@ -14,7 +14,7 @@ import type { Booking } from '../types'
 
 import { RefundRequestRow } from './RefundRequestRow'
 
-interface AdminRefundRequestsTableProps {
+interface RefundRequestsTableProps {
     bookings: Booking[]
     title: string
     page: number
@@ -27,7 +27,7 @@ interface AdminRefundRequestsTableProps {
     onReject: (booking: Booking) => void
 }
 
-export function AdminRefundRequestsTable({
+export function RefundRequestsTable({
     bookings,
     title,
     page,
@@ -38,7 +38,7 @@ export function AdminRefundRequestsTable({
     onNextPage,
     onApprove,
     onReject,
-}: AdminRefundRequestsTableProps) {
+}: RefundRequestsTableProps) {
     const { t } = useTranslation()
 
     return (
@@ -50,13 +50,13 @@ export function AdminRefundRequestsTable({
                 <Table>
                     <TableHeader>
                         <TableRow>
-                            <TableHead>{t('adminRefund.bookingCode')}</TableHead>
-                            <TableHead>{t('adminRefund.customer')}</TableHead>
-                            <TableHead>{t('adminRefund.route')}</TableHead>
-                            <TableHead>{t('adminRefund.seats')}</TableHead>
-                            <TableHead className="text-right">{t('adminRefund.amount')}</TableHead>
-                            <TableHead>{t('adminRefund.departure')}</TableHead>
-                            <TableHead>{t('adminRefund.requestedAt')}</TableHead>
+                            <TableHead>{t('refundRequests.bookingCode')}</TableHead>
+                            <TableHead>{t('refundRequests.customer')}</TableHead>
+                            <TableHead>{t('refundRequests.route')}</TableHead>
+                            <TableHead>{t('refundRequests.seats')}</TableHead>
+                            <TableHead className="text-right">{t('refundRequests.amount')}</TableHead>
+                            <TableHead>{t('refundRequests.departure')}</TableHead>
+                            <TableHead>{t('refundRequests.requestedAt')}</TableHead>
                             <TableHead className="text-right">{t('common.actions')}</TableHead>
                         </TableRow>
                     </TableHeader>

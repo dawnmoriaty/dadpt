@@ -8,8 +8,8 @@ import { Button } from '@/components/ui/button'
 import { useBusTypes, useDeleteBusType, useCreateBusType, useUpdateBusType } from '../hooks'
 import type { BusType, CreateBusTypeRequest, UpdateBusTypeRequest } from '../types'
 
-import { getBusTypesColumns } from './bus-types-columns'
 import { BusTypeFormDialog } from './BusTypeFormDialog'
+import { getBusTypesColumns } from './BusTypesColumns'
 
 
 export function BusTypesPage(): React.ReactElement {

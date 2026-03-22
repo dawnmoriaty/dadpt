@@ -13,7 +13,7 @@ import type { Location } from '../types'
 
 import { LocationCard } from './LocationCard'
 import { LocationForm } from './LocationForm'
-import { getLocationsColumns } from './locations-columns'
+import { getLocationsColumns } from './LocationsColumns'
 
 
 type ViewMode = 'grid' | 'table'

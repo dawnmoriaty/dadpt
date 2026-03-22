@@ -238,7 +238,7 @@
     "resumePayment": "Resume payment",
     "copyPaymentLink": "Copy payment link"
   },
-  "adminRefund": {
+  "refundRequests": {
     "title": "Refund Requests",
     "subtitle": "Manage refund requests from customers",
     "noRequests": "No refund requests",

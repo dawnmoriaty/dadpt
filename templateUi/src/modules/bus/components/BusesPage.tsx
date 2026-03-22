@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button'
 import { useBuses, useDeleteBus, useCreateBus, useUpdateBus } from '../hooks'
 import type { Bus, CreateBusRequest, UpdateBusRequest } from '../types'
 
-import { getBusesColumns } from './buses-columns'
+import { getBusesColumns } from './BusesColumns'
 import { BusFormDialog } from './BusFormDialog'
 
 

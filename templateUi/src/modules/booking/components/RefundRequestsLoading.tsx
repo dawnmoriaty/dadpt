@@ -1,6 +1,6 @@
 import { Skeleton } from '@/components/ui/skeleton'
 
-export function AdminRefundRequestsLoading() {
+export function RefundRequestsLoading() {
     return (
         <div className="space-y-6">
             <div>

@@ -12,7 +12,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
-import { useAdminBookingEventFeed, useRefundPendingCount } from '@/modules/booking/hooks/use-admin-refund-hooks'
+import { useRefundPendingCount, useRefundRequestEventFeed } from '@/modules/booking/hooks/use-refund-requests-hooks'
 import { useAuthStore } from '@/stores/use-auth-store'
 
 export function Header() {
@@ -20,7 +20,7 @@ export function Header() {
     const { user, logout } = useAuthStore()
     const navigate = useNavigate()
     const { data: refundCountData } = useRefundPendingCount()
-    const { data: eventFeed } = useAdminBookingEventFeed()
+    const { data: eventFeed } = useRefundRequestEventFeed()
 
     const refundPendingCount = refundCountData?.count ?? 0
     const totalNotificationCount = (eventFeed?.length ?? 0) + refundPendingCount
@@ -64,12 +64,12 @@ export function Header() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2">
                                                 <span className="text-sm font-medium truncate">
-                                                    {t('adminRefund.title')}
+                                                    {t('refundRequests.title')}
                                                 </span>
                                                 <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-primary" />
                                             </div>
                                             <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                                {t('adminRefund.found', { count: refundPendingCount })}
+                                                {t('refundRequests.found', { count: refundPendingCount })}
                                             </p>
                                         </div>
                                     </button>
@@ -86,7 +86,7 @@ export function Header() {
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium truncate">
                                                 {event.type === 'refund_requested'
-                                                    ? t('adminRefund.newRequest', {
+                                                    ? t('refundRequests.newRequest', {
                                                         code: event.code,
                                                         name: event.guestName,
                                                         amount: new Intl.NumberFormat('vi-VN', {
@@ -94,7 +94,7 @@ export function Header() {
                                                             currency: 'VND',
                                                         }).format(event.amount),
                                                     })
-                                                    : t('adminRefund.bookingCancelled', {
+                                                    : t('refundRequests.bookingCancelled', {
                                                         code: event.code,
                                                         name: event.guestName,
                                                     })}

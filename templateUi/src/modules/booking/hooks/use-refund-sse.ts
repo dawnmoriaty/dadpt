@@ -5,11 +5,11 @@ import { toast } from 'sonner'
 
 import { useAuthStore } from '@/stores/use-auth-store'
 
-import { adminBookingKeys, pushAdminBookingEvent } from './query-keys'
+import { pushRefundRequestEvent, refundRequestKeys } from './query-keys'
 
 const SSE_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api/v1'
 
-interface AdminBookingEvent {
+interface RefundRequestEvent {
     eventType: string
     bookingId: number
     code: string
@@ -22,7 +22,7 @@ interface AdminBookingEvent {
 }
 
 /**
- * useRefundSSE connects to the admin SSE endpoint to receive real-time
+ * useRefundSSE connects to the refund SSE endpoint to receive real-time
  * refund request notifications. On each event:
  * - Invalidates refund request queries (auto-refresh table)
  * - Invalidates refund pending count (auto-update badge)
@@ -47,12 +47,12 @@ export function useRefundSSE() {
 
         es.addEventListener('refund_requested', (event) => {
             try {
-                const data: AdminBookingEvent = JSON.parse(event.data)
+                const data: RefundRequestEvent = JSON.parse(event.data)
                 console.log('[SSE] Received refund event:', data)
 
                 // Invalidate queries to auto-refresh the admin refund list and badge
-                queryClient.invalidateQueries({ queryKey: ['admin-refund-requests'] })
-                queryClient.invalidateQueries({ queryKey: adminBookingKeys.refundPendingCount })
+                queryClient.invalidateQueries({ queryKey: refundRequestKeys.root })
+                queryClient.invalidateQueries({ queryKey: refundRequestKeys.pendingCount })
 
                 // Show toast notification
                 const amountFormatted = new Intl.NumberFormat('vi-VN', {
@@ -61,7 +61,7 @@ export function useRefundSSE() {
                 }).format(data.amount)
 
                 toast.info(
-                    t('adminRefund.newRequest', {
+                    t('refundRequests.newRequest', {
                         code: data.code,
                         name: data.guestName,
                         amount: amountFormatted,
@@ -70,7 +70,7 @@ export function useRefundSSE() {
                     { duration: 8000 },
                 )
 
-                pushAdminBookingEvent(queryClient, {
+                pushRefundRequestEvent(queryClient, {
                     type: 'refund_requested',
                     code: data.code,
                     guestName: data.guestName,

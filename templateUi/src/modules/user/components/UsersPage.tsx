@@ -9,7 +9,7 @@ import { useUsers, useDeleteUser, useCreateUser, useUpdateUser } from '../hooks'
 import type { User, CreateUserRequest, UpdateUserRequest } from '../types'
 
 import { UserFormDialog } from './UserFormDialog'
-import { getUsersColumns } from './users-columns'
+import { getUsersColumns } from './UsersColumns'
 
 export function UsersPage(): React.ReactElement {
     const [page, setPage] = useState(0)

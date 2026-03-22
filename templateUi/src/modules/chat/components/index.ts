@@ -1,3 +1,3 @@
-export { ChatHeader } from './chat-header'
-export { ChatMessages } from './chat-messages'
-export { ChatPage } from './chat-page'
+export { ChatHeader } from './ChatHeader'
+export { ChatMessages } from './ChatMessages'
+export { ChatPage } from './ChatPage'

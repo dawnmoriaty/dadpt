@@ -2,15 +2,15 @@ import { useMemo, useState } from 'react'
 
 import type { Booking } from '../types'
 
-import { useApproveRefund, useRefundRequests, useRejectRefund } from './use-admin-refund-hooks'
-import { useRefundSSE } from './useRefundSSE'
+import { useApproveRefund, useRefundRequests, useRejectRefund } from './use-refund-requests-hooks'
+import { useRefundSSE } from './use-refund-sse'
 
 interface RefundConfirmAction {
     type: 'approve' | 'reject'
     booking: Booking
 }
 
-interface UseAdminRefundRequestsPageResult {
+interface UseRefundRequestsPageResult {
     page: number
     totalPages: number
     canGoPreviousPage: boolean
@@ -33,7 +33,7 @@ interface UseAdminRefundRequestsPageResult {
     handleConfirm: () => void
 }
 
-export function useAdminRefundRequestsPage(pageSize = 20): UseAdminRefundRequestsPageResult {
+export function useRefundRequestsPage(pageSize = 20): UseRefundRequestsPageResult {
     const [page, setPage] = useState(1)
     const [confirmAction, setConfirmAction] = useState<RefundConfirmAction | null>(null)
     const [refundReference, setRefundReference] = useState('')
