@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router'
 import { useEffect } from 'react'
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native'
-import { CheckCircle2, Clock3, Copy, CreditCard } from 'lucide-react-native'
+import { Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native'
+import { CheckCircle2, Clock3, Copy, CreditCard, ExternalLink } from 'lucide-react-native'
 
 import { tw } from '@/src/lib/utils'
 
@@ -34,6 +34,22 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
 
     const handleCopyOrderCode = () => {
         void navigator.clipboard?.writeText?.(orderCode)
+    }
+
+    const handleOpenPayment = async () => {
+        if (!data.paymentUrl) {
+            return
+        }
+        try {
+            const canOpen = await Linking.canOpenURL(data.paymentUrl)
+            if (!canOpen) {
+                Alert.alert('Khong mo duoc', 'Khong the mo lien ket thanh toan tren thiet bi nay.')
+                return
+            }
+            await Linking.openURL(data.paymentUrl)
+        } catch {
+            Alert.alert('Loi', 'Da xay ra loi khi mo trang thanh toan.')
+        }
     }
 
     return (
@@ -94,6 +110,18 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
                         <Text style={tw`text-sm text-blue-700`}>
                             Ma QR da san sang ({qrCode.length} ky tu). Ban co the tiep tuc thanh toan trong tab Ve cua toi.
                         </Text>
+                    )}
+
+                    {!!data.paymentUrl && (
+                        <TouchableOpacity
+                            style={tw`mt-3 rounded-xl border border-blue-300 bg-white py-3`}
+                            onPress={handleOpenPayment}
+                        >
+                            <View style={tw`flex-row items-center justify-center`}>
+                                <ExternalLink size={15} color="#1D4ED8" />
+                                <Text style={tw`ml-2 text-sm font-semibold text-blue-700`}>Mo trang thanh toan</Text>
+                            </View>
+                        </TouchableOpacity>
                     )}
                 </View>
             )}

@@ -148,6 +148,12 @@ export function BookingScreen() {
             </View>
 
             <ScrollView contentContainerStyle={tw`p-4 pb-20`}>
+                <View style={tw`mb-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-3`}>
+                    <Text style={tw`text-xs text-emerald-700`}>
+                        Dat cho dang duoc giu tam thoi. Vui long hoan tat thong tin de tranh mat cho.
+                    </Text>
+                </View>
+
                 <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4`}>
                     <Text style={tw`mb-3 text-base font-bold text-gray-900`}>Thong tin lien he</Text>
 

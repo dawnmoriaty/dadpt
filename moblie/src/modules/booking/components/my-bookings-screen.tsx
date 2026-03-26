@@ -206,6 +206,7 @@ export function MyBookingsScreen() {
         <SafeAreaView style={tw`flex-1 bg-gray-50`}>
             <View style={tw`border-b border-gray-100 bg-white px-4 py-4 shadow-sm`}>
                 <Text style={tw`text-xl font-bold text-gray-900`}>Ve cua toi</Text>
+                <Text style={tw`mt-1 text-xs text-gray-500`}>Quan ly ve da dat, thanh toan va huy/hoan ve</Text>
             </View>
 
             <View style={tw`flex-1 px-4 pt-4`}>

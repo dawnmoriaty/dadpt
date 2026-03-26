@@ -125,13 +125,18 @@ export function SearchResultsScreen() {
                         </TouchableOpacity>
                     </View>
                 ) : (
-                    <FlatList
-                        data={data.items}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={renderTripCard}
-                        contentContainerStyle={tw`pb-10`}
-                        showsVerticalScrollIndicator={false}
-                    />
+                    <>
+                        <View style={tw`mb-3 rounded-xl bg-white px-3 py-2`}>
+                            <Text style={tw`text-xs text-gray-500`}>Tim thay {data.items.length} chuyen phu hop</Text>
+                        </View>
+                        <FlatList
+                            data={data.items}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={renderTripCard}
+                            contentContainerStyle={tw`pb-10`}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    </>
                 )}
             </View>
         </SafeAreaView>

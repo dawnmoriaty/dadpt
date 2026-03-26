@@ -112,12 +112,15 @@ export function HomeSearchScreen() {
     return (
         <SafeAreaView style={tw`flex-1 bg-gray-50`}>
             <ScrollView contentContainerStyle={tw`p-4 pb-10`}>
-                <View style={tw`mt-4 mb-6 rounded-2xl bg-blue-600 p-6`}>
+                <View style={tw`mt-4 mb-6 rounded-3xl border border-blue-500 bg-blue-600 p-6 shadow-sm`}>
+                    <View style={tw`mb-2 self-start rounded-full bg-white/20 px-3 py-1`}>
+                        <Text style={tw`text-xs font-semibold text-white`}>Bus Ticketing</Text>
+                    </View>
                     <Text style={tw`mb-1 text-2xl font-bold text-white`}>Dat ve xe khach</Text>
                     <Text style={tw`text-blue-100`}>Tim chuyen nhanh, dat cho de dang va an toan</Text>
                 </View>
 
-                <View style={tw`rounded-2xl border border-gray-100 bg-white p-4 shadow-sm`}>
+                <View style={tw`rounded-3xl border border-gray-100 bg-white p-4 shadow-sm`}>
                     <LocationInput
                         label="Diem di"
                         placeholder="Nhap diem di"
@@ -175,6 +178,10 @@ export function HomeSearchScreen() {
                     {(originSearch.isLoading || destinationSearch.isLoading) && (
                         <Text style={tw`mt-3 text-center text-xs text-gray-500`}>Dang tim diem di/den...</Text>
                     )}
+
+                    <Text style={tw`mt-3 text-center text-xs text-gray-400`}>
+                        Goi y nhap ten tinh/thanh de tim nhanh diem don-tra.
+                    </Text>
                 </View>
 
                 <View style={tw`mt-6 flex-row`}>
