@@ -1,3 +1,6 @@
 export * from './types'
 export * from './hooks'
 export * from './api'
+export { HomeSearchScreen } from './components/home-search-screen'
+export { SearchResultsScreen } from './components/search-results-screen'
+export { UpcomingTripsSection } from './components/upcoming-trips-section'

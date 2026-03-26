@@ -8,7 +8,19 @@ export function useSearchTrips(params: SearchTripsRequest, enabled: boolean = tr
     return useQuery({
         queryKey: [...TRIPS_QUERY_KEY, 'search', params],
         queryFn: () => tripApi.search(params),
-        enabled: enabled && !!params.origin && !!params.destination && !!params.departureDate,
+        enabled: enabled && params.originId > 0 && params.destinationId > 0 && !!params.departureDate,
+    })
+}
+
+export function useBrowseTrips(params?: {
+    providerIds?: number[]
+    busTypeIds?: number[]
+    page?: number
+    limit?: number
+}) {
+    return useQuery({
+        queryKey: [...TRIPS_QUERY_KEY, 'browse', params],
+        queryFn: () => tripApi.browse(params),
     })
 }
 
