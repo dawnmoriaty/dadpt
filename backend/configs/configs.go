@@ -32,6 +32,15 @@ type Config struct {
 	// RabbitMQ
 	RabbitMQURI string `mapstructure:"RABBITMQ_URI"`
 
+	// Kafka
+	KafkaEnabled              bool   `mapstructure:"KAFKA_ENABLED"`
+	KafkaBrokers              string `mapstructure:"KAFKA_BROKERS"`
+	KafkaClientID             string `mapstructure:"KAFKA_CLIENT_ID"`
+	KafkaBookingEventsTopic   string `mapstructure:"KAFKA_BOOKING_EVENTS_TOPIC"`
+	KafkaBookingConsumerGroup string `mapstructure:"KAFKA_BOOKING_CONSUMER_GROUP"`
+	KafkaRefundEventsTopic    string `mapstructure:"KAFKA_REFUND_EVENTS_TOPIC"`
+	KafkaRefundConsumerGroup  string `mapstructure:"KAFKA_REFUND_CONSUMER_GROUP"`
+
 	// MinIO
 	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
 	MinioAccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
@@ -70,29 +79,36 @@ func LoadConfig() *Config {
 	}
 
 	cfg = Config{
-		Environment:           viper.GetString("ENVIRONMENT"),
-		HTTPPort:              viper.GetInt("HTTP_PORT"),
-		BookingExpiryDuration: viper.GetDuration("BOOKING_EXPIRY_DURATION"),
-		DatabaseURI:           viper.GetString("DATABASE_URI"),
-		RedisURI:              viper.GetString("REDIS_URI"),
-		RedisPassword:         viper.GetString("REDIS_PASSWORD"),
-		RedisDB:               viper.GetInt("REDIS_DB"),
-		RabbitMQURI:           viper.GetString("RABBITMQ_URI"),
-		MinioEndpoint:         viper.GetString("MINIO_ENDPOINT"),
-		MinioAccessKey:        viper.GetString("MINIO_ACCESS_KEY"),
-		MinioSecretKey:        viper.GetString("MINIO_SECRET_KEY"),
-		MinioBucket:           viper.GetString("MINIO_BUCKET"),
-		MinioBaseURL:          viper.GetString("MINIO_BASE_URL"),
-		MinioUseSSL:           viper.GetBool("MINIO_USE_SSL"),
-		AuthSecret:            viper.GetString("AUTH_SECRET"),
-		AccessTokenDuration:   viper.GetDuration("ACCESS_TOKEN_DURATION"),
-		RefreshTokenDuration:  viper.GetDuration("REFRESH_TOKEN_DURATION"),
-		AIAgentGRPCAddr:       viper.GetString("AI_AGENT_GRPC_ADDR"),
-		PayOSClientID:         viper.GetString("PAYOS_CLIENT_ID"),
-		PayOSAPIKey:           viper.GetString("PAYOS_API_KEY"),
-		PayOSChecksumKey:      viper.GetString("PAYOS_CHECKSUM_KEY"),
-		PayOSReturnURL:        viper.GetString("PAYOS_RETURN_URL"),
-		PayOSCancelURL:        viper.GetString("PAYOS_CANCEL_URL"),
+		Environment:               viper.GetString("ENVIRONMENT"),
+		HTTPPort:                  viper.GetInt("HTTP_PORT"),
+		BookingExpiryDuration:     viper.GetDuration("BOOKING_EXPIRY_DURATION"),
+		DatabaseURI:               viper.GetString("DATABASE_URI"),
+		RedisURI:                  viper.GetString("REDIS_URI"),
+		RedisPassword:             viper.GetString("REDIS_PASSWORD"),
+		RedisDB:                   viper.GetInt("REDIS_DB"),
+		RabbitMQURI:               viper.GetString("RABBITMQ_URI"),
+		KafkaEnabled:              viper.GetBool("KAFKA_ENABLED"),
+		KafkaBrokers:              viper.GetString("KAFKA_BROKERS"),
+		KafkaClientID:             viper.GetString("KAFKA_CLIENT_ID"),
+		KafkaBookingEventsTopic:   viper.GetString("KAFKA_BOOKING_EVENTS_TOPIC"),
+		KafkaBookingConsumerGroup: viper.GetString("KAFKA_BOOKING_CONSUMER_GROUP"),
+		KafkaRefundEventsTopic:    viper.GetString("KAFKA_REFUND_EVENTS_TOPIC"),
+		KafkaRefundConsumerGroup:  viper.GetString("KAFKA_REFUND_CONSUMER_GROUP"),
+		MinioEndpoint:             viper.GetString("MINIO_ENDPOINT"),
+		MinioAccessKey:            viper.GetString("MINIO_ACCESS_KEY"),
+		MinioSecretKey:            viper.GetString("MINIO_SECRET_KEY"),
+		MinioBucket:               viper.GetString("MINIO_BUCKET"),
+		MinioBaseURL:              viper.GetString("MINIO_BASE_URL"),
+		MinioUseSSL:               viper.GetBool("MINIO_USE_SSL"),
+		AuthSecret:                viper.GetString("AUTH_SECRET"),
+		AccessTokenDuration:       viper.GetDuration("ACCESS_TOKEN_DURATION"),
+		RefreshTokenDuration:      viper.GetDuration("REFRESH_TOKEN_DURATION"),
+		AIAgentGRPCAddr:           viper.GetString("AI_AGENT_GRPC_ADDR"),
+		PayOSClientID:             viper.GetString("PAYOS_CLIENT_ID"),
+		PayOSAPIKey:               viper.GetString("PAYOS_API_KEY"),
+		PayOSChecksumKey:          viper.GetString("PAYOS_CHECKSUM_KEY"),
+		PayOSReturnURL:            viper.GetString("PAYOS_RETURN_URL"),
+		PayOSCancelURL:            viper.GetString("PAYOS_CANCEL_URL"),
 	}
 
 	// Defaults
@@ -104,6 +120,24 @@ func LoadConfig() *Config {
 	}
 	if cfg.AIAgentGRPCAddr == "" {
 		cfg.AIAgentGRPCAddr = "localhost:50051"
+	}
+	if cfg.KafkaBrokers == "" {
+		cfg.KafkaBrokers = "localhost:9092"
+	}
+	if cfg.KafkaClientID == "" {
+		cfg.KafkaClientID = "bus-backend"
+	}
+	if cfg.KafkaBookingEventsTopic == "" {
+		cfg.KafkaBookingEventsTopic = "booking.events.v1"
+	}
+	if cfg.KafkaBookingConsumerGroup == "" {
+		cfg.KafkaBookingConsumerGroup = "booking-workers.v1"
+	}
+	if cfg.KafkaRefundEventsTopic == "" {
+		cfg.KafkaRefundEventsTopic = "booking.refund.events.v1"
+	}
+	if cfg.KafkaRefundConsumerGroup == "" {
+		cfg.KafkaRefundConsumerGroup = "booking-refund-workers.v1"
 	}
 	if cfg.Environment == "" {
 		cfg.Environment = EnvironmentDev

@@ -27,6 +27,7 @@ import (
 	"backend/pkgs/aiagent"
 	grpcpkg "backend/pkgs/grpc"
 	"backend/pkgs/jwt"
+	"backend/pkgs/kafka"
 	"backend/pkgs/logger"
 	"backend/pkgs/minio"
 	"backend/pkgs/rabbitmq"
@@ -56,6 +57,7 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		provideDatabase,
 		provideRedis,
 		provideRabbitMQ,
+		provideKafka,
 		provideMinio,
 		provideJWTProvider,
 		provideGRPCConn,
@@ -137,6 +139,24 @@ func provideRabbitMQ(cfg *configs.Config) rabbitmq.IRabbitMQ {
 		return nil
 	}
 	return rmq
+}
+
+func provideKafka(cfg *configs.Config) kafka.IKafka {
+	if cfg == nil || !cfg.KafkaEnabled {
+		return nil
+	}
+
+	client, err := kafka.NewKafka(kafka.Config{
+		Enabled:  cfg.KafkaEnabled,
+		Brokers:  kafka.ParseBrokers(cfg.KafkaBrokers),
+		ClientID: cfg.KafkaClientID,
+	})
+	if err != nil {
+		logger.Warn("Kafka not connected: %v", err)
+		return nil
+	}
+
+	return client
 }
 
 func provideMinio(cfg *configs.Config) *minio.MinioClient {

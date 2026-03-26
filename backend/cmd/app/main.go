@@ -6,12 +6,14 @@ import (
 	"os/signal"
 	"syscall"
 
+	"backend/configs"
 	"backend/db"
 	"backend/di"
 	"backend/internals/booking/infrastructure"
 	"backend/internals/booking/repository"
 	"backend/internals/booking/usecase"
 	httpServer "backend/internals/server/http"
+	"backend/pkgs/kafka"
 	"backend/pkgs/logger"
 	"backend/pkgs/rabbitmq"
 )
@@ -29,8 +31,10 @@ func main() {
 	// Run with injected dependencies
 	err = container.Invoke(func(
 		server *httpServer.Server,
+		cfg *configs.Config,
 		database *db.Database,
 		rmq rabbitmq.IRabbitMQ,
+		kafkaClient kafka.IKafka,
 	) {
 		logger.Info("Starting Bus Ticketing Backend...")
 
@@ -45,6 +49,15 @@ func main() {
 		if err := infrastructure.SetupBookingTopology(rmq); err != nil {
 			logger.Error("Failed to setup booking RabbitMQ topology: %v", err)
 			// Continue without RabbitMQ — degraded mode
+		}
+
+		if kafkaClient != nil {
+			topics := infrastructure.BookingKafkaTopics(cfg)
+			if err := kafkaClient.EnsureTopics(ctx, topics); err != nil {
+				logger.Error("Failed to ensure Kafka topics: %v", err)
+			} else {
+				logger.Info("Kafka topics ensured successfully")
+			}
 		}
 
 		// Start outbox processor (polls outbox_events → publishes to RabbitMQ)
@@ -73,6 +86,11 @@ func main() {
 			cancel() // Stop background workers
 			if rmq != nil {
 				rmq.Close()
+			}
+			if kafkaClient != nil {
+				if err := kafkaClient.Close(); err != nil {
+					logger.Warn("Failed to close Kafka client: %v", err)
+				}
 			}
 			database.Close()
 			os.Exit(0)
