@@ -1,7 +1,7 @@
 'use client'
 
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bus, LogOut, Menu, Ticket, X, MessageCircle } from 'lucide-react'
+import { Bus, LogOut, Menu, Ticket, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -30,7 +30,7 @@ export function Header() {
     const navLinks = [
         { label: 'Trang chủ', to: '/' },
         { label: 'Tìm kiếm vé', to: '/search' },
-        { label: 'Chat AI', to: '/chat', icon: MessageCircle },
+        { label: 'AI hỗ trợ', to: '/chat' },
     ]
 
     return (
@@ -52,7 +52,7 @@ export function Header() {
                             to={link.to}
                             className="flex items-center gap-1.5 px-4 py-2 text-sm font-medium text-foreground rounded-lg transition-all hover:bg-primary/10 hover:text-primary active:scale-95"
                         >
-                            {link.icon && <link.icon className="h-4 w-4" />}
+                            {/* {link.icon && <link.icon className="h-4 w-4" />} */}
                             {link.label}
                         </Link>
                     ))}
@@ -158,7 +158,7 @@ export function Header() {
                                 className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-foreground rounded-lg hover:bg-primary/10 transition-colors"
                                 onClick={() => setMobileMenuOpen(false)}
                             >
-                                {link.icon && <link.icon className="h-4 w-4 text-primary" />}
+                                {/* {link.icon && <link.icon className="h-4 w-4 text-primary" />} */}
                                 {link.label}
                             </Link>
                         ))}
