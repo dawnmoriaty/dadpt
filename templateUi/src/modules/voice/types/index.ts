@@ -1,3 +1,5 @@
+import type { VoiceExecuteResponse, VoicePlanResponse } from './booking'
+
 export interface VoiceTranscribeResponse {
     transcript: string
     engine: string
