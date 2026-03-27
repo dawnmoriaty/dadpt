@@ -2,6 +2,7 @@ package dto
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 
 	"backend/internals/trip/domain"
@@ -184,8 +185,8 @@ func ToTripResponse(trip *domain.Trip) *TripResponse {
 		AvailableSeats:  int(trip.AvailableSeats),
 		IsHotDeal:       trip.IsHotDeal,
 		Status:          trip.Status.String(),
-		PickupPoints:    pointsDomainToDTO(trip.PickupPoints),
-		DropoffPoints:   pointsDomainToDTO(trip.DropoffPoints),
+		PickupPoints:    pointsDomainToDTO(trip.PickupPoints, trip.OriginName),
+		DropoffPoints:   pointsDomainToDTO(trip.DropoffPoints, trip.DestinationName),
 		BookedSeats:     trip.BookedSeats,
 		BusImageURL:     trip.BusImageURL,
 		SeatLayout:      trip.SeatLayout,
@@ -215,14 +216,18 @@ func pointsDTOToDomain(points []PointDTO) []domain.Point {
 	return result
 }
 
-func pointsDomainToDTO(points []domain.Point) []PointDTO {
+func pointsDomainToDTO(points []domain.Point, fallbackName string) []PointDTO {
 	if points == nil {
 		return []PointDTO{}
 	}
 	result := make([]PointDTO, len(points))
 	for i, p := range points {
+		name := strings.TrimSpace(p.Name)
+		if name == "" {
+			name = strings.TrimSpace(fallbackName)
+		}
 		result[i] = PointDTO{
-			Name:      p.Name,
+			Name:      name,
 			Time:      p.Time,
 			Surcharge: p.Surcharge,
 		}

@@ -102,11 +102,12 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 
 	reusable := h.findReusablePendingBooking(c, userID, trip.ID)
 	if reusable != nil {
+		actualTravelDate := trip.DepartureTime.Format("2006-01-02")
 		response.Success(c, gin.H{
 			"flow":          "voice-e2e-reuse",
 			"tripId":        trip.ID,
 			"seatCodes":     reusable.Booking.SeatCodes,
-			"travelDate":    req.TravelDate,
+			"travelDate":    actualTravelDate,
 			"origin":        fallbackName(trip.OriginName, req.Origin),
 			"destination":   fallbackName(trip.DestinationName, req.Destination),
 			"bookingResult": bookingDto.ToCreateBookingResponse(reusable),
@@ -153,7 +154,7 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 		"flow":          "voice-e2e",
 		"tripId":        trip.ID,
 		"seatCodes":     seatCodes,
-		"travelDate":    req.TravelDate,
+		"travelDate":    trip.DepartureTime.Format("2006-01-02"),
 		"origin":        fallbackName(trip.OriginName, req.Origin),
 		"destination":   fallbackName(trip.DestinationName, req.Destination),
 		"bookingResult": bookingDto.ToCreateBookingResponse(out),
@@ -223,10 +224,7 @@ func (h *VoiceBookingHandler) Plan(c *gin.Context) {
 		return
 	}
 
-	travelDate := strings.TrimSpace(req.TravelDate)
-	if travelDate == "" {
-		travelDate = "auto"
-	}
+	travelDate := normalizeVoiceTravelDate(req.TravelDate)
 
 	trips, _, err := h.searchTripsForVoice(c, int32(origin.ID), int32(destination.ID), travelDate, req.SeatCount, 5)
 	if err != nil || len(trips) == 0 {
@@ -234,11 +232,8 @@ func (h *VoiceBookingHandler) Plan(c *gin.Context) {
 		return
 	}
 
-	if req.TravelDate == "" {
-		req.TravelDate = trips[0].DepartureTime.Format("2006-01-02")
-	}
-
 	recommended := selectBestTrip(trips)
+	actualTravelDate := recommended.DepartureTime.Format("2006-01-02")
 	candidates := make([]voiceTripCandidate, 0, len(trips))
 	for _, trip := range trips {
 		suggestedSeats, _ := allocateSeats(trip.BookedSeats, normalizeSeatPreference(req.SeatPreferenceOrder), req.SeatCount)
@@ -261,7 +256,7 @@ func (h *VoiceBookingHandler) Plan(c *gin.Context) {
 		"flow":              "voice-plan",
 		"origin":            fallbackName(recommended.OriginName, req.Origin),
 		"destination":       fallbackName(recommended.DestinationName, req.Destination),
-		"travelDate":        req.TravelDate,
+		"travelDate":        actualTravelDate,
 		"seatCount":         req.SeatCount,
 		"recommendedTripId": recommended.ID,
 		"candidates":        candidates,
@@ -306,10 +301,7 @@ func (h *VoiceBookingHandler) selectTripForExecute(c *gin.Context, req *VoiceExe
 		return nil, err
 	}
 
-	travelDate := strings.TrimSpace(req.TravelDate)
-	if travelDate == "" {
-		travelDate = "auto"
-	}
+	travelDate := normalizeVoiceTravelDate(req.TravelDate)
 
 	trips, _, err := h.searchTripsForVoice(c, int32(origin.ID), int32(destination.ID), travelDate, req.SeatCount, 20)
 	if err != nil {
@@ -548,25 +540,37 @@ func scoreLocationMatch(target string, location *locationDomain.Location) int {
 		return 90
 	}
 
+	if score := fuzzyLocationNameScore(target, name); score > 0 {
+		return score
+	}
+
 	targetTokens := strings.Fields(target)
 	nameTokens := strings.Fields(name)
 	if len(targetTokens) == 0 || len(nameTokens) == 0 {
 		return 0
 	}
 
-	set := make(map[string]bool, len(nameTokens))
-	for _, token := range nameTokens {
-		set[token] = true
-	}
-
 	overlap := 0
+	used := make([]bool, len(nameTokens))
 	for _, token := range targetTokens {
-		if set[token] {
-			overlap++
+		for i, candidate := range nameTokens {
+			if used[i] {
+				continue
+			}
+			if token == candidate {
+				overlap += 20
+				used[i] = true
+				break
+			}
+			if isApproximateLocationToken(token, candidate) {
+				overlap += 15
+				used[i] = true
+				break
+			}
 		}
 	}
 
-	score := overlap * 20
+	score := overlap
 	if strings.Contains(normalizeLocationText(location.City), target) {
 		score += 10
 	}
@@ -575,6 +579,83 @@ func scoreLocationMatch(target string, location *locationDomain.Location) int {
 	}
 
 	return score
+}
+
+func fuzzyLocationNameScore(target string, name string) int {
+	distance := levenshteinDistance(target, name)
+	maxLength := maxInt(len(target), len(name))
+	if maxLength >= 6 && distance <= 2 {
+		return 80 - (distance * 5)
+	}
+	if maxLength >= 4 && distance == 1 {
+		return 75
+	}
+	return 0
+}
+
+func isApproximateLocationToken(left string, right string) bool {
+	distance := levenshteinDistance(left, right)
+	maxLength := maxInt(len(left), len(right))
+	if maxLength <= 3 {
+		return distance <= 2 && sharesTokenEdge(left, right)
+	}
+	return distance <= 1
+}
+
+func sharesTokenEdge(left string, right string) bool {
+	if left == "" || right == "" {
+		return false
+	}
+	return left[0] == right[0] || left[len(left)-1] == right[len(right)-1]
+}
+
+func levenshteinDistance(left string, right string) int {
+	if left == right {
+		return 0
+	}
+	if left == "" {
+		return len(right)
+	}
+	if right == "" {
+		return len(left)
+	}
+
+	prev := make([]int, len(right)+1)
+	for j := 0; j <= len(right); j++ {
+		prev[j] = j
+	}
+
+	for i := 1; i <= len(left); i++ {
+		current := make([]int, len(right)+1)
+		current[0] = i
+		for j := 1; j <= len(right); j++ {
+			cost := 0
+			if left[i-1] != right[j-1] {
+				cost = 1
+			}
+			current[j] = minInt(
+				minInt(current[j-1]+1, prev[j]+1),
+				prev[j-1]+cost,
+			)
+		}
+		prev = current
+	}
+
+	return prev[len(right)]
+}
+
+func minInt(left int, right int) int {
+	if left < right {
+		return left
+	}
+	return right
+}
+
+func maxInt(left int, right int) int {
+	if left > right {
+		return left
+	}
+	return right
 }
 
 func stripLocationNoise(text string) string {
@@ -732,4 +813,25 @@ func fallbackName(primary, fallback string) string {
 		return primary
 	}
 	return strings.TrimSpace(fallback)
+}
+
+func normalizeVoiceTravelDate(raw string) string {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return "auto"
+	}
+
+	normalized := normalizeLocationText(trimmed)
+	switch normalized {
+	case "auto", "gan nhat", "som nhat":
+		return "auto"
+	case "hom nay":
+		return time.Now().Format("2006-01-02")
+	case "ngay mai", "mai":
+		return time.Now().AddDate(0, 0, 1).Format("2006-01-02")
+	case "ngay kia", "mot":
+		return time.Now().AddDate(0, 0, 2).Format("2006-01-02")
+	default:
+		return trimmed
+	}
 }

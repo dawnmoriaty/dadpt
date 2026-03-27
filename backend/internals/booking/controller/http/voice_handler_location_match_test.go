@@ -38,3 +38,18 @@ func TestPickBestLocationMatch_ReturnsNilOnWeakMatch(t *testing.T) {
 		t.Fatalf("expected nil for weak match, got id=%d", best.ID)
 	}
 }
+
+func TestPickBestLocationMatch_HandlesTranscriptTypos(t *testing.T) {
+	candidates := []*locationDomain.Location{
+		{ID: 1, Name: "Bến xe Gia Lâm", City: "Hà Nội", Keywords: "gia lam"},
+		{ID: 2, Name: "Bến xe Yên Nghĩa", City: "Hà Nội", Keywords: "yen nghia"},
+	}
+
+	best := pickBestLocationMatch("ben xe ra lam", candidates)
+	if best == nil {
+		t.Fatalf("expected a fuzzy best match")
+	}
+	if best.ID != 1 {
+		t.Fatalf("expected location id=1, got %d", best.ID)
+	}
+}

@@ -92,6 +92,11 @@ func (h *ChatHandler) callInternalJSON(c *gin.Context, method, path string, payl
 	if err := json.Unmarshal(recorder.Body.Bytes(), &result); err != nil {
 		return nil, pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}
+
+	if data, ok := result["data"].(map[string]any); ok {
+		return data, nil
+	}
+
 	return result, nil
 }
 

@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 
 import { upsertPendingBookingHistory } from '@/modules/booking'
 
-import type { VoiceExecuteResponse, VoicePlanResponse } from '../types'
+import type { VoiceExecuteResponse, VoicePipelineResponse, VoicePlanResponse } from '../types'
 import { parseSeatPreferenceOrder, parseTranscriptToPlanInput } from '../utils/voice-parser'
 
 import { getVoiceErrorMessage, useVoiceExecute, useVoicePipeline, useVoicePlan } from './index'
@@ -71,6 +71,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             updateAudioPreview(file)
             const result = await pipelineMutation.mutateAsync(file)
             setLastTranscript(result.transcript)
+            applyPipelinePlan(result.plan)
 
             const executeFromPipeline = result.execute as VoiceExecuteResponse | undefined
             if (executeFromPipeline?.bookingResult?.booking?.code) {
@@ -93,14 +94,19 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 }
             }
 
-            const command = result.parse?.command
+            const command = normalizePipelineCommand(result)
             if (command) {
                 setOrigin(command.origin)
                 setDestination(command.destination)
-                setTravelDate(command.travel_date)
-                setSeatCount(command.seat_count)
-                setSeatPreferenceOrder((command.seat_preference_order ?? []).join(', '))
-                toast.success('Đã nhận diện và phân tích giọng nói.')
+                setTravelDate(command.travelDate)
+                setSeatCount(command.seatCount)
+                setSeatPreferenceOrder(command.seatPreferenceOrder.join(', '))
+
+                if (result.plan?.candidates?.length) {
+                    toast.success('Đã nhận diện và tìm được chuyến phù hợp.')
+                } else {
+                    toast.success('Đã nhận diện và phân tích giọng nói.')
+                }
             } else {
                 toast.warning(result.parse?.message || 'Chưa nhận diện đủ thông tin chuyến đi.')
 
@@ -115,6 +121,19 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         }
+    }
+
+    const applyPipelinePlan = (plan?: VoicePlanResponse) => {
+        if (!plan) {
+            return
+        }
+
+        setPlanResult(plan)
+        setSelectedTripId(plan.recommendedTripId ?? null)
+        setOrigin(plan.origin ?? '')
+        setDestination(plan.destination ?? '')
+        setTravelDate(plan.travelDate ?? '')
+        setSeatCount(plan.seatCount ?? 1)
     }
 
     const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
@@ -269,5 +288,28 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         stopRecording,
         planTrips,
         executeBooking,
+    }
+}
+
+interface NormalizedPipelineCommand {
+    origin: string
+    destination: string
+    travelDate: string
+    seatCount: number
+    seatPreferenceOrder: string[]
+}
+
+function normalizePipelineCommand(result: VoicePipelineResponse): NormalizedPipelineCommand | null {
+    const command = result.parse?.command
+    if (!command) {
+        return null
+    }
+
+    return {
+        origin: command.origin,
+        destination: command.destination,
+        travelDate: command.travelDate ?? command.travel_date ?? result.plan?.travelDate ?? '',
+        seatCount: command.seatCount ?? command.seat_count ?? result.plan?.seatCount ?? 1,
+        seatPreferenceOrder: command.seatPreferenceOrder ?? command.seat_preference_order ?? [],
     }
 }

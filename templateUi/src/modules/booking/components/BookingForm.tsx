@@ -487,8 +487,8 @@ function PointSelect({ points, selectedName, placeholder, onSelect }: PointOptio
                 </SelectTrigger>
             </FormControl>
             <SelectContent>
-                {points.map((point) => (
-                    <SelectItem key={`${point.name}-${point.time}`} value={point.name}>
+                {points.map((point, index) => (
+                    <SelectItem key={`${point.name}-${point.time}-${index}`} value={point.name}>
                         {point.name}
                     </SelectItem>
                 ))}
@@ -499,7 +499,10 @@ function PointSelect({ points, selectedName, placeholder, onSelect }: PointOptio
 
 function getSelectablePoints(points: Point[] | undefined, fallbackName: string): Point[] {
     if (points && points.length > 0) {
-        return points
+        return points.map((point) => ({
+            ...point,
+            name: point.name.trim() || fallbackName,
+        }))
     }
 
     return [{

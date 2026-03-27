@@ -39,7 +39,12 @@ export function VoiceTripForm({
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="voice-date">Ngày đi</Label>
-                    <Input id="voice-date" value={travelDate} onChange={(event) => onTravelDateChange(event.target.value)} placeholder="Định dạng: YYYY-MM-DD" />
+                    <Input
+                        id="voice-date"
+                        value={travelDate}
+                        onChange={(event) => onTravelDateChange(event.target.value)}
+                        placeholder="YYYY-MM-DD, hôm nay, ngày mai hoặc auto"
+                    />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="voice-seat-count">Số ghế</Label>

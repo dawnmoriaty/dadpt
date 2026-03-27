@@ -9,21 +9,20 @@ export interface VoicePipelineResponse {
         command: {
             origin: string
             destination: string
-            travel_date: string
-            seat_count: number
-            seat_preference_order: string[]
+            travel_date?: string
+            seat_count?: number
+            seat_preference_order?: string[]
+            travelDate?: string
+            seatCount?: number
+            seatPreferenceOrder?: string[]
         } | null
         confidence: number
-        missing_fields: string[]
+        missing_fields?: string[]
+        missingFields?: string[]
         message: string
     }
-    plan?: {
-        data?: {
-            recommendedTripId?: number
-            candidates?: Array<{ tripId: number }>
-        }
-    }
-    execute?: unknown
+    plan?: VoicePlanResponse
+    execute?: VoiceExecuteResponse
 }
 
 export * from './booking'
