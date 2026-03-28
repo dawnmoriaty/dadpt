@@ -54,14 +54,7 @@ type PaymentRepository interface {
 	MarkRefunded(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 }
 
-// BookingEventPublisher defines the interface for publishing booking events to message broker
-type BookingEventPublisher interface {
-	PublishBookingCreated(ctx context.Context, booking *Booking) error
-	PublishBookingPaid(ctx context.Context, booking *Booking) error
-	PublishBookingExpired(ctx context.Context, booking *Booking) error
-	PublishBookingCancelled(ctx context.Context, booking *Booking) error
-	PublishRefundRequested(ctx context.Context, booking *Booking) error
-}
+
 
 // DistributedLock defines the interface for distributed locking
 type DistributedLock interface {

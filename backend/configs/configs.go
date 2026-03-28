@@ -32,14 +32,10 @@ type Config struct {
 	// RabbitMQ
 	RabbitMQURI string `mapstructure:"RABBITMQ_URI"`
 
-	// Kafka
-	KafkaEnabled              bool   `mapstructure:"KAFKA_ENABLED"`
-	KafkaBrokers              string `mapstructure:"KAFKA_BROKERS"`
-	KafkaClientID             string `mapstructure:"KAFKA_CLIENT_ID"`
-	KafkaBookingEventsTopic   string `mapstructure:"KAFKA_BOOKING_EVENTS_TOPIC"`
-	KafkaBookingConsumerGroup string `mapstructure:"KAFKA_BOOKING_CONSUMER_GROUP"`
-	KafkaRefundEventsTopic    string `mapstructure:"KAFKA_REFUND_EVENTS_TOPIC"`
-	KafkaRefundConsumerGroup  string `mapstructure:"KAFKA_REFUND_CONSUMER_GROUP"`
+	// Kafka (connection-level only — topic definitions in kafka.Registry)
+	KafkaEnabled  bool   `mapstructure:"KAFKA_ENABLED"`
+	KafkaBrokers  string `mapstructure:"KAFKA_BROKERS"`
+	KafkaClientID string `mapstructure:"KAFKA_CLIENT_ID"`
 
 	// MinIO
 	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
@@ -87,13 +83,9 @@ func LoadConfig() *Config {
 		RedisPassword:             viper.GetString("REDIS_PASSWORD"),
 		RedisDB:                   viper.GetInt("REDIS_DB"),
 		RabbitMQURI:               viper.GetString("RABBITMQ_URI"),
-		KafkaEnabled:              viper.GetBool("KAFKA_ENABLED"),
-		KafkaBrokers:              viper.GetString("KAFKA_BROKERS"),
-		KafkaClientID:             viper.GetString("KAFKA_CLIENT_ID"),
-		KafkaBookingEventsTopic:   viper.GetString("KAFKA_BOOKING_EVENTS_TOPIC"),
-		KafkaBookingConsumerGroup: viper.GetString("KAFKA_BOOKING_CONSUMER_GROUP"),
-		KafkaRefundEventsTopic:    viper.GetString("KAFKA_REFUND_EVENTS_TOPIC"),
-		KafkaRefundConsumerGroup:  viper.GetString("KAFKA_REFUND_CONSUMER_GROUP"),
+		KafkaEnabled:  viper.GetBool("KAFKA_ENABLED"),
+		KafkaBrokers:  viper.GetString("KAFKA_BROKERS"),
+		KafkaClientID: viper.GetString("KAFKA_CLIENT_ID"),
 		MinioEndpoint:             viper.GetString("MINIO_ENDPOINT"),
 		MinioAccessKey:            viper.GetString("MINIO_ACCESS_KEY"),
 		MinioSecretKey:            viper.GetString("MINIO_SECRET_KEY"),
@@ -126,18 +118,6 @@ func LoadConfig() *Config {
 	}
 	if cfg.KafkaClientID == "" {
 		cfg.KafkaClientID = "bus-backend"
-	}
-	if cfg.KafkaBookingEventsTopic == "" {
-		cfg.KafkaBookingEventsTopic = "booking.events.v1"
-	}
-	if cfg.KafkaBookingConsumerGroup == "" {
-		cfg.KafkaBookingConsumerGroup = "booking-workers.v1"
-	}
-	if cfg.KafkaRefundEventsTopic == "" {
-		cfg.KafkaRefundEventsTopic = "booking.refund.events.v1"
-	}
-	if cfg.KafkaRefundConsumerGroup == "" {
-		cfg.KafkaRefundConsumerGroup = "booking-refund-workers.v1"
 	}
 	if cfg.Environment == "" {
 		cfg.Environment = EnvironmentDev

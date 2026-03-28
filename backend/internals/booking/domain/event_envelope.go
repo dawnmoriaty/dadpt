@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"backend/pkgs/messaging"
 )
 
 const (
@@ -25,17 +26,7 @@ type BookingEventPayload struct {
 	GuestPhone string   `json:"guestPhone"`
 }
 
-type EventEnvelope struct {
-	EventID       string          `json:"eventId"`
-	CorrelationID string          `json:"correlationId,omitempty"`
-	EventType     string          `json:"eventType"`
-	Version       int             `json:"version"`
-	AggregateType string          `json:"aggregateType"`
-	AggregateID   int64           `json:"aggregateId"`
-	OccurredAt    time.Time       `json:"occurredAt"`
-	Source        string          `json:"source"`
-	Payload       json.RawMessage `json:"payload"`
-}
+
 
 func NewBookingEventEnvelope(eventType string, booking *Booking, correlationID string) []byte {
 	payload, _ := json.Marshal(BookingEventPayload{
@@ -50,7 +41,7 @@ func NewBookingEventEnvelope(eventType string, booking *Booking, correlationID s
 		GuestPhone: booking.GuestInfo.Phone,
 	})
 
-	envelope := EventEnvelope{
+	envelope := messaging.EventEnvelope{
 		EventID:       uuid.NewString(),
 		CorrelationID: correlationID,
 		EventType:     eventType,

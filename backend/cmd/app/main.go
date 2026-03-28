@@ -10,11 +10,16 @@ import (
 	"backend/db"
 	"backend/di"
 	"backend/internals/booking/infrastructure"
+	"backend/internals/booking/infrastructure/messaging"
+	kafka_consumer "backend/internals/booking/infrastructure/messaging/kafka/consumer"
+	rmq_consumer "backend/internals/booking/infrastructure/messaging/rabbitmq/consumer"
 	"backend/internals/booking/repository"
 	"backend/internals/booking/usecase"
 	httpServer "backend/internals/server/http"
 	"backend/pkgs/kafka"
 	"backend/pkgs/logger"
+	"backend/pkgs/messaging/outbox"
+	rmq_config "backend/pkgs/messaging/rabbitmq"
 	"backend/pkgs/rabbitmq"
 )
 
@@ -35,6 +40,7 @@ func main() {
 		database *db.Database,
 		rmq rabbitmq.IRabbitMQ,
 		kafkaClient kafka.IKafka,
+		kafkaRegistry *kafka.Registry,
 	) {
 		logger.Info("Starting Bus Ticketing Backend...")
 
@@ -45,24 +51,26 @@ func main() {
 		// BACKGROUND WORKERS
 		// =====================================================================
 
-		// Setup RabbitMQ topology for booking events
-		if err := infrastructure.SetupBookingTopology(rmq); err != nil {
-			logger.Error("Failed to setup booking RabbitMQ topology: %v", err)
+		// Setup RabbitMQ topology for refund events via central messaging
+		if err := rmq_config.SetupRabbitMQTopology(rmq); err != nil {
+			logger.Error("Failed to setup central RabbitMQ topology: %v", err)
 			// Continue without RabbitMQ — degraded mode
 		}
 
+		// Ensure all registered Kafka topics exist
 		if kafkaClient != nil {
-			topics := infrastructure.BookingKafkaTopics(cfg)
+			topics := kafkaRegistry.All()
 			if err := kafkaClient.EnsureTopics(ctx, topics); err != nil {
 				logger.Error("Failed to ensure Kafka topics: %v", err)
 			} else {
-				logger.Info("Kafka topics ensured successfully")
+				logger.Info("Kafka topics ensured successfully (count=%d)", len(topics))
 			}
 		}
 
-		// Start outbox processor (polls outbox_events → publishes to RabbitMQ)
+		// Start Generic Outbox Processor
 		outboxRepo := repository.NewOutboxRepository(database)
-		outboxProcessor := infrastructure.NewOutboxProcessor(outboxRepo, rmq)
+		outboxAdapter := messaging.NewOutboxAdapter(outboxRepo)
+		outboxProcessor := outbox.NewProcessor(outboxAdapter, rmq, kafkaClient)
 		go outboxProcessor.Start(ctx)
 
 		// Start booking expiry worker (checks expired pending bookings every 60s)
@@ -71,9 +79,12 @@ func main() {
 		expiryWorker := usecase.NewExpiryWorker(bookingRepo, tripLocker, outboxRepo)
 		go expiryWorker.Start(ctx)
 
-		// Start admin booking event consumer (RabbitMQ → SSE hub for admin notifications)
-		adminEventConsumer := infrastructure.NewAdminBookingEventConsumer(rmq, sseHub)
-		go adminEventConsumer.Start(ctx)
+		// Start Admin Consumers (SSE Hub broadcast)
+		adminRMQConsumer := rmq_consumer.NewRefundNotificationConsumer(rmq, sseHub)
+		go adminRMQConsumer.Start(ctx)
+
+		adminKafkaConsumer := kafka_consumer.NewBookingNotificationConsumer(kafkaClient, sseHub)
+		go adminKafkaConsumer.Start(ctx)
 
 		// =====================================================================
 		// GRACEFUL SHUTDOWN

@@ -29,17 +29,16 @@ import (
 	"backend/pkgs/jwt"
 	"backend/pkgs/kafka"
 	"backend/pkgs/logger"
+	kafka_config "backend/pkgs/messaging/kafka"
 	"backend/pkgs/minio"
 	"backend/pkgs/rabbitmq"
 	"backend/pkgs/redis"
 )
 
-// Container wraps dig.Container for dependency injection
 type Container struct {
 	*dig.Container
 }
 
-// NewContainer creates a new DI container with all dependencies registered
 func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 	c := dig.New()
 
@@ -57,6 +56,7 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		provideDatabase,
 		provideRedis,
 		provideRabbitMQ,
+		provideKafkaRegistry,
 		provideKafka,
 		provideMinio,
 		provideJWTProvider,
@@ -139,6 +139,14 @@ func provideRabbitMQ(cfg *configs.Config) rabbitmq.IRabbitMQ {
 		return nil
 	}
 	return rmq
+}
+
+func provideKafkaRegistry() *kafka.Registry {
+	registry := kafka.NewRegistry()
+	// All modules register their topics here — single place for topic catalog
+	kafka_config.RegisterSystemTopics(registry)
+	logger.Info("Kafka topic registry initialized: %d topics", registry.Len())
+	return registry
 }
 
 func provideKafka(cfg *configs.Config) kafka.IKafka {

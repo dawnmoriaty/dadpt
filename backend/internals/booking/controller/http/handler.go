@@ -13,6 +13,7 @@ import (
 	"backend/internals/booking/infrastructure"
 	"backend/internals/booking/usecase"
 	pkgErrors "backend/pkgs/errors"
+	"backend/pkgs/messaging"
 	"backend/pkgs/response"
 
 	"github.com/gin-gonic/gin"
@@ -286,7 +287,7 @@ func mapDomainError(err error) error {
 }
 
 func parseEventUserID(data []byte) (int64, bool) {
-	var envelope domain.EventEnvelope
+	var envelope messaging.EventEnvelope
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return 0, false
 	}
@@ -304,7 +305,7 @@ func parseEventUserID(data []byte) (int64, bool) {
 }
 
 func getBookingSSEEventName(data []byte) string {
-	var envelope domain.EventEnvelope
+	var envelope messaging.EventEnvelope
 	if err := json.Unmarshal(data, &envelope); err != nil {
 		return "booking_event"
 	}
