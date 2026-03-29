@@ -69,6 +69,49 @@ export interface BookingListParams {
     pageSize?: number
 }
 
+export interface AdminBookingListParams {
+    page?: number
+    pageSize?: number
+    status?: BookingStatus | ''
+    tripId?: number
+    search?: string
+}
+
+export interface AdminBookingStats {
+    totalBookings: number
+    unpaidBookings: number
+    paidBookings: number
+    refundPendingBookings: number
+    cancelledBookings: number
+    paidRevenue: number
+    unpaidRevenue: number
+    activeTripCount: number
+}
+
+export interface TripSeatAssignment {
+    seatCode: string
+    booking: Booking
+}
+
+export interface TripSeatManifestResponse {
+    tripId: number
+    seatCount: number
+    items: TripSeatAssignment[]
+}
+
+export interface AdminRevenueSeriesPoint {
+    date: string
+    totalBookings: number
+    paidBookings: number
+    unpaidBookings: number
+    paidRevenue: number
+}
+
+export interface AdminRevenueSeriesResponse {
+    days: number
+    items: AdminRevenueSeriesPoint[]
+}
+
 // Admin refund types
 export interface RefundRequestListParams {
     page?: number
@@ -87,4 +130,15 @@ export interface RefundRequestListResponse {
     total: number
     page: number
     pageSize: number
+}
+
+export interface AdminBookingListResponse {
+    items: Booking[]
+    total: number
+    page: number
+    pageSize: number
+}
+
+export interface AdminUpdateBookingStatusRequest {
+    status: 'pending' | 'paid' | 'cancelled' | 'expired'
 }

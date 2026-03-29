@@ -11,7 +11,11 @@ type Repository interface {
 	GetByID(ctx context.Context, id int64) (*Booking, error)
 	GetByCode(ctx context.Context, code BookingCode) (*Booking, error)
 	ListActiveSeatCodesByUserTrip(ctx context.Context, userID int64, tripID int64) ([]string, error)
+	ListActiveByTrip(ctx context.Context, tripID int64) ([]*Booking, error)
 	ListByUser(ctx context.Context, userID int64, limit, offset int32) ([]*Booking, int64, error)
+	ListAdmin(ctx context.Context, input *AdminBookingListInput) ([]*Booking, int64, error)
+	GetAdminStats(ctx context.Context) (*AdminBookingStatsOutput, error)
+	GetAdminRevenueSeries(ctx context.Context, days int32) ([]*AdminRevenueSeriesPoint, error)
 	UpdateStatus(ctx context.Context, id int64, status BookingStatus) (*Booking, error)
 	GetExpiredPending(ctx context.Context, limit int32) ([]*Booking, error)
 	MarkPaid(ctx context.Context, id int64) (*Booking, error)
@@ -53,8 +57,6 @@ type PaymentRepository interface {
 	MarkFailed(ctx context.Context, orderCode string, webhookData []byte) (*PaymentTransaction, error)
 	MarkRefunded(ctx context.Context, bookingID int64) (*PaymentTransaction, error)
 }
-
-
 
 // DistributedLock defines the interface for distributed locking
 type DistributedLock interface {

@@ -25,11 +25,11 @@ export const voiceApi = {
         return response.data.data
     },
 
-    pipeline: async (file: File, execute = false): Promise<VoicePipelineResponse> => {
+    pipeline: async (file: File, execute = true): Promise<VoicePipelineResponse> => {
         const formData = new FormData()
         formData.append('file', file)
         formData.append('execute', String(execute))
-        formData.append('paymentMethod', 'bank_transfer')
+        formData.append('paymentMethod', 'cod')
 
         const response = await api.post<{ data: VoicePipelineResponse }>(API_ENDPOINTS.VOICE_BOOKING.PIPELINE, formData, {
             headers: {

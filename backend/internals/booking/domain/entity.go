@@ -39,6 +39,7 @@ var (
 	ErrInvalidRefundReference    = errors.New("invalid refund reference")
 	ErrPaymentLinkUnavailable    = errors.New("payment link unavailable")
 	ErrRefundConfirmCodeMismatch = errors.New("refund confirm code mismatch")
+	ErrInvalidStatusTransition   = errors.New("invalid booking status transition")
 )
 
 // =============================================================================

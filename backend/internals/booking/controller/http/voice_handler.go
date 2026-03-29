@@ -123,7 +123,7 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 
 	paymentMethod := req.PaymentMethod
 	if paymentMethod == "" {
-		paymentMethod = "bank_transfer"
+		paymentMethod = "cod"
 	}
 
 	input := &bookingDomain.CreateBookingInput{

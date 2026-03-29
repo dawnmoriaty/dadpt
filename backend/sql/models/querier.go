@@ -14,6 +14,7 @@ type Querier interface {
 	BrowseUpcomingTrips(ctx context.Context, arg BrowseUpcomingTripsParams) ([]BrowseUpcomingTripsRow, error)
 	BusExistsByLicensePlate(ctx context.Context, licensePlate string) (bool, error)
 	CountActiveBookingsByTripID(ctx context.Context, tripID int64) (int64, error)
+	CountAdminBookings(ctx context.Context, arg CountAdminBookingsParams) (int64, error)
 	CountBookingsByTrip(ctx context.Context, tripID int64) (int64, error)
 	CountBookingsByUser(ctx context.Context, userID *int64) (int64, error)
 	CountBrowseUpcomingTrips(ctx context.Context, arg CountBrowseUpcomingTripsParams) (int64, error)
@@ -40,6 +41,8 @@ type Querier interface {
 	DeleteLocation(ctx context.Context, id int32) error
 	DeleteProvider(ctx context.Context, id int32) error
 	DeleteTrip(ctx context.Context, id int64) error
+	GetAdminBookingRevenueSeries(ctx context.Context, dollar_1 int32) ([]GetAdminBookingRevenueSeriesRow, error)
+	GetAdminBookingStats(ctx context.Context) (GetAdminBookingStatsRow, error)
 	GetBookingByCode(ctx context.Context, code string) (Booking, error)
 	GetBookingByID(ctx context.Context, id int64) (Booking, error)
 	// ============================================================================
@@ -67,7 +70,9 @@ type Querier interface {
 	GetUserByIdentity(ctx context.Context, phone string) (User, error)
 	GetUserByPhone(ctx context.Context, phone string) (User, error)
 	GetUserByUsername(ctx context.Context, username *string) (User, error)
+	ListActiveBookingsByTrip(ctx context.Context, tripID int64) ([]ListActiveBookingsByTripRow, error)
 	ListActiveSeatCodesByUserTrip(ctx context.Context, arg ListActiveSeatCodesByUserTripParams) ([]string, error)
+	ListAdminBookings(ctx context.Context, arg ListAdminBookingsParams) ([]ListAdminBookingsRow, error)
 	ListBookingsByUser(ctx context.Context, arg ListBookingsByUserParams) ([]ListBookingsByUserRow, error)
 	ListBusTypes(ctx context.Context, arg ListBusTypesParams) ([]BusType, error)
 	ListBusTypesPublic(ctx context.Context) ([]BusType, error)

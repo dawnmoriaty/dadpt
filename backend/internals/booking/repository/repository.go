@@ -105,6 +105,58 @@ func refundPendingRowToEntity(m models.ListRefundPendingBookingsRow) *domain.Boo
 	}
 }
 
+func adminListRowToEntity(m models.ListAdminBookingsRow) *domain.Booking {
+	return &domain.Booking{
+		ID:              m.ID,
+		Code:            domain.BookingCode(m.Code),
+		TripID:          m.TripID,
+		UserID:          m.UserID,
+		GuestInfo:       jsonToGuestInfo(m.GuestInfo),
+		PickupInfo:      jsonToPointInfo(m.PickupInfo),
+		DropoffInfo:     jsonToPointInfo(m.DropoffInfo),
+		SeatCodes:       m.SeatCodes,
+		TotalAmount:     utils.NumericToFloat64(m.TotalAmount),
+		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
+		ExpiresAt:       m.ExpiresAt.Time,
+		RefundedAt:      m.RefundedAt.Time,
+		RefundReference: utils.PtrToString(m.RefundReference),
+		RefundNote:      utils.PtrToString(m.RefundNote),
+		CreatedAt:       m.CreatedAt.Time,
+		UpdatedAt:       m.UpdatedAt.Time,
+		DepartureTime:   m.DepartureTime.Time,
+		ArrivalTime:     m.ArrivalTime.Time,
+		OriginName:      m.OriginName,
+		DestinationName: m.DestinationName,
+	}
+}
+
+func activeTripRowToEntity(m models.ListActiveBookingsByTripRow) *domain.Booking {
+	return &domain.Booking{
+		ID:              m.ID,
+		Code:            domain.BookingCode(m.Code),
+		TripID:          m.TripID,
+		UserID:          m.UserID,
+		GuestInfo:       jsonToGuestInfo(m.GuestInfo),
+		PickupInfo:      jsonToPointInfo(m.PickupInfo),
+		DropoffInfo:     jsonToPointInfo(m.DropoffInfo),
+		SeatCodes:       m.SeatCodes,
+		TotalAmount:     utils.NumericToFloat64(m.TotalAmount),
+		Status:          domain.BookingStatus(utils.PtrToString(m.Status)),
+		PaymentMethod:   utils.PtrToString(m.PaymentMethod),
+		ExpiresAt:       m.ExpiresAt.Time,
+		RefundedAt:      m.RefundedAt.Time,
+		RefundReference: utils.PtrToString(m.RefundReference),
+		RefundNote:      utils.PtrToString(m.RefundNote),
+		CreatedAt:       m.CreatedAt.Time,
+		UpdatedAt:       m.UpdatedAt.Time,
+		DepartureTime:   m.DepartureTime.Time,
+		ArrivalTime:     m.ArrivalTime.Time,
+		OriginName:      m.OriginName,
+		DestinationName: m.DestinationName,
+	}
+}
+
 func jsonToGuestInfo(data json.RawMessage) domain.GuestInfo {
 	var info domain.GuestInfo
 	json.Unmarshal(data, &info)
@@ -204,6 +256,91 @@ func (r *bookingRepository) ListByUser(ctx context.Context, userID int64, limit,
 	}
 
 	return result, count, nil
+}
+
+func (r *bookingRepository) ListActiveByTrip(ctx context.Context, tripID int64) ([]*domain.Booking, error) {
+	rows, err := r.queries.ListActiveBookingsByTrip(ctx, tripID)
+	if err != nil {
+		return nil, fmt.Errorf("listing active bookings by trip: %w", err)
+	}
+
+	result := make([]*domain.Booking, len(rows))
+	for i, row := range rows {
+		result[i] = activeTripRowToEntity(row)
+	}
+
+	return result, nil
+}
+
+func (r *bookingRepository) ListAdmin(ctx context.Context, input *domain.AdminBookingListInput) ([]*domain.Booking, int64, error) {
+	rows, err := r.queries.ListAdminBookings(ctx, models.ListAdminBookingsParams{
+		Column1: input.Status,
+		Column2: input.TripID,
+		Column3: input.Search,
+		Limit:   input.Limit,
+		Offset:  input.Offset,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("listing admin bookings: %w", err)
+	}
+
+	count, err := r.queries.CountAdminBookings(ctx, models.CountAdminBookingsParams{
+		Column1: input.Status,
+		Column2: input.TripID,
+		Column3: input.Search,
+	})
+	if err != nil {
+		return nil, 0, fmt.Errorf("counting admin bookings: %w", err)
+	}
+
+	result := make([]*domain.Booking, len(rows))
+	for i, row := range rows {
+		result[i] = adminListRowToEntity(row)
+	}
+
+	return result, count, nil
+}
+
+func (r *bookingRepository) GetAdminStats(ctx context.Context) (*domain.AdminBookingStatsOutput, error) {
+	row, err := r.queries.GetAdminBookingStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting admin booking stats: %w", err)
+	}
+
+	return &domain.AdminBookingStatsOutput{
+		TotalBookings:         row.TotalBookings,
+		UnpaidBookings:        row.UnpaidBookings,
+		PaidBookings:          row.PaidBookings,
+		RefundPendingBookings: row.RefundPendingBookings,
+		CancelledBookings:     row.CancelledBookings,
+		PaidRevenue:           utils.NumericToFloat64(row.PaidRevenue),
+		UnpaidRevenue:         utils.NumericToFloat64(row.UnpaidRevenue),
+		ActiveTripCount:       row.ActiveTripCount,
+	}, nil
+}
+
+func (r *bookingRepository) GetAdminRevenueSeries(ctx context.Context, days int32) ([]*domain.AdminRevenueSeriesPoint, error) {
+	rows, err := r.queries.GetAdminBookingRevenueSeries(ctx, days)
+	if err != nil {
+		return nil, fmt.Errorf("getting admin revenue series: %w", err)
+	}
+
+	items := make([]*domain.AdminRevenueSeriesPoint, len(rows))
+	for i, row := range rows {
+		dateValue := ""
+		if row.Day.Valid {
+			dateValue = row.Day.Time.Format("2006-01-02")
+		}
+		items[i] = &domain.AdminRevenueSeriesPoint{
+			Date:           dateValue,
+			TotalBookings:  row.TotalBookings,
+			PaidBookings:   row.PaidBookings,
+			UnpaidBookings: row.UnpaidBookings,
+			PaidRevenue:    utils.NumericToFloat64(row.PaidRevenue),
+		}
+	}
+
+	return items, nil
 }
 
 func (r *bookingRepository) UpdateStatus(ctx context.Context, id int64, status domain.BookingStatus) (*domain.Booking, error) {

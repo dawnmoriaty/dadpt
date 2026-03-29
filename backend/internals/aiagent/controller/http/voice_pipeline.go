@@ -133,7 +133,7 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	if req.Execute {
 		paymentMethod := strings.TrimSpace(req.Payment)
 		if paymentMethod == "" {
-			paymentMethod = "bank_transfer"
+			paymentMethod = "cod"
 		}
 
 		execPayload := voiceExecuteRequest{

@@ -32,7 +32,7 @@ class VoiceBookingExecuteInput(BaseModel):
     backend_base_url: str
     bearer_token: str
     command: VoiceBookingCommand
-    payment_method: str = "bank_transfer"
+    payment_method: str = "cod"
 
 
 class VoiceBookingSubmitOutput(BaseModel):
@@ -48,7 +48,7 @@ class VoiceBookingPipelineInput(BaseModel):
     backend_base_url: str | None = None
     bearer_token: str | None = None
     execute_booking: bool = True
-    payment_method: str = "bank_transfer"
+    payment_method: str = "cod"
 
 
 class VoiceBookingPipelineOutput(BaseModel):

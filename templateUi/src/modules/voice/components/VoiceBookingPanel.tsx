@@ -7,7 +7,6 @@ import { Card } from '@/components/ui/card'
 
 import { useVoiceBooking } from '../hooks/use-voice-booking'
 
-import { VoiceCandidateCard } from './VoiceCandidateCard'
 import { VoiceTripForm } from './VoiceTripForm'
 
 interface VoiceBookingPanelProps {
@@ -25,12 +24,10 @@ export function VoiceBookingPanel({ disabled = false }: VoiceBookingPanelProps) 
         seatCount,
         seatPreferenceOrder,
         planResult,
-        selectedTripId,
         isRecording,
         isBusy,
         canRecord,
         fileInputRef,
-        planPending,
         executePending,
         transcribePending,
         setOrigin,
@@ -38,12 +35,10 @@ export function VoiceBookingPanel({ disabled = false }: VoiceBookingPanelProps) 
         setTravelDate,
         setSeatCount,
         setSeatPreferenceOrder,
-        setSelectedTripId,
         handleChooseFile,
         handleFileChange,
         startRecording,
         stopRecording,
-        planTrips,
         executeBooking,
     } = useVoiceBooking({ disabled })
 
@@ -57,7 +52,7 @@ export function VoiceBookingPanel({ disabled = false }: VoiceBookingPanelProps) 
                     <div className="flex-1">
                         <h3 className="font-semibold text-foreground">Đặt vé bằng giọng nói</h3>
                         <p className="mt-1 text-xs text-muted-foreground">
-                            Tải file hoặc ghi âm trực tiếp. Hệ thống sẽ nhận diện và xử lý đơn đặt vé.
+                            Tải file hoặc ghi âm trực tiếp. Hệ thống sẽ tự chọn chuyến gần nhất và đặt vé chưa thanh toán.
                         </p>
                     </div>
                 </div>
@@ -124,28 +119,26 @@ export function VoiceBookingPanel({ disabled = false }: VoiceBookingPanelProps) 
                 />
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" variant="outline" onClick={planTrips} disabled={isBusy} className="sm:flex-1">
-                        {planPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Gợi ý chuyến
-                    </Button>
-                    <Button type="button" onClick={executeBooking} disabled={isBusy || !selectedTripId} className="sm:flex-1">
+                    <Button type="button" onClick={executeBooking} disabled={isBusy} className="sm:flex-1">
                         {executePending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        Đặt chuyến đã chọn
+                        Đặt chuyến gần nhất
                     </Button>
                 </div>
 
-                {planResult && (
+                {planResult && planResult.candidates.length > 0 && (
                     <div className="space-y-2 rounded-xl border bg-background/80 p-3">
-                        <p className="text-sm font-semibold">Các chuyến đề xuất</p>
+                        <p className="text-sm font-semibold">Hệ thống sẽ ưu tiên chuyến sớm nhất trong các chuyến tìm được</p>
                         <div className="space-y-2">
-                            {planResult.candidates.map((candidate) => (
-                                <VoiceCandidateCard
-                                    key={candidate.tripId}
-                                    candidate={candidate}
-                                    selected={selectedTripId === candidate.tripId}
-                                    recommended={planResult.recommendedTripId === candidate.tripId}
-                                    onSelect={() => setSelectedTripId(candidate.tripId)}
-                                />
+                            {planResult.candidates.slice(0, 1).map((candidate) => (
+                                <div key={candidate.tripId} className="rounded-lg border border-primary/20 bg-primary/5 p-3 text-sm">
+                                    <p className="font-medium">Chuyến được tự động chọn</p>
+                                    <p className="mt-1 text-muted-foreground">
+                                        {candidate.originName ?? origin} {'->'} {candidate.destinationName ?? destination}
+                                    </p>
+                                    <p className="text-muted-foreground">
+                                        Khởi hành: {new Date(candidate.departureTime).toLocaleString('vi-VN')}
+                                    </p>
+                                </div>
                             ))}
                         </div>
                     </div>

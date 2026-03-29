@@ -86,7 +86,11 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 setSeatCount(executeFromPipeline.seatCodes?.length || 1)
                 setSeatPreferenceOrder(executeFromPipeline.seatCodes?.join(', ') ?? '')
 
-                toast.success('Đã đặt vé tự động từ giọng nói.')
+                if (executeFromPipeline.bookingResult.booking.paymentMethod === 'cod') {
+                    toast.success('Đã đặt vé tự động bằng giọng nói. Thanh toán khi lên xe.')
+                } else {
+                    toast.success('Đã đặt vé tự động từ giọng nói.')
+                }
 
                 if (paymentUrl) {
                     await copyPaymentLink(paymentUrl)
@@ -229,18 +233,18 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         if (executeLockRef.current) {
             return
         }
-        if (!selectedTripId) {
-            toast.error('Vui long chon mot chuyen truoc khi dat.')
+        if (!origin.trim() || !destination.trim() || !travelDate.trim()) {
+            toast.error('Vui long nhap du diem di, diem den va ngay di.')
             return
         }
 
         try {
             executeLockRef.current = true
             const result = await executeMutation.mutateAsync({
-                tripId: selectedTripId,
+                tripId: selectedTripId ?? undefined,
                 seatCount,
                 seatPreferenceOrder: parseSeatPreferenceOrder(seatPreferenceOrder),
-                paymentMethod: 'bank_transfer',
+                paymentMethod: 'cod',
             })
 
             const paymentUrl = result.bookingResult.paymentUrl
@@ -250,7 +254,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 return
             }
 
-            toast.success('Dat ve thanh cong.')
+            toast.success('Da dat chuyen gan nhat thanh cong.')
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         } finally {

@@ -30,6 +30,16 @@ type ListBookingsInput struct {
 	PageSize int32
 }
 
+type AdminBookingListInput struct {
+	Limit    int32
+	Offset   int32
+	Page     int32
+	PageSize int32
+	Status   string
+	TripID   int64
+	Search   string
+}
+
 // ConfirmPaymentInput is the input from the payment webhook
 type ConfirmPaymentInput struct {
 	OrderCode   string
@@ -57,6 +67,41 @@ type BookingListOutput struct {
 	Total    int64
 	Page     int32
 	PageSize int32
+}
+
+type AdminBookingStatsOutput struct {
+	TotalBookings         int64
+	UnpaidBookings        int64
+	PaidBookings          int64
+	RefundPendingBookings int64
+	CancelledBookings     int64
+	PaidRevenue           float64
+	UnpaidRevenue         float64
+	ActiveTripCount       int64
+}
+
+type AdminUpdateBookingStatusInput struct {
+	BookingID int64
+	Status    BookingStatus
+}
+
+type AdminRevenueSeriesPoint struct {
+	Date           string
+	TotalBookings  int64
+	PaidBookings   int64
+	UnpaidBookings int64
+	PaidRevenue    float64
+}
+
+type AdminRevenueSeriesOutput struct {
+	Days  int32
+	Items []*AdminRevenueSeriesPoint
+}
+
+type TripSeatManifestOutput struct {
+	TripID    int64
+	Bookings  []*Booking
+	SeatCount int64
 }
 
 // PaymentConfirmOutput is the output from payment confirmation

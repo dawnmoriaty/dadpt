@@ -27,6 +27,8 @@ import { Route as AdminProvidersIndexRouteImport } from './routes/admin/provider
 import { Route as AdminLocationsIndexRouteImport } from './routes/admin/locations/index'
 import { Route as AdminBusesIndexRouteImport } from './routes/admin/buses/index'
 import { Route as AdminBusTypesIndexRouteImport } from './routes/admin/bus-types/index'
+import { Route as AdminBookingsIndexRouteImport } from './routes/admin/bookings/index'
+import { Route as AdminBookingsBookingIdRouteImport } from './routes/admin/bookings.$bookingId'
 import { Route as PublicTripsTripIdRouteImport } from './routes/_public/trips.$tripId'
 import { Route as PublicPaymentBookingCodeRouteImport } from './routes/_public/payment.$bookingCode'
 
@@ -119,6 +121,16 @@ const AdminBusTypesIndexRoute = AdminBusTypesIndexRouteImport.update({
   path: '/bus-types/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminBookingsIndexRoute = AdminBookingsIndexRouteImport.update({
+  id: '/bookings/',
+  path: '/bookings/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminBookingsBookingIdRoute = AdminBookingsBookingIdRouteImport.update({
+  id: '/bookings/$bookingId',
+  path: '/bookings/$bookingId',
+  getParentRoute: () => AdminRoute,
+} as any)
 const PublicTripsTripIdRoute = PublicTripsTripIdRouteImport.update({
   id: '/trips/$tripId',
   path: '/trips/$tripId',
@@ -143,6 +155,8 @@ export interface FileRoutesByFullPath {
   '/': typeof PublicIndexRoute
   '/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/trips/$tripId': typeof PublicTripsTripIdRoute
+  '/admin/bookings/$bookingId': typeof AdminBookingsBookingIdRoute
+  '/admin/bookings': typeof AdminBookingsIndexRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
@@ -163,6 +177,8 @@ export interface FileRoutesByTo {
   '/': typeof PublicIndexRoute
   '/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/trips/$tripId': typeof PublicTripsTripIdRoute
+  '/admin/bookings/$bookingId': typeof AdminBookingsBookingIdRoute
+  '/admin/bookings': typeof AdminBookingsIndexRoute
   '/admin/bus-types': typeof AdminBusTypesIndexRoute
   '/admin/buses': typeof AdminBusesIndexRoute
   '/admin/locations': typeof AdminLocationsIndexRoute
@@ -186,6 +202,8 @@ export interface FileRoutesById {
   '/_public/': typeof PublicIndexRoute
   '/_public/payment/$bookingCode': typeof PublicPaymentBookingCodeRoute
   '/_public/trips/$tripId': typeof PublicTripsTripIdRoute
+  '/admin/bookings/$bookingId': typeof AdminBookingsBookingIdRoute
+  '/admin/bookings/': typeof AdminBookingsIndexRoute
   '/admin/bus-types/': typeof AdminBusTypesIndexRoute
   '/admin/buses/': typeof AdminBusesIndexRoute
   '/admin/locations/': typeof AdminLocationsIndexRoute
@@ -208,6 +226,8 @@ export interface FileRouteTypes {
     | '/'
     | '/payment/$bookingCode'
     | '/trips/$tripId'
+    | '/admin/bookings/$bookingId'
+    | '/admin/bookings'
     | '/admin/bus-types'
     | '/admin/buses'
     | '/admin/locations'
@@ -228,6 +248,8 @@ export interface FileRouteTypes {
     | '/'
     | '/payment/$bookingCode'
     | '/trips/$tripId'
+    | '/admin/bookings/$bookingId'
+    | '/admin/bookings'
     | '/admin/bus-types'
     | '/admin/buses'
     | '/admin/locations'
@@ -250,6 +272,8 @@ export interface FileRouteTypes {
     | '/_public/'
     | '/_public/payment/$bookingCode'
     | '/_public/trips/$tripId'
+    | '/admin/bookings/$bookingId'
+    | '/admin/bookings/'
     | '/admin/bus-types/'
     | '/admin/buses/'
     | '/admin/locations/'
@@ -393,6 +417,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBusTypesIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/bookings/': {
+      id: '/admin/bookings/'
+      path: '/bookings'
+      fullPath: '/admin/bookings'
+      preLoaderRoute: typeof AdminBookingsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/bookings/$bookingId': {
+      id: '/admin/bookings/$bookingId'
+      path: '/bookings/$bookingId'
+      fullPath: '/admin/bookings/$bookingId'
+      preLoaderRoute: typeof AdminBookingsBookingIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/_public/trips/$tripId': {
       id: '/_public/trips/$tripId'
       path: '/trips/$tripId'
@@ -447,6 +485,8 @@ const PublicRouteWithChildren =
 
 interface AdminRouteChildren {
   AdminDashboardRoute: typeof AdminDashboardRoute
+  AdminBookingsBookingIdRoute: typeof AdminBookingsBookingIdRoute
+  AdminBookingsIndexRoute: typeof AdminBookingsIndexRoute
   AdminBusTypesIndexRoute: typeof AdminBusTypesIndexRoute
   AdminBusesIndexRoute: typeof AdminBusesIndexRoute
   AdminLocationsIndexRoute: typeof AdminLocationsIndexRoute
@@ -458,6 +498,8 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminDashboardRoute: AdminDashboardRoute,
+  AdminBookingsBookingIdRoute: AdminBookingsBookingIdRoute,
+  AdminBookingsIndexRoute: AdminBookingsIndexRoute,
   AdminBusTypesIndexRoute: AdminBusTypesIndexRoute,
   AdminBusesIndexRoute: AdminBusesIndexRoute,
   AdminLocationsIndexRoute: AdminLocationsIndexRoute,

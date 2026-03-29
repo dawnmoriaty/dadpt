@@ -212,7 +212,7 @@
     "next": "Next",
     "page": "Page {{page}}",
     "status": {
-      "pending": "Pending Payment",
+      "pending": "Unpaid",
       "paid": "Paid",
       "cancelled": "Cancelled",
       "expired": "Expired",

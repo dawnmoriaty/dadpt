@@ -27,6 +27,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
     const queryClient = useQueryClient()
     const { booking, orderCode, paymentUrl, qrCode } = data
 
+    const isCodBooking = booking.paymentMethod === 'cod'
     const requiresOnlinePayment = booking.paymentMethod === 'bank_transfer' || booking.paymentMethod === 'visa'
     const hasPaymentAccess = !!(paymentUrl || qrCode)
 
@@ -40,9 +41,7 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
         }
     }, [paymentStatus?.status, queryClient])
 
-    const isPaid = !requiresOnlinePayment
-        || booking.status === 'paid'
-        || paymentStatus?.status === 'success'
+    const isPaid = booking.status === 'paid' || paymentStatus?.status === 'success'
 
     const formatDateTime = (value?: string) => {
         if (!value) return '—'
@@ -89,6 +88,14 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                                 {t('booking.confirmedHint')}
                             </p>
                         </>
+                    ) : isCodBooking ? (
+                        <>
+                            <Clock className="h-16 w-16 text-blue-600 mb-4" />
+                            <h2 className="text-2xl font-bold text-blue-800 mb-2">Đặt vé thành công</h2>
+                            <p className="text-blue-700/80 mb-6 max-w-md">
+                                Vé đã được giữ chỗ. Bạn sẽ thanh toán khi lên xe.
+                            </p>
+                        </>
                     ) : (
                         <>
                             <Clock className="h-16 w-16 text-yellow-600 mb-4" />
@@ -110,15 +117,21 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                         </div>
                         <div className="bg-white border border-green-100 rounded-xl p-4 shadow-sm">
                             <p className="text-xs text-muted-foreground uppercase tracking-wider font-semibold mb-1">
-                                {t('booking.orderCode')}
+                                {isCodBooking ? 'Trạng thái thanh toán' : t('booking.orderCode')}
                             </p>
-                            <p className="text-xl font-mono font-semibold text-muted-foreground tracking-wide">
-                                {orderCode}
-                            </p>
-                            <Button type="button" variant="ghost" size="sm" className="mt-2 h-7 px-2" onClick={copyOrderCode}>
-                                <Copy className="mr-1 h-3.5 w-3.5" />
-                                Copy mã giao dịch
-                            </Button>
+                            {isCodBooking ? (
+                                <p className="text-lg font-semibold text-blue-700 tracking-wide">Thanh toán sau (COD)</p>
+                            ) : (
+                                <>
+                                    <p className="text-xl font-mono font-semibold text-muted-foreground tracking-wide">
+                                        {orderCode}
+                                    </p>
+                                    <Button type="button" variant="ghost" size="sm" className="mt-2 h-7 px-2" onClick={copyOrderCode}>
+                                        <Copy className="mr-1 h-3.5 w-3.5" />
+                                        Copy mã giao dịch
+                                    </Button>
+                                </>
+                            )}
                         </div>
                     </div>
                 </CardContent>
@@ -185,11 +198,10 @@ export function BookingSuccess({ data }: BookingSuccessProps) {
                     <CardHeader>
                         <CardTitle className="text-lg flex items-center gap-2">
                             <CreditCard className="h-5 w-5 text-primary" />
-                            {t('booking.paymentInstructions')}
+                            {isCodBooking ? 'Thông tin thanh toán' : t('booking.paymentInstructions')}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-6">
-                        {/* Amount */}
                         <div className="flex justify-between items-center bg-muted/50 p-4 rounded-lg">
                             <span className="text-muted-foreground">{t('booking.totalAmount')}</span>
                             <span className="text-2xl font-bold text-primary">{formatVndCurrency(booking.totalAmount)}</span>

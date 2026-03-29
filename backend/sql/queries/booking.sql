@@ -104,6 +104,67 @@ RETURNING *;
 -- name: CountBookingsByUser :one
 SELECT COUNT(*) FROM bookings WHERE user_id = $1;
 
+-- name: ListAdminBookings :many
+SELECT b.*, t.departure_time, t.arrival_time,
+       o.name as origin_name, d.name as destination_name
+FROM bookings b
+JOIN trips t ON b.trip_id = t.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE ($1::text = '' OR b.status = $1)
+  AND ($2::bigint = 0 OR b.trip_id = $2)
+  AND (
+    $3::text = ''
+    OR b.code ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'name', '') ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'phone', '') ILIKE '%' || $3 || '%'
+  )
+ORDER BY b.created_at DESC
+LIMIT $4 OFFSET $5;
+
+-- name: CountAdminBookings :one
+SELECT COUNT(*)
+FROM bookings b
+WHERE ($1::text = '' OR b.status = $1)
+  AND ($2::bigint = 0 OR b.trip_id = $2)
+  AND (
+    $3::text = ''
+    OR b.code ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'name', '') ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'phone', '') ILIKE '%' || $3 || '%'
+  );
+
+-- name: GetAdminBookingStats :one
+SELECT
+    COUNT(*)::bigint AS total_bookings,
+    COUNT(*) FILTER (WHERE status = 'pending')::bigint AS unpaid_bookings,
+    COUNT(*) FILTER (WHERE status = 'paid')::bigint AS paid_bookings,
+    COUNT(*) FILTER (WHERE status = 'refund_pending')::bigint AS refund_pending_bookings,
+    COUNT(*) FILTER (WHERE status = 'cancelled')::bigint AS cancelled_bookings,
+    COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0)::numeric AS paid_revenue,
+    COALESCE(SUM(total_amount) FILTER (WHERE status = 'pending'), 0)::numeric AS unpaid_revenue,
+    COUNT(DISTINCT trip_id) FILTER (WHERE status IN ('pending', 'paid', 'refund_pending'))::bigint AS active_trip_count
+FROM bookings;
+
+-- name: GetAdminBookingRevenueSeries :many
+WITH day_series AS (
+    SELECT generate_series(
+        (CURRENT_DATE - (($1::int - 1) * INTERVAL '1 day'))::date,
+        CURRENT_DATE::date,
+        INTERVAL '1 day'
+    )::date AS day
+)
+SELECT
+    ds.day,
+    COUNT(b.id)::bigint AS total_bookings,
+    COUNT(b.id) FILTER (WHERE b.status = 'paid')::bigint AS paid_bookings,
+    COUNT(b.id) FILTER (WHERE b.status = 'pending')::bigint AS unpaid_bookings,
+    COALESCE(SUM(b.total_amount) FILTER (WHERE b.status = 'paid'), 0)::numeric AS paid_revenue
+FROM day_series ds
+LEFT JOIN bookings b ON DATE(b.created_at) = ds.day
+GROUP BY ds.day
+ORDER BY ds.day ASC;
+
 -- name: ListActiveSeatCodesByUserTrip :many
 SELECT DISTINCT seat_codes.seat_code::text AS seat_code
 FROM bookings b
@@ -111,6 +172,17 @@ CROSS JOIN LATERAL unnest(COALESCE(b.seat_codes, '{}'::text[])) AS seat_codes(se
 WHERE b.user_id = $1
   AND b.trip_id = $2
   AND b.status IN ('pending', 'paid', 'refund_pending');
+
+-- name: ListActiveBookingsByTrip :many
+SELECT b.*, t.departure_time, t.arrival_time,
+       o.name as origin_name, d.name as destination_name
+FROM bookings b
+JOIN trips t ON b.trip_id = t.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE b.trip_id = $1
+  AND b.status IN ('pending', 'paid', 'refund_pending')
+ORDER BY b.created_at DESC;
 
 -- ============================================================================
 -- REFUND FLOW QUERIES

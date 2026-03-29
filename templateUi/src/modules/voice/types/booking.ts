@@ -31,7 +31,7 @@ export interface VoicePlanResponse {
 }
 
 export interface VoiceExecuteRequest {
-    tripId: number
+    tripId?: number
     seatCount: number
     seatPreferenceOrder?: string[]
     paymentMethod?: 'bank_transfer' | 'cod' | 'visa'

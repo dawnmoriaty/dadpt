@@ -27,12 +27,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "TECHNOLOGY_STACK.md",
+                "file": "MODULE_AI_AGENT.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TECHNOLOGY_STACK"
+              "title": "MODULE_AI_AGENT"
             }
           }
         ],
@@ -201,6 +201,7 @@
   },
   "active": "3289dfa53882d305",
   "lastOpenFiles": [
+    "TECHNOLOGY_STACK.md",
     "MODULE_UPLOAD.md",
     "MODULE_BOOKING.md",
     "MODULE_AUTH.md",

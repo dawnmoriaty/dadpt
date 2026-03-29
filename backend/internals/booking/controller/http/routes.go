@@ -76,6 +76,13 @@ func AdminRoutes(
 	handler := NewAdminBookingHandler(uc, sseHub)
 
 	bookings := admin.Group("/bookings")
+	bookings.GET("", handler.ListBookings)
+	bookings.GET("/export", handler.ExportBookingsCSV)
+	bookings.GET("/stats", handler.GetStats)
+	bookings.GET("/revenue-series", handler.GetRevenueSeries)
+	bookings.GET("/:id", handler.GetBookingDetail)
+	bookings.PATCH("/:id/status", handler.UpdateBookingStatus)
+	bookings.GET("/trips/:tripId/seats", handler.GetTripSeatManifest)
 	bookings.GET("/refund-requests", handler.ListRefundRequests)
 	bookings.GET("/refund-pending-count", handler.CountRefundPending)
 	bookings.POST("/:id/approve-refund", handler.ApproveRefund)

@@ -281,6 +281,8 @@ func mapDomainError(err error) error {
 		return pkgErrors.ValidationError("invalid refund reference")
 	case errors.Is(err, domain.ErrRefundConfirmCodeMismatch):
 		return pkgErrors.ValidationError("confirm code does not match booking code")
+	case errors.Is(err, domain.ErrInvalidStatusTransition):
+		return pkgErrors.ValidationError("invalid booking status transition")
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}

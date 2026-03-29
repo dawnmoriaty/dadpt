@@ -16,6 +16,15 @@ export const refundRequestKeys = {
     eventFeed: ['refund-request-event-feed'] as const,
 }
 
+export const adminBookingKeys = {
+    root: ['admin-bookings'] as const,
+    list: (params: Record<string, unknown>) => ['admin-bookings', 'list', params] as const,
+    stats: ['admin-bookings', 'stats'] as const,
+    tripSeats: (tripId: number) => ['admin-bookings', 'trip-seats', tripId] as const,
+    detail: (bookingId: number) => ['admin-bookings', 'detail', bookingId] as const,
+    revenueSeries: (days: number) => ['admin-bookings', 'revenue-series', days] as const,
+}
+
 export interface RefundRequestEventFeedItem {
     id: string
     type: 'refund_requested' | 'booking_cancelled'

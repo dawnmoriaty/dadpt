@@ -222,7 +222,7 @@
     "next": "Tiếp",
     "page": "Trang {{page}}",
     "status": {
-      "pending": "Chờ thanh toán",
+      "pending": "Chưa thanh toán",
       "paid": "Đã thanh toán",
       "cancelled": "Đã hủy",
       "expired": "Hết hạn",

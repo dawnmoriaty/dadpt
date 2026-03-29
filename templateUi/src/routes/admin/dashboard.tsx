@@ -1,39 +1,38 @@
 import { createFileRoute } from '@tanstack/react-router'
 
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { formatVndCurrency, useAdminBookingStats, useAdminBookings, useAdminRevenueSeries } from '@/modules/booking'
+
 export const Route = createFileRoute('/admin/dashboard')({
     component: DashboardPage,
 })
 
 function DashboardPage() {
+    const { data: stats } = useAdminBookingStats()
+    const { data: recentBookings } = useAdminBookings({ page: 1, pageSize: 5 })
+    const { data: revenueSeries } = useAdminRevenueSeries(7)
+    const maxRevenue = revenueSeries?.items.reduce((max, item) => Math.max(max, item.paidRevenue), 0) ?? 0
+
     return (
         <div className="space-y-6">
-            {/* Page Header */}
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Tổng quan</h1>
-                <p className="text-muted-foreground">
-                    Chào mừng bạn đến với trang quản trị
-                </p>
+                <p className="text-muted-foreground">Số liệu booking và doanh thu cập nhật từ dữ liệu thực tế.</p>
             </div>
 
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: 'Tổng người dùng', value: '12,345', icon: '👥', color: 'bg-blue-500', change: '+12%' },
-                    { title: 'Doanh thu', value: '$45,231', icon: '💰', color: 'bg-green-500', change: '+8%' },
-                    { title: 'Đơn hàng', value: '576', icon: '🛒', color: 'bg-purple-500', change: '+23%' },
-                    { title: 'Đang chờ xử lý', value: '23', icon: '⏳', color: 'bg-yellow-500', change: '-5%' },
-                ].map((stat, i) => (
-                    <div
-                        key={i}
-                        className="bg-background rounded-xl shadow-sm p-6 border"
-                    >
+                    { title: 'Tổng booking', value: stats?.totalBookings ?? 0, icon: '🎫', color: 'bg-blue-500', note: 'Tất cả booking đã tạo' },
+                    { title: 'Doanh thu đã thu', value: formatVndCurrency(stats?.paidRevenue ?? 0), icon: '💰', color: 'bg-green-500', note: 'Chỉ tính vé đã thanh toán' },
+                    { title: 'Vé chưa thanh toán', value: stats?.unpaidBookings ?? 0, icon: '⏳', color: 'bg-yellow-500', note: 'Bao gồm vé COD và pending' },
+                    { title: 'Chuyến có booking', value: stats?.activeTripCount ?? 0, icon: '🚌', color: 'bg-purple-500', note: 'Chuyến đang có khách' },
+                ].map((stat) => (
+                    <div key={stat.title} className="bg-background rounded-xl shadow-sm p-6 border">
                         <div className="flex items-center justify-between">
                             <div>
                                 <p className="text-sm text-muted-foreground">{stat.title}</p>
                                 <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                                <p className={`text-xs mt-1 ${stat.change.startsWith('+') ? 'text-green-500' : 'text-red-500'}`}>
-                                    {stat.change} so với tháng trước
-                                </p>
+                                <p className="text-xs mt-1 text-muted-foreground">{stat.note}</p>
                             </div>
                             <div className={`w-12 h-12 ${stat.color} rounded-lg flex items-center justify-center text-2xl`}>
                                 {stat.icon}
@@ -43,41 +42,79 @@ function DashboardPage() {
                 ))}
             </div>
 
-            {/* Quick Actions */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="bg-background rounded-xl shadow-sm p-6 border">
-                    <h2 className="text-lg font-semibold mb-4">Thao tác nhanh</h2>
-                    <div className="grid grid-cols-2 gap-4">
-                        {['Thêm tuyến mới', 'Quản lý người dùng', 'Xem báo cáo', 'Cài đặt'].map((action, i) => (
-                            <button
-                                key={i}
-                                className="p-4 text-center rounded-lg border hover:bg-muted transition-colors text-sm font-medium"
-                            >
-                                {action}
-                            </button>
-                        ))}
-                    </div>
-                </div>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Dòng tiền booking</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4 text-sm">
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Doanh thu đã thu</span>
+                            <span className="font-semibold">{formatVndCurrency(stats?.paidRevenue ?? 0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Doanh thu chờ thu</span>
+                            <span className="font-semibold">{formatVndCurrency(stats?.unpaidRevenue ?? 0)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Booking chờ duyệt hoàn</span>
+                            <span className="font-semibold">{stats?.refundPendingBookings ?? 0}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                            <span className="text-muted-foreground">Booking đã hủy</span>
+                            <span className="font-semibold">{stats?.cancelledBookings ?? 0}</span>
+                        </div>
+                    </CardContent>
+                </Card>
 
-                <div className="bg-background rounded-xl shadow-sm p-6 border">
-                    <h2 className="text-lg font-semibold mb-4">Hoạt động gần đây</h2>
-                    <div className="space-y-4">
-                        {[
-                            { action: 'Có đặt vé mới', user: 'John Doe', time: '2 phút trước' },
-                            { action: 'Tuyến đường được cập nhật', user: 'Admin', time: '15 phút trước' },
-                            { action: 'Người dùng mới đăng ký', user: 'Jane Smith', time: '1 giờ trước' },
-                            { action: 'Nhận thanh toán mới', user: 'Mike Johnson', time: '2 giờ trước' },
-                        ].map((activity, i) => (
-                            <div key={i} className="flex items-center justify-between text-sm">
-                                <div>
-                                    <p className="font-medium">{activity.action}</p>
-                                    <p className="text-muted-foreground">{activity.user}</p>
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Doanh thu 7 ngày gần nhất</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {(revenueSeries?.items ?? []).map((item) => {
+                            const filledBlocks = maxRevenue > 0 ? Math.max(1, Math.round((item.paidRevenue / maxRevenue) * 12)) : 1
+
+                            return (
+                                <div key={item.date} className="space-y-1.5">
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <span>{item.date}</span>
+                                        <span>{formatVndCurrency(item.paidRevenue)}</span>
+                                    </div>
+                                    <div className="grid grid-cols-12 gap-1">
+                                        {Array.from({ length: 12 }, (_, index) => (
+                                            <div
+                                                key={`${item.date}-${index}`}
+                                                className={index < filledBlocks ? 'h-2 rounded-full bg-primary' : 'h-2 rounded-full bg-muted'}
+                                            />
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                                        <span>{item.totalBookings} booking</span>
+                                        <span>{item.paidBookings} đã thanh toán</span>
+                                    </div>
                                 </div>
-                                <p className="text-muted-foreground text-xs">{activity.time}</p>
+                            )
+                        })}
+                    </CardContent>
+                </Card>
+
+                <Card>
+                    <CardHeader>
+                        <CardTitle>Booking gần đây</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {(recentBookings?.items ?? []).map((booking) => (
+                            <div key={booking.id} className="flex items-center justify-between text-sm">
+                                <div>
+                                    <p className="font-medium">{booking.code} - {booking.guestInfo.name}</p>
+                                    <p className="text-muted-foreground">{booking.originName} {'->'} {booking.destinationName}</p>
+                                </div>
+                                <p className="text-muted-foreground text-xs">{formatVndCurrency(booking.totalAmount)}</p>
                             </div>
                         ))}
-                    </div>
-                </div>
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )

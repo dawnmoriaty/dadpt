@@ -7,9 +7,13 @@ import (
 	"backend/internals/booking/usecase"
 	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/response"
+	"bytes"
+	"encoding/csv"
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -27,6 +31,177 @@ type AdminBookingHandler struct {
 // NewAdminBookingHandler creates a new admin booking handler.
 func NewAdminBookingHandler(uc usecase.IBookingUseCase, sseHub *infrastructure.SSEHub) *AdminBookingHandler {
 	return &AdminBookingHandler{uc: uc, sseHub: sseHub}
+}
+
+// ListBookings GET /admin/bookings
+func (h *AdminBookingHandler) ListBookings(c *gin.Context) {
+	var req dto.AdminListBookingsParams
+	if err := c.ShouldBindQuery(&req); err != nil {
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
+		return
+	}
+
+	result, err := h.uc.ListAdminBookings(c.Request.Context(), &domain.AdminBookingListInput{
+		Page:     req.Page,
+		PageSize: req.PageSize,
+		Status:   req.Status,
+		TripID:   req.TripID,
+		Search:   req.Search,
+	})
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToBookingListResponse(result))
+}
+
+// GetStats GET /admin/bookings/stats
+func (h *AdminBookingHandler) GetStats(c *gin.Context) {
+	stats, err := h.uc.GetAdminBookingStats(c.Request.Context())
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToAdminBookingStatsResponse(stats))
+}
+
+// GetRevenueSeries GET /admin/bookings/revenue-series
+func (h *AdminBookingHandler) GetRevenueSeries(c *gin.Context) {
+	daysValue := strings.TrimSpace(c.DefaultQuery("days", "7"))
+	days, err := strconv.Atoi(daysValue)
+	if err != nil || days <= 0 {
+		response.HandleError(c, pkgErrors.ValidationError("invalid days"))
+		return
+	}
+
+	series, err := h.uc.GetAdminRevenueSeries(c.Request.Context(), int32(days))
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToAdminRevenueSeriesResponse(series))
+}
+
+// GetBookingDetail GET /admin/bookings/:id
+func (h *AdminBookingHandler) GetBookingDetail(c *gin.Context) {
+	id, err := parseID(c, "id")
+	if err != nil {
+		response.HandleError(c, pkgErrors.ValidationError("invalid booking id"))
+		return
+	}
+
+	booking, err := h.uc.GetBooking(c.Request.Context(), id)
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	if paymentTx, txErr := h.uc.GetLatestPaymentByBookingID(c.Request.Context(), booking.ID); txErr == nil && paymentTx != nil {
+		booking.OrderCode = paymentTx.OrderCode
+	}
+
+	response.Success(c, dto.ToBookingDetailResponse(booking))
+}
+
+// UpdateBookingStatus PATCH /admin/bookings/:id/status
+func (h *AdminBookingHandler) UpdateBookingStatus(c *gin.Context) {
+	id, err := parseID(c, "id")
+	if err != nil {
+		response.HandleError(c, pkgErrors.ValidationError("invalid booking id"))
+		return
+	}
+
+	var req dto.AdminUpdateBookingStatusRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
+		return
+	}
+
+	updated, err := h.uc.AdminUpdateBookingStatus(c.Request.Context(), &domain.AdminUpdateBookingStatusInput{
+		BookingID: id,
+		Status:    domain.BookingStatus(req.Status),
+	})
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToBookingResponse(updated))
+}
+
+// ExportBookingsCSV GET /admin/bookings/export
+func (h *AdminBookingHandler) ExportBookingsCSV(c *gin.Context) {
+	status := strings.TrimSpace(c.Query("status"))
+	search := strings.TrimSpace(c.Query("search"))
+	tripIDValue := strings.TrimSpace(c.Query("tripId"))
+	tripID := int64(0)
+	if tripIDValue != "" {
+		parsedTripID, err := strconv.ParseInt(tripIDValue, 10, 64)
+		if err != nil || parsedTripID <= 0 {
+			response.HandleError(c, pkgErrors.ValidationError("invalid trip id"))
+			return
+		}
+		tripID = parsedTripID
+	}
+
+	result, err := h.uc.ListAdminBookings(c.Request.Context(), &domain.AdminBookingListInput{
+		Limit:  10000,
+		Offset: 0,
+		Status: status,
+		TripID: tripID,
+		Search: search,
+	})
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	buffer := &bytes.Buffer{}
+	writer := csv.NewWriter(buffer)
+	_ = writer.Write([]string{"booking_code", "trip_id", "guest_name", "guest_phone", "seats", "status", "payment_method", "total_amount", "origin", "destination", "created_at"})
+	for _, booking := range result.Bookings {
+		if booking == nil {
+			continue
+		}
+		_ = writer.Write([]string{
+			string(booking.Code),
+			strconv.FormatInt(booking.TripID, 10),
+			booking.GuestInfo.Name,
+			booking.GuestInfo.Phone,
+			strings.Join(booking.SeatCodes, ","),
+			string(booking.Status),
+			booking.PaymentMethod,
+			fmt.Sprintf("%.0f", booking.TotalAmount),
+			booking.OriginName,
+			booking.DestinationName,
+			booking.CreatedAt.Format("2006-01-02 15:04:05"),
+		})
+	}
+	writer.Flush()
+
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", "attachment; filename=admin-bookings.csv")
+	c.String(200, buffer.String())
+}
+
+// GetTripSeatManifest GET /admin/bookings/trips/:tripId/seats
+func (h *AdminBookingHandler) GetTripSeatManifest(c *gin.Context) {
+	tripID, err := parseID(c, "tripId")
+	if err != nil {
+		response.HandleError(c, pkgErrors.ValidationError("invalid trip id"))
+		return
+	}
+
+	manifest, err := h.uc.GetTripSeatManifest(c.Request.Context(), tripID)
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToTripSeatManifestResponse(manifest))
 }
 
 // ListRefundRequests GET /admin/bookings/refund-requests

@@ -12,6 +12,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const countAdminBookings = `-- name: CountAdminBookings :one
+SELECT COUNT(*)
+FROM bookings b
+WHERE ($1::text = '' OR b.status = $1)
+  AND ($2::bigint = 0 OR b.trip_id = $2)
+  AND (
+    $3::text = ''
+    OR b.code ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'name', '') ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'phone', '') ILIKE '%' || $3 || '%'
+  )
+`
+
+type CountAdminBookingsParams struct {
+	Column1 string `json:"column1"`
+	Column2 int64  `json:"column2"`
+	Column3 string `json:"column3"`
+}
+
+func (q *Queries) CountAdminBookings(ctx context.Context, arg CountAdminBookingsParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countAdminBookings, arg.Column1, arg.Column2, arg.Column3)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countBookingsByTrip = `-- name: CountBookingsByTrip :one
 SELECT COUNT(*) FROM bookings WHERE trip_id = $1 AND status IN ('pending', 'paid')
 `
@@ -161,6 +187,100 @@ func (q *Queries) CreateBookingWithExpiry(ctx context.Context, arg CreateBooking
 	return i, err
 }
 
+const getAdminBookingRevenueSeries = `-- name: GetAdminBookingRevenueSeries :many
+WITH day_series AS (
+    SELECT generate_series(
+        (CURRENT_DATE - (($1::int - 1) * INTERVAL '1 day'))::date,
+        CURRENT_DATE::date,
+        INTERVAL '1 day'
+    )::date AS day
+)
+SELECT
+    ds.day,
+    COUNT(b.id)::bigint AS total_bookings,
+    COUNT(b.id) FILTER (WHERE b.status = 'paid')::bigint AS paid_bookings,
+    COUNT(b.id) FILTER (WHERE b.status = 'pending')::bigint AS unpaid_bookings,
+    COALESCE(SUM(b.total_amount) FILTER (WHERE b.status = 'paid'), 0)::numeric AS paid_revenue
+FROM day_series ds
+LEFT JOIN bookings b ON DATE(b.created_at) = ds.day
+GROUP BY ds.day
+ORDER BY ds.day ASC
+`
+
+type GetAdminBookingRevenueSeriesRow struct {
+	Day            pgtype.Date    `json:"day"`
+	TotalBookings  int64          `json:"totalBookings"`
+	PaidBookings   int64          `json:"paidBookings"`
+	UnpaidBookings int64          `json:"unpaidBookings"`
+	PaidRevenue    pgtype.Numeric `json:"paidRevenue"`
+}
+
+func (q *Queries) GetAdminBookingRevenueSeries(ctx context.Context, dollar_1 int32) ([]GetAdminBookingRevenueSeriesRow, error) {
+	rows, err := q.db.Query(ctx, getAdminBookingRevenueSeries, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []GetAdminBookingRevenueSeriesRow{}
+	for rows.Next() {
+		var i GetAdminBookingRevenueSeriesRow
+		if err := rows.Scan(
+			&i.Day,
+			&i.TotalBookings,
+			&i.PaidBookings,
+			&i.UnpaidBookings,
+			&i.PaidRevenue,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getAdminBookingStats = `-- name: GetAdminBookingStats :one
+SELECT
+    COUNT(*)::bigint AS total_bookings,
+    COUNT(*) FILTER (WHERE status = 'pending')::bigint AS unpaid_bookings,
+    COUNT(*) FILTER (WHERE status = 'paid')::bigint AS paid_bookings,
+    COUNT(*) FILTER (WHERE status = 'refund_pending')::bigint AS refund_pending_bookings,
+    COUNT(*) FILTER (WHERE status = 'cancelled')::bigint AS cancelled_bookings,
+    COALESCE(SUM(total_amount) FILTER (WHERE status = 'paid'), 0)::numeric AS paid_revenue,
+    COALESCE(SUM(total_amount) FILTER (WHERE status = 'pending'), 0)::numeric AS unpaid_revenue,
+    COUNT(DISTINCT trip_id) FILTER (WHERE status IN ('pending', 'paid', 'refund_pending'))::bigint AS active_trip_count
+FROM bookings
+`
+
+type GetAdminBookingStatsRow struct {
+	TotalBookings         int64          `json:"totalBookings"`
+	UnpaidBookings        int64          `json:"unpaidBookings"`
+	PaidBookings          int64          `json:"paidBookings"`
+	RefundPendingBookings int64          `json:"refundPendingBookings"`
+	CancelledBookings     int64          `json:"cancelledBookings"`
+	PaidRevenue           pgtype.Numeric `json:"paidRevenue"`
+	UnpaidRevenue         pgtype.Numeric `json:"unpaidRevenue"`
+	ActiveTripCount       int64          `json:"activeTripCount"`
+}
+
+func (q *Queries) GetAdminBookingStats(ctx context.Context) (GetAdminBookingStatsRow, error) {
+	row := q.db.QueryRow(ctx, getAdminBookingStats)
+	var i GetAdminBookingStatsRow
+	err := row.Scan(
+		&i.TotalBookings,
+		&i.UnpaidBookings,
+		&i.PaidBookings,
+		&i.RefundPendingBookings,
+		&i.CancelledBookings,
+		&i.PaidRevenue,
+		&i.UnpaidRevenue,
+		&i.ActiveTripCount,
+	)
+	return i, err
+}
+
 const getBookingByCode = `-- name: GetBookingByCode :one
 SELECT id, code, trip_id, user_id, guest_info, pickup_info, dropoff_info, seat_codes, total_amount, status, payment_method, created_at, updated_at, expires_at, refunded_at, refund_reference, refund_note FROM bookings WHERE code = $1
 `
@@ -299,6 +419,84 @@ func (q *Queries) GetExpiredPendingBookings(ctx context.Context, limit int32) ([
 	return items, nil
 }
 
+const listActiveBookingsByTrip = `-- name: ListActiveBookingsByTrip :many
+SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, b.refund_reference, b.refund_note, t.departure_time, t.arrival_time,
+       o.name as origin_name, d.name as destination_name
+FROM bookings b
+JOIN trips t ON b.trip_id = t.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE b.trip_id = $1
+  AND b.status IN ('pending', 'paid', 'refund_pending')
+ORDER BY b.created_at DESC
+`
+
+type ListActiveBookingsByTripRow struct {
+	ID              int64              `json:"id"`
+	Code            string             `json:"code"`
+	TripID          int64              `json:"tripId"`
+	UserID          *int64             `json:"userId"`
+	GuestInfo       json.RawMessage    `json:"guestInfo"`
+	PickupInfo      json.RawMessage    `json:"pickupInfo"`
+	DropoffInfo     json.RawMessage    `json:"dropoffInfo"`
+	SeatCodes       []string           `json:"seatCodes"`
+	TotalAmount     pgtype.Numeric     `json:"totalAmount"`
+	Status          *string            `json:"status"`
+	PaymentMethod   *string            `json:"paymentMethod"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
+	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
+	RefundedAt      pgtype.Timestamptz `json:"refundedAt"`
+	RefundReference *string            `json:"refundReference"`
+	RefundNote      *string            `json:"refundNote"`
+	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
+	OriginName      string             `json:"originName"`
+	DestinationName string             `json:"destinationName"`
+}
+
+func (q *Queries) ListActiveBookingsByTrip(ctx context.Context, tripID int64) ([]ListActiveBookingsByTripRow, error) {
+	rows, err := q.db.Query(ctx, listActiveBookingsByTrip, tripID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListActiveBookingsByTripRow{}
+	for rows.Next() {
+		var i ListActiveBookingsByTripRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.TripID,
+			&i.UserID,
+			&i.GuestInfo,
+			&i.PickupInfo,
+			&i.DropoffInfo,
+			&i.SeatCodes,
+			&i.TotalAmount,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ExpiresAt,
+			&i.RefundedAt,
+			&i.RefundReference,
+			&i.RefundNote,
+			&i.DepartureTime,
+			&i.ArrivalTime,
+			&i.OriginName,
+			&i.DestinationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listActiveSeatCodesByUserTrip = `-- name: ListActiveSeatCodesByUserTrip :many
 SELECT DISTINCT seat_codes.seat_code::text AS seat_code
 FROM bookings b
@@ -326,6 +524,105 @@ func (q *Queries) ListActiveSeatCodesByUserTrip(ctx context.Context, arg ListAct
 			return nil, err
 		}
 		items = append(items, seat_code)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listAdminBookings = `-- name: ListAdminBookings :many
+SELECT b.id, b.code, b.trip_id, b.user_id, b.guest_info, b.pickup_info, b.dropoff_info, b.seat_codes, b.total_amount, b.status, b.payment_method, b.created_at, b.updated_at, b.expires_at, b.refunded_at, b.refund_reference, b.refund_note, t.departure_time, t.arrival_time,
+       o.name as origin_name, d.name as destination_name
+FROM bookings b
+JOIN trips t ON b.trip_id = t.id
+JOIN locations o ON t.origin_id = o.id
+JOIN locations d ON t.destination_id = d.id
+WHERE ($1::text = '' OR b.status = $1)
+  AND ($2::bigint = 0 OR b.trip_id = $2)
+  AND (
+    $3::text = ''
+    OR b.code ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'name', '') ILIKE '%' || $3 || '%'
+    OR COALESCE(b.guest_info->>'phone', '') ILIKE '%' || $3 || '%'
+  )
+ORDER BY b.created_at DESC
+LIMIT $4 OFFSET $5
+`
+
+type ListAdminBookingsParams struct {
+	Column1 string `json:"column1"`
+	Column2 int64  `json:"column2"`
+	Column3 string `json:"column3"`
+	Limit   int32  `json:"limit"`
+	Offset  int32  `json:"offset"`
+}
+
+type ListAdminBookingsRow struct {
+	ID              int64              `json:"id"`
+	Code            string             `json:"code"`
+	TripID          int64              `json:"tripId"`
+	UserID          *int64             `json:"userId"`
+	GuestInfo       json.RawMessage    `json:"guestInfo"`
+	PickupInfo      json.RawMessage    `json:"pickupInfo"`
+	DropoffInfo     json.RawMessage    `json:"dropoffInfo"`
+	SeatCodes       []string           `json:"seatCodes"`
+	TotalAmount     pgtype.Numeric     `json:"totalAmount"`
+	Status          *string            `json:"status"`
+	PaymentMethod   *string            `json:"paymentMethod"`
+	CreatedAt       pgtype.Timestamptz `json:"createdAt"`
+	UpdatedAt       pgtype.Timestamptz `json:"updatedAt"`
+	ExpiresAt       pgtype.Timestamptz `json:"expiresAt"`
+	RefundedAt      pgtype.Timestamptz `json:"refundedAt"`
+	RefundReference *string            `json:"refundReference"`
+	RefundNote      *string            `json:"refundNote"`
+	DepartureTime   pgtype.Timestamptz `json:"departureTime"`
+	ArrivalTime     pgtype.Timestamptz `json:"arrivalTime"`
+	OriginName      string             `json:"originName"`
+	DestinationName string             `json:"destinationName"`
+}
+
+func (q *Queries) ListAdminBookings(ctx context.Context, arg ListAdminBookingsParams) ([]ListAdminBookingsRow, error) {
+	rows, err := q.db.Query(ctx, listAdminBookings,
+		arg.Column1,
+		arg.Column2,
+		arg.Column3,
+		arg.Limit,
+		arg.Offset,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []ListAdminBookingsRow{}
+	for rows.Next() {
+		var i ListAdminBookingsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Code,
+			&i.TripID,
+			&i.UserID,
+			&i.GuestInfo,
+			&i.PickupInfo,
+			&i.DropoffInfo,
+			&i.SeatCodes,
+			&i.TotalAmount,
+			&i.Status,
+			&i.PaymentMethod,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+			&i.ExpiresAt,
+			&i.RefundedAt,
+			&i.RefundReference,
+			&i.RefundNote,
+			&i.DepartureTime,
+			&i.ArrivalTime,
+			&i.OriginName,
+			&i.DestinationName,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err

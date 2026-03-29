@@ -2,7 +2,20 @@ import type { PaginatedResponse } from '@/modules/shared'
 import type { Trip } from '@/modules/trip'
 import { api } from '@/services/api/client'
 
-import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatusResponse, RefundActionRequest, RefundRequestListResponse } from '../types'
+import type {
+    AdminBookingListParams,
+    AdminBookingListResponse,
+    AdminBookingStats,
+    AdminRevenueSeriesResponse,
+    AdminUpdateBookingStatusRequest,
+    Booking,
+    CreateBookingRequest,
+    CreateBookingResponse,
+    PaymentStatusResponse,
+    RefundActionRequest,
+    RefundRequestListResponse,
+    TripSeatManifestResponse,
+} from '../types'
 
 export const bookingApi = {
     create: async (data: CreateBookingRequest): Promise<CreateBookingResponse> => {
@@ -69,6 +82,46 @@ export const bookingApi = {
 
 // Admin refund API
 export const adminBookingApi = {
+    listBookings: async (params: AdminBookingListParams = {}): Promise<AdminBookingListResponse> => {
+        const response = await api.get('/admin/bookings', { params })
+        return response.data.data
+    },
+
+    getStats: async (): Promise<AdminBookingStats> => {
+        const response = await api.get('/admin/bookings/stats')
+        return response.data.data
+    },
+
+    getTripSeatManifest: async (tripId: number): Promise<TripSeatManifestResponse> => {
+        const response = await api.get(`/admin/bookings/trips/${tripId}/seats`)
+        return response.data.data
+    },
+
+    getBookingDetail: async (id: number): Promise<Booking> => {
+        const response = await api.get(`/admin/bookings/${id}`)
+        return response.data.data
+    },
+
+    getRevenueSeries: async (days = 7): Promise<AdminRevenueSeriesResponse> => {
+        const response = await api.get('/admin/bookings/revenue-series', {
+            params: { days },
+        })
+        return response.data.data
+    },
+
+    updateBookingStatus: async (id: number, data: AdminUpdateBookingStatusRequest): Promise<Booking> => {
+        const response = await api.patch(`/admin/bookings/${id}/status`, data)
+        return response.data.data
+    },
+
+    exportBookingsCsv: async (params: AdminBookingListParams = {}): Promise<Blob> => {
+        const response = await api.get('/admin/bookings/export', {
+            params,
+            responseType: 'blob',
+        })
+        return response.data as Blob
+    },
+
     listRefundRequests: async (page = 1, pageSize = 20): Promise<RefundRequestListResponse> => {
         const response = await api.get('/admin/bookings/refund-requests', {
             params: { page, pageSize },

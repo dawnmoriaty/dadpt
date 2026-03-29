@@ -46,6 +46,7 @@ type BookingResponse struct {
 	ID              int64        `json:"id"`
 	Code            string       `json:"code"`
 	TripID          int64        `json:"tripId"`
+	UserID          *int64       `json:"userId,omitempty"`
 	OrderCode       string       `json:"orderCode,omitempty"`
 	SeatCodes       []string     `json:"seatCodes"`
 	GuestInfo       GuestInfoDTO `json:"guestInfo"`
@@ -122,6 +123,7 @@ func ToBookingResponse(b *domain.Booking) *BookingResponse {
 		ID:        b.ID,
 		Code:      string(b.Code),
 		TripID:    b.TripID,
+		UserID:    b.UserID,
 		OrderCode: b.OrderCode,
 		SeatCodes: b.SeatCodes,
 		GuestInfo: GuestInfoDTO{
@@ -203,6 +205,53 @@ type ListRefundRequestsParams struct {
 	PageSize int32 `form:"pageSize,default=20" binding:"omitempty,min=1,max=50"`
 }
 
+type AdminListBookingsParams struct {
+	Page     int32  `form:"page,default=1" binding:"omitempty,min=1"`
+	PageSize int32  `form:"pageSize,default=20" binding:"omitempty,min=1,max=100"`
+	Status   string `form:"status" binding:"omitempty,oneof=pending paid cancelled expired refund_pending refunded"`
+	TripID   int64  `form:"tripId" binding:"omitempty,min=1"`
+	Search   string `form:"search" binding:"omitempty,max=100"`
+}
+
+type AdminBookingStatsResponse struct {
+	TotalBookings         int64   `json:"totalBookings"`
+	UnpaidBookings        int64   `json:"unpaidBookings"`
+	PaidBookings          int64   `json:"paidBookings"`
+	RefundPendingBookings int64   `json:"refundPendingBookings"`
+	CancelledBookings     int64   `json:"cancelledBookings"`
+	PaidRevenue           float64 `json:"paidRevenue"`
+	UnpaidRevenue         float64 `json:"unpaidRevenue"`
+	ActiveTripCount       int64   `json:"activeTripCount"`
+}
+
+type AdminUpdateBookingStatusRequest struct {
+	Status string `json:"status" binding:"required,oneof=pending paid cancelled expired"`
+}
+
+type AdminRevenueSeriesPointResponse struct {
+	Date           string  `json:"date"`
+	TotalBookings  int64   `json:"totalBookings"`
+	PaidBookings   int64   `json:"paidBookings"`
+	UnpaidBookings int64   `json:"unpaidBookings"`
+	PaidRevenue    float64 `json:"paidRevenue"`
+}
+
+type AdminRevenueSeriesResponse struct {
+	Days  int32                              `json:"days"`
+	Items []*AdminRevenueSeriesPointResponse `json:"items"`
+}
+
+type TripSeatAssignmentResponse struct {
+	SeatCode string                 `json:"seatCode"`
+	Booking  *BookingDetailResponse `json:"booking"`
+}
+
+type TripSeatManifestResponse struct {
+	TripID    int64                         `json:"tripId"`
+	SeatCount int64                         `json:"seatCount"`
+	Items     []*TripSeatAssignmentResponse `json:"items"`
+}
+
 type RefundActionRequest struct {
 	Reason          string `json:"reason" binding:"omitempty,max=500"`
 	RefundReference string `json:"refundReference" binding:"omitempty,max=100"`
@@ -227,5 +276,70 @@ func ToRefundRequestListResponse(output *domain.RefundRequestListOutput) *Refund
 		Total:    output.Total,
 		Page:     output.Page,
 		PageSize: output.PageSize,
+	}
+}
+
+func ToAdminBookingStatsResponse(output *domain.AdminBookingStatsOutput) *AdminBookingStatsResponse {
+	if output == nil {
+		return &AdminBookingStatsResponse{}
+	}
+
+	return &AdminBookingStatsResponse{
+		TotalBookings:         output.TotalBookings,
+		UnpaidBookings:        output.UnpaidBookings,
+		PaidBookings:          output.PaidBookings,
+		RefundPendingBookings: output.RefundPendingBookings,
+		CancelledBookings:     output.CancelledBookings,
+		PaidRevenue:           output.PaidRevenue,
+		UnpaidRevenue:         output.UnpaidRevenue,
+		ActiveTripCount:       output.ActiveTripCount,
+	}
+}
+
+func ToTripSeatManifestResponse(output *domain.TripSeatManifestOutput) *TripSeatManifestResponse {
+	if output == nil {
+		return &TripSeatManifestResponse{}
+	}
+
+	items := make([]*TripSeatAssignmentResponse, 0)
+	for _, booking := range output.Bookings {
+		if booking == nil {
+			continue
+		}
+		bookingResponse := ToBookingDetailResponse(booking)
+		for _, seatCode := range booking.SeatCodes {
+			items = append(items, &TripSeatAssignmentResponse{
+				SeatCode: seatCode,
+				Booking:  bookingResponse,
+			})
+		}
+	}
+
+	return &TripSeatManifestResponse{
+		TripID:    output.TripID,
+		SeatCount: output.SeatCount,
+		Items:     items,
+	}
+}
+
+func ToAdminRevenueSeriesResponse(output *domain.AdminRevenueSeriesOutput) *AdminRevenueSeriesResponse {
+	if output == nil {
+		return &AdminRevenueSeriesResponse{}
+	}
+
+	items := make([]*AdminRevenueSeriesPointResponse, len(output.Items))
+	for i, item := range output.Items {
+		items[i] = &AdminRevenueSeriesPointResponse{
+			Date:           item.Date,
+			TotalBookings:  item.TotalBookings,
+			PaidBookings:   item.PaidBookings,
+			UnpaidBookings: item.UnpaidBookings,
+			PaidRevenue:    item.PaidRevenue,
+		}
+	}
+
+	return &AdminRevenueSeriesResponse{
+		Days:  output.Days,
+		Items: items,
 	}
 }

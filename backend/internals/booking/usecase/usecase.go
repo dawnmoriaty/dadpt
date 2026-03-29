@@ -51,6 +51,11 @@ type IBookingUseCase interface {
 	GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error)
 	RegeneratePaymentLink(ctx context.Context, booking *domain.Booking, paymentTx *domain.PaymentTransaction) (*domain.BookingOutput, error)
 	GatewayAvailable() bool
+	ListAdminBookings(ctx context.Context, input *domain.AdminBookingListInput) (*domain.BookingListOutput, error)
+	GetAdminBookingStats(ctx context.Context) (*domain.AdminBookingStatsOutput, error)
+	GetTripSeatManifest(ctx context.Context, tripID int64) (*domain.TripSeatManifestOutput, error)
+	GetAdminRevenueSeries(ctx context.Context, days int32) (*domain.AdminRevenueSeriesOutput, error)
+	AdminUpdateBookingStatus(ctx context.Context, input *domain.AdminUpdateBookingStatusInput) (*domain.Booking, error)
 	// Admin refund flow
 	ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error)
 	CountRefundPending(ctx context.Context) (int64, error)
@@ -365,6 +370,151 @@ func (u *bookingUseCase) ListUserBookings(ctx context.Context, input *domain.Lis
 		Page:     page,
 		PageSize: pageSize,
 	}, nil
+}
+
+func (u *bookingUseCase) ListAdminBookings(ctx context.Context, input *domain.AdminBookingListInput) (*domain.BookingListOutput, error) {
+	page := input.Page
+	pageSize := input.PageSize
+	limit := input.Limit
+	offset := input.Offset
+
+	if page > 0 {
+		if pageSize <= 0 {
+			pageSize = 20
+		}
+		limit = pageSize
+		offset = (page - 1) * pageSize
+	}
+
+	if limit <= 0 {
+		limit = 20
+	}
+	if offset < 0 {
+		offset = 0
+	}
+	if page <= 0 {
+		pageSize = limit
+		page = (offset / limit) + 1
+	}
+
+	items, total, err := u.repo.ListAdmin(ctx, &domain.AdminBookingListInput{
+		Limit:  limit,
+		Offset: offset,
+		Status: strings.TrimSpace(input.Status),
+		TripID: input.TripID,
+		Search: strings.TrimSpace(input.Search),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("uc.ListAdminBookings: %w", err)
+	}
+
+	return &domain.BookingListOutput{
+		Bookings: items,
+		Total:    total,
+		Page:     page,
+		PageSize: pageSize,
+	}, nil
+}
+
+func (u *bookingUseCase) GetAdminBookingStats(ctx context.Context) (*domain.AdminBookingStatsOutput, error) {
+	stats, err := u.repo.GetAdminStats(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("uc.GetAdminBookingStats: %w", err)
+	}
+	return stats, nil
+}
+
+func (u *bookingUseCase) GetTripSeatManifest(ctx context.Context, tripID int64) (*domain.TripSeatManifestOutput, error) {
+	bookings, err := u.repo.ListActiveByTrip(ctx, tripID)
+	if err != nil {
+		return nil, fmt.Errorf("uc.GetTripSeatManifest: %w", err)
+	}
+
+	seatCount := int64(0)
+	for _, booking := range bookings {
+		if booking == nil {
+			continue
+		}
+		seatCount += int64(len(booking.SeatCodes))
+	}
+
+	return &domain.TripSeatManifestOutput{
+		TripID:    tripID,
+		Bookings:  bookings,
+		SeatCount: seatCount,
+	}, nil
+}
+
+func (u *bookingUseCase) GetAdminRevenueSeries(ctx context.Context, days int32) (*domain.AdminRevenueSeriesOutput, error) {
+	if days <= 0 {
+		days = 7
+	}
+
+	items, err := u.repo.GetAdminRevenueSeries(ctx, days)
+	if err != nil {
+		return nil, fmt.Errorf("uc.GetAdminRevenueSeries: %w", err)
+	}
+
+	return &domain.AdminRevenueSeriesOutput{
+		Days:  days,
+		Items: items,
+	}, nil
+}
+
+func (u *bookingUseCase) AdminUpdateBookingStatus(ctx context.Context, input *domain.AdminUpdateBookingStatusInput) (*domain.Booking, error) {
+	booking, err := u.repo.GetByID(ctx, input.BookingID)
+	if err != nil {
+		return nil, err
+	}
+
+	if booking.Status == input.Status {
+		return booking, nil
+	}
+
+	switch input.Status {
+	case domain.StatusPaid:
+		if booking.Status != domain.StatusPending {
+			return nil, domain.ErrInvalidStatusTransition
+		}
+		updated, err := u.repo.MarkPaid(ctx, booking.ID)
+		if err != nil {
+			return nil, fmt.Errorf("uc.AdminUpdateBookingStatus: mark paid: %w", err)
+		}
+		_ = u.outboxRepo.CreateEvent(ctx, TopicBookingPaid, domain.NewBookingEventEnvelope(TopicBookingPaid, updated, getCorrelationIDFromContext(ctx)))
+		return updated, nil
+
+	case domain.StatusExpired:
+		if booking.Status != domain.StatusPending {
+			return nil, domain.ErrInvalidStatusTransition
+		}
+		seatCount := int32(len(booking.SeatCodes))
+		if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
+			logger.Warn("Failed to release seats while expiring booking %d: %v", booking.ID, err)
+		}
+		updated, err := u.repo.MarkExpired(ctx, booking.ID)
+		if err != nil {
+			return nil, fmt.Errorf("uc.AdminUpdateBookingStatus: mark expired: %w", err)
+		}
+		_ = u.outboxRepo.CreateEvent(ctx, TopicBookingExpired, domain.NewBookingEventEnvelope(TopicBookingExpired, updated, getCorrelationIDFromContext(ctx)))
+		return updated, nil
+
+	case domain.StatusCancelled:
+		if booking.Status != domain.StatusPending && booking.Status != domain.StatusPaid && booking.Status != domain.StatusRefundPending {
+			return nil, domain.ErrInvalidStatusTransition
+		}
+		seatCount := int32(len(booking.SeatCodes))
+		if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
+			logger.Warn("Failed to release seats while cancelling booking %d: %v", booking.ID, err)
+		}
+		updated, err := u.repo.UpdateStatus(ctx, booking.ID, domain.StatusCancelled)
+		if err != nil {
+			return nil, fmt.Errorf("uc.AdminUpdateBookingStatus: cancel booking: %w", err)
+		}
+		_ = u.outboxRepo.CreateEvent(ctx, TopicBookingCancelled, domain.NewBookingEventEnvelope(TopicBookingCancelled, updated, getCorrelationIDFromContext(ctx)))
+		return updated, nil
+	default:
+		return nil, domain.ErrInvalidStatusTransition
+	}
 }
 
 func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error) {

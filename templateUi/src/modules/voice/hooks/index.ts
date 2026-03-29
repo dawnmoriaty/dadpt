@@ -31,7 +31,7 @@ export function useVoiceExecute() {
 
 export function useVoicePipeline() {
     return useMutation<VoicePipelineResponse, Error, File>({
-        mutationFn: (file: File) => voiceApi.pipeline(file, false),
+        mutationFn: (file: File) => voiceApi.pipeline(file, true),
     })
 }
 

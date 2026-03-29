@@ -100,13 +100,15 @@ async def execute_voice_booking(data: VoiceBookingExecuteInput):
         "Authorization": f"Bearer {data.bearer_token}",
         "Content-Type": "application/json",
     }
+    payment_method = data.payment_method.strip() or "cod"
+
     payload = {
         "origin": data.command.origin,
         "destination": data.command.destination,
         "travelDate": data.command.travel_date,
         "seatCount": data.command.seat_count,
         "seatPreferenceOrder": data.command.seat_preference_order,
-        "paymentMethod": data.payment_method,
+        "paymentMethod": payment_method,
     }
 
     async with aiohttp.ClientSession() as session:
