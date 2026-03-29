@@ -3,7 +3,9 @@ package kafka
 import (
 	"context"
 	"fmt"
+	"net"
 	"strings"
+	"time"
 
 	"backend/pkgs/logger"
 
@@ -72,29 +74,11 @@ func (c *client) Close() error {
 }
 
 // EnsureTopics creates topics on the Kafka cluster if they don't exist.
-// Existing topics are silently skipped.
+// Retries with exponential backoff since Kafka (KRaft) may take time to elect a controller.
 func (c *client) EnsureTopics(ctx context.Context, topics []TopicDefinition) error {
 	if len(topics) == 0 {
 		return nil
 	}
-
-	conn, err := kg.DialContext(ctx, "tcp", c.brokers[0])
-	if err != nil {
-		return fmt.Errorf("kafka: dial broker: %w", err)
-	}
-	defer conn.Close()
-
-	controller, err := conn.Controller()
-	if err != nil {
-		return fmt.Errorf("kafka: get controller: %w", err)
-	}
-
-	controllerAddr := fmt.Sprintf("%s:%d", controller.Host, controller.Port)
-	controllerConn, err := kg.DialContext(ctx, "tcp", controllerAddr)
-	if err != nil {
-		return fmt.Errorf("kafka: dial controller: %w", err)
-	}
-	defer controllerConn.Close()
 
 	kafkaTopics := make([]kg.TopicConfig, 0, len(topics))
 	for _, topic := range topics {
@@ -120,7 +104,62 @@ func (c *client) EnsureTopics(ctx context.Context, topics []TopicDefinition) err
 		return nil
 	}
 
-	if err := controllerConn.CreateTopics(kafkaTopics...); err != nil {
+	const maxRetries = 5
+	var lastErr error
+
+	for attempt := 1; attempt <= maxRetries; attempt++ {
+		if err := c.createTopics(ctx, kafkaTopics); err != nil {
+			lastErr = err
+			if attempt < maxRetries {
+				backoff := time.Duration(attempt) * 2 * time.Second
+				logger.Warn("Kafka topics ensure attempt %d/%d failed: %v — retrying in %v", attempt, maxRetries, err, backoff)
+				select {
+				case <-time.After(backoff):
+				case <-ctx.Done():
+					return ctx.Err()
+				}
+				continue
+			}
+		} else {
+			logger.Info("Kafka topics ensured: count=%d", len(kafkaTopics))
+			return nil
+		}
+	}
+
+	return fmt.Errorf("kafka: ensure topics after %d retries: %w", maxRetries, lastErr)
+}
+
+// createTopics dials the broker and creates topics.
+// Uses the broker address directly (instead of conn.Controller()) to avoid
+// Docker-internal hostname resolution issues in single-node KRaft mode.
+func (c *client) createTopics(ctx context.Context, topics []kg.TopicConfig) error {
+	conn, err := kg.DialContext(ctx, "tcp", c.brokers[0])
+	if err != nil {
+		return fmt.Errorf("kafka: dial broker: %w", err)
+	}
+	defer conn.Close()
+
+	// Get the controller info and dial it via our own resolver
+	controller, err := conn.Controller()
+	if err != nil {
+		return fmt.Errorf("kafka: get controller: %w", err)
+	}
+
+	// In single-node KRaft mode, the controller IS the broker.
+	// The controller may advertise a Docker-internal hostname (e.g. bus.kafka:29092)
+	// that isn't reachable from the host. Use the original broker address instead.
+	controllerAddr := fmt.Sprintf("%s:%d", controller.Host, controller.Port)
+	if !c.isReachable(controllerAddr) {
+		controllerAddr = c.brokers[0]
+	}
+
+	controllerConn, err := kg.DialContext(ctx, "tcp", controllerAddr)
+	if err != nil {
+		return fmt.Errorf("kafka: dial controller: %w", err)
+	}
+	defer controllerConn.Close()
+
+	if err := controllerConn.CreateTopics(topics...); err != nil {
 		if strings.Contains(err.Error(), "Topic with this name already exists") {
 			logger.Info("Kafka topics already exist, skip create")
 			return nil
@@ -128,8 +167,17 @@ func (c *client) EnsureTopics(ctx context.Context, topics []TopicDefinition) err
 		return fmt.Errorf("kafka: create topics: %w", err)
 	}
 
-	logger.Info("Kafka topics ensured: count=%d", len(kafkaTopics))
 	return nil
+}
+
+// isReachable checks if a host:port is reachable with a short timeout.
+func (c *client) isReachable(addr string) bool {
+	conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
+	if err != nil {
+		return false
+	}
+	conn.Close()
+	return true
 }
 
 // NewProducer creates a new producer for the specified topic.

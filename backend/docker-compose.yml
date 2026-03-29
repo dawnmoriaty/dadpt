@@ -54,6 +54,51 @@ services:
       retries: 5
     restart: unless-stopped
 
+  # Kafka (KRaft mode)
+  bus.kafka:
+    image: apache/kafka:3.8.0
+    container_name: bus.kafka
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: 'broker,controller'
+      KAFKA_CONTROLLER_QUORUM_VOTERS: '1@bus.kafka:9093'
+      KAFKA_LOG_DIRS: '/var/lib/kafka/data'
+      KAFKA_LISTENERS: 'INTERNAL://0.0.0.0:29092,CONTROLLER://0.0.0.0:9093,EXTERNAL://0.0.0.0:9092'
+      KAFKA_ADVERTISED_LISTENERS: 'INTERNAL://bus.kafka:29092,EXTERNAL://localhost:9092'
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: 'CONTROLLER:PLAINTEXT,INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT'
+      KAFKA_CONTROLLER_LISTENER_NAMES: 'CONTROLLER'
+      KAFKA_INTER_BROKER_LISTENER_NAME: 'INTERNAL'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    volumes:
+      - bus_kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --list > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # Kafka UI
+  bus.kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: bus.kafka-ui
+    ports:
+      - "8081:8080"
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=LocalCluster
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=bus.kafka:29092
+      - DYNAMIC_CONFIG_ENABLED=true
+    depends_on:
+      - bus.kafka
+    restart: unless-stopped
+
   # MinIO Object Storage
   bus.minio:
     image: minio/minio:latest
@@ -154,3 +199,5 @@ volumes:
     name: bus_qdrant_data
   bus_ai_data:
     name: bus_ai_data
+  bus_kafka_data:
+    name: bus_kafka_data
