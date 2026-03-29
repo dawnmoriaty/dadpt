@@ -24,15 +24,15 @@ type IProducer interface {
 type ProducerOption func(*producerConfig)
 
 type producerConfig struct {
-	balancer       kg.Balancer
-	batchSize      int
-	batchTimeout   time.Duration
-	async          bool
-	maxAttempts    int
-	writeTimeout   time.Duration
-	requiredAcks   kg.RequiredAcks
-	idempotent     bool
-	compressor     kg.Compression
+	balancer     kg.Balancer
+	batchSize    int
+	batchTimeout time.Duration
+	async        bool
+	maxAttempts  int
+	writeTimeout time.Duration
+	requiredAcks kg.RequiredAcks
+	idempotent   bool
+	compressor   kg.Compression
 }
 
 func defaultProducerConfig() producerConfig {
@@ -162,15 +162,16 @@ func (p *producer) Close() error {
 
 // toKafkaGoMessage converts our Message to kafka-go's Message format.
 func toKafkaGoMessage(msg Message, defaultTopic string) kg.Message {
-	topic := msg.Topic
-	if topic == "" {
-		topic = defaultTopic
-	}
-
 	kgMsg := kg.Message{
-		Topic: topic,
 		Key:   msg.Key,
 		Value: msg.Value,
+	}
+
+	// kafka-go forbids specifying topic on both Writer and Message.
+	// Our producers are created per-topic, so only propagate Message.Topic
+	// when the writer itself has no default topic configured.
+	if defaultTopic == "" && msg.Topic != "" {
+		kgMsg.Topic = msg.Topic
 	}
 
 	if len(msg.Headers) > 0 {
