@@ -13,6 +13,7 @@ gRPC serves:
 from __future__ import annotations
 
 from contextlib import asynccontextmanager
+import os
 
 import structlog
 import uvicorn
@@ -54,6 +55,13 @@ async def lifespan(app: FastAPI):
     await registry.load()
     logger.info("startup.registry_ready", tenants=len(registry.list_all()))
 
+    # 3.1 Runtime hint for grpc target wiring
+    logger.info(
+        "startup.grpc_target_env",
+        default_grpc_target=os.getenv("DEFAULT_GRPC_TARGET", ""),
+        tenant_bus_target=os.getenv("TENANT_GRPC_TARGET_BUS", ""),
+    )
+
     # 4. Pre-warm model pool
     pool = get_model_pool()
     await pool.reload()
@@ -65,13 +73,16 @@ async def lifespan(app: FastAPI):
 
     # 6. Start gRPC server in background
     grpc_server = None
-    try:
-        from src.grpc_server.server import start_grpc_server
+    if settings.enable_grpc_server:
+        try:
+            from src.grpc_server.server import start_grpc_server
 
-        grpc_server = await start_grpc_server()
-        logger.info("startup.grpc_ready", port=settings.grpc_port)
-    except Exception as e:
-        logger.warning("startup.grpc_failed", error=str(e))
+            grpc_server = await start_grpc_server()
+            logger.info("startup.grpc_ready", port=settings.grpc_port)
+        except Exception as e:
+            logger.warning("startup.grpc_failed", error=str(e))
+    else:
+        logger.info("startup.grpc_skipped", reason="ENABLE_GRPC_SERVER=false")
 
     logger.info("startup.complete", http_port=settings.ai_service_port)
 

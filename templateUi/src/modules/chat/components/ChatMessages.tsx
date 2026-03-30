@@ -8,6 +8,8 @@ import { cn } from '@/lib/utils'
 
 import type { ChatMessage } from '../types'
 
+import { ChatTripActionCard } from './ChatTripActionCard'
+
 interface ChatMessagesProps {
     messages: ChatMessage[]
     isLoading: boolean
@@ -39,7 +41,7 @@ export function ChatMessages({ messages, isLoading, input, onInputChange, onSend
     }
 
     return (
-        <Card className="flex flex-1 flex-col overflow-hidden">
+        <Card className="flex min-h-0 flex-1 flex-col overflow-hidden">
             <div className="flex-1 overflow-y-auto p-6" ref={scrollRef}>
                 {messages.length === 0 ? (
                     <EmptyState sendMessage={sendMessage} isLoading={isLoading} />
@@ -145,6 +147,29 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                 <div className="space-y-2">
                     <p className="whitespace-pre-wrap break-words">{message.content}</p>
 
+                    {message.uiActions?.some(
+                        (action) =>
+                            (action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations') &&
+                            (action.items?.length ?? 0) > 0,
+                    ) && (
+                        <div className="mt-3 space-y-2 border-t pt-3">
+                            {message.uiActions
+                                .filter(
+                                    (action) =>
+                                        action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations',
+                                )
+                                .flatMap((action, actionIndex) =>
+                                    (action.items ?? []).map((item, itemIndex) => ({ item, actionType: action.type, actionIndex, itemIndex })),
+                                )
+                .map(({ item, actionType, actionIndex, itemIndex }) => (
+                                    <ChatTripActionCard
+                                        key={`trip-action-${actionType}-${actionIndex}-${item.trip_id}-${itemIndex}`}
+                                        item={item}
+                                    />
+                                ))}
+                        </div>
+                    )}
+
                     {message.workflowSlug && (
                         <div className="mt-2 border-t pt-2 text-xs opacity-70">
                             <span className="font-medium">workflow:</span> {message.workflowSlug}
@@ -152,7 +177,8 @@ function MessageBubble({ message }: { message: ChatMessage }) {
                     )}
                     {message.toolCalls && message.toolCalls.length > 0 && (
                         <div className="mt-2 border-t pt-2 text-xs opacity-70">
-                            <span className="font-medium">tools:</span> {message.toolCalls.map((item) => item.tool_name).join(', ')}
+                            <span className="font-medium">tools:</span>{' '}
+                            {message.toolCalls.map((item) => item.tool_name || item.tool || 'unknown').join(', ')}
                         </div>
                     )}
                 </div>

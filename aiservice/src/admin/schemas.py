@@ -87,6 +87,8 @@ class ModelInstanceCreate(BaseModel):
     temperature: float = 0.3
     max_tokens: int = 2000
     top_p: float = 1.0
+    frequency_penalty: float = 0.0
+    presence_penalty: float = 0.0
     system_prefix: str | None = None
     purpose: str = "general"
     fallback_slug: str | None = None
@@ -98,6 +100,8 @@ class ModelInstanceUpdate(BaseModel):
     temperature: float | None = None
     max_tokens: int | None = None
     top_p: float | None = None
+    frequency_penalty: float | None = None
+    presence_penalty: float | None = None
     system_prefix: str | None = None
     purpose: str | None = None
     fallback_slug: str | None = None
@@ -112,6 +116,8 @@ class ModelInstanceOut(BaseModel):
     temperature: float
     max_tokens: int
     top_p: float
+    frequency_penalty: float
+    presence_penalty: float
     purpose: str
     fallback_slug: str | None
     enabled: bool
@@ -269,4 +275,25 @@ class ChatOutput(BaseModel):
     session_id: str
     workflow_slug: str | None = None
     tool_calls: list[dict] = []
+    ui_actions: list[dict] = []
+    trace_id: str = ""
+    metrics: dict = {}
+
+
+class PolicyWeightsUpdate(BaseModel):
+    profile: str | None = None
+    price_weight: float | None = None
+    departure_weight: float | None = None
+    seats_weight: float | None = None
+    rag_hybrid: bool | None = None
+    rag_keyword_top_k: int | None = None
+    rag_top_k: int | None = None
+
+
+class RagEvalInput(BaseModel):
+    collection: str = "trips"
+    top_k: int = 5
+    hybrid: bool = True
+    keyword_top_k: int = 3
+    queries: list[str]
 

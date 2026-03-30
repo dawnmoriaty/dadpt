@@ -4,6 +4,12 @@ import { MessageCircle } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
 export function ChatFab() {
+    const isChatRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/chat')
+
+    if (isChatRoute) {
+        return null
+    }
+
     return (
         <div className="fixed bottom-6 left-6 z-40">
             <Button

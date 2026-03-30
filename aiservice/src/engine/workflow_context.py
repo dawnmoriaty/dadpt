@@ -6,6 +6,7 @@ Analogous to BPMN process variables / execution context.
 from __future__ import annotations
 
 import datetime as dt
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -18,6 +19,7 @@ class WorkflowContext:
     session_id: str  # conversation session
     tenant_slug: str
     workflow_slug: str | None = None  # which workflow is running
+    trace_id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
     # ── conversation ──
     user_message: str = ""
@@ -34,9 +36,11 @@ class WorkflowContext:
     # ── output ──
     response: str = ""  # final message back to user
     tool_calls_log: list[dict[str, Any]] = field(default_factory=list)
+    task_timings: list[dict[str, Any]] = field(default_factory=list)
 
     # ── metadata ──
     created_at: str = field(default_factory=lambda: dt.datetime.now(dt.UTC).isoformat())
+    started_at: str = field(default_factory=lambda: dt.datetime.now(dt.UTC).isoformat())
     error: str | None = None
 
     # ── helpers ──
@@ -66,6 +70,7 @@ class WorkflowContext:
             "session_id": self.session_id,
             "tenant_slug": self.tenant_slug,
             "workflow_slug": self.workflow_slug,
+            "trace_id": self.trace_id,
             "user_message": self.user_message,
             "messages": self.messages,
             "variables": self.variables,
@@ -74,7 +79,9 @@ class WorkflowContext:
             "status": self.status,
             "response": self.response,
             "tool_calls_log": self.tool_calls_log,
+            "task_timings": self.task_timings,
             "created_at": self.created_at,
+            "started_at": self.started_at,
             "error": self.error,
         }
 

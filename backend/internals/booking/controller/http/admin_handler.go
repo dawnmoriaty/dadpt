@@ -132,6 +132,38 @@ func (h *AdminBookingHandler) UpdateBookingStatus(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(updated))
 }
 
+// ConfirmCOD POST /admin/bookings/:id/confirm-cod
+// Phase 1: allow admin/COD signal to move booking from pending -> paid.
+func (h *AdminBookingHandler) ConfirmCOD(c *gin.Context) {
+	id, err := parseID(c, "id")
+	if err != nil {
+		response.HandleError(c, pkgErrors.ValidationError("invalid booking id"))
+		return
+	}
+
+	booking, err := h.uc.GetBooking(c.Request.Context(), id)
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	if strings.TrimSpace(strings.ToLower(booking.PaymentMethod)) != "cod" {
+		response.HandleError(c, pkgErrors.ValidationError("booking payment method is not cod"))
+		return
+	}
+
+	updated, err := h.uc.AdminUpdateBookingStatus(c.Request.Context(), &domain.AdminUpdateBookingStatusInput{
+		BookingID: id,
+		Status:    domain.StatusPaid,
+	})
+	if err != nil {
+		response.HandleError(c, mapDomainError(err))
+		return
+	}
+
+	response.Success(c, dto.ToBookingResponse(updated))
+}
+
 // ExportBookingsCSV GET /admin/bookings/export
 func (h *AdminBookingHandler) ExportBookingsCSV(c *gin.Context) {
 	status := strings.TrimSpace(c.Query("status"))

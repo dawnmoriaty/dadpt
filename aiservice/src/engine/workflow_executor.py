@@ -29,6 +29,7 @@ from __future__ import annotations
 import asyncio
 import copy
 import json
+import time
 from typing import Any
 
 import structlog
@@ -109,15 +110,23 @@ class WorkflowExecutor:
 
             # Handle parallel task specially
             if task_type == "parallel":
+                started = time.perf_counter()
                 ctx = await self._execute_parallel(node_def, nodes, adjacency, ctx)
+                elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+                self._record_task_timing(ctx, current, task_type, iteration, elapsed_ms, ctx.status)
                 if ctx.status in ("paused", "error"):
                     break
             else:
                 # Create and execute task
+                started = time.perf_counter()
                 try:
                     task = create_task(task_type, task_config, **self.deps)
                     ctx = await task.execute(ctx)
+                    elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+                    self._record_task_timing(ctx, current, task_type, iteration, elapsed_ms, ctx.status)
                 except Exception as e:
+                    elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
+                    self._record_task_timing(ctx, current, task_type, iteration, elapsed_ms, "error")
                     logger.error("workflow.task_error", node=current, error=str(e))
                     ctx.error = f"Task '{current}' failed: {e}"
                     ctx.status = "error"
@@ -155,6 +164,25 @@ class WorkflowExecutor:
         )
 
         return ctx
+
+    @staticmethod
+    def _record_task_timing(
+        ctx: WorkflowContext,
+        node: str,
+        task_type: str,
+        iteration: int,
+        elapsed_ms: float,
+        status: str,
+    ) -> None:
+        ctx.task_timings.append(
+            {
+                "node": node,
+                "task_type": task_type,
+                "iteration": iteration,
+                "elapsed_ms": elapsed_ms,
+                "status": status,
+            }
+        )
 
     def _build_adjacency(
         self, edges: list[dict]

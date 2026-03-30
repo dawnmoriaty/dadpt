@@ -24,4 +24,6 @@ class OpenAIAdapter(LLMProviderAdapter):
             temperature=cfg.temperature,
             max_tokens=cfg.max_tokens,
             top_p=cfg.top_p,
+            frequency_penalty=cfg.frequency_penalty,
+            presence_penalty=cfg.presence_penalty,
         )

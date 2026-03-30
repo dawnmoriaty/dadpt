@@ -16,6 +16,7 @@ Flow:
 from __future__ import annotations
 
 import json
+import time
 from typing import Any
 
 import structlog
@@ -85,17 +86,28 @@ class Supervisor:
 
     async def handle(self, ctx: WorkflowContext) -> WorkflowContext:
         """Main entry point — route and execute."""
+        started = time.perf_counter()
 
         # If resuming a paused workflow, go straight to executor
         if ctx.status == "resuming" and ctx.workflow_slug:
-            return await self._resume_workflow(ctx)
+            result = await self._resume_workflow(ctx)
+            self._set_total_latency(result, started)
+            return result
 
         # ── New: Agent→Skill routing ──
         if self._agent_router and self.tenant.has_agents:
-            return await self._handle_agent_routing(ctx)
+            result = await self._handle_agent_routing(ctx)
+            self._set_total_latency(result, started)
+            return result
 
         # ── Legacy: Flat workflow routing ──
-        return await self._handle_legacy_routing(ctx)
+        result = await self._handle_legacy_routing(ctx)
+        self._set_total_latency(result, started)
+        return result
+
+    @staticmethod
+    def _set_total_latency(ctx: WorkflowContext, started: float) -> None:
+        ctx.set_var("_total_latency_ms", round((time.perf_counter() - started) * 1000, 2))
 
     async def _handle_agent_routing(self, ctx: WorkflowContext) -> WorkflowContext:
         """Route via Agent→Skill hierarchy (new architecture)."""
@@ -109,6 +121,7 @@ class Supervisor:
             ctx.variables["_agent_slug"] = agent.slug
             ctx.variables["_skill_slug"] = skill.slug
             ctx.variables["_resolved_model"] = route_result.resolved_model_slug
+            ctx.variables["_router_confidence"] = route_result.confidence
 
             # Inject agent's role_prompt into context
             ctx.variables["_role_prompt"] = agent.role_prompt
@@ -119,6 +132,7 @@ class Supervisor:
                 agent=agent.slug,
                 skill=skill.slug,
                 model=route_result.resolved_model_slug,
+                confidence=route_result.confidence,
             )
 
             # Override model in executor deps if skill/agent specifies one

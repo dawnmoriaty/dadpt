@@ -24,6 +24,8 @@ class ProviderConfig(BaseModel):
     temperature: float = 0.3
     max_tokens: int = 2000
     top_p: float = 1.0
+    frequency_penalty: float = 0.0
+    presence_penalty: float = 0.0
     system_prefix: str | None = None
     fallback_slug: str | None = None
 

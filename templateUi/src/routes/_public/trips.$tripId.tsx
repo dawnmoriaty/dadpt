@@ -12,6 +12,7 @@ import { tripApi } from '@/modules/trip/api'
 
 const tripSearchSchema = z.object({
     passengers: z.coerce.number().optional().default(1),
+    paymentMethod: z.enum(['bank_transfer', 'cod', 'visa']).optional(),
 })
 
 export const Route = createFileRoute('/_public/trips/$tripId')({
@@ -83,6 +84,7 @@ function TripBookingPage() {
             <BookingForm
                 trip={trip}
                 passengers={search.passengers}
+                defaultPaymentMethod={search.paymentMethod}
                 onSuccess={setBookingData}
             />
         </div>

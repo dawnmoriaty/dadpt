@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import json
 import re
+from datetime import datetime, timedelta
 from typing import Any
 
 import structlog
@@ -115,7 +116,19 @@ class JsonExtractTask(BaseTask):
         key_lower = key.lower()
         if key_lower in {"date", "departure_date", "travel_date"}:
             match = re.search(r"\d{4}-\d{2}-\d{2}", raw_text)
-            return match.group(0) if match else None
+            if match:
+                return match.group(0)
+
+            lowered = raw_text.lower()
+            today = datetime.now()
+            if "ngay mai" in lowered or "ngaymai" in lowered:
+                return (today + timedelta(days=1)).strftime("%Y-%m-%d")
+            if "hom nay" in lowered or "homnay" in lowered:
+                return today.strftime("%Y-%m-%d")
+            if "ngay kia" in lowered or "ngaykia" in lowered:
+                return (today + timedelta(days=2)).strftime("%Y-%m-%d")
+
+            return None
 
         patterns: list[str] = []
         if key_lower in {"origin", "from", "origin_name"}:
@@ -132,7 +145,7 @@ class JsonExtractTask(BaseTask):
 
         if key_lower in {"origin", "from", "origin_name", "destination", "to", "destination_name"}:
             route_match = re.search(
-                r"t[uừ]\s+(.+?)\s+[đd][ếe]n\s+(.+?)(?:\s+ng[àa]y\s+\d{4}-\d{2}-\d{2}|$)",
+                r"t[uừ]\s+(.+?)\s+[đd][ếe]n\s+(.+?)(?:\s+ng[àa]y\s+\d{4}-\d{2}-\d{2}|\s+ng[àa]y\s+mai|\s+h[oô]m\s+nay|\s+ng[àa]y\s+kia|$)",
                 raw_text,
                 flags=re.IGNORECASE,
             )

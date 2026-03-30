@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import base64
 import importlib
+import os
 import tempfile
 from typing import Any
 from pathlib import Path
@@ -73,7 +74,11 @@ class VoiceBookingServicer:
             temp_path = temp_file.name
 
         try:
-            model = whisper_model("small", device="cpu", compute_type="int8")
+            model = whisper_model(
+                os.getenv("WHISPER_MODEL_SIZE", "small"),
+                device=os.getenv("WHISPER_DEVICE", "cpu"),
+                compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"),
+            )
             segments, _ = model.transcribe(temp_path, language="vi")
             transcript = " ".join(segment.text.strip() for segment in segments).strip()
             if not transcript:

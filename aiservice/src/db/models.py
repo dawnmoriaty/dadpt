@@ -123,6 +123,8 @@ class ModelInstance(Base):
     temperature: Mapped[float] = mapped_column(Float, default=0.3)
     max_tokens: Mapped[int] = mapped_column(Integer, default=2000)
     top_p: Mapped[float] = mapped_column(Float, default=1.0)
+    frequency_penalty: Mapped[float] = mapped_column(Float, default=0.0)
+    presence_penalty: Mapped[float] = mapped_column(Float, default=0.0)
     system_prefix: Mapped[Optional[str]] = mapped_column(
         Text, nullable=True
     )  # prepended to every prompt

@@ -432,6 +432,16 @@ async def seed():
             model_slug="bus-search-gpt",
             icon="🎫",
             priority=0,
+            routing_config={
+                "keywords": [
+                    "tim chuyen",
+                    "lich trinh",
+                    "gia ve",
+                    "dat ve",
+                    "book ve",
+                    "ghe",
+                ]
+            },
         )
         session.add(sales_agent)
         await session.flush()
@@ -473,23 +483,40 @@ async def seed():
                             },
                             "position": {"x": 400, "y": 200},
                         },
+                        "rerank": {
+                            "task_type": "rerank_trips",
+                            "config": {
+                                "input_key": "search_results",
+                                "list_key": "trips",
+                                "output_key": "top_trips",
+                                "top_n": 5,
+                                "price_field": "finalPrice",
+                                "related_n": 2,
+                                "departure_field": "departureTime",
+                                "max_related_gap_minutes": 180,
+                            },
+                            "position": {"x": 550, "y": 200},
+                        },
                         "format": {
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-chat-gpt",
                                 "prompt_template": (
-                                    "Khách tìm: {user_message}\nKết quả:\n{search_results}\n\n"
-                                    "Trình bày kết quả dạng danh sách dễ đọc."
+                                    "Khách tìm: {user_message}\n"
+                                    "Chuyến chính đã xếp hạng:\n{top_trips}\n\n"
+                                    "Chuyến liên quan:\n{related_trips}\n\n"
+                                    "Trình bày 2 phần rõ ràng: Chuyến chính và Chuyến liên quan."
                                 ),
                                 "output_key": "response",
                             },
-                            "position": {"x": 700, "y": 200},
+                            "position": {"x": 740, "y": 200},
                         },
                     },
                     "edges": [
                         {"source": "START", "target": "extract", "flow_type": "SEQUENCE"},
                         {"source": "extract", "target": "search", "flow_type": "SEQUENCE"},
-                        {"source": "search", "target": "format", "flow_type": "SEQUENCE"},
+                        {"source": "search", "target": "rerank", "flow_type": "SEQUENCE"},
+                        {"source": "rerank", "target": "format", "flow_type": "SEQUENCE"},
                         {"source": "format", "target": "END", "flow_type": "SEQUENCE"},
                     ],
                 },
@@ -508,12 +535,97 @@ async def seed():
                             "config": {
                                 "model": "bus-search-gpt",
                                 "prompt_template": (
-                                    "Trích xuất thông tin đặt vé: trip_id, guest_name, "
-                                    'guest_phone, seat_codes. Yêu cầu: {user_message}'
+                                    "Trich xuat thong tin dat ve tu yeu cau sau va tra ve JSON THUAN "
+                                    "voi cac truong: trip_id, origin, destination, date, passengers, "
+                                    "guest_name, guest_phone, seat_codes. "
+                                    "Neu thieu thi de null. Yeu cau: {user_message}"
                                 ),
                                 "output_key": "booking_info",
                             },
                             "position": {"x": 100, "y": 200},
+                        },
+                        "parse": {
+                            "task_type": "json_extract",
+                            "config": {
+                                "input_key": "booking_info",
+                                "fields": {
+                                    "trip_id": "trip_id",
+                                    "origin": "origin",
+                                    "destination": "destination",
+                                    "date": "date",
+                                    "passengers": "passengers",
+                                    "guest_name": "guest_name",
+                                    "guest_phone": "guest_phone",
+                                    "seat_codes": "seat_codes",
+                                },
+                                "casts": {
+                                    "trip_id": "int",
+                                    "passengers": "int",
+                                },
+                                "defaults": {
+                                    "trip_id": 0,
+                                    "origin": "",
+                                    "destination": "",
+                                    "date": "",
+                                    "passengers": 1,
+                                    "guest_name": "",
+                                    "guest_phone": "",
+                                    "seat_codes": "",
+                                },
+                            },
+                            "position": {"x": 280, "y": 200},
+                        },
+                        "need_search": {
+                            "task_type": "condition",
+                            "config": {
+                                "expression": "trip_id <= 0 and origin != '' and destination != '' and date != ''",
+                            },
+                            "position": {"x": 430, "y": 200},
+                        },
+                        "search": {
+                            "task_type": "grpc_call",
+                            "config": {
+                                "tool_name": "search_trips",
+                                "input_mapping": {
+                                    "origin": "{origin}",
+                                    "destination": "{destination}",
+                                    "date": "{date}",
+                                    "passengers": "{passengers}",
+                                },
+                                "output_key": "search_results",
+                            },
+                            "position": {"x": 580, "y": 120},
+                        },
+                        "rerank": {
+                            "task_type": "rerank_trips",
+                            "config": {
+                                "input_key": "search_results",
+                                "list_key": "trips",
+                                "output_key": "top_trips",
+                                "top_n": 5,
+                                "price_field": "finalPrice",
+                                "related_n": 2,
+                                "departure_field": "departureTime",
+                                "max_related_gap_minutes": 180,
+                                "policy": {
+                                    "profile": "balanced",
+                                },
+                            },
+                            "position": {"x": 730, "y": 120},
+                        },
+                        "format_search": {
+                            "task_type": "llm_call",
+                            "config": {
+                                "model": "bus-chat-gpt",
+                                "prompt_template": (
+                                    "Khach muon dat ve va toi da tim thay cac chuyen phu hop. "
+                                    "Chuyen chinh:\n{top_trips}\n\n"
+                                    "Chuyen lien quan:\n{related_trips}\n\n"
+                                    "Hay moi khach bam nut Book ve ngay hoac Xem chi tiet tren giao dien de tiep tuc."
+                                ),
+                                "output_key": "response",
+                            },
+                            "position": {"x": 890, "y": 120},
                         },
                         "confirm": {
                             "task_type": "human_input",
@@ -521,7 +633,7 @@ async def seed():
                                 "prompt_template": "Xác nhận đặt vé:\n{booking_info}\n\nĐồng ý? (Có/Không)",
                                 "output_key": "user_confirm",
                             },
-                            "position": {"x": 400, "y": 200},
+                            "position": {"x": 580, "y": 300},
                         },
                         "do_book": {
                             "task_type": "grpc_call",
@@ -535,7 +647,7 @@ async def seed():
                                 },
                                 "output_key": "booking_result",
                             },
-                            "position": {"x": 700, "y": 200},
+                            "position": {"x": 740, "y": 300},
                         },
                         "done": {
                             "task_type": "llm_call",
@@ -544,12 +656,18 @@ async def seed():
                                 "prompt_template": "Đặt vé thành công!\n{booking_result}\nTóm tắt thân thiện.",
                                 "output_key": "response",
                             },
-                            "position": {"x": 1000, "y": 200},
+                            "position": {"x": 900, "y": 300},
                         },
                     },
                     "edges": [
                         {"source": "START", "target": "collect", "flow_type": "SEQUENCE"},
-                        {"source": "collect", "target": "confirm", "flow_type": "SEQUENCE"},
+                        {"source": "collect", "target": "parse", "flow_type": "SEQUENCE"},
+                        {"source": "parse", "target": "need_search", "flow_type": "SEQUENCE"},
+                        {"source": "need_search", "target": "search", "condition": "true", "flow_type": "CONDITIONAL"},
+                        {"source": "need_search", "target": "confirm", "condition": "false", "flow_type": "CONDITIONAL"},
+                        {"source": "search", "target": "rerank", "flow_type": "SEQUENCE"},
+                        {"source": "rerank", "target": "format_search", "flow_type": "SEQUENCE"},
+                        {"source": "format_search", "target": "END", "flow_type": "SEQUENCE"},
                         {"source": "confirm", "target": "do_book", "flow_type": "SEQUENCE"},
                         {"source": "do_book", "target": "done", "flow_type": "SEQUENCE"},
                         {"source": "done", "target": "END", "flow_type": "SEQUENCE"},
@@ -572,6 +690,16 @@ async def seed():
             model_slug="bus-chat-gpt",
             icon="💬",
             priority=1,
+            routing_config={
+                "keywords": [
+                    "trang thai",
+                    "ma ve",
+                    "booking",
+                    "hoan ve",
+                    "chinh sach",
+                    "hanh ly",
+                ]
+            },
         )
         session.add(support_agent)
         await session.flush()

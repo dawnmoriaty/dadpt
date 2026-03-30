@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     environment: str = "development"
     ai_service_port: int = 8100
     grpc_port: int = 50051
+    enable_grpc_server: bool = True
     log_level: str = "DEBUG"
 
     # --- LLM API Keys (DEPRECATED fallback — primary source is now encrypted keys in DB) ---

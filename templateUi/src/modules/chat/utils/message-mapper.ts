@@ -25,6 +25,7 @@ export function toAssistantMessage(response: ChatResponse): ChatMessage {
         status: response.status,
         workflowSlug: response.workflow_slug,
         toolCalls: response.tool_calls,
+        uiActions: response.ui_actions ?? [],
     }
 }
 

@@ -45,6 +45,28 @@ async def init_db():
     engine = get_engine()
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await _ensure_model_instance_columns(conn)
+
+
+async def _ensure_model_instance_columns(conn) -> None:
+    """Lightweight schema evolution for SQLite without migrations.
+
+    Phase 2 introduces tuning knobs on model_instances. Existing DBs need
+    columns added safely at startup.
+    """
+    result = await conn.exec_driver_sql("PRAGMA table_info(model_instances)")
+    rows = result.fetchall()
+    existing_columns = {str(row[1]) for row in rows}
+
+    if "frequency_penalty" not in existing_columns:
+        await conn.exec_driver_sql(
+            "ALTER TABLE model_instances ADD COLUMN frequency_penalty FLOAT DEFAULT 0.0"
+        )
+
+    if "presence_penalty" not in existing_columns:
+        await conn.exec_driver_sql(
+            "ALTER TABLE model_instances ADD COLUMN presence_penalty FLOAT DEFAULT 0.0"
+        )
 
 
 async def close_db():

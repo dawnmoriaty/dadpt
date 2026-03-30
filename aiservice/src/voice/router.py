@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import aiohttp
+import os
 import tempfile
 from pathlib import Path
 
@@ -43,7 +44,11 @@ async def transcribe_audio(file: UploadFile = File(...)):
         temp_path = temp_file.name
 
     try:
-        model = WhisperModel("small", device="cpu", compute_type="int8")
+        model = WhisperModel(
+            os.getenv("WHISPER_MODEL_SIZE", "small"),
+            device=os.getenv("WHISPER_DEVICE", "cpu"),
+            compute_type=os.getenv("WHISPER_COMPUTE_TYPE", "int8"),
+        )
         segments, _ = model.transcribe(temp_path, language="vi")
         transcript = " ".join(segment.text.strip() for segment in segments).strip()
         if not transcript:

@@ -43,10 +43,11 @@ const MAX_BOOKING_SEATS = 4
 interface BookingFormProps {
     trip: Trip
     passengers: number
+    defaultPaymentMethod?: 'bank_transfer' | 'cod' | 'visa'
     onSuccess: (data: CreateBookingResponse) => void
 }
 
-export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
+export function BookingForm({ trip, passengers, defaultPaymentMethod, onSuccess }: BookingFormProps) {
     const createBooking = useCreateBooking()
     const { t } = useTranslation()
     const navigate = useNavigate()
@@ -68,6 +69,17 @@ export function BookingForm({ trip, passengers, onSuccess }: BookingFormProps) {
             paymentMethod: '',
         },
     })
+
+    useEffect(() => {
+        if (!defaultPaymentMethod) {
+            return
+        }
+        const current = form.getValues('paymentMethod')
+        if (current) {
+            return
+        }
+        form.setValue('paymentMethod', defaultPaymentMethod, { shouldDirty: false, shouldValidate: true })
+    }, [defaultPaymentMethod, form])
 
     const selectedSeats = useWatch({ control: form.control, name: 'seatCodes' })
     const selectedPickupName = useWatch({ control: form.control, name: 'pickupInfo.name' })

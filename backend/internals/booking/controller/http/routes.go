@@ -87,5 +87,6 @@ func AdminRoutes(
 	bookings.GET("/refund-pending-count", handler.CountRefundPending)
 	bookings.POST("/:id/approve-refund", handler.ApproveRefund)
 	bookings.POST("/:id/reject-refund", handler.RejectRefund)
+	bookings.POST("/:id/confirm-cod", handler.ConfirmCOD)
 	bookings.GET("/refund-events", handler.StreamRefundEvents)
 }

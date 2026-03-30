@@ -8,6 +8,7 @@ Now supports both:
 from __future__ import annotations
 
 import asyncio
+import os
 from dataclasses import dataclass, field
 
 import structlog
@@ -184,9 +185,36 @@ class TenantRegistry:
                     agents=agents,
                 )
 
+            self._apply_runtime_grpc_target_overrides(new_map)
+
             self._tenants = new_map
             self._loaded = True
             logger.info("tenant_registry.loaded", count=len(new_map))
+
+    @staticmethod
+    def _apply_runtime_grpc_target_overrides(tenants: dict[str, TenantConfig]) -> None:
+        """Allow runtime override of grpc_target without DB mutation.
+
+        Priority:
+          1) TENANT_GRPC_TARGET_<TENANT_SLUG_UPPER>
+          2) DEFAULT_GRPC_TARGET
+        """
+        default_target = os.getenv("DEFAULT_GRPC_TARGET", "").strip()
+
+        for slug, tenant in tenants.items():
+            tenant_key = f"TENANT_GRPC_TARGET_{slug.upper()}"
+            override = os.getenv(tenant_key, "").strip()
+            if override:
+                logger.info("tenant_registry.grpc_target_override", tenant=slug, source=tenant_key, target=override)
+                tenant.grpc_target = override
+                continue
+
+            current = (tenant.grpc_target or "").strip().lower()
+            is_local_target = current.startswith("localhost:") or current.startswith("127.0.0.1:")
+
+            if default_target and is_local_target:
+                logger.info("tenant_registry.grpc_target_override", tenant=slug, source="DEFAULT_GRPC_TARGET", target=default_target)
+                tenant.grpc_target = default_target
 
     def get(self, slug: str) -> TenantConfig | None:
         return self._tenants.get(slug)

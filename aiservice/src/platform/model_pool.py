@@ -111,6 +111,13 @@ class ModelPool:
                 return await self.get_llm(fallback)
             raise
 
+    def get_fallback_slug(self, instance_slug: str) -> str | None:
+        """Return configured fallback model slug for a model instance."""
+        cfg = self._configs.get(instance_slug)
+        if cfg is None:
+            return None
+        return cfg.fallback_slug
+
     def invalidate(self, instance_slug: str | None = None) -> None:
         """Drop cached LLM so next call rebuilds from DB config."""
         if instance_slug:
@@ -162,6 +169,8 @@ class ModelPool:
                     temperature=inst.temperature,
                     max_tokens=inst.max_tokens,
                     top_p=inst.top_p,
+                    frequency_penalty=inst.frequency_penalty,
+                    presence_penalty=inst.presence_penalty,
                     system_prefix=inst.system_prefix,
                     fallback_slug=inst.fallback_slug,
                 )

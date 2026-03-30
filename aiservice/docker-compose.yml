@@ -31,7 +31,7 @@ services:
     container_name: dadpt-aiservice
     ports:
       - "8100:8100"   # FastAPI HTTP
-      - "50051:50051"  # gRPC
+      - "50051:50051"  # gRPC for backend voice/chat client
     env_file:
       - .env
     environment:
@@ -39,6 +39,11 @@ services:
       QDRANT_HOST: qdrant
       REDIS_URI: redis://redis-ai:6379
       ADMIN_DB_PATH: /app/data/admin.db
+      DEFAULT_GRPC_TARGET: http://host.docker.internal:8080
+      ENABLE_GRPC_SERVER: "true"
+      WHISPER_MODEL_SIZE: small
+      WHISPER_DEVICE: cpu
+      WHISPER_COMPUTE_TYPE: int8
     volumes:
       - aiservice_data:/app/data
     depends_on:

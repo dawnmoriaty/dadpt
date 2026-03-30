@@ -18,6 +18,7 @@ Config example (in workflow JSON):
 from __future__ import annotations
 
 import json
+import re
 
 import structlog
 
@@ -63,6 +64,20 @@ class GRPCCallTask(BaseTask):
             else:
                 kwargs[param_name] = template_value
 
+        unresolved = [
+            key
+            for key, value in kwargs.items()
+            if isinstance(value, str) and re.fullmatch(r"\{[a-zA-Z0-9_]+\}", value.strip())
+        ]
+        if unresolved:
+            ctx.error = (
+                f"gRPC call blocked: unresolved placeholders for tool '{tool_name}': "
+                + ", ".join(unresolved)
+            )
+            ctx.status = "error"
+            logger.warning("grpc_call.unresolved_placeholders", tool=tool_name, fields=unresolved)
+            return ctx
+
         # Invoke tool
         try:
             result = await tool.ainvoke(kwargs)
@@ -80,6 +95,6 @@ class GRPCCallTask(BaseTask):
 
         ctx.set_var(output_key, result)
         ctx.log_tool_call(tool_name, kwargs, str(result)[:500])
-        logger.debug("grpc_call.done", tool=tool_name, output_key=output_key)
+        logger.debug("grpc_call.done", tool=tool_name, output_key=output_key, trace_id=ctx.trace_id)
 
         return ctx

@@ -46,6 +46,11 @@ class LLMCallTask(BaseTask):
             ctx.status = "error"
             return ctx
 
+        resolved_model = model_slug
+        fallback_slug = None
+        if hasattr(model_pool, "get_fallback_slug"):
+            fallback_slug = model_pool.get_fallback_slug(model_slug)
+
         # Render prompt
         prompt = self._render_template(prompt_template, ctx)
 
@@ -61,13 +66,38 @@ class LLMCallTask(BaseTask):
             response = await llm.ainvoke(messages)
             result = response.content if hasattr(response, "content") else str(response)
         except Exception as e:
-            logger.error("llm_call.error", model=model_slug, error=str(e))
-            ctx.error = f"LLM call failed: {e}"
-            ctx.status = "error"
-            return ctx
+            logger.warning("llm_call.primary_error", model=model_slug, error=str(e))
+
+            if fallback_slug:
+                try:
+                    fallback_llm = await model_pool.get_llm(fallback_slug)
+                    response = await fallback_llm.ainvoke(messages)
+                    result = response.content if hasattr(response, "content") else str(response)
+                    resolved_model = fallback_slug
+                except Exception as fallback_error:
+                    logger.error(
+                        "llm_call.fallback_error",
+                        model=model_slug,
+                        fallback=fallback_slug,
+                        error=str(fallback_error),
+                    )
+                    ctx.error = f"LLM call failed: {fallback_error}"
+                    ctx.status = "error"
+                    return ctx
+            else:
+                ctx.error = f"LLM call failed: {e}"
+                ctx.status = "error"
+                return ctx
 
         # Store result
         ctx.set_var(output_key, result)
-        logger.debug("llm_call.done", model=model_slug, output_key=output_key, length=len(result))
+        logger.debug(
+            "llm_call.done",
+            model=model_slug,
+            resolved_model=resolved_model,
+            output_key=output_key,
+            length=len(result),
+            trace_id=ctx.trace_id,
+        )
 
         return ctx
