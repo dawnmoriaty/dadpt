@@ -2,9 +2,11 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"time"
 
 	authDomain "backend/internals/auth/domain"
 	bookingHttp "backend/internals/booking/controller/http"
@@ -117,7 +119,10 @@ func (h *ChatHandler) Chat(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.client.Chat(c.Request.Context(), &aiagent.ChatRequest{
+	chatCtx, cancel := context.WithTimeout(c.Request.Context(), 120*time.Second)
+	defer cancel()
+
+	resp, err := h.client.Chat(chatCtx, &aiagent.ChatRequest{
 		TenantSlug: req.TenantSlug,
 		SessionID:  req.SessionID,
 		Message:    req.Message,

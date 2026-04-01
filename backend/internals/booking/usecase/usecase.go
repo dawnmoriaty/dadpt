@@ -228,9 +228,11 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		return nil, fmt.Errorf("creating booking: %w", err)
 	}
 
-	// 9. Create payment link via gateway (if configured and method requires it)
+	// 9. Create payment link via gateway (only for online methods)
 	var checkoutURL, qrCode string
-	if u.paymentGw != nil {
+	paymentMethod := strings.TrimSpace(strings.ToLower(input.PaymentMethod))
+	shouldCreatePaymentLink := u.paymentGw != nil && paymentMethod != "cod"
+	if shouldCreatePaymentLink {
 		orderCodeInt := orderCodeToInt64(orderCode)
 		amountInt := int(totalAmount)
 		desc := fmt.Sprintf("VE XE %s", bookingCode)
@@ -247,24 +249,28 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		}
 	}
 
-	if input.PaymentMethod == "bank_transfer" && strings.TrimSpace(checkoutURL) == "" {
+	if paymentMethod == "bank_transfer" && strings.TrimSpace(checkoutURL) == "" {
 		_ = u.tripLocker.ReleaseSeats(ctx, input.TripID, input.SeatCodes, seatCount)
 		_, _ = u.repo.UpdateStatus(ctx, created.ID, domain.StatusExpired)
 		return nil, domain.ErrPaymentLinkUnavailable
 	}
 
-	// 10. Create payment transaction (persist payment link data for resume flow)
-	_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
-		BookingID:     created.ID,
-		OrderCode:     orderCode,
-		Amount:        totalAmount,
-		PaymentMethod: input.PaymentMethod,
-		CheckoutURL:   checkoutURL,
-		QRCode:        qrCode,
-	})
-	if err != nil {
-		logger.Error("Failed to create payment transaction: %v", err)
-		// Don't rollback booking — payment can be retried
+	// 10. Create payment transaction only for online methods
+	if paymentMethod != "cod" {
+		_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
+			BookingID:     created.ID,
+			OrderCode:     orderCode,
+			Amount:        totalAmount,
+			PaymentMethod: input.PaymentMethod,
+			CheckoutURL:   checkoutURL,
+			QRCode:        qrCode,
+		})
+		if err != nil {
+			logger.Error("Failed to create payment transaction: %v", err)
+			// Don't rollback booking — payment can be retried
+		}
+	} else {
+		orderCode = ""
 	}
 
 	// 11. Create outbox event (transactional outbox pattern)

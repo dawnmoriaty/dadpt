@@ -37,8 +37,18 @@ class RAGQueryTask(BaseTask):
 
         qdrant_manager = self.deps.get("qdrant_manager")
         if not qdrant_manager:
-            ctx.error = "qdrant_manager dependency not injected"
-            ctx.status = "error"
+            ctx.set_var(output_key, "")
+            ctx.set_var(
+                "rag_metrics",
+                {
+                    "collection": "",
+                    "semantic_count": 0,
+                    "keyword_count": 0,
+                    "merged_count": 0,
+                    "hybrid": hybrid,
+                    "disabled": True,
+                },
+            )
             return ctx
 
         # Get query text from context

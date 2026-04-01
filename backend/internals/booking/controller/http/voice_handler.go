@@ -29,7 +29,6 @@ type VoiceExecuteRequest struct {
 	TravelDate          string   `json:"travelDate"`
 	SeatCount           int      `json:"seatCount" binding:"required,min=1,max=4"`
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
-	PaymentMethod       string   `json:"paymentMethod" binding:"omitempty,oneof=bank_transfer cod visa"`
 }
 
 type VoicePlanRequest struct {
@@ -117,14 +116,16 @@ func (h *VoiceBookingHandler) Execute(c *gin.Context) {
 
 	seatCodes, err := allocateSeats(trip.BookedSeats, normalizeSeatPreference(req.SeatPreferenceOrder), req.SeatCount)
 	if err != nil {
-		response.HandleError(c, pkgErrors.ErrSeatsNotAvailable)
-		return
+		fallbackTrip, fallbackSeats, fallbackFound := h.tryFallbackTrip(c, &req, trip.ID)
+		if !fallbackFound {
+			response.HandleError(c, pkgErrors.ErrSeatsNotAvailable)
+			return
+		}
+		trip = fallbackTrip
+		seatCodes = fallbackSeats
 	}
 
-	paymentMethod := req.PaymentMethod
-	if paymentMethod == "" {
-		paymentMethod = "cod"
-	}
+	paymentMethod := "cod"
 
 	input := &bookingDomain.CreateBookingInput{
 		TripID:    trip.ID,
@@ -179,25 +180,7 @@ func (h *VoiceBookingHandler) findReusablePendingBooking(c *gin.Context, userID 
 			continue
 		}
 
-		output := &bookingDomain.BookingOutput{Booking: booking}
-		paymentTx, txErr := h.bookingUC.GetPendingPaymentByBookingID(c.Request.Context(), booking.ID)
-		if txErr != nil || paymentTx == nil {
-			return output
-		}
-
-		output.OrderCode = paymentTx.OrderCode
-		output.PaymentURL = strings.TrimSpace(paymentTx.CheckoutURL)
-		output.QRCode = strings.TrimSpace(paymentTx.QRCode)
-
-		if h.bookingUC.GatewayAvailable() {
-			regen, regenErr := h.bookingUC.RegeneratePaymentLink(c.Request.Context(), booking, paymentTx)
-			if regenErr == nil && regen != nil {
-				output.PaymentURL = strings.TrimSpace(regen.PaymentURL)
-				output.QRCode = strings.TrimSpace(regen.QRCode)
-			}
-		}
-
-		return output
+		return &bookingDomain.BookingOutput{Booking: booking}
 	}
 
 	return nil
@@ -396,6 +379,39 @@ func validateExecuteRequest(req *VoiceExecuteRequest) error {
 		return fmt.Errorf("travelDate is required")
 	}
 	return nil
+}
+
+func (h *VoiceBookingHandler) tryFallbackTrip(c *gin.Context, req *VoiceExecuteRequest, excludeTripID int64) (*tripDomain.Trip, []string, bool) {
+	if req.TripID != nil {
+		return nil, nil, false
+	}
+
+	origin, destination, err := h.resolveLocations(c, req.Origin, req.Destination)
+	if err != nil {
+		return nil, nil, false
+	}
+
+	travelDate := normalizeVoiceTravelDate(req.TravelDate)
+	trips, _, err := h.searchTripsForVoice(c, int32(origin.ID), int32(destination.ID), travelDate, req.SeatCount, 20)
+	if err != nil || len(trips) == 0 {
+		return nil, nil, false
+	}
+
+	seatPreference := normalizeSeatPreference(req.SeatPreferenceOrder)
+	for _, candidate := range trips {
+		if candidate == nil || candidate.ID == excludeTripID {
+			continue
+		}
+
+		seatCodes, seatErr := allocateSeats(candidate.BookedSeats, seatPreference, req.SeatCount)
+		if seatErr != nil {
+			continue
+		}
+
+		return candidate, seatCodes, true
+	}
+
+	return nil, nil, false
 }
 
 func (h *VoiceBookingHandler) resolveLocations(c *gin.Context, originText, destinationText string) (*locationResult, *locationResult, error) {

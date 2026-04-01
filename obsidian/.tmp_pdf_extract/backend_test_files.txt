@@ -1,0 +1,6 @@
+﻿TOTAL_TEST_FILES=5
+149 :: D:\feature\dadpt\backend\internals\aiagent\controller\http\voice_booking_test.go
+231 :: D:\feature\dadpt\backend\internals\aiagent\controller\http\voice_transcribe_test.go
+55 :: D:\feature\dadpt\backend\internals\booking\controller\http\voice_handler_location_match_test.go
+82 :: D:\feature\dadpt\backend\internals\booking\controller\http\voice_handler_test.go
+22 :: D:\feature\dadpt\backend\internals\location\usecase\usecase_test.go

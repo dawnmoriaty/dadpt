@@ -1,0 +1,319 @@
+﻿===== D:\feature\dadpt\aiservice\src\admin\router.py =====
+3: Also serves HTML admin UI via Jinja2 templates and a REST chat endpoint for testing.
+27: ChatInput,
+28: ChatOutput,
+85: def _build_chat_metrics(ctx: WorkflowContext) -> dict[str, Any]:
+100: def _record_chat_metrics(ctx: WorkflowContext, metrics: dict[str, Any]) -> None:
+102: store.record_chat(
+600: parsed = WorkflowDefinitionSchema.model_validate(skill.workflow_definition)
+603: "node_count": len(parsed.nodes),
+604: "edge_count": len(parsed.edges),
+704: @api_router.get("/diagnostics/chat-trace/{tenant_slug}")
+705: async def diagnostics_chat_trace(tenant_slug: str, message: str):
+706: """Run a synthetic chat and return full trace metrics for profiling."""
+730: "metrics": _build_chat_metrics(ctx),
+986: # ── Chat endpoint (REST — for testing / frontend) ──────────────────────────
+988: chat_router = APIRouter(prefix="/api/v1", tags=["chat"])
+991: @chat_router.post("/chat", response_model=ChatOutput)
+992: async def chat(data: ChatInput):
+993: """REST chat endpoint — mirrors gRPC Chat for convenience."""
+1026: metrics = _build_chat_metrics(ctx)
+1027: _record_chat_metrics(ctx, metrics)
+1029: return ChatOutput(**formatter.format(ctx, session_id=session_id, metrics=metrics))
+
+===== D:\feature\dadpt\aiservice\src\admin\schemas.py =====
+264: # ─── Chat (REST API for testing) ───────────────────────────────────────────
+266: class ChatInput(BaseModel):
+272: class ChatOutput(BaseModel):
+
+===== D:\feature\dadpt\aiservice\src\engine\task_types\base_task.py =====
+71: parsed = BaseTask._coerce_dict(value)
+72: if not parsed:
+74: for key, item in parsed.items():
+91: parsed = json.loads(text)
+95: if isinstance(parsed, dict):
+96: return parsed
+
+===== D:\feature\dadpt\aiservice\src\engine\task_types\grpc_call.py =====
+130: parsed = GRPCCallTask._try_json_parse(value)
+131: if parsed is not None:
+132: return parsed
+138: parsed = GRPCCallTask._try_json_parse(candidate)
+139: if parsed is not None:
+140: return parsed
+146: parsed = GRPCCallTask._try_json_parse(candidate)
+147: if parsed is not None:
+148: return parsed
+154: parsed = GRPCCallTask._try_json_parse(candidate)
+155: if parsed is not None:
+156: return parsed
+161: def _try_json_parse(value: str) -> Any | None:
+
+===== D:\feature\dadpt\aiservice\src\engine\task_types\rerank_trips.py =====
+60: preferred_departure_minutes = self._parse_preferred_minutes(ctx.get_var(preferred_time_key))
+157: parsed = RerankTripsTask._try_json_parse(value)
+158: if parsed is not None:
+159: return parsed
+165: parsed = RerankTripsTask._try_json_parse(candidate)
+166: if parsed is not None:
+167: return parsed
+173: parsed = RerankTripsTask._try_json_parse(candidate)
+174: if parsed is not None:
+175: return parsed
+181: parsed = RerankTripsTask._try_json_parse(candidate)
+182: if parsed is not None:
+183: return parsed
+188: def _try_json_parse(value: str) -> Any | None:
+332: def _parse_preferred_minutes(raw: Any) -> int | None:
+
+===== D:\feature\dadpt\aiservice\src\engine\agent_router.py =====
+120: selected_slug, confidence = self._parse_router_output(response.content)
+174: selected_slug, confidence = self._parse_router_output(response.content, field="skill")
+191: def _parse_router_output(raw: str, field: str = "agent") -> tuple[str, float]:
+199: parsed = json.loads(text)
+200: slug = str(parsed.get(field, "NONE")).strip().lower()
+201: confidence_raw = parsed.get("confidence", 0.0)
+
+===== D:\feature\dadpt\aiservice\src\engine\presentation.py =====
+1: """Presentation layer for chat responses and trip UI components."""
+104: class ChatResponsePayload(BaseModel):
+125: payload = ChatResponsePayload(
+317: parsed_tool_meta = SearchMeta(
+326: if not parsed_tool_meta.origin:
+327: parsed_tool_meta.origin = message_meta.origin
+328: if not parsed_tool_meta.destination:
+329: parsed_tool_meta.destination = message_meta.destination
+330: if not parsed_tool_meta.date:
+331: parsed_tool_meta.date = message_meta.date
+332: if not parsed_tool_meta.time:
+333: parsed_tool_meta.time = message_meta.time
+334: if parsed_tool_meta.passengers <= 0:
+335: parsed_tool_meta.passengers = max(1, message_meta.passengers)
+336: if parsed_tool_meta.budget <= 0:
+337: parsed_tool_meta.budget = message_meta.budget
+339: return parsed_tool_meta
+
+===== D:\feature\dadpt\aiservice\src\engine\supervisor.py =====
+217: # Parse JSON response
+
+===== D:\feature\dadpt\aiservice\src\engine\voice_booking_parser.py =====
+1: """Voice booking parser.
+3: Phase 1 parser converts transcript text into a minimal command schema:
+22: class ParsedVoiceCommand:
+30: def parse_voice_booking_transcript(transcript: str) -> ParsedVoiceCommand:
+59: return ParsedVoiceCommand(
+68: def build_parse_result(transcript: str) -> dict:
+69: parsed = parse_voice_booking_transcript(transcript)
+72: if not parsed.origin:
+74: if not parsed.destination:
+76: if not parsed.travel_date:
+80: if parsed.origin:
+82: if parsed.destination:
+84: if parsed.travel_date:
+86: if parsed.seat_count:
+88: if parsed.seat_preference_order:
+102: "origin": parsed.origin,
+103: "destination": parsed.destination,
+104: "travel_date": parsed.travel_date,
+105: "seat_count": parsed.seat_count or 1,
+106: "seat_preference_order": parsed.seat_preference_order,
+110: "message": "Đã parse command thành công.",
+
+===== D:\feature\dadpt\aiservice\src\engine\workflow_context.py =====
+26: messages: list[dict[str, str]] = field(default_factory=list)  # chat history
+
+===== D:\feature\dadpt\aiservice\src\engine\workflow_executor.py =====
+19: 1. Parses nodes + edges into a DAG
+
+===== D:\feature\dadpt\aiservice\src\grpc_server\server.py =====
+1: """gRPC async server for AI agent chat."""
+17: from src.grpc_server.voice_service import VoiceBookingServicer
+22: from src.vectorstore.data_sync import DataSyncPipeline
+37: async def Chat(self, request: Any, context: grpc.aio.ServicerContext) -> Any:
+45: "grpc.chat",
+95: pipeline = DataSyncPipeline(get_qdrant_manager())
+99: count = await pipeline.sync_trips(prefix, data)
+101: count = await pipeline.sync_locations(prefix, data)
+103: count = await pipeline.sync_faq(prefix, data)
+105: count = await pipeline.sync_generic(f"{prefix}_{collection}", data)
+141: store.record_chat(
+181: "Chat": servicer.Chat,
+211: class _VoiceGenericHandler(grpc.GenericRpcHandler):
+212: SERVICE_NAME = "aiagent.VoiceBookingService"
+214: def __init__(self, servicer: VoiceBookingServicer) -> None:
+216: "ParseCommand": servicer.ParseCommand,
+251: voice_servicer = VoiceBookingServicer()
+257: server.add_generic_rpc_handlers([_VoiceGenericHandler(voice_servicer)])
+262: _VoiceGenericHandler(voice_servicer),
+
+===== D:\feature\dadpt\aiservice\src\grpc_server\session_store.py =====
+1: """Session helpers for chat pause/resume state."""
+
+===== D:\feature\dadpt\aiservice\src\grpc_server\voice_service.py =====
+1: """Dedicated gRPC voice booking service.
+17: from src.voice.parser import build_parse_result
+20: class VoiceBookingServicer:
+21: async def ParseCommand(self, request: Any, context: Any) -> dict:
+27: return build_parse_result(transcript)
+32: "service": "voice-booking",
+37: filename = str(request.get("filename", "voice.webm"))
+41: filename = str(getattr(request, "filename", "voice.webm"))
+
+===== D:\feature\dadpt\aiservice\src\observability\metrics_store.py =====
+1: """In-memory metrics store for chat/task observability.
+5: - p50/p95 latency for chat and task groups
+18: self._chat_events: deque[dict[str, Any]] = deque(maxlen=max_events)
+21: def record_chat(self, event: dict[str, Any]) -> None:
+24: self._chat_events.append(event)
+33: chat_events = [e for e in self._chat_events if now - float(e.get("ts", 0)) <= window_seconds]
+36: chat_latencies = [float(e.get("total_latency_ms", 0.0) or 0.0) for e in chat_events]
+37: status_counter = Counter(str(e.get("status", "unknown")) for e in chat_events)
+38: workflow_counter = Counter(str(e.get("workflow_slug", "")) for e in chat_events)
+69: "chat": {
+70: "count": len(chat_events),
+72: "avg_latency_ms": round(sum(chat_latencies) / len(chat_latencies), 2) if chat_latencies else 0.0,
+73: "p50_latency_ms": round(_percentile(chat_latencies, 50), 2),
+74: "p95_latency_ms": round(_percentile(chat_latencies, 95), 2),
+
+===== D:\feature\dadpt\aiservice\src\platform\providers\anthropic_adapter.py =====
+5: from langchain_core.language_models import BaseChatModel
+11: """Creates ChatAnthropic instances."""
+17: def build_llm(self, cfg: ProviderConfig) -> BaseChatModel:
+18: from langchain_anthropic import ChatAnthropic
+20: return ChatAnthropic(
+
+===== D:\feature\dadpt\aiservice\src\platform\providers\base.py =====
+13: from langchain_core.language_models import BaseChatModel
+36: Each adapter knows how to create a LangChain BaseChatModel
+47: def build_llm(self, cfg: ProviderConfig) -> BaseChatModel:
+
+===== D:\feature\dadpt\aiservice\src\platform\providers\google_adapter.py =====
+5: from langchain_core.language_models import BaseChatModel
+11: """Creates ChatGoogleGenerativeAI instances."""
+17: def build_llm(self, cfg: ProviderConfig) -> BaseChatModel:
+18: from langchain_google_genai import ChatGoogleGenerativeAI
+20: return ChatGoogleGenerativeAI(
+
+===== D:\feature\dadpt\aiservice\src\platform\providers\huggingface_adapter.py =====
+16: from langchain_core.language_models import BaseChatModel
+22: """Creates ChatHuggingFace instances via HF Inference API (serverless, free)."""
+28: def build_llm(self, cfg: ProviderConfig) -> BaseChatModel:
+30: ChatHuggingFace,
+45: # Wrap in ChatHuggingFace for LangChain chat interface
+46: return ChatHuggingFace(
+
+===== D:\feature\dadpt\aiservice\src\platform\providers\openai_adapter.py =====
+5: from langchain_core.language_models import BaseChatModel
+11: """Creates ChatOpenAI instances."""
+17: def build_llm(self, cfg: ProviderConfig) -> BaseChatModel:
+18: from langchain_openai import ChatOpenAI
+20: return ChatOpenAI(
+
+===== D:\feature\dadpt\aiservice\src\platform\model_pool.py =====
+15: from langchain_core.language_models import BaseChatModel
+76: self._cache: dict[str, BaseChatModel] = {}
+83: async def get_llm(self, instance_slug: str) -> BaseChatModel:
+100: async def get_llm_with_fallback(self, instance_slug: str) -> BaseChatModel:
+181: def _build_llm(cfg: ProviderConfig) -> BaseChatModel:
+
+===== D:\feature\dadpt\aiservice\src\platform\tool_factory.py =====
+11: from urllib.parse import urlencode
+
+===== D:\feature\dadpt\aiservice\src\vectorstore\data_sync.py =====
+22: class DataSyncPipeline:
+
+===== D:\feature\dadpt\aiservice\src\voice\parser.py =====
+1: """Voice booking parser.
+3: Isolated parser for new voice flow, independent from legacy admin/chat router.
+49: def build_parse_result(transcript: str) -> dict:
+133: "message": "Đã parse command thành công.",
+
+===== D:\feature\dadpt\aiservice\src\voice\router.py =====
+1: """Voice booking API router (new isolated flow)."""
+12: from src.voice.parser import build_parse_result
+13: from src.voice.schemas import (
+14: VoiceBookingExecuteInput,
+15: VoiceBookingParseInput,
+16: VoiceBookingParseOutput,
+17: VoiceBookingPipelineInput,
+18: VoiceBookingPipelineOutput,
+19: VoiceBookingSubmitInput,
+20: VoiceTranscribeOutput,
+23: voice_router = APIRouter(prefix="/api/v2/voice", tags=["voice-booking"])
+26: @voice_router.post("/booking/transcribe", response_model=VoiceTranscribeOutput)
+56: return VoiceTranscribeOutput(transcript=transcript, engine="faster-whisper")
+61: @voice_router.post("/booking/parse-command", response_model=VoiceBookingParseOutput)
+62: async def parse_voice_command(data: VoiceBookingParseInput):
+63: """Parse transcript into strict command schema.
+65: This router is intentionally isolated from legacy chat/admin flows.
+67: return VoiceBookingParseOutput(**build_parse_result(data.transcript))
+70: @voice_router.post("/booking/submit-validation")
+71: async def submit_voice_booking(data: VoiceBookingSubmitInput):
+72: """Forward parsed voice command to Go validator endpoint."""
+73: url = data.backend_base_url.rstrip("/") + "/api/v1/ai/voice/booking/validate"
+97: @voice_router.post("/booking/execute")
+98: async def execute_voice_booking(data: VoiceBookingExecuteInput):
+99: """Execute full voice booking flow in Go backend.
+103: url = data.backend_base_url.rstrip("/") + "/api/v1/bookings/voice/execute"
+130: @voice_router.post("/booking/pipeline", response_model=VoiceBookingPipelineOutput)
+131: async def run_pipeline(data: VoiceBookingPipelineInput):
+132: """Single endpoint: parse transcript, optionally submit to Go validator."""
+133: parse_output = VoiceBookingParseOutput(**build_parse_result(data.transcript))
+138: parse_output.command is not None
+142: submit_input = VoiceBookingSubmitInput(
+145: command=parse_output.command,
+147: submit_result = await submit_voice_booking(submit_input)
+150: execute_input = VoiceBookingExecuteInput(
+153: command=parse_output.command,
+156: booking_result = await execute_voice_booking(execute_input)
+158: return VoiceBookingPipelineOutput(parse=parse_output, submit=submit_result, booking=booking_result)
+
+===== D:\feature\dadpt\aiservice\src\voice\schemas.py =====
+6: class VoiceBookingCommand(BaseModel):
+14: class VoiceBookingParseInput(BaseModel):
+18: class VoiceBookingParseOutput(BaseModel):
+19: command: VoiceBookingCommand | None = None
+25: class VoiceBookingSubmitInput(BaseModel):
+28: command: VoiceBookingCommand
+31: class VoiceBookingExecuteInput(BaseModel):
+34: command: VoiceBookingCommand
+38: class VoiceBookingSubmitOutput(BaseModel):
+46: class VoiceBookingPipelineInput(BaseModel):
+54: class VoiceBookingPipelineOutput(BaseModel):
+55: parse: VoiceBookingParseOutput
+60: class VoiceTranscribeOutput(BaseModel):
+
+===== D:\feature\dadpt\aiservice\src\voice\__init__.py =====
+1: """Voice booking module (isolated from legacy admin/chat router)."""
+
+===== D:\feature\dadpt\aiservice\src\main.py =====
+6: - /api/v1/chat     → REST chat endpoint (for testing / frontend)
+10: - AIAgentService   → Chat, SyncData, HealthCheck (for Go backend)
+23: from src.admin.router import api_router, chat_router, ui_router
+30: from src.voice.router import voice_router
+132: app.include_router(chat_router)
+134: app.include_router(voice_router)
+
+===== D:\feature\dadpt\aiservice\src\seed.py =====
+115: slug="bus-chat-gpt",
+116: display_name="HF Chat",
+204: "parse": {
+259: "model": "bus-chat-gpt",
+279: {"from": "extract", "to": "parse"},
+280: {"from": "parse", "to": "search"},
+369: "model": "bus-chat-gpt",
+420: "model": "bus-chat-gpt",
+460: "model": "bus-chat-gpt",
+552: "parse": {
+609: "model": "bus-chat-gpt",
+624: {"source": "extract", "target": "parse", "flow_type": "SEQUENCE"},
+625: {"source": "parse", "target": "search", "flow_type": "SEQUENCE"},
+670: "parse": {
+764: "model": "bus-chat-gpt",
+822: "model": "bus-chat-gpt",
+834: {"source": "collect", "target": "parse", "flow_type": "SEQUENCE"},
+835: {"source": "parse", "target": "need_search", "flow_type": "SEQUENCE"},
+864: model_slug="bus-chat-gpt",
+912: "model": "bus-chat-gpt",
+951: "model": "bus-chat-gpt",
+

@@ -42,13 +42,20 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("startup.db_ready")
 
-    # 2. Init Qdrant
-    try:
-        qdrant = get_qdrant_manager()
-        await qdrant.init()
-        logger.info("startup.qdrant_ready")
-    except Exception as e:
-        logger.warning("startup.qdrant_failed", error=str(e))
+    qdrant = None
+    qdrant_enabled = os.getenv("ENABLE_QDRANT", "false").strip().lower() in {"1", "true", "yes", "on"}
+
+    # 2. Init Qdrant (optional)
+    if qdrant_enabled:
+        try:
+            qdrant = get_qdrant_manager()
+            await qdrant.init()
+            logger.info("startup.qdrant_ready")
+        except Exception as e:
+            qdrant = None
+            logger.warning("startup.qdrant_failed", error=str(e))
+    else:
+        logger.info("startup.qdrant_skipped", reason="ENABLE_QDRANT=false")
 
     # 3. Load tenant registry
     registry = get_tenant_registry()
@@ -92,8 +99,8 @@ async def lifespan(app: FastAPI):
     logger.info("shutdown.begin")
     if grpc_server:
         await grpc_server.stop(grace=5)
-    qdrant = get_qdrant_manager()
-    await qdrant.close()
+    if qdrant is not None:
+        await qdrant.close()
     await close_db()
     logger.info("shutdown.complete")
 

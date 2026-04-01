@@ -237,8 +237,16 @@ class AgentRouter:
         best_skill = None
         best_score = 0.0
         for skill in skills:
+            keywords: list[str] = []
+
+            input_schema = skill.input_schema if isinstance(skill.input_schema, dict) else {}
+            schema_keywords = input_schema.get("intent_keywords", []) if isinstance(input_schema, dict) else []
+            if isinstance(schema_keywords, list):
+                keywords.extend(str(k).strip().lower() for k in schema_keywords if str(k).strip())
+
             words = [w.strip().lower() for w in (skill.trigger_description or "").split() if w.strip()]
-            keywords = [w for w in words if len(w) >= 4][:10]
+            keywords.extend([w for w in words if len(w) >= 4][:10])
+
             score = self._keyword_score(message, keywords)
             if score > best_score:
                 best_score = score

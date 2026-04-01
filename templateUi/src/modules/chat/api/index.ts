@@ -1,6 +1,8 @@
-import { aiApi } from '@/services/api/ai-client'
+import { api } from '@/services/api/client'
 
 import type { ChatRequest, ChatResponse } from '../types'
+
+const CHAT_TIMEOUT_MS = 120_000
 
 function normalizeChatResponse(raw: unknown): ChatResponse {
     const root = (raw ?? {}) as Record<string, unknown>
@@ -27,7 +29,7 @@ function normalizeChatResponse(raw: unknown): ChatResponse {
 
 export const chatApi = {
     send: async (payload: ChatRequest): Promise<ChatResponse> => {
-        const { data } = await aiApi.post<ChatResponse>('/api/v1/chat', payload)
+        const { data } = await api.post<ChatResponse>('/ai/chat', payload, { timeout: CHAT_TIMEOUT_MS })
         return normalizeChatResponse(data)
     },
 }

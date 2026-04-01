@@ -183,18 +183,49 @@ async def seed():
             trigger_description="Khách hàng muốn tìm chuyến xe, hỏi về tuyến xe, lịch trình, giá vé, hoặc tìm xe từ A đến B",
             definition={
                 "nodes": {
-                    "extract": {
-                        "task_type": "llm_call",
+                        "extract": {
+                            "task_type": "llm_call",
+                            "config": {
+                                "model": "bus-search-gpt",
+                                "system_prompt": (
+                                    "Bạn là bộ phân tích yêu cầu tìm chuyến xe. "
+                                    "Trích xuất chính xác 6 trường: origin, destination, date, time, passengers, budget. "
+                                    "Nếu thiếu thì để chuỗi rỗng hoặc 0, không được bịa."
+                                ),
+                                "prompt_template": (
+                                    "Phân tích yêu cầu sau và trích xuất JSON (không markdown):\n"
+                                    '- origin: điểm đi\n- destination: điểm đến\n- date: ngày đi (YYYY-MM-DD hoặc từ khóa như ngày mai)\n- time: giờ đi mong muốn (HH:MM)\n- passengers: số ghế/số người (mặc định 1)\n- budget: ngân sách mỗi vé (số, mặc định 0)\n\n'
+                                    "Yêu cầu: {user_message}\n\n"
+                                    'Trả về JSON thuần: {{"origin": "...", "destination": "...", "date": "", "time": "", "passengers": 1, "budget": 0}}'
+                                ),
+                                "output_key": "search_params",
+                            },
+                        },
+                    "parse": {
+                        "task_type": "json_extract",
                         "config": {
-                            "model": "bus-search-gpt",
-                            "system_prompt": "Bạn là bộ phân tích yêu cầu tìm chuyến xe. Trích xuất thông tin từ câu hỏi của khách hàng.",
-                            "prompt_template": (
-                                "Phân tích yêu cầu sau và trích xuất JSON (không markdown):\n"
-                                '- origin: điểm đi\n- destination: điểm đến\n- date: ngày đi (YYYY-MM-DD)\n- passengers: số người\n\n'
-                                "Yêu cầu: {user_message}\n\n"
-                                'Trả về JSON thuần: {{"origin": "...", "destination": "...", "date": "...", "passengers": 1}}'
-                            ),
-                            "output_key": "search_params",
+                            "input_key": "search_params",
+                            "fallback_text_key": "user_message",
+                            "fields": {
+                                "origin": "origin",
+                                "destination": "destination",
+                                "date": "date",
+                                "time": "time",
+                                "passengers": "passengers",
+                                "budget": "budget",
+                            },
+                            "casts": {
+                                "passengers": "int",
+                                "budget": "float",
+                            },
+                            "defaults": {
+                                "origin": "",
+                                "destination": "",
+                                "date": "",
+                                "time": "",
+                                "passengers": 1,
+                                "budget": 0,
+                            },
                         },
                     },
                     "search": {
@@ -217,29 +248,27 @@ async def seed():
                             "list_key": "trips",
                             "output_key": "top_trips",
                             "top_n": 5,
-                            "price_field": "base_price"
-                        }
-                    },
-                    "rag": {
-                        "task_type": "rag_query",
-                        "config": {
-                            "collection": "trips",
-                            "query_key": "user_message",
-                            "top_k": 5,
-                            "output_key": "trip_context"
+                            "price_field": "base_price",
+                            "preferred_time_key": "time",
+                            "max_price_key": "budget",
                         }
                     },
                     "format": {
                         "task_type": "llm_call",
                         "config": {
                             "model": "bus-chat-gpt",
-                            "system_prompt": "Bạn là nhân viên tư vấn vé xe bus. Hãy trình bày kết quả tìm kiếm một cách thân thiện, dễ đọc.",
+                            "system_prompt": (
+                                "Bạn là nhân viên tư vấn vé xe bus. "
+                                "Chỉ được dùng dữ liệu từ tool output trong context (top_trips, related_trips). "
+                                "Không tự bịa giá, nhà xe, ảnh, giờ đi, số ghế hoặc mã chuyến. "
+                                "Nếu thiếu dữ liệu, hãy nói rõ là chưa có thông tin."
+                            ),
                             "prompt_template": (
                                 "Khách hàng tìm: {user_message}\n\n"
-                                "Kết quả đã xếp hạng theo giá (rẻ → đắt):\n{top_trips}\n\n"
-                                "Ngữ cảnh chuyến xe liên quan:\n{trip_context}\n\n"
-                                "Hãy trình bày kết quả dạng danh sách dễ đọc, ưu tiên các chuyến rẻ hơn. "
-                                "Nếu không có kết quả, gợi ý khách tìm ngày khác hoặc tuyến khác."
+                                "Dữ liệu chuyến đã xếp hạng từ tool:\n{top_trips}\n\n"
+                                "Hãy viết tối đa 2 câu ngắn để dẫn người dùng xem các thẻ chuyến xe trên giao diện. "
+                                "Nếu không có kết quả, gợi ý khách tìm ngày khác hoặc tuyến khác. "
+                                "Không nhắc số liệu nào không xuất hiện trong dữ liệu trên."
                             ),
                             "output_key": "response",
                         },
@@ -247,10 +276,10 @@ async def seed():
                 },
                 "edges": [
                     {"from": "START", "to": "extract"},
-                    {"from": "extract", "to": "search"},
+                    {"from": "extract", "to": "parse"},
+                    {"from": "parse", "to": "search"},
                     {"from": "search", "to": "rerank"},
-                    {"from": "rerank", "to": "rag"},
-                    {"from": "rag", "to": "format"},
+                    {"from": "rerank", "to": "format"},
                     {"from": "format", "to": "END"},
                 ],
             },
@@ -265,19 +294,22 @@ async def seed():
             trigger_description="Khách hàng muốn đặt vé, mua vé, book vé xe bus cho chuyến cụ thể",
             definition={
                 "nodes": {
-                    "collect_info": {
-                        "task_type": "llm_call",
-                        "config": {
-                            "model": "bus-search-gpt",
-                            "system_prompt": "Trích xuất thông tin đặt vé từ yêu cầu khách hàng.",
-                            "prompt_template": (
-                                "Phân tích yêu cầu đặt vé và trích xuất JSON:\n"
-                                '- trip_id: ID chuyến (số)\n- guest_name: tên khách\n- guest_phone: SĐT\n- seat_codes: mã ghế (VD: "A01,A02")\n\n'
-                                "Yêu cầu: {user_message}\n\n"
-                                'Trả về JSON. Nếu thiếu thông tin, để giá trị null.'
-                            ),
-                            "output_key": "booking_info",
-                        },
+                        "collect_info": {
+                            "task_type": "llm_call",
+                            "config": {
+                                "model": "bus-search-gpt",
+                                "system_prompt": (
+                                    "Bạn là bộ trích xuất dữ liệu đặt vé. "
+                                    "Chỉ được trả về đúng 1 JSON object hợp lệ, không markdown, không giải thích, không văn xuôi."
+                                ),
+                                "prompt_template": (
+                                    "Phân tích yêu cầu đặt vé và trích xuất JSON thuần:\n"
+                                    '- trip_id: ID chuyến (số)\n- guest_name: tên khách\n- guest_phone: SĐT\n- seat_codes: mã ghế (VD: "A01,A02")\n\n'
+                                    "Yêu cầu: {user_message}\n\n"
+                                    'Chỉ trả về JSON object. Nếu thiếu thông tin, để null hoặc chuỗi rỗng. Không thêm bất kỳ chữ nào khác.'
+                                ),
+                                "output_key": "booking_info",
+                            },
                     },
                     "check_info": {
                         "task_type": "condition",
@@ -294,13 +326,28 @@ async def seed():
                             "output_key": "additional_info",
                         },
                     },
-                    "confirm": {
-                        "task_type": "human_input",
-                        "config": {
-                            "prompt_template": "Xác nhận đặt vé:\n{booking_info}\n\nBạn đồng ý đặt vé không? (Có/Không)",
-                            "output_key": "user_confirm",
+                        "confirm": {
+                            "task_type": "human_input",
+                            "config": {
+                                "prompt_template": (
+                                    "Xác nhận đặt vé:\n"
+                                    "- Mã chuyến: {trip_id}\n"
+                                    "- Họ tên: {guest_name}\n"
+                                    "- Số điện thoại: {guest_phone}\n"
+                                    "- Ghế: {seat_codes}\n\n"
+                                    "Bạn đồng ý đặt vé không? (Có/Không)"
+                                ),
+                                "output_key": "user_confirm",
+                                "friendly_prompt": (
+                                    "Mình sắp đặt vé với thông tin sau:\n"
+                                    "- Mã chuyến: {trip_id}\n"
+                                    "- Họ tên: {guest_name}\n"
+                                    "- Số điện thoại: {guest_phone}\n"
+                                    "- Ghế: {seat_codes}\n\n"
+                                    "Bạn xác nhận nhé? (Có/Không)"
+                                ),
+                            },
                         },
-                    },
                     "do_booking": {
                         "task_type": "grpc_call",
                         "config": {
@@ -320,7 +367,11 @@ async def seed():
                         "task_type": "llm_call",
                         "config": {
                             "model": "bus-chat-gpt",
-                            "prompt_template": "Đặt vé thành công!\nKết quả: {booking_result}\n\nHãy tóm tắt thông tin vé cho khách một cách thân thiện.",
+                            "prompt_template": (
+                                "Đặt vé thành công theo dữ liệu tool:\n{booking_result}\n\n"
+                                "Hãy tóm tắt thân thiện tối đa 3 câu. "
+                                "Chỉ dùng thông tin có trong booking_result, không bịa thêm."
+                            ),
                             "output_key": "response",
                         },
                     },
@@ -367,7 +418,11 @@ async def seed():
                         "task_type": "llm_call",
                         "config": {
                             "model": "bus-chat-gpt",
-                            "prompt_template": "Thông tin vé:\n{booking_status}\n\nHãy trình bày trạng thái vé cho khách hàng một cách rõ ràng.",
+                            "prompt_template": (
+                                "Thông tin vé từ tool:\n{booking_status}\n\n"
+                                "Hãy trình bày trạng thái vé rõ ràng và ngắn gọn. "
+                                "Không tự thêm thông tin ngoài booking_status."
+                            ),
                             "output_key": "response",
                         },
                     },
@@ -403,7 +458,12 @@ async def seed():
                         "task_type": "llm_call",
                         "config": {
                             "model": "bus-chat-gpt",
-                            "system_prompt": "Bạn là nhân viên hỗ trợ khách hàng. Trả lời dựa trên thông tin FAQ bên dưới. Nếu không tìm thấy câu trả lời trong FAQ, nói rõ và gợi ý liên hệ hotline.",
+                            "system_prompt": (
+                                "Bạn là nhân viên hỗ trợ khách hàng. "
+                                "Chỉ trả lời dựa trên thông tin FAQ được cung cấp. "
+                                "Nếu FAQ không có dữ liệu, nói rõ và gợi ý liên hệ hotline. "
+                                "Không tự bịa chính sách hoặc số liệu."
+                            ),
                             "prompt_template": "Câu hỏi: {user_message}\n\nThông tin FAQ liên quan:\n{faq_context}\n\nHãy trả lời câu hỏi:",
                             "output_key": "response",
                         },
@@ -440,6 +500,9 @@ async def seed():
                     "dat ve",
                     "book ve",
                     "ghe",
+                    "tu",
+                    "den",
+                    "ngay mai",
                 ]
             },
         )
@@ -454,20 +517,62 @@ async def seed():
                 name="Tìm chuyến xe",
                 description="Tìm kiếm chuyến xe theo yêu cầu",
                 trigger_description="Khách muốn tìm chuyến xe, hỏi về tuyến, lịch trình, giá vé",
+                input_schema={
+                    "intent_keywords": [
+                        "tim",
+                        "chuyen",
+                        "tu",
+                        "den",
+                        "ngay",
+                        "gia",
+                        "lich",
+                    ]
+                },
                 workflow_definition={
                     "nodes": {
                         "extract": {
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-search-gpt",
+                                "system_prompt": (
+                                    "Bạn là bộ trích xuất dữ liệu tìm chuyến. "
+                                    "Chỉ được trả về đúng 1 JSON object hợp lệ, không markdown, không giải thích."
+                                ),
                                 "prompt_template": (
                                     "Phân tích yêu cầu tìm chuyến xe. Trích xuất JSON:\n"
-                                    '{"origin": "...", "destination": "...", "date": "...", "passengers": 1}\n\n'
-                                    "Yêu cầu: {user_message}"
+                                    '{"origin": "...", "destination": "...", "date": "...", "time": "", "passengers": 1}\n\n'
+                                    "Yêu cầu: {user_message}\n\n"
+                                    "Trong đó time là giờ đi mong muốn theo HH:MM (có thể để rỗng), passengers là số ghế/số người (mặc định 1). "
+                                    "Chỉ trả về JSON object. Nếu thiếu thì để chuỗi rỗng hoặc 1 với passengers."
                                 ),
                                 "output_key": "search_params",
                             },
                             "position": {"x": 100, "y": 200},
+                        },
+                        "parse": {
+                            "task_type": "json_extract",
+                            "config": {
+                                "input_key": "search_params",
+                                "fallback_text_key": "user_message",
+                                "fields": {
+                                    "origin": "origin",
+                                    "destination": "destination",
+                                    "date": "date",
+                                    "time": "time",
+                                    "passengers": "passengers",
+                                },
+                                "casts": {
+                                    "passengers": "int",
+                                },
+                                "defaults": {
+                                    "origin": "",
+                                    "destination": "",
+                                    "date": "",
+                                    "time": "",
+                                    "passengers": 1,
+                                },
+                            },
+                            "position": {"x": 260, "y": 200},
                         },
                         "search": {
                             "task_type": "grpc_call",
@@ -481,7 +586,7 @@ async def seed():
                                 },
                                 "output_key": "search_results",
                             },
-                            "position": {"x": 400, "y": 200},
+                            "position": {"x": 430, "y": 200},
                         },
                         "rerank": {
                             "task_type": "rerank_trips",
@@ -494,8 +599,9 @@ async def seed():
                                 "related_n": 2,
                                 "departure_field": "departureTime",
                                 "max_related_gap_minutes": 180,
+                                "preferred_time_key": "time",
                             },
-                            "position": {"x": 550, "y": 200},
+                            "position": {"x": 590, "y": 200},
                         },
                         "format": {
                             "task_type": "llm_call",
@@ -505,16 +611,18 @@ async def seed():
                                     "Khách tìm: {user_message}\n"
                                     "Chuyến chính đã xếp hạng:\n{top_trips}\n\n"
                                     "Chuyến liên quan:\n{related_trips}\n\n"
-                                    "Trình bày 2 phần rõ ràng: Chuyến chính và Chuyến liên quan."
+                                    "Chỉ viết một lời dẫn ngắn để người dùng xem 2 nhóm thẻ: chuyến chính và chuyến liên quan. "
+                                    "Chỉ dùng dữ liệu đã có trong top_trips/related_trips, không bịa thêm."
                                 ),
                                 "output_key": "response",
                             },
-                            "position": {"x": 740, "y": 200},
+                            "position": {"x": 780, "y": 200},
                         },
                     },
                     "edges": [
                         {"source": "START", "target": "extract", "flow_type": "SEQUENCE"},
-                        {"source": "extract", "target": "search", "flow_type": "SEQUENCE"},
+                        {"source": "extract", "target": "parse", "flow_type": "SEQUENCE"},
+                        {"source": "parse", "target": "search", "flow_type": "SEQUENCE"},
                         {"source": "search", "target": "rerank", "flow_type": "SEQUENCE"},
                         {"source": "rerank", "target": "format", "flow_type": "SEQUENCE"},
                         {"source": "format", "target": "END", "flow_type": "SEQUENCE"},
@@ -527,6 +635,16 @@ async def seed():
                 name="Đặt vé xe",
                 description="Hoàn tất đặt vé cho khách",
                 trigger_description="Khách muốn đặt vé, mua vé, book vé cho chuyến xe cụ thể",
+                input_schema={
+                    "intent_keywords": [
+                        "dat",
+                        "book",
+                        "mua",
+                        "ve",
+                        "chon",
+                        "ghe",
+                    ]
+                },
                 model_slug="bus-search-gpt",
                 workflow_definition={
                     "nodes": {
@@ -534,11 +652,16 @@ async def seed():
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-search-gpt",
+                                "system_prompt": (
+                                    "Bạn là bộ trích xuất dữ liệu đặt vé. "
+                                    "Chỉ được trả về đúng 1 JSON object hợp lệ, không markdown, không giải thích, không văn xuôi."
+                                ),
                                 "prompt_template": (
                                     "Trich xuat thong tin dat ve tu yeu cau sau va tra ve JSON THUAN "
                                     "voi cac truong: trip_id, origin, destination, date, passengers, "
                                     "guest_name, guest_phone, seat_codes. "
-                                    "Neu thieu thi de null. Yeu cau: {user_message}"
+                                    "Neu thieu thi de null. Yeu cau: {user_message}. "
+                                    "Chi tra ve JSON object, khong them giai thich, khong them markdown."
                                 ),
                                 "output_key": "booking_info",
                             },
@@ -582,6 +705,28 @@ async def seed():
                             },
                             "position": {"x": 430, "y": 200},
                         },
+                        "ready_to_confirm": {
+                            "task_type": "condition",
+                            "config": {
+                                "expression": "trip_id > 0 and guest_name != '' and guest_phone != '' and seat_codes != ''",
+                            },
+                            "position": {"x": 500, "y": 300},
+                        },
+                        "ask_missing_info": {
+                            "task_type": "human_input",
+                            "config": {
+                                "prompt_template": (
+                                    "Mình cần thêm thông tin để đặt vé:\n"
+                                    "- Mã chuyến hợp lệ\n"
+                                    "- Họ tên khách\n"
+                                    "- Số điện thoại\n"
+                                    "- Ghế muốn đặt\n\n"
+                                    "Bạn gửi thêm giúp mình nhé."
+                                ),
+                                "output_key": "additional_booking_info",
+                            },
+                            "position": {"x": 580, "y": 380},
+                        },
                         "search": {
                             "task_type": "grpc_call",
                             "config": {
@@ -621,7 +766,8 @@ async def seed():
                                     "Khach muon dat ve va toi da tim thay cac chuyen phu hop. "
                                     "Chuyen chinh:\n{top_trips}\n\n"
                                     "Chuyen lien quan:\n{related_trips}\n\n"
-                                    "Hay moi khach bam nut Book ve ngay hoac Xem chi tiet tren giao dien de tiep tuc."
+                                    "Chi viet loi moi ngan, huong khach bam nut Book ve ngay hoac Xem chi tiet tren giao dien de tiep tuc. "
+                                    "Khong duoc tu bo sung thong tin ngoai top_trips/related_trips."
                                 ),
                                 "output_key": "response",
                             },
@@ -630,8 +776,29 @@ async def seed():
                         "confirm": {
                             "task_type": "human_input",
                             "config": {
-                                "prompt_template": "Xác nhận đặt vé:\n{booking_info}\n\nĐồng ý? (Có/Không)",
+                                "prompt_template": (
+                                    "Xác nhận đặt vé:\n"
+                                    "- Mã chuyến: {trip_id}\n"
+                                    "- Tuyến: {origin} → {destination}\n"
+                                    "- Ngày đi: {date}\n"
+                                    "- Số vé: {passengers}\n"
+                                    "- Họ tên: {guest_name}\n"
+                                    "- Số điện thoại: {guest_phone}\n"
+                                    "- Ghế: {seat_codes}\n\n"
+                                    "Đồng ý đặt vé không? (Có/Không)"
+                                ),
                                 "output_key": "user_confirm",
+                                "friendly_prompt": (
+                                    "Mình sắp tạo booking với thông tin sau:\n"
+                                    "- Mã chuyến: {trip_id}\n"
+                                    "- Tuyến: {origin} → {destination}\n"
+                                    "- Ngày đi: {date}\n"
+                                    "- Số vé: {passengers}\n"
+                                    "- Họ tên: {guest_name}\n"
+                                    "- Số điện thoại: {guest_phone}\n"
+                                    "- Ghế: {seat_codes}\n\n"
+                                    "Bạn xác nhận nhé? (Có/Không)"
+                                ),
                             },
                             "position": {"x": 580, "y": 300},
                         },
@@ -653,7 +820,10 @@ async def seed():
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-chat-gpt",
-                                "prompt_template": "Đặt vé thành công!\n{booking_result}\nTóm tắt thân thiện.",
+                                "prompt_template": (
+                                    "Đặt vé thành công theo dữ liệu tool:\n{booking_result}\n"
+                                    "Tóm tắt thân thiện, chỉ dùng đúng dữ liệu trong booking_result."
+                                ),
                                 "output_key": "response",
                             },
                             "position": {"x": 900, "y": 300},
@@ -664,7 +834,10 @@ async def seed():
                         {"source": "collect", "target": "parse", "flow_type": "SEQUENCE"},
                         {"source": "parse", "target": "need_search", "flow_type": "SEQUENCE"},
                         {"source": "need_search", "target": "search", "condition": "true", "flow_type": "CONDITIONAL"},
-                        {"source": "need_search", "target": "confirm", "condition": "false", "flow_type": "CONDITIONAL"},
+                        {"source": "need_search", "target": "ready_to_confirm", "condition": "false", "flow_type": "CONDITIONAL"},
+                        {"source": "ready_to_confirm", "target": "confirm", "condition": "true", "flow_type": "CONDITIONAL"},
+                        {"source": "ready_to_confirm", "target": "ask_missing_info", "condition": "false", "flow_type": "CONDITIONAL"},
+                        {"source": "ask_missing_info", "target": "collect", "flow_type": "SEQUENCE"},
                         {"source": "search", "target": "rerank", "flow_type": "SEQUENCE"},
                         {"source": "rerank", "target": "format_search", "flow_type": "SEQUENCE"},
                         {"source": "format_search", "target": "END", "flow_type": "SEQUENCE"},
@@ -673,6 +846,7 @@ async def seed():
                         {"source": "done", "target": "END", "flow_type": "SEQUENCE"},
                     ],
                 },
+                enabled=False,
             ),
         ])
 
@@ -736,7 +910,10 @@ async def seed():
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-chat-gpt",
-                                "prompt_template": "Thông tin vé:\n{booking_status}\nTrình bày rõ ràng.",
+                                "prompt_template": (
+                                    "Thông tin vé từ tool:\n{booking_status}\n"
+                                    "Trình bày rõ ràng, không thêm thông tin ngoài booking_status."
+                                ),
                                 "output_key": "response",
                             },
                             "position": {"x": 700, "y": 200},
@@ -772,8 +949,15 @@ async def seed():
                             "task_type": "llm_call",
                             "config": {
                                 "model": "bus-chat-gpt",
-                                "system_prompt": "Trả lời dựa trên FAQ. Nếu không có, gợi ý hotline.",
-                                "prompt_template": "Câu hỏi: {user_message}\nFAQ:\n{faq_context}",
+                                "system_prompt": (
+                                    "Trả lời chỉ dựa trên FAQ được cung cấp. "
+                                    "Nếu không có thông tin, gợi ý hotline. Không tự bịa chính sách."
+                                ),
+                                "prompt_template": (
+                                    "Câu hỏi: {user_message}\n"
+                                    "FAQ:\n{faq_context}\n"
+                                    "Trả lời ngắn gọn, đúng dữ liệu FAQ."
+                                ),
                                 "output_key": "response",
                             },
                             "position": {"x": 400, "y": 200},

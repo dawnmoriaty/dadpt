@@ -1,0 +1,1308 @@
+===== PAGE 1 =====
+CAPSTONE  PROJECT  REPORT  
+Report  3  –  Software  Requirement  Specification   READEE  _  Researching  and  developing  digital  
+education
+ 
+library
+ 
+platform
+ 
+integrating
+ 
+AI
+ 
+applications
+ 
+in
+ 
+quality
+ 
+control
+ 
+and
+ 
+document
+ 
+summaries
+ 
+  Researching  and  developing  digital  education  library  platform  integrating  AI  applications  in  quality  control  and  document  summaries.
+ 
+ 
+Group  Members  
+Nguyen  Tat  Quan              -  HE187203  Vu  Hong  Quang                 -  HE176765  To  Duc  Anh                         -  HE170025  Vo  Dinh  Hung                     -  HE186864  Nghiem  Thi  Hong  Ngoc    -  HE186888  
+Supervisor  Miss.  Nguyen  Thi  Nguyet  Project  Code  READEE  Group  Code  SEP490_G49  
+ 
+ –  Hanoi,  September  2025  –  
+ 
+ 
+1
+
+===== PAGE 2 =====
+Table  of  Contents  I.  Record  of  Changes ................................................................................................................................ 3 II.  Software  Requirement  Specification ................................................................................................... 4 1.  Overall  Requirements ................................................................................................................... 4 1.1  Context  Diagram ................................................................................................................... 4 1.2  Main  Workflows ................................................................................................................... 5 1.3  User  Requirements ............................................................................................................... 6 1.4  System  Functionalities ........................................................................................................ 17 1.5  Entity  Relationship  Diagram ............................................................................................... 24 2.  Use  Case  Specifications ............................................................................................................... 25 2.1  Common ............................................................................................................................. 25 2.2  Organization  Management ................................................................................................. 46 2.3  Document  Management .................................................................................................... 63 2.4  Review  Document .............................................................................................................. 79 2.5  Tag,  Domain,  Type,  specialization  Management ................................................................ 92 2.6  Interaction  &  Feedback .................................................................................................... 108 2.7  Policy  &  Configuration ...................................................................................................... 118 2.8  Statistics ........................................................................................................................... 125 2.9  SavedLists  Management ................................................................................................... 134 3.  Functional  Requirements .......................................................................................................... 142 3.1  Common ........................................................................................................................... 142 3.2  Organization  Management ............................................................................................... 171 3.3  Document  Management .................................................................................................. 187 3.4  Review  Document ............................................................................................................ 207 3.5  Tag,  Domain,  Specialization,  Type  Management .............................................................. 216 3.6  Interaction  &  Feedback .................................................................................................... 227 3.7  Policy  &  Configuration ...................................................................................................... 232 3.8  Statistics ........................................................................................................................... 242 3.9  SavedLists  Management ................................................................................................... 250 4.  Non-Functional  Requirements .................................................................................................. 251 5.  Requirement  Appendix ............................................................................................................. 252 5.1  Business  Rules .................................................................................................................. 252 List  of  Figures ................................................................................................................................ 261 List  of  Tables .................................................................................................................................. 263 
+ 
+2
+
+===== PAGE 3 =====
+I.  Record  of  Changes   
+Date  A*  M,  D  
+In  charge  Change  Description  
+15/09/2025  A  NgocNTH  Create  Document  
+20/09/2025  A  NgocNTH  Add  Context  diagram  
+20/09/2025  A  NgocNTH  Add  Actors  List  
+20/09/2025  A  NgocNTH  Add  Use  case  diagrams  and  description  
+21/09/2025  A  NgocNTH  Add  Main  Work  Flows  
+22/09/2025  A  NgocNTH  Add  Use  case  specification:  Common,  Organization  Management  Feature  
+23/09/2025  A  NgocNTH  Add  Use  case  specification:  Document  Management,  Review  Document  Feature  
+24/09/2025  A  NgocNTH  Add  Use  case  specification:  Tag,  Type,  Domain,  Specification  Management,  Interaction  &  Feedback,  Policy  &  Configuration,  SavedList  Management  Feature  
+25/09/2025  A  NgocNTH  Add  Functional  Requirement:   Common,  Organization  Management  Feature  
+26/09/2025  A  NgocNTH  Add  Functional  Requirement:  Document  Management,  Review  Document  Feature  
+27/09/2025  A  NgocNTH  Add  Functional  Requirement:  Tag,  Type,  Domain,  Specification  Management,  Interaction  &  Feedback  Feature  
+28/09/2025  A  NgocNTH  Add  Functional  Requirement  Policy  &  Configuration,  SavedList  Management  Feature  
+29/09/2025  A  NgocNTH  Add  non-functional  requirement,  business  rule,  message  
+01/12/2025  M  NgocNTH  Update  Context  Diagram,  Use  case  diagram  and  description  
+02/12/2025  M  NgocNTH  Update  Main  Work  Flows  
+3
+
+===== PAGE 4 =====
+03/12/2025  M  NgocNTH  Update  Use  case  specification:  Register,  Login,  Review  Document  
+04/12/2025  M  NgocNTH  Update  Functional  Requirement:  Register,  Login,  Review  Document  
+05/12/2025  M  NgocNTH  Update  business  rule  
+    
+*A  -  Added  M  -  Modified  D  -  Deleted  
+Link  Diagram:  https://drive.google.com/file/d/1Up0LniiEqpeGpe5MYFE0KScw_laZuCkn/view?usp=sharing 
+II.  Software  Requirement  Specification  1.  Overall  Requirements  1.1  Context  Diagram 
+The  READEE  System  is  an  intelligent  academic  document  management  and  evaluation  
+platform
+ 
+designed
+ 
+to
+ 
+replace
+ 
+traditional,
+ 
+unstructured
+ 
+methods
+ 
+of
+ 
+sharing,
+ 
+reviewing,
+ 
+and
+ 
+accessing
+ 
+study
+ 
+materials.
+ 
+The
+ 
+system
+ 
+provides
+ 
+an
+ 
+integrated
+ 
+environment
+ 
+for
+ 
+readers,
+ 
+reviewers,
+ 
+administrators,
+ 
+and
+ 
+organizations
+ 
+to
+ 
+collaborate
+ 
+around
+ 
+digital
+ 
+learning
+ 
+resources
+ 
+with
+ 
+transparency,
+ 
+automation,
+ 
+and
+ 
+AI-assisted
+ 
+evaluation.
+ 
+Release  1.0  focuses  on  core  functionalities  including  user  registration  and  authentication,  
+document
+ 
+upload
+ 
+and
+ 
+management,
+ 
+AI-based
+ 
+document
+ 
+review,
+ 
+report
+ 
+handling,
+ 
+and
+ 
+organizational
+ 
+administration.
+ 
+READEE
+ 
+ensures
+ 
+a
+ 
+secure,
+ 
+role-based
+ 
+environment
+ 
+that
+ 
+supports
+ 
+document
+ 
+moderation,
+ 
+reader
+ 
+engagement,
+ 
+and
+ 
+academic
+ 
+integrity.
+ 
+The  context  diagram  below  illustrates  the  system  boundaries,  showing  how  READEE  
+interacts
+ 
+with
+ 
+external
+ 
+entities
+ 
+such
+ 
+as
+ 
+users,
+ 
+administrative
+ 
+roles,
+ 
+AI
+ 
+services,
+ 
+and
+ 
+external
+ 
+authentication
+ 
+or
+ 
+mail
+ 
+systems.
+ 
+4
+
+===== PAGE 5 =====
+Figure  2  –   Overall  Requirements  –  Context  Diagram  
+ 
+1.2  Main  Workflows  1.2.1  Register  Processing  
+ 
+Figure  3  –   Overall  Requirements  –  Main  Workflows  –  Register  Processing  
+5
+
+===== PAGE 6 =====
+1.2.2  Upload  Document  Processing  
+ 
+Figure  4  –   Overall  Requirements  –  Main  Workflows  –  Upload  Document  Processing  1.2.3  Import  Readers  into  Organization  Processing  
+ 
+Figure  5  –  Main  Workflows  –  Import  Readers  into  Organization  Processing  1.3  User  Requirements  1.3.1  Actors 
+ 
+Table  3  –  User  Requirements  –  Actors  
+#  Actor  Description  
+1  Guest  
+Unregistered  visitor  who  can  browse  limited  documents  and  view  public  information.  
+6
+
+===== PAGE 7 =====
+2  Reader  
+User  who  uploads  their  own  document  and  has  the  ability  to  view  others'  uploaded  documents,  download,  interact  with  the  document.  
+3  Reviewer  
+User  who  reviews  and  approves/rejects  documents  content  uploaded  by  users  to  ensure  quality  and  accuracy.  
+4  
+Organization  Admin  
+User  who  manages  an  organization  and  the  enrollment  of  reader  in  the  organization.  
+5  Business  Admin  
+Manages  the  business  in  the  system  includes  users,  documents,  organization,  documents  attributes  (type,  tag,  domain,  specification).  
+6  System  Admin  
+Maintains  system  infrastructure,  user  roles,  security,  and  backend  configuration.  
+7  
+Google  Mail  Service  
+External  Service  used  to  send  automated  notifications,  verification  emails.  
+8  AI  Model  
+Service  created  by  internal  team  provides  document  moderation  and  summarization  assist.  
+ 
+1.3.2  Use  Cases  (UC) 
+ 
+Table  4  –  User  Requirements  –  Use  Cases  (UC)  Feature  #  Use  Case  Description  
+Common  
+CM1  Register  As  Reader  
+Allows  a  new  user  to  create  an  account  as  a  reader.  
+CM2  Register  As  Reviewer  
+Allows  a  new  user  to  create  an  account  with  reviewer  privileges.  
+CM3  
+Register  As  Organization  Admin  
+Allows  a  new  user  to  create  a  new  organization  with  their  account  to  manage  the  organization.  
+CM4  
+Login  as  Normal  User  
+Allows  a  registered  user  role  READER,  REVIEWER,  ORGANIZATION  ADMIN  to  access  the  system  using  valid  credentials.  
+CM5  Login  as  Admin  
+Allows  admin  (BA,  SA)  to  access  the  system  using  valid  credentials.  
+CM6  Reset  Password  
+Allows  a  user  to  reset  their  account  password  if  forgotten.  Ensures  secure  access  to  the  system.  
+CM7  View  Profile  
+Enables  a  user  to  view  their  personal  account  information  and  profile  details.  
+7
+
+===== PAGE 8 =====
+CM8  Change  Profile  
+Allows  a  user  to  update  their  personal  information  to  keep  their  profile  current.  
+CM9  Change  Email  
+Enables  a  user  to  update  the  email  associated  with  their  account.  Ensures  notifications  are  sent  to  the  correct  address.  
+CM10  Change  Password  
+Allows  a  user  to  update  their  password  to  maintain  account  security.  
+CM11  Delete  Account  
+Enables  a  user  to  permanently  remove  their  account.  
+CM12  
+Create  Support  Ticket  
+Allows  a  user  to  communicate  with  the  business  administrator  for  queries  or  issues.  
+CM13  View  Notification  
+Enables  a  user  to  view  all  notifications  relevant  to  their  account  and  activities.  
+CM14  View  landing  page  
+Displays  the  system’s  landing  page  to  provide  an  overview  and  navigation.  
+CM15  View  users  list  
+Allows  an  admin  to  view  all  registered  users  and  their  basic  information.  
+CM16  Deactive  User  
+Enables  an  admin  to  temporarily  disable  a  user  account  for  security  or  policy  reasons.  
+CM17  Active  user  
+Allows  an  admin  to  reactivate  a  previously  deactivated  user  account.  
+CM18  
+Update  User  Support  Ticket  
+Enables  an  admin  to  respond  to  user  support  tickets.  
+Organization  Management  
+ORG1  
+BA  -  View  Organizations  List  
+Allows  a  Business  Admin  to  view  organizations  they  manage.  
+ORG2  
+BA  -  View  Organization  detail  
+Enables  a  Business  Admin  to  view  detailed  information  about  an  organization.  
+ORG3  
+BA  -  Active  organization  
+Allows  a  Business  Admin  to  activate  an  organization  in  the  system  for  operations.  
+ORG4  
+BA  -  Deactive  organization  
+Enables  a  Business  Admin  to  deactivate  an  organization  from  the  system.  
+ORG5  
+View  Organization  Information  
+Enables  organization  admin  to  see  the  details  and  information  of  their  organization.  
+ORG6  
+Update  Organization  Information  
+Allows  an  Organization  Admin  to  edit  an  organization’s  information  for  accuracy.  
+ORG7  
+OA  -  Delete  Organization  
+Enables  an  Organization  Admin  to  remove  their  organization  from  the  system.  
+ORG8  View  Readers  List  
+Allows  an  organization  admin  to  see  all  readers  enrolled  in  the  organization.  
+8
+
+===== PAGE 9 =====
+ORG9  
+Import  Readers  List  To  Organization  
+Enables  an  Organization  Admin  to  add  multiple  readers  into  an  organization  at  once.  
+ORG10  
+Change  reader  access  
+Allows  an  Organization  Admin  to  revoke  a  reader’s  access  to  an  organization.  
+ORG11  View  Import  History  
+Allows  an  organization  admin  to  review  the  history  of  imported  readers  or  data.  
+ORG12  View  Import  Detail  
+Allows  an  organization  admin  to  review  the  detail  of  imported  readers  or  data  in  a  batch  import.  
+ORG12  
+Reader  -  View  Organizations  List  
+Enables  a  reader  to  see  all  available  organizations  they  have  joined  in  the  system.  
+ORG13  
+Reader  -  View  Organization  Detail  
+Allows  a  reader  to  view  detailed  information  about  a  specific  organization.  
+ORG14  Join  Organization  
+Allows  a  user  to  join  an  organization  and  access  its  resources.  
+ORG15  Leave  Organization  
+Enables  a  user  to  leave  an  organization  they  are  part  of,  revoking  associated  access.  
+Document  Management  
+DOC1  Search  Document  
+Enables  a  user  to  search  documents  using  keywords  or  filters.  
+DOC2  
+View  Document  Description  Detail  
+Allows  a  user  to  see  the  detailed  description  and  metadata  of  a  document.  
+DOC3  
+View  Document  Content  Detail  
+Enables  a  user  to  view  the  full  content  of  a  document.  
+DOC4  Download  Document  
+Allows  a  user  to  download  a  document  for  offline  access.  
+DOC5  Upload  Document  
+Enables  a  user  to  upload  new  documents  to  the  system.  
+DOC6  
+View  Document  Upload  History  
+Allows  a  user  to  track  all  documents  they  have  uploaded.  
+DOC7  View  Library  
+Provides  access  to  the  document  library  for  browsing  and  searching  documents  uploaded  or  purchased  successfully.  
+DOC8  Update  Document  
+Enables  a  user  to  edit  an  existing  document  to  correct  or  update  information.  
+DOC9  
+Reader  -  Delete  Document  
+Allows  a  reader  to  remove  documents  they  previously  uploaded.  
+DOC10  
+View  Documents  Read  History  
+Enables  a  user  to  track  which  documents  they  have  read  and  when.  
+DOC11  
+Business  Admin  -  View  Documents  List  
+Enables  a  Business  Admin  to  view  all  documents  in  the  system.  
+9
+
+===== PAGE 10 =====
+DOC12  
+Business  Admin  -  View  Document  Detail  
+Allows  a  Business  Admin  to  see  detailed  information  about  a  document.  
+DOC13  Active  document  
+Enables  a  Business  Admin  to  make  a  document  available  for  use.  
+DOC14  
+Business  Admin  -  Deactive  Document  
+Allows  a  Business  Admin  to  temporarily  disable  a  document  from  being  accessed.  
+Review  Document  
+RV1  
+Assign  Reviewer  for  Document  
+Enables  a  Business  Admin  to  assign  documents  to  reviewers  for  evaluation.  
+RV2  
+View  Review  Document  Request  
+Allows  a  user  to  see  pending  requests  for  document  reviews.  
+RV3  
+Reviewer  -  View  Document  Description  
+Enables  a  reviewer  to  access  full  document  description  to  consider  action  for  a  review  request.  
+RV4  
+Accept  Review  Document  Request  
+Allows  a  reviewer  to  accept  a  document  review  assignment.  
+RV5  
+Reject  Review  Document  Request  
+Allows  a  reviewer  to  reject  a  document  review  assignment.  
+RV6  
+View  Reviewing  Documents  List  
+Provides  reviewers  a  list  of  documents  assigned  for  review.  
+RV7  
+View  Document  Detail  
+Reviewer  view  content  of  the  document  need  to  review  and  take  actions  on  it.  
+RV8  Review  Document  
+Enables  a  reviewer  to  provide  feedback  and  evaluations  for  a  document.  
+RV9  
+View  Document  Review  History  
+Allows  a  reviewer  to  see  the  history  of  their  reviews  for  documents.  
+RV10  
+View  Pending  Approve  Review  
+Allows  a  Business  Admin  to  view  list  of  review  results  that  are  pending  approval  and  act  on  them.  
+RV11  
+Approve  Review  Result  
+Allows  a  Business  Admin  to  approve  the  result  of  reviewing  for  a  document.  
+RV12  Reject  Review  Result  
+Allows  a  Business  Admin  to  reject  the  review  result  of  a  reviewer  and  request  an  update.  
+Categorized  Document  
+DAM1  View  Tags  List  
+Enables  a  BA  to  view  all  tags  available  in  the  system.  
+DAM2  
+Business  Admin  -  Add  Tag  
+Allows  a  Business  Admin  to  create  a  new  tag  for  organizing  documents.  
+DAM3  Reader  -  Add  Tag  
+Enables  a  reader  to  add  tags  to  documents  for  better  categorization.  
+10
+
+===== PAGE 11 =====
+DAM4  Reject  Document  Tag  
+Allows  a  BA  to  reject  inappropriate  or  incorrect  suggested  tags.  
+DAM5  Update  Tag  
+Enables  a  BA  to  modify  an  existing  tag’s  name  or  description.  
+DAM6  View  domains  List  
+Allows  a  BA  to  see  all  available  domains  in  the  system.  
+DAM7  Add  domain  
+Enables  a  BA  to  create  a  new  domain  for  document  categorization.  
+DAM8  Update  domain  
+Allows  a  BA  to  edit  details  of  an  existing  domain.  
+DAM9  View  Types  List  
+Enables  a  BA  to  see  all  available  document  types.  
+DAM10  Add  Type  
+Allows  a  BA  to  add  a  new  type  for  classifying  documents.  
+DAM11  Update  Type  
+Enables  a  BA  to  edit  the  details  of  an  existing  document  type.  
+DAM12  
+View  specializations  List  of  a  domain  
+Allows  a  BA  to  see  all  specializations  under  a  specific  domain.  
+DAM13  
+Add  specialization  into  domain  
+Enables  a  BA  to  add  a  new  specialization  under  a  domain.  
+DAM14  
+Update  specialization  in  domain  
+Allows  a  BA  to  modify  an  existing  specialization  in  a  domain.  
+Interaction  &  Feedback  
+INT1  Comment  Document  
+Enables  a  user  to  add  comments  on  a  document.  
+INT2  Update  comment  
+Allows  a  user  to  edit  comments  they  previously  added.  
+INT3  Delete  comment  
+Enables  a  user  to  remove  a  comment  from  a  document.  
+INT4  Vote  Document  
+Allows  a  user  to  vote  a  document  based  on  relevance  or  quality.  
+INT5  Report  Document  
+Enables  a  user  to  report  issues  or  inappropriate  content  in  a  document.  
+INT6  View  Reports  List  
+Allows  a  BA  to  see  all  reports  submitted  in  the  system.  
+INT7  View  report  detail  
+Enables  a  BA  to  access  detailed  information  about  a  specific  report.  
+INT8  Update  Report  
+Allows  a  BA  to  act  on  or  update  the  status  of  a  report.  
+11
+
+===== PAGE 12 =====
+INT9  Redeem  Document  
+Enables  a  user  to  redeem  a  document  if  it  is  premium  content.  
+Policy  &  Configuration  
+CON1  View  Policies  
+Allows  a  user  to  read  system  policies  and  guidelines.  
+CON2  Update  Policy  
+Enables  an  admin  to  edit  or  update  system  policies.  
+CON3  Configure  System  
+Allows  an  admin  to  set  up  or  modify  system-wide  configurations.  
+CON4  
+View  User  Role  In  System  
+Enables  an  admin  to  view  roles  and  permissions  of  users.  
+CON5  
+Update  Role  Of  User  in  system  
+Allows  an  admin  to  update  or  change  a  user’s  role  in  the  system.  
+CON6  View  System  Log  
+Allows  an  admin  to  review  system  activity  and  logs  for  monitoring.  
+CON7  
+Add  a  new  version  Policy  
+Allows  an  admin  to  add  a  new  policy  version.  
+Statistics  
+STA1  
+View  Personal  Document  Statistics  
+Enables  a  user  to  see  their  own  document  activity  and  statistics.  
+STA2  
+View  Document  Review  Statistics  
+Allows  a  reviewer  to  track  review  activity  and  statistics  for  documents.  
+STA3  
+View  Organization  Statistics  
+Enables  an  Organization  Admin  to  view  performance  and  activity  statistics  of  an  organization.  
+STA4  
+View  System  Statistics  
+Allows  a  Business  Admin  to  see  overall  statistics  for  documents,  reports,  and  organizations.  
+STA5  
+View  Access  Statistics  
+Allows  an  admin  to  view  access-related  statistics.  
+SavedLists  Management  
+SLM1  
+View  Saved  Documents  List  
+Enables  a  user  to  see  all  documents  they  have  saved  for  future  reference.  
+SLM2  Create  SavedList  
+Allows  a  user  to  create  a  new  list  to  organize  saved  documents.  
+SLM3  Delete  SavedList  
+Enables  a  user  to  remove  a  saved  document  list.  
+SLM4  Rename  SavedList  
+Allows  a  user  to  change  the  name  of  a  saved  document  list.  
+SLM5  View  SavedList  Detail  
+Enables  a  user  to  see  the  contents  and  details  of  a  saved  list.  
+SLM6  
+Add  document  in  SavedList  
+Allows  a  user  to  add  a  document  to  an  existing  saved  list.  
+12
+
+===== PAGE 13 =====
+SLM7  
+Delete  document  in  SavedList  
+Enables  a  user  to  remove  a  document  from  a  saved  list.  
+ 
+1.3.3  Use  Case  Diagrams  1.3.3.1  UCs  for  Guest,  Common  
+ 
+Figure  6  –  User  Requirements   –  UCs  for  Guest,  Common  
+ 
+1.3.3.2  UCs  for  Reader  
+ 
+13
+
+===== PAGE 14 =====
+Figure  7  –  User  Requirements   –  UCs  for  Reader  
+ 
+1.3.3.3  UCs  for  Organization,  Reviewer  
+ 
+14
+
+===== PAGE 15 =====
+Figure  8  –  User  Requirements   –  UCs  for  Organization,  Reviewer  
+ 
+1.3.3.4  UCs  for  Business  Admin  
+ 
+15
+
+===== PAGE 16 =====
+Figure  9  –  User  Requirements   –  UCs  for  Business  Admin  
+ 
+1.3.3.5  UCs  for  System  Admin  
+ 
+16
+
+===== PAGE 17 =====
+Figure  10  –  User  Requirements   –  UCs  for  System  Admin  1.4  System  Functionalities  1.4.1  Screens  Flow  
+ 
+Figure  11  –  System  Functionalities  –  Screens  Flow  
+ 
+ 1.4.2  Screen  Authorization Table  5  –  System  Functionalities  –  Screen  Authorization  
+Feature  Screen  Name  Guest  Reader  
+Reviewer  
+Organization  Admin  
+Business  Admin  
+System  Admin  Common  Sign  up  x       Common  Sign  in  x       
+17
+
+===== PAGE 18 =====
+Common  
+Forgot  Password  (Enter  Email)  
+x       
+Common  
+Forgot  Password  (Enter  OTP)  
+x       
+Common  
+Reset  Password  
+x       
+Common  User  Profile   x  x     
+Common  
+Change  Profile  
+ x  x     
+Common  
+Change  Email  -  Verify  Password  
+ x  x  x    
+Common  
+Change  Email  -  Enter  New  Email  
+ x  x  x    
+Common  
+Change  Email  -  Verify  OTP  
+ x  x  x    
+Common  
+Change  Password  
+ x  x  x    
+Common  
+Send  Support  Ticket  
+x  x  x  x    
+Common  Notification   x  x  x  x  x  
+Common  
+Notification  List  
+ x  x  x  x  x  
+Common  
+Notification  Detail  
+ x  x  x  x  x  
+Common  Landing  Page  x  x  x  x  x  x  Common  User  List      x   Common  User  Detail      x   
+Common  
+Support  Ticket  List  
+    x   
+Common  
+Support  Ticket  Detail  
+    x   
+Common  Policy  x  x  x  x  x  x  Common  Home   x      
+Organization  
+Organization  List  
+    x   
+18
+
+===== PAGE 19 =====
+Organization  
+BA  -  Organization  Details  
+    x   
+Organization  
+Manage  Organization  
+   x    
+Organization  
+Edit  Organization  
+   x    
+Organization  
+Manage  Readers  
+   x    
+Organization  
+Import  History  
+   x    
+Organization  
+Import  Readers  
+   x    
+Organization  
+Import  Details  
+   x    
+Organization  
+My  Organizations  
+ x      
+Organization  
+R  -  Organization  Detail  
+ x      
+Document  Management  
+Search  Document  
+ x      
+Document  Management  
+Document  Description  
+ x  x   x   
+Document  Management  
+Document  Detail  
+ x  x   x   
+Document  Management  
+Upload  Document  
+ x      
+Document  Management  
+Upload  History  
+ x      
+Document  Management  
+Library   x      
+Document  Management  
+Update  Document  
+ x      
+Document  Management  
+Read  History   x      
+Document  Management  
+Document  List  
+    x   
+19
+
+===== PAGE 20 =====
+Document  Management  
+BA  -  Document  Detail  
+    x   
+Document  Management  
+Summary      x   
+Review  Document  
+Assign  Reviewer  
+    x   
+Review  Document  
+Review  Document  
+  x     
+Tag,  Domain,  Type,  specialization  Management  
+Tag  Management  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+BA  -  Add  Tag      x   
+Tag,  Domain,  Type,  specialization  Management  
+Update  Tag      x   
+Tag,  Domain,  Type,  specialization  Management  
+Domain  Management  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+Add  Domain      x   
+Tag,  Domain,  Type,  specialization  Management  
+Update  domain  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+Type  Management  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+Add  Type      x   
+20
+
+===== PAGE 21 =====
+Tag,  Domain,  Type,  specialization  Management  
+Update  Type      x   
+Tag,  Domain,  Type,  specialization  Management  
+Specializtions  List  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+Add  Specialization  
+    x   
+Tag,  Domain,  Type,  specialization  Management  
+Update  Specialization  
+    x   
+Interaction  &  Feedback  
+Report  Document  
+ x      
+Interaction  &  Feedback  
+Report  List      x   
+Interaction  &  Feedback  
+Report  Detail      x   
+Policy  &  Configuration  
+Policies       x  
+Policy  &  Configuration  
+Update  Policy       x  
+Policy  &  Configuration  
+Create  New  Version  Policy  
+     x  
+Policy  &  Configuration  
+System  Config  
+     x  
+Policy  &  Configuration  
+Role  Management  
+     x  
+Policy  &  Configuration  
+Change  User  Role  
+     x  
+Policy  &  Configuration  
+System  Log       x  
+Statistics  
+Personal  Statistics  
+ x      
+Statistics  
+Dashboard  (Reviewer)  
+  x     
+21
+
+===== PAGE 22 =====
+Statistics  
+Dashboard  (Business  Admin)  
+    x   
+Statistics  
+Dashboard  (Organization  Admin)  
+   x    
+Statistics  
+Dashboard  (System  Admin)  
+     x  
+SavedLists  Management  
+Add  new  SavedList  
+ x      
+SavedLists  Management  
+Add  To  Save  Lists  
+ x      
+ 
+1.4.3  Non-UI  Functions Table  6  –  System  Functionalities  –  Non-UI  Functions  #  Feature  System  Function  Description  
+1  Common  User  Authentication  
+Validate  user  credentials,  generate  session/token,  and  enforce  role-based  access  control  (Reader,  Reviewer,  Business  Admin).  
+2  All  Features  
+Role  Permission  Validation  
+Verify  user  permissions  for  non-UI  actions  (upload,  approve  review  result,  activate  document,  delete  document).  
+3  
+Document  Management  
+Document  Upload  Processing  
+Handle  file  upload,  validate  file  type/size,  store  file  securely,  and  create  document  metadata  record.  
+4  
+Document  Management  
+Document  Content  Storage  
+Persist  document  binary  content  in  storage  service  and  link  it  to  document  metadata.  
+5  
+Document  Management  
+Document  Status  Management  
+Manage  document  lifecycle  status  transitions  (Pending_Review,  Reviewing,  Pending_Approve,  Active,  Rejected,  Deleted).  
+6  
+Document  Management  
+Document  Activation  
+Activate  approved  documents  and  make  them  available  for  search,  view,  and  download.  
+22
+
+===== PAGE 23 =====
+7  
+Document  Management  
+Document  Deletion  
+Perform  deletion  of  documents  and  ensure  removed  documents  are  no  longer  retrievable.  
+8  
+Document  Management  
+Document  Search  Indexing  
+Index  document  metadata  and  content  to  support  search  and  filtering  without  UI  dependency.  
+9  
+Document  Management  
+Document  Retrieval  Service  
+Retrieve  document  metadata  and  content  for  view,  download,  or  processing  requests.  
+10  
+Review  Document  
+Review  Request  Creation  
+Create  review  request  records  when  a  reviewer  is  assigned  to  a  document.  
+11  
+Review  Document  
+Review  Request  Status  Handling  
+Update  review  request  statuses  (Pending,  Accepted,  Rejected,  Expired)  based  on  system  rules.  
+12  
+Review  Document  
+Review  Result  Creation  
+Persist  review  results  submitted  by  reviewers  and  link  them  to  documents  and  review  requests.  
+13  
+Review  Document  
+Review  Result  Approval  
+Process  admin  approval  or  rejection  of  review  results  and  update  related  document  status.  
+14  
+Review  Document,  Common  
+Review  Assignment  Notification  
+Send  notifications  when  reviewers  are  assigned  or  review  results  are  approved/rejected.  
+15  
+Document  Management  
+Read  History  Tracking  
+Log  document  read/view  events  for  user  access  history.  
+16  
+Policy  &  Configuration  
+Review  History  Tracking  
+Maintain  immutable  records  of  completed  review  actions  for  compliance  and  traceability.  
+17  
+Document  Management  
+Upload  Performance  Handling  
+Ensure  upload  requests  are  processed  within  SLA  under  normal  and  peak  load.  
+18  
+Document  Management,  Review  Document  
+Concurrency  Control  
+Prevent  data  inconsistency  during  simultaneous  uploads,  reviews,  or  approvals.  
+23
+
+===== PAGE 24 =====
+1.5  Entity  Relationship  Diagram  
+ 
+Entities  Description  
+Table  7  –  Entity  Relationship  Diagram  #  Entity  Description  1  Reader  A  user  who  reads  documents  in  the  system.  A  Reader  can  upload  documents,  create  saved  lists,  comment,  vote,  and  report  documents.  Each  Reader  has  a  fullName  and  points  (accumulated  score).  
+2  SavedList  A  list  of  saved  documents  created  by  a  Reader.  Each  list  has  a  unique  name  and  belongs  to  a  specific  Reader.  
+3  SavedDocument  A  linking  entity  between  SavedList  and  Document,  representing  which  documents  are  saved  in  which  lists.  
+4  Document  A  document  uploaded  to  the  system.  It  contains  information  about  the  uploader,  title,  and  premium  status.  A  Document  may  belong  to  an  Organization  and  is  categorized  by  Domain  and  
+24
+
+===== PAGE 25 =====
+Specialization.  
+5  Report  A  violation  report  created  by  a  Reader  for  a  document.  It  contains  the  report  reason.  
+6  Comment  A  comment  made  by  a  Reader  on  a  document.  It  contains  the  comment  content.  
+7  Vote  A  rating  (upvote/downvote)  given  by  a  Reader  to  a  document.  It  contains  a  value  (+1  or  -1).  
+8  Domain  A  field  or  industry  used  to  classify  documents  (e.g.,  IT,  Healthcare,  Economics).  It  has  a  name  and  a  code.  One  Domain  can  contain  multiple  Specializations.  
+9  Specialization  A  sub-field  within  a  Domain  used  for  detailed  document  classification  (e.g.,  Web  Development  under  IT).  It  has  a  name  and  a  code.  
+10  Tag  A  label  used  to  tag  documents  to  support  searching  and  categorization.  Each  Tag  has  a  unique  name.  
+11  Organization  An  organization  or  institution  in  the  system.  It  can  own  multiple  documents  and  contains  a  name  and  contact  email.  
+12  Business  Admin  A  business  administrator  of  the  system.  Has  the  authority  to  assign  Reviewers  to  premium  documents  that  require  review.  Identified  by  fullName.  
+13  Reviewer  A  person  responsible  for  reviewing  premium  documents.  Has  a  fullName  and  credentials  (professional  certificates  or  qualifications).  Receives  review  requests  from  the  Business  Admin.  
+14  Review  Request  A  request  created  by  a  Business  Admin  to  assign  a  document  to  a  Reviewer  for  evaluation.  Contains  documentId,  reviewerId,  and  expiry  date.  
+15  ReviewResult  The  result  of  a  document  review  submitted  by  a  Reviewer.  Contains  the  decision  (isAccept),  a  review  report  file,  and  review  comments.  
+ 
+2.  Use  Case  Specifications  2.1  Common  2.1.1  Register  As  Reader  
+ 
+Table  8  –  Use  Case  Specifications   –  Register  As  Reader  
+25
+
+===== PAGE 26 =====
+ID  and  Name  CM1  -  Register  As  Reader  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Date  of  birth  -  Email  -  Password  -  Confirm  Password  
+2  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+3  The  system  validates  the  inputs.  
+4  The  system  sends  verification  email  for  user.  
+5  
+The  system  creates  a  new  READER  account  with  status  PENDING_EMAIL_VERIFY.  
+6  The  system  displays  a  success  message.  
+Alternative  Flows  None  
+Exceptions  CM1E1.  Invalid  input:  Step  5:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR13,  BR143  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+26
+
+===== PAGE 27 =====
+2.1.2  Register  As  Reviewer  
+ 
+Table  9  –  Use  Case  Specifications   –  Register  As  Reviewer  ID  and  Name  CM2  -  Register  As  Reviewer  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Date  of  birth  -  Email  -  Password  -  Confirm  Password  
+2  User  choose  to  Register  as  a  Reviewer  
+3  System  displays  reviewer  input  section  for  user  
+4  
+User  inputs  information:  -  ORCID  -  Education  Level  -  Domains  -  Review  Specialization  -  Reference  Organization  Name  -  Reference  Organization  Email  -  Verified  Background  Upload  
+5  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+6  The  system  validates  the  inputs.  
+7  The  system  sends  email  verification  for  user.  
+8  
+The  system  creates  a  new  REVIEWER  account  with  status  PENDING_EMAIL_VERIFY.  
+27
+
+===== PAGE 28 =====
+9  The  system  displays  a  success  message.  
+Alternative  Flows  None  
+Exceptions  CM2E1.  Invalid  input:  Step  8:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR13,  BR160,  BR161,  BR20  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.3  Register  As  Organization  Admin  
+ 
+Table  10  –  Use  Case  Specifications   –  Register  As  Organization  Admin  ID  and  Name  CM3  -  Register  As  Organization  Admin  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Email  -  Date  of  birth  -  Password  -  Confirm  Password  
+2  User  choose  to  Register  as  an  Organization  Admin  
+3  System  displays  organization  input  section  for  user  
+28
+
+===== PAGE 29 =====
+4  
+User  inputs  information:  -  Organization  Name  -  Organization  Type  -  Registration  Number  -  Organization  Email  -  Hotline  -  Address  -  Logo  -  Organization  Certificate  Upload  
+5  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+6  The  system  validates  the  inputs.  
+7  The  system  sends  email  verification  for  user.  
+8  
+The  system  creates  a  new  ORGANIZATION  ADMIN  account  with  status  PENDING_EMAIL_VERIFY.  
+9  The  system  displays  a  success  message.  
+Alternative  Flows  None  
+Exceptions  CM3E1.  Invalid  input:  Step  8:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR48,  BR49,  BR13,  BR167,  BR20  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.4.1  Login  as  Normal  user  
+ 
+Table  11  –  Use  Case  Specifications   –  Login  as  Normal  user  ID  and  Name  CM4  -  Login  as  Normal  User  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  None  
+29
+
+===== PAGE 30 =====
+Trigger  User  clicks  "Sign  In"  link  in  "Sign  up"  page/  "Sign  In"  button  from  Landing  Page  or  access  through  Login  URL  
+Description  This  use  case  allows  users  to  log  in  to  the  system  and  use  system  service.  
+Preconditions  -  The  account  must  already  be  registered.  
+Postconditions  -  The  user  is  authenticated  and  granted  access.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Sign  In"  page  
+2  User  choose  role  to  login  
+3  User  enters  email  and  password.  
+4  The  system  validates  account  input.  
+5  
+The  system  redirects  user  to:  -  Home  Page  (Reader)  -  Reviewer  Dashboard  (Reviewer)  -  Organization  Dashboard  (Organization  Admin)  
+Alternative  Flows  None  
+Exceptions  CM4E1.  The  user  is  in  deleted  status.  Step  4.  The  system  displayed  error  message:  "Invalid  account".  CM4E2.  The  user  is  unverified  by  the  BA.  Step  4.  The  system  displayed  error  message:  "You  need  to  wait  for  admin  verification."  CM4E3.  User  inputs  account  not  exists  in  the  system.  Step  4.  The  system  displayed  error  message:  "Invalid  account"  
+Frequency  of  Use  High  
+Business  Rules  BR149  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.4.2  Login  as  Admin  
+ 
+Table  12  –  Use  Case  Specifications   –  Login  as  Admin  
+30
+
+===== PAGE 31 =====
+ID  and  Name  CM5  -  Login  as  Admin  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  None  
+Trigger  User  access  Admin  Sign  In  Page  through  URL  
+Description  This  use  case  allows  users  to  log  in  to  the  system  and  use  system  service  as  admin  privilege.  
+Preconditions  -  The  account  must  already  be  registered.  
+Postconditions  -  The  user  is  authenticated  and  granted  access.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Admin  Sign  In"  page  
+2  User  choose  role  to  login  
+3  User  enters  email  and  password.  
+4  The  system  validates  account  input.  
+5  
+The  system  redirects  user  to:  -  BA  Dashboard  (Business  Admin)  -  SA  Dashboard  (System  Admin)  
+Alternative  Flows  None  
+Exceptions  CM5E1.  User  inputs  account  not  exists  in  the  system.  Step  4.  The  system  displayed  error  message:  "Invalid  account"  
+Frequency  of  Use  High  
+Business  Rules  None  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.5  Reset  Password  
+ 
+Table  13  –  Use  Case  Specifications   –  Reset  Password  ID  and  Name  CM6  -  Reset  password  
+Created  By  QuanNT  Date  Created  18/09/2025  
+31
+
+===== PAGE 32 =====
+Primary  Actor  Guest  Secondary  Actors  None  
+Trigger  User  clicks  "Forgot  Password"  link  in  "Login"  page  or  access  through  the  Forgot  Password  URL  
+Description  This  use  case  allows  users  to  reset  their  password  by  verifying  their  identity  with  email,  followed  by  OTP  confirmation.  
+Preconditions  -  The  user  has  a  registered  account.  
+Postconditions  The  password  is  successfully  reset.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Forgot  Password  -  Enter  Email"  Page  
+2  User  enters  registered  email.  
+3  User  clicks  "Send  OTP"  button.  
+4  The  system  validates  user  email.  
+5  The  system  sends  an  OTP  to  the  registered  email.  
+6  
+The  system  redirects  user  to  the  "Forgot  Password  -  Enter  OTP"  Page  with  message  "Please  check  your  email.  We  have  sent  an  OTP  for  you.".  
+7  The  user  enters  the  OTP.  
+8  The  user  clicks  "Verify  OTP"  button.  
+9  The  system  validates  OTP.  
+10  The  system  redirects  user  to  the  "Reset  Password"  Page.  
+11  
+The  user  inputs  the  Reset  Password  form:  -  New  Password  -  Confirm  New  Password  
+12  The  user  clicks  "Reset  Password"  button.  
+13  The  system  verifies  the  password  input.  
+14  The  system  saves  the  user  new  password.  
+15  
+The  system  displays  message:  "Your  password  is  reset  successfully."  to  the  user.  
+Alternative  Flows  None  
+32
+
+===== PAGE 33 =====
+Exceptions  CM6E1.  Email  does  not  exist  in  the  system  Step  5.  The  system  displays  message:  "Email  does  not  exist  in  the  system".  CM6E2.  OTP  is  incorrect  5  times.  Step  10.  The  system  updates  the  user  status  to  locked.  Step  11.  The  system  displays  message:  "Your  account  is  locked  because  of  too  many  times  trying.  Please  contact  admin  if  needed.".  CM6E3.  OTP  expired  Step  10.  The  system  displays  message:  "OTP  expired.  Click  Resend  OTP  button  to  receive  new  OTP."  CM6E4.  OTP  is  incorrect  Step  10.  The  system  displays  message:  "OTP  is  incorrect.".  
+Frequency  of  Use  Medium  
+Business  Rules  BR153,  BR155  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.6  View  Profile  
+ 
+Table  14  –  Use  Case  Specifications   –  View  Profile  ID  and  Name  CM7  -  View  profile  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer  Secondary  Actors  None  
+Trigger  User  selects  the  "Profile"  option  in  the  menu  or  access  through  URL  
+Description  This  use  case  allows  a  user  to  view  their  personal  account  details.  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  None  
+Normal  Flows  Step  Step  Details  
+1  The  user  logs  in  and  selects  "Profile".  
+2  
+The  system  retrieves  the  user’s  information  from  the  database.  
+3  The  system  displays  the  information  (including  name,  
+33
+
+===== PAGE 34 =====
+dob,  email,  username,  avatar).  
+Alternative  Flows  None  
+Exceptions  
+CM7E1.  Session  timeout  →  The  system  requests  the  member  to  log  in  again.  
+Frequency  of  Use  Simple  
+Business  Rules  BR10,  BR11  
+Other  Information  
+None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+2.1.7  Change  Profile  
+ 
+Table  15  –  Use  Case  Specifications   –  Change  Profile  ID  and  Name  CM8  -  Change  profile  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer  Secondary  Actors  None  
+Trigger  User  click  to  the  "Update  Profile"  button  in  the  Profile  page  or  access  through  URL  
+Description  This  use  case  allows  a  user  to  updates  profile  information.  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  -  The  user’s  information  is  updated  in  the  system.  -  The  Profile  is  displayed  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+The  user  click  the  "Update  Profile"  button  on  the  profile  page.  
+2  
+The  system  displays  a  form  for  editing  personal  information  Reader  ->  (name,  dob),  Reivewer  ->  (name,  dob,  ORCID,  education  level,  Organization  Name,  Organization  Email).  
+3  
+The  user  updates  that  information  retrived  and  clicks  "Update  profile."  button  
+4  The  user  clicks  "Update  profile"  button  
+34
+
+===== PAGE 35 =====
+5  The  system  validates  the  entered  data.  
+6  The  system  updates  the  information  in  the  database.  
+7  
+The  system  displays  a  success  message  and  shows  the  updated  profile  information.  
+Alternative  Flows  None  
+Exceptions  CM8E1.  Session  timeout  Step  5:  The  system  requests  the  member  to  log  in  again.  CM8E2.  Invalid  input  data  Step  6:  The  system  displays  an  error  message  and  requests  the  user  to  re-enter.  
+Frequency  of  Use  Medium  
+Business  Rules  BR12,BR13,  BR35  
+Other  Information  
+None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+2.1.8  Change  Email  
+ 
+Table  16  –  Use  Case  Specifications   –  Change  Email  ID  and  Name  CM9  -  Change  email  
+Created  By  NgocNTH  Date  Created  15/10/2025  
+Primary  Actor  Reader,  Reviewer,  Organization  Admin  
+Secondary  Actors  Google  Mail  Service  
+Trigger  User  click  to  the  "Change  Email"  button  in  the  Profile  page  or  access  through  URL  
+Description  Change  email  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  -  The  user’s  email  is  updated  in  the  system.  -  The  Profile  is  displayed  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+The  user  click  the  "Change  Email"  button  on  the  profile  page.  
+35
+
+===== PAGE 36 =====
+2  The  system  redirects  user  to  Change  Email  page.  
+3  
+The  user  inputs  information  for  changing  email:  -  Password  -  New  Email  
+4  The  user  clicks  "Change  Email"  button  
+5  The  system  validates  the  entered  data.  
+6  The  system  sends  OTP  through  new  email.  
+7  The  user  enters  OTP  and  clicks  "Verify".  
+8  The  system  validates  the  OTP.  
+9  The  system  updates  the  information  in  the  database.  
+10  
+The  system  displays  a  success  message  and  shows  the  updated  profile  information.  
+Alternative  Flows  None  
+Exceptions  CM9E1.  Session  timeout  Step  5:  The  system  requests  the  member  to  log  in  again.  CM9E2.  Invalid  input  data  Step  6:  The  system  displays  an  error  message  and  requests  the  user  to  re-enter.  Step  11.  The  system  displays  message:  "Your  account  is  locked  because  of  too  many  times  trying.  Please  contact  admin  if  needed.".  CM9E3.  OTP  expired  Step  10.  The  system  displays  message:  "OTP  expired.  Click  Resend  OTP  button  to  receive  new  OTP."  CM9E4.  OTP  is  incorrect  Step  10.  The  system  displays  message:  "OTP  is  incorrect.".  
+Frequency  of  Use  Medium  
+Business  Rules  BR41  
+Other  Information  
+None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+2.1.9  Change  Password  
+ 
+Table  17  –  Use  Case  Specifications   –  Change  Password  
+36
+
+===== PAGE 37 =====
+ID  and  Name  CM10  -  Change  password  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Reader,  Reviewer,  Organization  Admin  Secondary  Actors  None  
+Trigger  User  click  to  the  "Change  Password"  button  in  the  Profile  page  or  access  through  URL  
+Description  This  use  case  allows  members  to  change  their  current  password  with  validation  and  security  rules.  
+Preconditions  -  The  user  must  be  logged  in.  -  The  current  password  must  be  correct.  
+Postconditions  The  password  is  successfully  updated.  
+Normal  Flows  Step  Step  Details  
+1  
+User  click  to  the  "Change  Password"  button  in  the  Profile  page.  
+ 
+2  
+The  system  redirects  user  to  the  Change  Password  Page  
+3  
+User  enters  information  to  change  password:  -  Old  Password  -  New  Password  -  Confirm  Password  
+4  User  click  to  the  "Change  Password"  button.  
+5  The  system  validates  user  input.  
+6  The  system  updates  the  password.  
+7  The  system  displays  success  message  to  the  user.  
+Alternative  Flows  None  
+Exceptions  CM10E1.  Session  timeout  Step  5:  The  system  requests  re-login.  CM10E2.  User  old  password  is  incorrect  Step  6.  The  system  displays  message:  "Old  Password  is  incorrect."  to  the  user.  CM10E3.  New  password  does  not  match  business  rule  Step  6.  The  system  displays  error  message  
+Frequency  of  Use  Medium  
+Business  Rules  BR42  
+37
+
+===== PAGE 38 =====
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+2.1.10  Delete  Account  
+ 
+Table  18  –  Use  Case  Specifications   –  Delete  Account  ID  and  Name  CM11  -  Delete  Account  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer  Secondary  Actors  None  
+Trigger  User  click  the  "Delete  Account"  button  from  the  profile  page.  
+Description  User  deletes  their  own  account  via  confirmation  dialog  and  password  entry.  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  -  The  account  is  marked  for  deletion  and  locked.  -  Premium  documents  are  retained;  public  documents  are  removed.  
+Normal  Flows  Step  Step  Details  
+1  User  selects  "Delete  Account"  from  profile.  
+2  
+The  system  displays  a  confirmation  dialog  requesting  User  to  enter  their  password.  
+3  User  enters  password  and  confirms  deletion.  
+4  The  system  validates  the  deletion.  
+5  
+The  system  marks  the  account  as  "deleted"  locks  the  account.  
+6  
+The  system  displays  successful  deletion  message  to  the  user.  
+7  The  system  logs  out  the  user.  
+8  The  system  redirects  the  user  to  the  home  page.  
+Alternative  Flows  None  
+Exceptions  
+CM11E1.  Session  timeout  →  The  system  requests  the  member  to  log  in  again.  CM11E2.  Incorrect  password  
+38
+
+===== PAGE 39 =====
+Step  5.  The  system  displays  an  error  message  and  requests  re-entry.  
+Frequency  of  Use  Low  
+Business  Rules  BR14,  BR16  
+Other  Information  
+None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+2.1.11  Create  Support  Ticket  
+ 
+Table  19  –  Use  Case  Specifications   –  Create  Support  Ticket  ID  and  Name  CM12  -  Create  Support  Ticket  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer,  Organization  Admin,  Guest  
+Secondary  Actors  None  
+Trigger  User  selects  the  "Create  Support  Ticket"  option  related  to  account  issues  from  the  menu  or  through  the  Create  Support  Ticket  URL.  
+Description  This  use  case  allows  a  user  to  contact  admin  for  account-related  functions.  
+Preconditions  -  The  user  must  be  logged  into  the  system.  
+Postconditions  -  A  support  request  is  sent  to  the  business  admin.  
+Normal  Flows  Step  Step  Details  
+1  The  user  selects  "Create  Support  Ticket"  on  the  menu.  
+2  
+The  system  displays  a  form  for  the  user  to  choose  the  issue  type  and  enter  required  details.  
+3  The  user  enters  the  details.  
+4  The  user  clicks  button  "Send".  
+5  The  system  saves  the  issue.  
+6  
+The  system  displays  a  confirmation  message  to  the  member.  
+Alternative  Flows  None  
+39
+
+===== PAGE 40 =====
+Exceptions  
+CM12E1.  Session  timeout  →  The  system  requests  the  member  to  log  in  again.  
+Frequency  of  Use  Medium  
+Business  Rules  BR22  
+Other  Information  None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+2.1.12  View  Notification  
+ 
+Table  20  –  Use  Case  Specifications   –  View  Notification  ID  and  Name  CM13  -  View  notification  
+Created  By  NgocNTH  Date  Created  15/10/2025  
+Primary  Actor  Reader,  Reviewer,  BA,  SA,  Organization  Admin  Secondary  Actors  None  
+Trigger  User  clicks  the  Notification  icon  from  the  menu  
+Description  This  use  case  allows  a  member  to  view  system  notifications  such  as  document  approvals,  comments,  tag  approvals,  purchases,  or  system  updates.  
+Preconditions  -  The  user  must  be  logged  in.  -  Notifications  exist  in  the  system  for  that  member.  
+Postconditions  -  Notifications  are  displayed  to  the  member.  -  Unread  notifications  are  marked  as  read  once  viewed.  
+Normal  Flows  Step  Step  Details  
+1  
+User  clicks  the  notification  icon  or  navigates  to  the  Notification  page  
+2  
+System  retrieves  top  5  notifications  related  to  the  member,  sorted  by  most  recent.  
+3  
+System  displays  notifications  with  details:  -  Title  /  Summary  -  Timestamp  -  Read/Unread  status.  
+40

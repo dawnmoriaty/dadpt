@@ -6,9 +6,11 @@ Zero code per tool — everything from database config.
 
 from __future__ import annotations
 
+import asyncio
 from typing import Any
+from urllib.parse import urlencode
+from urllib.request import urlopen
 
-import aiohttp
 import grpc
 import json
 import structlog
@@ -77,53 +79,64 @@ class ToolFactory:
         if not origin or not destination or not date:
             return '{"error": "Missing origin/destination/date"}'
 
-        async with aiohttp.ClientSession() as session:
-            origin_id = await self._resolve_location_id(session, origin)
-            destination_id = await self._resolve_location_id(session, destination)
-            if not origin_id or not destination_id:
-                return '{"trips": [], "total": 0}'
+        origin_ids = await self._resolve_location_candidates(origin)
+        destination_ids = await self._resolve_location_candidates(destination)
+        if not origin_ids or not destination_ids:
+            return '{"trips": [], "total": 0}'
 
-            params = {
-                "originId": origin_id,
-                "destinationId": destination_id,
-                "departureDate": date,
-                "minSeats": passengers,
-            }
-            async with session.get(f"{self._grpc_target}/api/v1/trips", params=params) as resp:
-                try:
-                    raw = await resp.json()
-                except Exception:
-                    return await resp.text()
+        for origin_id in origin_ids:
+            for destination_id in destination_ids:
+                params = {
+                    "originId": origin_id,
+                    "destinationId": destination_id,
+                    "departureDate": date,
+                    "minSeats": passengers,
+                }
+                raw = await self._http_get_json(f"{self._grpc_target}/api/v1/trips", params)
                 if isinstance(raw, dict):
                     data = raw.get("data", {})
                     items = data.get("items", []) if isinstance(data, dict) else []
                     total = data.get("total", len(items)) if isinstance(data, dict) else len(items)
-                    return json.dumps({"trips": items, "total": total})
-                return json.dumps({"trips": [], "total": 0})
+                    if items:
+                        return json.dumps({"trips": items, "total": total})
+        return json.dumps({"trips": [], "total": 0})
 
     async def _get_locations_http(self, **kwargs: Any) -> str:
         query = str(kwargs.get("query", "")).strip()
         if not query:
             return '{"locations": []}'
-        params = {"q": query}
-        async with aiohttp.ClientSession() as session:
-            async with session.get(
-                f"{self._grpc_target}/api/v1/locations/search", params=params
-            ) as resp:
-                payload = await resp.text()
-                return payload
+        payload = await self._http_get_text(f"{self._grpc_target}/api/v1/locations/search", {"q": query})
+        return payload
 
-    async def _resolve_location_id(self, session: aiohttp.ClientSession, query: str) -> int | None:
+    async def _resolve_location_candidates(self, query: str) -> list[int]:
         params = {"q": query}
-        async with session.get(f"{self._grpc_target}/api/v1/locations/search", params=params) as resp:
-            try:
-                data = await resp.json()
-            except Exception:
-                return None
+        data = await self._http_get_json(f"{self._grpc_target}/api/v1/locations/search", params)
         items = data.get("data", []) if isinstance(data, dict) else []
         if not items:
-            return None
-        return items[0].get("id")
+            return []
+
+        candidates: list[int] = []
+        for item in items[:8]:
+            location_id = item.get("id") if isinstance(item, dict) else None
+            if isinstance(location_id, int) and location_id not in candidates:
+                candidates.append(location_id)
+        return candidates
+
+    @staticmethod
+    async def _http_get_text(url: str, params: dict[str, Any]) -> str:
+        def _fetch() -> str:
+            query = urlencode(params)
+            with urlopen(f"{url}?{query}") as response:  # noqa: S310
+                return response.read().decode("utf-8")
+
+        return await asyncio.to_thread(_fetch)
+
+    async def _http_get_json(self, url: str, params: dict[str, Any]) -> dict[str, Any] | list[Any] | str:
+        raw = await self._http_get_text(url, params)
+        try:
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            return raw
 
     def create_tool(self, tool_config: dict[str, Any]) -> StructuredTool:
         """Convert a tool_definition dict → LangChain StructuredTool.

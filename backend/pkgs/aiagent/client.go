@@ -22,11 +22,14 @@ type ChatRequest struct {
 
 // ChatResponse represents the AI agent's response.
 type ChatResponse struct {
-	Message      string     `json:"message"`
-	Status       string     `json:"status"` // completed | paused | error
-	SessionID    string     `json:"session_id"`
-	WorkflowSlug string     `json:"workflow_slug,omitempty"`
-	ToolCalls    []ToolCall `json:"tool_calls,omitempty"`
+	Message      string           `json:"message"`
+	Status       string           `json:"status"` // completed | paused | error
+	SessionID    string           `json:"session_id"`
+	WorkflowSlug string           `json:"workflow_slug,omitempty"`
+	ToolCalls    []ToolCall       `json:"tool_calls,omitempty"`
+	UiActions    []map[string]any `json:"ui_actions,omitempty"`
+	TraceID      string           `json:"trace_id,omitempty"`
+	Metrics      map[string]any   `json:"metrics,omitempty"`
 }
 
 // ToolCall represents a tool invocation log entry.

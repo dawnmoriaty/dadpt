@@ -1,0 +1,260 @@
+﻿===== 001_initial_schema.sql =====
+5: CREATE TABLE users (
+6: id BIGSERIAL PRIMARY KEY,
+7: phone VARCHAR(20) UNIQUE NOT NULL,
+8: password_hash VARCHAR(255) NOT NULL,
+9: full_name VARCHAR(100) NOT NULL,
+10: email VARCHAR(100),
+11: role VARCHAR(20) DEFAULT 'customer', -- 'customer', 'admin', 'provider'
+12: created_at TIMESTAMPTZ DEFAULT NOW()
+16: CREATE TABLE providers (
+17: id SERIAL PRIMARY KEY,
+18: name VARCHAR(100) NOT NULL,     -- "Phương Trang"
+19: hotline VARCHAR(20),            -- "1900 6067"
+20: slug VARCHAR(100) UNIQUE,       -- "phuong-trang"
+21: policy_refund TEXT,             -- "Hủy trước 24h hoàn 70%..."
+22: is_active BOOLEAN DEFAULT TRUE
+26: CREATE TABLE bus_types (
+27: id SERIAL PRIMARY KEY,
+28: name VARCHAR(100) NOT NULL,     -- "Giường nằm 40 chỗ", "Limousine 24 phòng"
+29: total_seats INT NOT NULL,
+31: seat_layout JSONB NOT NULL
+35: CREATE TABLE buses (
+36: id SERIAL PRIMARY KEY,
+37: provider_id INT NOT NULL REFERENCES providers(id),
+38: bus_type_id INT NOT NULL REFERENCES bus_types(id),
+39: license_plate VARCHAR(20) UNIQUE NOT NULL, -- "51B-123.45"
+40: status VARCHAR(20) DEFAULT 'active'
+44: CREATE TABLE locations (
+45: id SERIAL PRIMARY KEY,
+46: name VARCHAR(255) NOT NULL, -- "Bến xe Miền Đông Mới"
+47: city VARCHAR(100) NOT NULL, -- "Hồ Chí Minh"
+48: address VARCHAR(255),
+49: keywords TEXT               -- "sai gon, hcm, quan 9" (Hỗ trợ Search)
+53: CREATE TABLE trips (
+54: id BIGSERIAL PRIMARY KEY,
+55: provider_id INT NOT NULL REFERENCES providers(id),
+56: bus_id INT NOT NULL REFERENCES buses(id),
+59: origin_id INT NOT NULL REFERENCES locations(id),
+60: destination_id INT NOT NULL REFERENCES locations(id),
+62: departure_time TIMESTAMPTZ NOT NULL,
+63: arrival_time TIMESTAMPTZ NOT NULL,
+66: base_price DECIMAL(10, 2) NOT NULL,        -- Giá gốc: 300.000
+67: price_modifier DECIMAL(3, 2) DEFAULT 1.0,  -- Hệ số AI: 1.2 (Cao điểm), 0.9 (Thấp điểm)
+68: is_hot_deal BOOLEAN DEFAULT FALSE,         -- Cờ để FE hiển thị icon 🔥
+71: pickup_points JSONB NOT NULL DEFAULT '[]',
+72: dropoff_points JSONB NOT NULL DEFAULT '[]',
+75: booked_seats TEXT[] DEFAULT '{}', -- Mảng các ghế đã bán: ['A01', 'B02']
+76: available_seats INT NOT NULL,     -- Cache số lượng ghế trống để filter nhanh
+78: status VARCHAR(20) DEFAULT 'scheduled', -- scheduled, running, completed, cancelled
+79: created_at TIMESTAMPTZ DEFAULT NOW()
+83: CREATE TABLE bookings (
+84: id BIGSERIAL PRIMARY KEY,
+85: code VARCHAR(12) UNIQUE NOT NULL, -- "VX123456" (Mã vé)
+87: trip_id BIGINT NOT NULL REFERENCES trips(id),
+88: user_id BIGINT REFERENCES users(id), -- Nullable (Cho phép khách vãng lai)
+91: guest_info JSONB NOT NULL,
+94: pickup_info JSONB NOT NULL,
+95: dropoff_info JSONB NOT NULL,
+97: seat_codes TEXT[] NOT NULL, -- ['A01', 'A02']
+99: total_amount DECIMAL(10, 2) NOT NULL,
+100: status VARCHAR(20) DEFAULT 'pending', -- pending -> paid -> cancelled
+101: payment_method VARCHAR(20),           -- vnpay, momo
+103: created_at TIMESTAMPTZ DEFAULT NOW(),
+104: updated_at TIMESTAMPTZ DEFAULT NOW()
+108: CREATE TABLE outbox_events (
+109: id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+110: topic VARCHAR(100) NOT NULL, -- "booking.created", "booking.paid"
+111: payload JSONB NOT NULL,
+112: status VARCHAR(20) DEFAULT 'pending', -- pending, processed, failed
+113: retry_count INT DEFAULT 0,
+114: created_at TIMESTAMPTZ DEFAULT NOW(),
+115: processed_at TIMESTAMPTZ
+119: CREATE INDEX idx_trips_search ON trips(origin_id, destination_id, departure_time);
+120: CREATE INDEX idx_trips_provider ON trips(provider_id);
+121: CREATE INDEX idx_bookings_trip ON bookings(trip_id);
+122: CREATE INDEX idx_bookings_user ON bookings(user_id);
+123: CREATE INDEX idx_outbox_pending ON outbox_events(status) WHERE status = 'pending';
+130: DROP INDEX IF EXISTS idx_outbox_pending;
+131: DROP INDEX IF EXISTS idx_bookings_user;
+132: DROP INDEX IF EXISTS idx_bookings_trip;
+133: DROP INDEX IF EXISTS idx_trips_provider;
+134: DROP INDEX IF EXISTS idx_trips_search;
+136: DROP TABLE IF EXISTS outbox_events;
+137: DROP TABLE IF EXISTS bookings;
+138: DROP TABLE IF EXISTS trips;
+139: DROP TABLE IF EXISTS locations;
+140: DROP TABLE IF EXISTS buses;
+141: DROP TABLE IF EXISTS bus_types;
+142: DROP TABLE IF EXISTS providers;
+143: DROP TABLE IF EXISTS users;
+
+===== 002_add_username.sql =====
+3: ALTER TABLE users
+4: ADD COLUMN username VARCHAR(50) UNIQUE;
+7: CREATE INDEX idx_users_username ON users(username);
+12: DROP INDEX IF EXISTS idx_users_username;
+13: ALTER TABLE users DROP COLUMN IF EXISTS username;
+
+===== 20260203155205_add_image_urls.sql =====
+5: ALTER TABLE providers ADD COLUMN image_url VARCHAR(500);
+8: ALTER TABLE buses ADD COLUMN image_url VARCHAR(500);
+11: ALTER TABLE locations ADD COLUMN image_url VARCHAR(500);
+18: ALTER TABLE locations DROP COLUMN IF EXISTS image_url;
+19: ALTER TABLE buses DROP COLUMN IF EXISTS image_url;
+20: ALTER TABLE providers DROP COLUMN IF EXISTS image_url;
+
+===== 20260207000000_add_booking_version.sql =====
+5: ALTER TABLE trips ADD COLUMN IF NOT EXISTS version INT DEFAULT 1;
+8: ALTER TABLE bookings ADD COLUMN IF NOT EXISTS expires_at TIMESTAMPTZ;
+11: CREATE INDEX IF NOT EXISTS idx_bookings_pending_expired ON bookings(status, expires_at)
+12: WHERE status = 'pending';
+19: DROP INDEX IF EXISTS idx_bookings_pending_expired;
+20: ALTER TABLE bookings DROP COLUMN IF EXISTS expires_at;
+21: ALTER TABLE trips DROP COLUMN IF EXISTS version;
+
+===== 20260211000000_add_payment_transactions.sql =====
+5: CREATE TABLE payment_transactions (
+6: id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+7: booking_id BIGINT NOT NULL REFERENCES bookings(id),
+8: order_code VARCHAR(50) UNIQUE NOT NULL,
+9: amount DECIMAL(10, 2) NOT NULL,
+10: status VARCHAR(20) DEFAULT 'pending',       -- pending, success, failed, cancelled
+11: payment_method VARCHAR(20),
+12: webhook_data JSONB,                          -- Raw webhook payload for audit
+13: created_at TIMESTAMPTZ DEFAULT NOW(),
+14: paid_at TIMESTAMPTZ
+17: CREATE INDEX idx_payment_tx_booking ON payment_transactions(booking_id);
+18: CREATE INDEX idx_payment_tx_order ON payment_transactions(order_code);
+19: CREATE INDEX idx_payment_tx_status ON payment_transactions(status) WHERE status = 'pending';
+26: DROP INDEX IF EXISTS idx_payment_tx_status;
+27: DROP INDEX IF EXISTS idx_payment_tx_order;
+28: DROP INDEX IF EXISTS idx_payment_tx_booking;
+29: DROP TABLE IF EXISTS payment_transactions;
+
+===== 20260301000000_seed_northern_vietnam.sql =====
+12: DELETE FROM payment_transactions;
+13: DELETE FROM outbox_events;
+14: DELETE FROM bookings;
+15: DELETE FROM trips;
+16: DELETE FROM buses;
+17: DELETE FROM bus_types;
+18: DELETE FROM providers;
+19: DELETE FROM locations;
+21: ALTER SEQUENCE locations_id_seq RESTART WITH 1;
+22: ALTER SEQUENCE providers_id_seq RESTART WITH 1;
+23: ALTER SEQUENCE bus_types_id_seq RESTART WITH 1;
+24: ALTER SEQUENCE buses_id_seq RESTART WITH 1;
+25: ALTER SEQUENCE trips_id_seq RESTART WITH 1;
+31: INSERT INTO locations (name, city, address, keywords) VALUES
+114: INSERT INTO providers (name, hotline, slug, policy_refund, is_active) VALUES
+133: INSERT INTO bus_types (name, total_seats, seat_layout) VALUES
+275: INSERT INTO buses (provider_id, bus_type_id, license_plate, status) VALUES
+347: INSERT INTO trips (provider_id, bus_id, origin_id, destination_id, departure_time, arrival_time, base_price, price_modifier, is_hot_deal, pickup_points, dropoff_points, available_seats, status) VALUES
+826: DELETE FROM trips WHERE id IN (SELECT id FROM trips ORDER BY id DESC);
+827: DELETE FROM buses;
+828: DELETE FROM bus_types;
+829: DELETE FROM providers;
+830: DELETE FROM locations;
+
+===== 20260317000000_add_refund_support.sql =====
+5: ALTER TABLE bookings ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
+8: ALTER TABLE payment_transactions ADD COLUMN IF NOT EXISTS refunded_at TIMESTAMPTZ;
+15: ALTER TABLE payment_transactions DROP COLUMN IF EXISTS refunded_at;
+16: ALTER TABLE bookings DROP COLUMN IF EXISTS refunded_at;
+
+===== 20260321000000_add_booking_refund_confirmation_fields.sql =====
+4: ALTER TABLE bookings
+5: ADD COLUMN IF NOT EXISTS refund_reference VARCHAR(100),
+6: ADD COLUMN IF NOT EXISTS refund_note TEXT;
+13: ALTER TABLE bookings
+14: DROP COLUMN IF EXISTS refund_note,
+15: DROP COLUMN IF EXISTS refund_reference;
+
+===== 20260322000001_add_payment_link_columns.sql =====
+4: ALTER TABLE payment_transactions
+5: ADD COLUMN IF NOT EXISTS checkout_url TEXT,
+6: ADD COLUMN IF NOT EXISTS qr_code TEXT;
+13: ALTER TABLE payment_transactions
+14: DROP COLUMN IF EXISTS qr_code,
+15: DROP COLUMN IF EXISTS checkout_url;
+
+===== 20260327090000_seed_transfer_test_window.sql =====
+9: INSERT INTO locations (name, city, address, keywords, image_url)
+53: ON CONFLICT DO NOTHING;
+56: INSERT INTO providers (name, hotline, slug, policy_refund, is_active, image_url)
+74: ON CONFLICT (slug) DO NOTHING;
+77: INSERT INTO bus_types (name, total_seats, seat_layout)
+116: ON CONFLICT DO NOTHING;
+119: INSERT INTO buses (provider_id, bus_type_id, license_plate, status, image_url)
+120: SELECT p.id, bt.id, s.license_plate, 'active', s.image_url
+128: JOIN providers p ON p.slug = s.provider_slug
+129: JOIN bus_types bt ON bt.name = s.bus_type_name
+130: WHERE NOT EXISTS (
+136: INSERT INTO trips (
+222: JOIN providers p ON p.slug = t.provider_slug
+223: JOIN buses b ON b.license_plate = t.license_plate
+224: JOIN locations o ON o.name = t.origin_name
+225: JOIN locations d ON d.name = t.destination_name;
+228: INSERT INTO trips (
+285: JOIN providers p ON p.slug = t.provider_slug
+286: JOIN buses b ON b.license_plate = t.license_plate
+287: JOIN locations o ON o.name = t.origin_name
+288: JOIN locations d ON d.name = t.destination_name;
+296: DELETE FROM payment_transactions
+297: WHERE booking_id IN (
+298: SELECT b.id
+299: FROM bookings b
+300: JOIN trips t ON t.id = b.trip_id
+301: JOIN providers p ON p.id = t.provider_id
+302: WHERE p.slug IN ('seed-transfer-express', 'seed-transfer-limousine')
+303: AND t.departure_time >= TIMESTAMPTZ '2026-03-27 00:00:00+07'
+304: AND t.departure_time <= TIMESTAMPTZ '2026-04-11 23:59:59+07'
+307: DELETE FROM bookings
+308: WHERE trip_id IN (
+309: SELECT t.id
+310: FROM trips t
+311: JOIN providers p ON p.id = t.provider_id
+312: WHERE p.slug IN ('seed-transfer-express', 'seed-transfer-limousine')
+313: AND t.departure_time >= TIMESTAMPTZ '2026-03-27 00:00:00+07'
+314: AND t.departure_time <= TIMESTAMPTZ '2026-04-11 23:59:59+07'
+317: DELETE FROM trips
+318: WHERE provider_id IN (
+319: SELECT id FROM providers WHERE slug IN ('seed-transfer-express', 'seed-transfer-limousine')
+321: AND departure_time >= TIMESTAMPTZ '2026-03-27 00:00:00+07'
+322: AND departure_time <= TIMESTAMPTZ '2026-04-11 23:59:59+07';
+324: DELETE FROM buses
+325: WHERE license_plate IN ('30S-102.27', '30S-204.11', '15S-310.27', '14S-411.27');
+327: DELETE FROM bus_types
+328: WHERE name IN ('Seed Sleeper 34', 'Seed Limousine 22');
+330: DELETE FROM providers
+331: WHERE slug IN ('seed-transfer-express', 'seed-transfer-limousine');
+333: DELETE FROM locations
+334: WHERE keywords ILIKE '%seed-transfer-2026%';
+
+===== 20260327113000_fix_blank_trip_points.sql =====
+4: UPDATE trips AS t
+5: SET pickup_points = COALESCE(
+7: SELECT jsonb_agg(
+9: WHEN COALESCE(NULLIF(BTRIM(point->>'name'), ''), '') = ''
+10: THEN jsonb_set(point, '{name}', to_jsonb(o.name), true)
+11: ELSE point
+14: FROM jsonb_array_elements(COALESCE(t.pickup_points, '[]'::jsonb)) AS point
+18: FROM locations AS o
+19: WHERE o.id = t.origin_id
+20: AND EXISTS (
+22: FROM jsonb_array_elements(COALESCE(t.pickup_points, '[]'::jsonb)) AS point
+23: WHERE COALESCE(NULLIF(BTRIM(point->>'name'), ''), '') = ''
+26: UPDATE trips AS t
+27: SET dropoff_points = COALESCE(
+29: SELECT jsonb_agg(
+31: WHEN COALESCE(NULLIF(BTRIM(point->>'name'), ''), '') = ''
+32: THEN jsonb_set(point, '{name}', to_jsonb(d.name), true)
+33: ELSE point
+36: FROM jsonb_array_elements(COALESCE(t.dropoff_points, '[]'::jsonb)) AS point
+40: FROM locations AS d
+41: WHERE d.id = t.destination_id
+42: AND EXISTS (
+44: FROM jsonb_array_elements(COALESCE(t.dropoff_points, '[]'::jsonb)) AS point
+45: WHERE COALESCE(NULLIF(BTRIM(point->>'name'), ''), '') = ''
+

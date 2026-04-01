@@ -23,18 +23,15 @@ type voicePlanRequest struct {
 }
 
 type voiceExecuteRequest struct {
-	TripID              *int64   `json:"tripId,omitempty"`
 	Origin              string   `json:"origin"`
 	Destination         string   `json:"destination"`
 	TravelDate          string   `json:"travelDate"`
 	SeatCount           int      `json:"seatCount"`
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
-	PaymentMethod       string   `json:"paymentMethod"`
 }
 
 type voicePipelineRequest struct {
-	Execute bool   `form:"execute"`
-	Payment string `form:"paymentMethod"`
+	Execute bool `form:"execute"`
 }
 
 // VoicePipeline handles full flow: transcribe -> parse (gRPC) -> plan/execute (Go backend logic).
@@ -131,18 +128,12 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	}
 
 	if req.Execute {
-		paymentMethod := strings.TrimSpace(req.Payment)
-		if paymentMethod == "" {
-			paymentMethod = "cod"
-		}
-
 		execPayload := voiceExecuteRequest{
 			Origin:              planPayload.Origin,
 			Destination:         planPayload.Destination,
 			TravelDate:          planPayload.TravelDate,
 			SeatCount:           planPayload.SeatCount,
 			SeatPreferenceOrder: planPayload.SeatPreferenceOrder,
-			PaymentMethod:       paymentMethod,
 		}
 
 		execResp, execErr := h.callInternalJSON(c, http.MethodPost, "/api/v1/bookings/voice/execute", execPayload)

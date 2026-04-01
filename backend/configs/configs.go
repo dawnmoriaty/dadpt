@@ -2,6 +2,7 @@ package configs
 
 import (
 	"os"
+	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
@@ -75,32 +76,32 @@ func LoadConfig() *Config {
 	}
 
 	cfg = Config{
-		Environment:               viper.GetString("ENVIRONMENT"),
-		HTTPPort:                  viper.GetInt("HTTP_PORT"),
-		BookingExpiryDuration:     viper.GetDuration("BOOKING_EXPIRY_DURATION"),
-		DatabaseURI:               viper.GetString("DATABASE_URI"),
-		RedisURI:                  viper.GetString("REDIS_URI"),
-		RedisPassword:             viper.GetString("REDIS_PASSWORD"),
-		RedisDB:                   viper.GetInt("REDIS_DB"),
-		RabbitMQURI:               viper.GetString("RABBITMQ_URI"),
-		KafkaEnabled:  viper.GetBool("KAFKA_ENABLED"),
-		KafkaBrokers:  viper.GetString("KAFKA_BROKERS"),
-		KafkaClientID: viper.GetString("KAFKA_CLIENT_ID"),
-		MinioEndpoint:             viper.GetString("MINIO_ENDPOINT"),
-		MinioAccessKey:            viper.GetString("MINIO_ACCESS_KEY"),
-		MinioSecretKey:            viper.GetString("MINIO_SECRET_KEY"),
-		MinioBucket:               viper.GetString("MINIO_BUCKET"),
-		MinioBaseURL:              viper.GetString("MINIO_BASE_URL"),
-		MinioUseSSL:               viper.GetBool("MINIO_USE_SSL"),
-		AuthSecret:                viper.GetString("AUTH_SECRET"),
-		AccessTokenDuration:       viper.GetDuration("ACCESS_TOKEN_DURATION"),
-		RefreshTokenDuration:      viper.GetDuration("REFRESH_TOKEN_DURATION"),
-		AIAgentGRPCAddr:           viper.GetString("AI_AGENT_GRPC_ADDR"),
-		PayOSClientID:             viper.GetString("PAYOS_CLIENT_ID"),
-		PayOSAPIKey:               viper.GetString("PAYOS_API_KEY"),
-		PayOSChecksumKey:          viper.GetString("PAYOS_CHECKSUM_KEY"),
-		PayOSReturnURL:            viper.GetString("PAYOS_RETURN_URL"),
-		PayOSCancelURL:            viper.GetString("PAYOS_CANCEL_URL"),
+		Environment:           viper.GetString("ENVIRONMENT"),
+		HTTPPort:              viper.GetInt("HTTP_PORT"),
+		BookingExpiryDuration: viper.GetDuration("BOOKING_EXPIRY_DURATION"),
+		DatabaseURI:           viper.GetString("DATABASE_URI"),
+		RedisURI:              viper.GetString("REDIS_URI"),
+		RedisPassword:         viper.GetString("REDIS_PASSWORD"),
+		RedisDB:               viper.GetInt("REDIS_DB"),
+		RabbitMQURI:           viper.GetString("RABBITMQ_URI"),
+		KafkaEnabled:          viper.GetBool("KAFKA_ENABLED"),
+		KafkaBrokers:          viper.GetString("KAFKA_BROKERS"),
+		KafkaClientID:         viper.GetString("KAFKA_CLIENT_ID"),
+		MinioEndpoint:         viper.GetString("MINIO_ENDPOINT"),
+		MinioAccessKey:        viper.GetString("MINIO_ACCESS_KEY"),
+		MinioSecretKey:        viper.GetString("MINIO_SECRET_KEY"),
+		MinioBucket:           viper.GetString("MINIO_BUCKET"),
+		MinioBaseURL:          viper.GetString("MINIO_BASE_URL"),
+		MinioUseSSL:           viper.GetBool("MINIO_USE_SSL"),
+		AuthSecret:            viper.GetString("AUTH_SECRET"),
+		AccessTokenDuration:   viper.GetDuration("ACCESS_TOKEN_DURATION"),
+		RefreshTokenDuration:  viper.GetDuration("REFRESH_TOKEN_DURATION"),
+		AIAgentGRPCAddr:       viper.GetString("AI_AGENT_GRPC_ADDR"),
+		PayOSClientID:         viper.GetString("PAYOS_CLIENT_ID"),
+		PayOSAPIKey:           viper.GetString("PAYOS_API_KEY"),
+		PayOSChecksumKey:      viper.GetString("PAYOS_CHECKSUM_KEY"),
+		PayOSReturnURL:        viper.GetString("PAYOS_RETURN_URL"),
+		PayOSCancelURL:        viper.GetString("PAYOS_CANCEL_URL"),
 	}
 
 	// Defaults
@@ -112,6 +113,9 @@ func LoadConfig() *Config {
 	}
 	if cfg.AIAgentGRPCAddr == "" {
 		cfg.AIAgentGRPCAddr = "localhost:50051"
+	}
+	if strings.HasPrefix(cfg.AIAgentGRPCAddr, "localhost:") {
+		cfg.AIAgentGRPCAddr = strings.Replace(cfg.AIAgentGRPCAddr, "localhost:", "127.0.0.1:", 1)
 	}
 	if cfg.KafkaBrokers == "" {
 		cfg.KafkaBrokers = "localhost:9092"

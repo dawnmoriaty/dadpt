@@ -3,7 +3,7 @@ import { toast } from 'sonner'
 
 import { upsertPendingBookingHistory } from '@/modules/booking'
 
-import type { VoiceExecuteResponse, VoicePipelineResponse, VoicePlanResponse } from '../types'
+import type { VoicePipelineResponse, VoicePlanResponse } from '../types'
 import { parseSeatPreferenceOrder, parseTranscriptToPlanInput } from '../utils/voice-parser'
 
 import { getVoiceErrorMessage, useVoiceExecute, useVoicePipeline, useVoicePlan } from './index'
@@ -73,31 +73,6 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             setLastTranscript(result.transcript)
             applyPipelinePlan(result.plan)
 
-            const executeFromPipeline = result.execute as VoiceExecuteResponse | undefined
-            if (executeFromPipeline?.bookingResult?.booking?.code) {
-                const paymentUrl = executeFromPipeline.bookingResult.paymentUrl
-                const bookingCode = executeFromPipeline.bookingResult.booking.code
-
-                upsertPendingBookingHistory(bookingCode, executeFromPipeline.bookingResult.orderCode)
-
-                setOrigin(executeFromPipeline.origin ?? '')
-                setDestination(executeFromPipeline.destination ?? '')
-                setTravelDate(executeFromPipeline.travelDate ?? '')
-                setSeatCount(executeFromPipeline.seatCodes?.length || 1)
-                setSeatPreferenceOrder(executeFromPipeline.seatCodes?.join(', ') ?? '')
-
-                if (executeFromPipeline.bookingResult.booking.paymentMethod === 'cod') {
-                    toast.success('Đã đặt vé tự động bằng giọng nói. Thanh toán khi lên xe.')
-                } else {
-                    toast.success('Đã đặt vé tự động từ giọng nói.')
-                }
-
-                if (paymentUrl) {
-                    await copyPaymentLink(paymentUrl)
-                    return
-                }
-            }
-
             const command = normalizePipelineCommand(result)
             if (command) {
                 setOrigin(command.origin)
@@ -107,7 +82,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 setSeatPreferenceOrder(command.seatPreferenceOrder.join(', '))
 
                 if (result.plan?.candidates?.length) {
-                    toast.success('Đã nhận diện và tìm được chuyến phù hợp.')
+                    toast.success('Đã nhận diện và gợi ý các chuyến phù hợp.')
                 } else {
                     toast.success('Đã nhận diện và phân tích giọng nói.')
                 }
@@ -229,7 +204,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         }
     }
 
-    const executeBooking = async () => {
+    const executeBooking = async (tripId?: number) => {
         if (executeLockRef.current) {
             return
         }
@@ -241,7 +216,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
         try {
             executeLockRef.current = true
             const result = await executeMutation.mutateAsync({
-                tripId: selectedTripId ?? undefined,
+                tripId: tripId ?? selectedTripId ?? undefined,
                 seatCount,
                 seatPreferenceOrder: parseSeatPreferenceOrder(seatPreferenceOrder),
                 paymentMethod: 'cod',
@@ -254,7 +229,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 return
             }
 
-            toast.success('Da dat chuyen gan nhat thanh cong.')
+            toast.success('Đã đặt vé cho chuyến đã chọn.')
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         } finally {

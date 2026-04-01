@@ -16,6 +16,8 @@ export interface TripUiActionItem {
     price?: number
     available_seats?: number
     status?: string
+    image_url?: string
+    description?: string
     tags?: Array<'best_price' | 'faster' | 'premium'>
     score_explain?: {
         reasons?: string[]
@@ -28,16 +30,52 @@ export interface TripUiActionItem {
         passengers?: number
         payment_method?: 'bank_transfer' | 'cod' | 'visa'
     }
+    buttons?: ChatActionButton[]
+    cta?: {
+        label: string
+        action: 'open_search' | 'prefill_message'
+        payload?: {
+            origin?: string
+            destination?: string
+            date?: string
+            passengers?: number
+            message?: string
+        }
+    }
+}
+
+export interface ChatActionButton {
+    label: string
+    action: 'open_url' | 'book_ticket' | 'open_search' | 'prefill_message'
+    value?: string | ChatActionButtonValue
+}
+
+export interface ChatActionButtonValue {
+    trip_id?: number
+    passengers?: number
+    payment_method?: 'bank_transfer' | 'cod' | 'visa'
+    origin?: string
+    destination?: string
+    date?: string
+    message?: string
+}
+
+export interface ChatQuickReplyOption {
+    label: string
+    value: string
 }
 
 export interface ChatUiAction {
     type: string
     title?: string
     items?: TripUiActionItem[]
+    options?: Array<string | ChatQuickReplyOption>
+    prompt?: string
     meta?: {
         origin?: string
         destination?: string
         date?: string
+        time?: string
         passengers?: number
     }
 }

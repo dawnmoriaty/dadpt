@@ -1,0 +1,1328 @@
+===== PAGE 1 =====
+CAPSTONE  PROJECT  REPORT  
+Report  1  –  Project  Introduction  
+ 
+READEE  _  Researching  and  developing  digital  
+education
+ 
+library
+ 
+platform
+ 
+integrating
+ 
+AI
+ 
+applications
+ 
+in
+ 
+quality
+ 
+control
+ 
+and
+ 
+document
+ 
+summaries
+ 
+ 
+ Researching  and  developing  digital  education  library  platform  integrating  AI  applications  in  quality  control  and  document  summaries.
+ 
+ 
+Group  Members  
+Nguyen  Tat  Quan              -  HE187203  Vu  Hong  Quang                 -  HE176765  To  Duc  Anh                         -  HE170025  Vo  Dinh  Hung                     -  HE186864  Nghiem  Thi  Hong  Ngoc    -  HE186888  
+Supervisor  Miss.  Nguyen  Thi  Nguyet  Project  Code  READEE  Group  Code  SEP490_G49  
+ 
+ 
+–
+ 
+Hanoi,
+ 
+September
+ 
+2025
+ 
+–
+ 
+1
+
+===== PAGE 2 =====
+Table  of  Contents  I.  Record  of  Changes ................................................................................................................................ 3 II.  Project  Introduction ............................................................................................................................ 4 1.  Overview ....................................................................................................................................... 4 1.1  Project  Information .............................................................................................................. 4 1.2  Project  Team ......................................................................................................................... 4 2.  Product  Background ...................................................................................................................... 4 3.  Existing  Systems ............................................................................................................................ 5 3.1  StuDocu ................................................................................................................................ 5 3.2  Viblo ..................................................................................................................................... 5 3.3  Course  Hero .......................................................................................................................... 6 3.4  Docsity .................................................................................................................................. 6 3.5  Academia .............................................................................................................................. 6 3.6  Scribd .................................................................................................................................... 6 3.7  TailieuVN ............................................................................................................................... 6 4.  Business  Opportunity .................................................................................................................... 7 5.  Software  Product  Vision ................................................................................................................ 7 6.  Project  Scope  &  Limitations .......................................................................................................... 8 6.1  Major  Features ..................................................................................................................... 8 6.2  Limitations  &  Exclusions ..................................................................................................... 10 
+ 
+2
+
+===== PAGE 3 =====
+I.  Record  of  Changes  
+Date  A*  M,  D  
+In  charge  Change  Description  
+20/09/2025  A  QuanNTHE187203  
+Create   -  Project  overview:  refer  item  1.  Overview -  Project  background:  refer  item  2.  Product  Background -  Research  of  existing  systems:  refer  item  3.  Existing  Systems  
+21/09/2025  A  QuanNTHE187203  
+Create  
+-  Business  Opportunity:  refer  item  4.  Business  Opportunity -  Software  product  vision:  refer  item  5.  Software  Product  Vision -  Project  scope  &  limitation:  refer  item  6.  Project  Scope  &  Limitations 
+10/12/2025  M  QuanNTHE187203  
+Update  -  Project  information:  refer  item  II.  Project  Introduction -  Update  feature  tree:  refer  item  6.1  Major  Features 
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+*A  -  Added  M  -  Modified  D  -  Deleted  
+ 
+ 
+3
+
+===== PAGE 4 =====
+II.  Project  Introduction  1.  Overview  1.1  Project  Information  •  Project  name:   Researching  and  developing  digital  education  library  platform  integrating  AI  applications  
+in
+ 
+quality
+ 
+control
+ 
+and
+ 
+document
+ 
+summaries •  Project  code:   READEE  •  Group  name:   SEP490_G49 •  Software  type:   
+Website  
+1.2  Project  Team  
+Full  Name  Role  Email  
+  Mobile  
+Nguyen  Thi  Nguyet   Lecturer  nguyetnt41@fe.edu.vn  0913566692  
+ Nguyen  Tat  Quan   Leader  quannthe187203@fpt.edu.vn  0829505619  
+ Vu  Hong  Quang   Member  quangvhhe176765@fpt.edu.vn  0385669226  
+ Vo  Dinh  Hung   Member  hungvdhe186864@fpt.edu.vn  0914421458  
+ Nghiem  Thi  Hong  Ngoc   Member  ngocnthhe186888@fpt.edu.vn  0898756885  
+ To  Duc  Anh   Member  anhtdhe170025@fpt.edu.vn  0395480412  
+ 
+2.  Product  Background  
+Technology  is  advancing  at  an  accelerating  pace,  and  with  it  the  imperative  for  digital  transformation  
+is
+ 
+gaining
+ 
+prominence.
+ 
+Education—despite
+ 
+its
+ 
+strategic
+ 
+importance—has
+ 
+yet
+ 
+to
+ 
+adopt
+ 
+digital
+ 
+transformation
+ 
+in
+ 
+a
+ 
+robust
+ 
+and
+ 
+systematic
+ 
+manner.
+ 
+Based
+ 
+on
+ 
+a
+ 
+clear-eyed
+ 
+appraisal
+ 
+of
+ 
+current
+ 
+conditions,
+ 
+together
+ 
+with
+ 
+market
+ 
+analysis
+ 
+and
+ 
+user-needs
+ 
+research,
+ 
+our
+ 
+team
+ 
+has
+ 
+identified
+ 
+digital
+ 
+libraries
+ 
+as
+ 
+a
+ 
+salient
+ 
+focus
+ 
+area.
+ 
+Although
+ 
+numerous
+ 
+solutions
+ 
+exist,
+ 
+they
+ 
+remain
+ 
+fragmented,
+ 
+insufficiently
+ 
+comprehensive,
+ 
+and
+ 
+often
+ 
+fail
+ 
+to
+ 
+address
+ 
+several
+ 
+core
+ 
+issues.
+ 
+Accordingly,  we  will  research  and  develop  a  digital-library  solution  that  elevates  document  quality  
+and
+ 
+places
+ 
+the
+ 
+user
+ 
+experience
+ 
+at
+ 
+the
+ 
+centre.
+ 
+By
+ 
+leveraging
+ 
+artificial
+ 
+intelligence,
+ 
+the
+ 
+platform
+ 
+will
+ 
+augment
+ 
+human
+ 
+effort,
+ 
+provide
+ 
+a
+ 
+richer
+ 
+corpus
+ 
+of
+ 
+high-quality
+ 
+references,
+ 
+and
+ 
+enhance
+ 
+the
+ 
+objectivity
+ 
+and
+ 
+reliability
+ 
+of
+ 
+the
+ 
+system
+ 
+as
+ 
+a
+ 
+whole.
+ 
+4
+
+===== PAGE 5 =====
+3.  Existing  Systems  
+Team  has  researched  and  given  the  following  existed  system  with  relation  of  educational  library  
+platform:
+ 
+-  StuDocu  _  Link  website -  Viblo  _  Link  website -  Course  Hero  _  Link  website -  Docsity  _  Link  website -  Academia  _   Link  website -  Scribd  _  Link  website -  TailieuVN  _  Link  website 
+Overall,  existing  systems  are  reasonably  well-organized  and  user-oriented,  yet  they  are  not  
+sufficiently
+ 
+tailored
+ 
+to
+ 
+the
+ 
+specific
+ 
+demands
+ 
+of
+ 
+a
+ 
+library
+ 
+platform.
+ 
+Although
+ 
+these
+ 
+products
+ 
+execute
+ 
+their
+ 
+chosen
+ 
+focus
+ 
+areas
+ 
+effectively,
+ 
+several
+ 
+hallmark
+ 
+features
+ 
+of
+ 
+a
+ 
+true
+ 
+library
+ 
+system
+ 
+are
+ 
+not
+ 
+articulated
+ 
+with
+ 
+clarity.
+ 
+Moreover,  with  respect  to  document  quality,  there  is  no  end-to-end  moderation  framework  in  place.  
+Current
+ 
+uses
+ 
+of
+ 
+artificial
+ 
+intelligence
+ 
+are
+ 
+largely
+ 
+confined
+ 
+to
+ 
+answering
+ 
+user
+ 
+queries,
+ 
+rather
+ 
+than
+ 
+being
+ 
+integrated
+ 
+with—and
+ 
+grounded
+ 
+in—the
+ 
+platform’s
+ 
+own
+ 
+document
+ 
+repository.
+ 
+By  the  given  concrete  evaluations  below:  
+3.1  StuDocu  
+●  Core  features:  User-generated  study  materials  organised  by  course  and  university ;  an  
+integrated
+ 
+AI
+ 
+toolkit
+ 
+(Ask
+ 
+AI,
+ 
+AI
+ 
+Notes,
+ 
+AI
+ 
+Quiz/Flashcards,
+ 
+Notes-to-Video/Audio);
+ 
+Premium
+ 
+on
+ 
+quarterly/annual
+ 
+plans;
+ 
+mobile
+ 
+“AI
+ 
+Homework
+ 
+Helper.”
+ 
+ ●  Technology  /  UX  (observed):  Rich  AI  study  tools;  mainstream  customer-support  stack;  
+modern
+ 
+commercial
+ 
+UX.
+ 
+ ●  User  reach  (VN  /  global):  High  ranking  in  Education  in  Viet  Nam;  global  monthly  visits  in  the  
+tens
+ 
+of
+ 
+millions
+ 
+(Aug
+ 
+2025
+ 
+estimates).
+ 
+3.2  Viblo   
+●  Core  features:  Developer  knowledge-sharing  network  (articles,  Q&A,  tags,  follow  system);  
+Viblo
+ 
+CTF
+ 
+for
+ 
+cybersecurity
+ 
+practice
+ 
+and
+ 
+competitions;
+ 
+mobile
+ 
+app.
+ 
+ ●  Technology  /  UX  (observed):  Public  posts  indicate  Vue.js  +  Node.js ;  some  components  
+open-sourced;
+ 
+clean,
+ 
+community-centric
+ 
+UX.
+ 
+ ●  User  reach:  Hundreds  of  thousands  of  monthly  visits  (Aug  2025  estimates),  with  
+concentration
+ 
+in
+ 
+Viet
+ 
+Nam.
+ 
+5
+
+===== PAGE 6 =====
+3.3  Course  Hero   
+●  Features:  Course-mapped  materials,  expert  Q&A ,  textbook  solutions,  AI  homework  help,  and  
+paid
+ 
+tutoring
+.
+ 
+ ●  Reach:  Millions  of  monthly  visits  (Aug  2025),  US-centric.  
+3.4  Docsity  
+●  Features:  Student-shared  notes/exams;  document  marketplace ;  exam  preparation  emphasis.  
+ ●  Reach:  Several  million  monthly  visits  (Aug  2025),  Italy  among  top  markets.  
+3.5  Academia  
+●  Features:  Sharing  academic  papers ,  follower/alerts,  premium  search  and  analytics.  
+ ●  Reach:  Dozens  of  millions  of  monthly  visits  (Aug  2025),  global.  
+3.6  Scribd  
+●  Features:  Subscription  to  ebooks/audiobooks  plus  community  documents  and  SlideShare  
+content.
+ 
+ ●  Reach:  Hundreds  of  millions  of  monthly  visits  (Aug  2025),  global  footprint.  
+3.7  TailieuVN   
+●  Features:  Vietnamese  repository  of  study  materials:  exams,  lesson  plans,  theses,  templates.  
+ ●  Reach:  Primarily  Vietnamese-language  audience.  
+The  system  identifies  StuDocu  and  Viblo  as  the  two  principal  competitors  for  this  release.  
+StuDocu  has  performed  strongly  in  aggregating  materials  from  diverse  sources  to  build  a  rich,  
+wide-ranging
+ 
+repository.
+ 
+The
+ 
+platform
+ 
+already
+ 
+applies
+ 
+AI
+ 
+to
+ 
+power
+ 
+Q&A
+ 
+and
+ 
+to
+ 
+capture
+ 
+user
+ 
+feedback.
+ 
+It
+ 
+also
+ 
+supports
+ 
+chat-based
+ 
+study
+ 
+groups
+,
+ 
+forming
+ 
+an
+ 
+effective
+ 
+model
+ 
+that
+ 
+offers
+ 
+users
+ 
+a
+ 
+variety
+ 
+of
+ 
+practical
+ 
+solutions.
+ 
+ 
+However,
+ 
+StuDocu
+ 
+does
+ 
+not
+ 
+moderate
+ 
+documents
+ 
+at
+ 
+the
+ 
+point
+ 
+of
+ 
+upload,
+ 
+which
+ 
+undermines
+ 
+strict
+ 
+governance
+ 
+and
+ 
+results
+ 
+in
+ 
+uneven
+ 
+quality
+ 
+across
+ 
+the
+ 
+repository.
+ 
+In
+ 
+addition,
+ 
+its
+ 
+pricing
+ 
+and
+ 
+billing
+ 
+practices
+ 
+have
+ 
+drawn
+ 
+criticism
+ 
+for
+ 
+a
+ 
+perceived
+ 
+lack
+ 
+of
+ 
+transparency,
+ 
+prompting
+ 
+considerable
+ 
+user
+ 
+backlash.
+ 
+Viblo ,  by  contrast,  delivers  valuable,  application-oriented  solutions:  it  hosts  a  large  corpus  of  
+knowledge-sharing
+ 
+posts
+ 
+and
+ 
+detailed
+ 
+course
+ 
+guides
+.
+ 
+Posts
+ 
+are
+ 
+interlinked,
+ 
+and
+ 
+the
+ 
+platform
+ 
+enables
+ 
+open
+ 
+commenting
+ 
+and
+ 
+replies,
+ 
+fostering
+ 
+discussion.
+ 
+ 
+That
+ 
+said,
+ 
+Viblo
+ 
+lacks
+ 
+a
+ 
+formal
+ 
+quality-assurance
+ 
+process
+,
+ 
+and
+ 
+its
+ 
+current
+ 
+trajectory
+ 
+aligns
+ 
+more
+ 
+with
+ 
+a
+ 
+knowledge-sharing
+ 
+network
+ 
+than
+ 
+with
+ 
+a
+ 
+digital
+ 
+library.
+ 
+The
+ 
+platform
+ 
+also
+ 
+does
+ 
+not
+ 
+provide
+ 
+a
+ 
+clear
+ 
+user
+ 
+hierarchy
+ 
+or
+ 
+tiering
+,
+ 
+leading
+ 
+to
+ 
+limited
+ 
+differentiation
+ 
+between
+ 
+user
+ 
+segments.
+ 
+Moreover,
+ 
+Viblo
+ 
+6
+
+===== PAGE 7 =====
+does  not  yet  leverage  AI ,  so  many  workflows  remain  insufficiently  streamlined  for  both  the  system  
+and
+ 
+its
+ 
+users.
+ 
+4.  Business  Opportunity  
+Upon  release,  the  platform  is  designed  to  deliver  a  solution  that  marries  technological  sophistication  
+with
+ 
+demonstrable
+ 
+quality.
+ 
+For  the  platform  itself.  It  will  operate  as  a  high-assurance  environment  in  which  all  submissions  
+undergo
+ 
+rigorous,
+ 
+front-door
+ 
+moderation.
+ 
+This
+ 
+creates
+ 
+an
+ 
+independent,
+ 
+well-curated
+ 
+repository
+ 
+with
+ 
+clear
+ 
+provenance,
+ 
+robust
+ 
+quality
+ 
+controls,
+ 
+and
+ 
+auditable
+ 
+standards.
+ 
+For  end-users.  Participants  will  engage  in  a  tightly  governed,  independent  ecosystem  where  content  
+quality
+ 
+and
+ 
+user
+ 
+safety
+ 
+are
+ 
+paramount.
+ 
+The
+ 
+experience
+ 
+prioritises
+ 
+reliability,
+ 
+transparency,
+ 
+and
+ 
+access
+ 
+to
+ 
+trustworthy
+ 
+materials.
+ 
+For  authors.  Contributors  will  work  within  an  impartial,  standards-driven  setting  and  benefit  from  
+meaningful
+ 
+incentives—recognition,
+ 
+analytics,
+ 
+and
+ 
+merit-based
+ 
+visibility—while
+ 
+retaining
+ 
+clarity
+ 
+over
+ 
+rights
+ 
+and
+ 
+attribution.
+ 
+For  institutions.  The  platform  functions  as  both  an  archival  store  and  a  collaborative  hub  for  learning  
+and
+ 
+development,
+ 
+improving
+ 
+educational
+ 
+quality
+ 
+while
+ 
+exemplifying
+ 
+a
+ 
+socially
+ 
+responsible,
+ 
+sustainable
+ 
+business
+ 
+model.
+ 
+For  experts.  Subject-matter  specialists  can  leverage  their  expertise  to  raise  the  bar  on  content  quality  
+through
+ 
+review,
+ 
+curation,
+ 
+and
+ 
+targeted
+ 
+enhancement
+ 
+workflows.
+ 
+In  summary,  The  system  aspires  to  be  a  multi-role,  highly  connected  platform  that  supports  diverse  
+use
+ 
+cases
+ 
+and
+ 
+operating
+ 
+models—yet
+ 
+consistently
+ 
+upholds
+ 
+discipline,
+ 
+rigorous
+ 
+oversight,
+ 
+and
+ 
+careful
+ 
+control
+ 
+without
+ 
+compromising
+ 
+user
+ 
+benefits
+ 
+or
+ 
+experience. 
+5.  Software  Product  Vision  
+This  digital  library  aims  to  establish  a  rigorously  structured  platform  that  tightly  couples  documents  
+with
+ 
+their
+ 
+semantic
+ 
+representations
+.
+ 
+All
+ 
+document
+ 
+operations
+ 
+must
+ 
+remain
+ 
+fully
+ 
+consistent
+ 
+with
+ 
+their
+ 
+summaries,
+ 
+content
+ 
+tags,
+ 
+and
+ 
+user-defined
+ 
+classifications,
+ 
+ensuring
+ 
+end-to-end
+ 
+coherence.
+ 
+To  maximise  this  ambition,  the  system  will  first  complete  and  harden  core  user  interactions .  It  will  
+then
+ 
+deploy
+ 
+user-action
+ 
+recognition
+ 
+to
+ 
+capture
+ 
+behavioural
+ 
+signals
+ 
+for
+ 
+analysis
+ 
+and
+ 
+continuous
+ 
+improvement.
+ 
+Crucially,  artificial  intelligence  will  be  embedded  as  a  first-class  pillar  of  the  operating  
+strategy—reflecting
+ 
+prevailing
+ 
+industry
+ 
+trends—to
+ 
+increase
+ 
+accuracy,
+ 
+technological
+ 
+depth,
+ 
+and
+ 
+objective
+ 
+quality
+ 
+without
+ 
+compromising
+ 
+user
+ 
+experience
+ 
+or
+ 
+functional
+ 
+breadth.
+ 
+We  will  begin  by  finalising  user-facing  features,  then  introduce  AI  selectively  into  high-impact  
+capabilities
+.
+ 
+Over
+ 
+time,
+ 
+AI
+ 
+will
+ 
+be
+ 
+progressively
+ 
+extended
+ 
+across
+ 
+all
+ 
+workflows
+,
+ 
+while
+ 
+maintaining
+ 
+human-in-the-loop
+ 
+oversight
+ 
+for
+ 
+critical
+ 
+tasks
+ 
+to
+ 
+safeguard
+ 
+reliability
+ 
+and
+ 
+trust. 
+7
+
+===== PAGE 8 =====
+6.  Project  Scope  &  Limitations  
+In  this  first  development  cycle,  the  platform  prioritises  foundational  user  capabilities—covering  core  
+interactions
+ 
+with
+ 
+the
+ 
+system
+ 
+and
+ 
+with
+ 
+documents.
+ 
+Administration  
+●  A  comprehensive  admin  console  provides  management  and  reporting  across  key  domains:  
+security-related
+ 
+events,
+ 
+user
+ 
+traffic
+ 
+and
+ 
+engagement,
+ 
+document-quality
+ 
+indicators,
+ 
+and
+ 
+user-created
+ 
+contacts.
+ 
+ ●  Logs  and  metrics  are  presented  with  clear,  actionable  detail  to  support  oversight  and  
+continuous
+ 
+improvement.
+ 
+Organisational  Workspaces  
+●  Participating  organisations  operate  within  dedicated,  isolated  workspaces  (multi-tenant  by  
+design).
+ 
+ ●  Per-document  public/  private  visibility  can  be  configured,  and  each  organisation  may  
+establish
+ 
+its
+ 
+own
+ 
+management
+ 
+team
+ 
+and
+ 
+governance
+ 
+rules.
+ 
+AI  Enablement  
+●  From  the  outset,  the  release  integrates  AI-assisted  moderation  to  assess  the  quality  of  
+uploaded
+ 
+documents
+ 
+before
+ 
+publication.
+ 
+ ●  It  also  offers  tri-level  summarisation  for  readers:  
+ 1.  Quick  gist  (very  brief),  
+ 2.  Standard  summary ,  
+ 3.  Detailed  summary  (more  comprehensive  and  structured).  
+ 
+This  combination  delivers  a  disciplined  baseline  of  functionality  while  laying  the  groundwork  for  
+robust
+ 
+curation,
+ 
+accountability,
+ 
+and
+ 
+a
+ 
+high-quality
+ 
+reading
+ 
+experience. 
+6.1  Major  Features  
+8  
+Epic  Feature  Priority  Complexity  Dependencies  
+Admin  &  Platform  Role-Based  Authorization  (RBAC)  
+P0  M  Auth  
+Auth  &  Account  Profile  &  Account  Settings  
+P0  S  Registration,  Login  &  profile
+
+===== PAGE 9 =====
+9  
+Discovery  &  Library  Library  &  Document  Browsing  
+P0  M  Auth  
+Documents  (Member)  Manage  My  Document  P0  M  Upload,  Auth,  RBAC  
+Moderation  &  Reporting  
+Document  Moderation  P0  M  Upload  Documents;  RBAC  
+Organizations  Organization  Management  &  Members  
+P0  L  Auth;  RBACA  
+Analytics  &  Logs  System  Log  &  Audit  Trails  P1  M  RBAC  
+Discovery  &  Library  Organization  Directory  P1  S  Auth  
+Engagement  Comments  P1  M  Auth;  Library  
+Organizations  Business  Admin  -  Manage  Document  
+P1  M  Organization  Management;  Document  Moderation  
+Taxonomy  Types,  Tags,  Categories  Management  
+P1  S  RBAC  
+Admin  &  Platform  System  Configuration  P1  M  RBAC  
+Admin  &  Platform  User  Administration  P1  M  Auth;  RBAC  
+Moderation  &  Reporting  
+User  Reporting  on  Documents  
+P1  M  Document  Moderation  
+Admin  &  Platform  Policy  Management  P2  S  User  Administration  
+Analytics  &  Logs  Usage  &  Content  Analytics  
+P2  M  System  Log;  Events  pipeline  
+Engagement  Votes/Ratings  P2  S  Comments
+
+===== PAGE 10 =====
+Figure  6.1.1:  Feature  tree    6.2  Limitations  &  Exclusions  LI-1:      Some  items  such  as  upload  documents  will  be  limited  in  the  accessed  safety  area.  LI-2:      A.I  system  will  be  run  under  chunking  paragraphs  instead  of  running  for  entire  documents.  LI-3:      System  will  delete  permanently  some  cases  and  delete  temporarily  for  some  items  in  a  
+rigorous
+ 
+period.
+ 
+10

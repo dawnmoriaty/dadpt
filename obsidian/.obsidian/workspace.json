@@ -25,14 +25,12 @@
             "id": "3289dfa53882d305",
             "type": "leaf",
             "state": {
-              "type": "markdown",
+              "type": "pdf",
               "state": {
-                "file": "MODULE_AI_AGENT.md",
-                "mode": "source",
-                "source": false
+                "file": "Report7_Final Project Report.pdf"
               },
-              "icon": "lucide-file",
-              "title": "MODULE_AI_AGENT"
+              "icon": "lucide-file-text",
+              "title": "Report7_Final Project Report"
             }
           }
         ],
@@ -201,6 +199,10 @@
   },
   "active": "3289dfa53882d305",
   "lastOpenFiles": [
+    "2155020107_LeHongVan_BaoCaoDATN.pdf",
+    "report7_backend.md",
+    "report3_backend.md",
+    "MODULE_AI_AGENT.md",
     "TECHNOLOGY_STACK.md",
     "MODULE_UPLOAD.md",
     "MODULE_BOOKING.md",

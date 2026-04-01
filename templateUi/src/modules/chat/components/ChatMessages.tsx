@@ -6,8 +6,10 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
-import type { ChatMessage } from '../types'
+import type { ChatMessage, ChatQuickReplyOption } from '../types'
 
+import { ChatPreviewSuggestions } from './ChatPreviewSuggestions'
+import { ChatQuickReplies } from './ChatQuickReplies'
 import { ChatTripActionCard } from './ChatTripActionCard'
 
 interface ChatMessagesProps {
@@ -48,7 +50,11 @@ export function ChatMessages({ messages, isLoading, input, onInputChange, onSend
                 ) : (
                     <div className="space-y-4">
                         {messages.map((message) => (
-                            <MessageBubble key={message.id} message={message} />
+                            <div key={message.id} className="space-y-2">
+                                <MessageBubble message={message} />
+                                <TripActionList message={message} />
+                                <QuickReplyList message={message} isLoading={isLoading} sendMessage={sendMessage} />
+                            </div>
                         ))}
                         {isLoading && <TypingIndicator />}
                     </div>
@@ -62,7 +68,7 @@ export function ChatMessages({ messages, isLoading, input, onInputChange, onSend
                         value={input}
                         onChange={(event) => onInputChange(event.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Nhập yêu cầu... (VD: Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21)"
+                        placeholder="Nhập điểm đi, điểm đến, ngày/giờ đi, số ghế (tùy chọn)..."
                         disabled={isLoading}
                         className="flex-1"
                     />
@@ -91,13 +97,13 @@ function EmptyState({ sendMessage, isLoading }: EmptyStateProps) {
             <p className="mt-4 text-sm">Bạn có thể thử các câu như:</p>
             <div className="mt-4 space-y-2">
                 <SuggestionButton
-                    text="Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21"
-                    onClick={() => sendMessage('Đặt 2 vé từ Sài Gòn đến Nha Trang ngày 2026-03-21')}
+                    text="Tìm chuyến Sài Gòn đi Nha Trang ngày 2026-03-21 lúc 09:00, 2 ghế"
+                    onClick={() => sendMessage('Tìm chuyến Sài Gòn đi Nha Trang ngày 2026-03-21 lúc 09:00, 2 ghế')}
                     disabled={isLoading}
                 />
                 <SuggestionButton
-                    text="Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai"
-                    onClick={() => sendMessage('Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai')}
+                    text="Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai lúc 7h"
+                    onClick={() => sendMessage('Tìm chuyến từ Hà Nội đến Đà Nẵng ngày mai lúc 7h')}
                     disabled={isLoading}
                 />
                 <SuggestionButton
@@ -105,6 +111,10 @@ function EmptyState({ sendMessage, isLoading }: EmptyStateProps) {
                     onClick={() => sendMessage('Kiểm tra booking của tôi')}
                     disabled={isLoading}
                 />
+            </div>
+
+            <div className="w-full max-w-5xl">
+                <ChatPreviewSuggestions />
             </div>
         </div>
     )
@@ -131,60 +141,133 @@ function SuggestionButton({ text, onClick, disabled }: SuggestionButtonProps) {
 function MessageBubble({ message }: { message: ChatMessage }) {
     const isUser = message.role === 'user'
     const isError = message.status === 'error'
+    const formattedLines = formatMessageContent(message.content)
+    const hasTripCards = (message.uiActions ?? []).some(
+        (action) =>
+            (action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations') &&
+            (action.items?.length ?? 0) > 0,
+    )
 
     return (
         <div className={cn('flex gap-3', isUser ? 'justify-end' : 'justify-start')}>
             <div
                 className={cn(
-                    'max-w-[70%] rounded-lg px-4 py-3 text-sm leading-relaxed',
+                    'max-w-[92%] rounded-2xl px-4 py-3 text-sm shadow-sm md:max-w-[85%]',
                     isUser
                         ? 'rounded-br-none bg-primary text-primary-foreground'
                         : isError
                           ? 'rounded-bl-none border border-destructive/30 bg-destructive/10 text-destructive'
-                          : 'rounded-bl-none bg-muted text-foreground',
+                          : hasTripCards
+                            ? 'rounded-bl-none border border-border/40 bg-muted/40 text-muted-foreground'
+                            : 'rounded-bl-none border border-border/60 bg-background text-foreground',
                 )}
             >
-                <div className="space-y-2">
-                    <p className="whitespace-pre-wrap break-words">{message.content}</p>
-
-                    {message.uiActions?.some(
-                        (action) =>
-                            (action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations') &&
-                            (action.items?.length ?? 0) > 0,
-                    ) && (
-                        <div className="mt-3 space-y-2 border-t pt-3">
-                            {message.uiActions
-                                .filter(
-                                    (action) =>
-                                        action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations',
-                                )
-                                .flatMap((action, actionIndex) =>
-                                    (action.items ?? []).map((item, itemIndex) => ({ item, actionType: action.type, actionIndex, itemIndex })),
-                                )
-                .map(({ item, actionType, actionIndex, itemIndex }) => (
-                                    <ChatTripActionCard
-                                        key={`trip-action-${actionType}-${actionIndex}-${item.trip_id}-${itemIndex}`}
-                                        item={item}
-                                    />
-                                ))}
-                        </div>
-                    )}
-
-                    {message.workflowSlug && (
-                        <div className="mt-2 border-t pt-2 text-xs opacity-70">
-                            <span className="font-medium">workflow:</span> {message.workflowSlug}
-                        </div>
-                    )}
-                    {message.toolCalls && message.toolCalls.length > 0 && (
-                        <div className="mt-2 border-t pt-2 text-xs opacity-70">
-                            <span className="font-medium">tools:</span>{' '}
-                            {message.toolCalls.map((item) => item.tool_name || item.tool || 'unknown').join(', ')}
-                        </div>
-                    )}
+                <div className={cn('space-y-2', hasTripCards && 'space-y-1')}>
+                    {formattedLines.map((line, index) => (
+                        <p
+                            key={`${message.id}-line-${index}`}
+                            className={cn(
+                                'break-words whitespace-pre-wrap',
+                                hasTripCards ? 'text-[13px] leading-6' : 'leading-7',
+                                line.variant === 'heading' && 'font-semibold',
+                                line.variant === 'bullet' && 'pl-2',
+                            )}
+                        >
+                            {line.text}
+                        </p>
+                    ))}
                 </div>
             </div>
         </div>
     )
+}
+
+function TripActionList({ message }: { message: ChatMessage }) {
+    const actions = (message.uiActions ?? []).filter(
+        (action) =>
+            (action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations') &&
+            (action.items?.length ?? 0) > 0,
+    )
+
+    if (actions.length === 0 || message.role !== 'assistant') {
+        return null
+    }
+
+    return (
+        <div className="space-y-3 pl-2 pr-1">
+            {actions.map((action, actionIndex) => (
+                <section key={`trip-action-group-${message.id}-${action.type}-${actionIndex}`} className="space-y-2">
+                    {(action.title || action.prompt) && (
+                        <div className="space-y-1 px-1">
+                            {action.title ? <p className="text-sm font-semibold text-foreground">{action.title}</p> : null}
+                            {action.prompt ? <p className="text-xs text-muted-foreground">{action.prompt}</p> : null}
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        {(action.items ?? []).map((item, itemIndex) => (
+                            <ChatTripActionCard
+                                key={`trip-action-${message.id}-${action.type}-${actionIndex}-${item.trip_id}-${itemIndex}`}
+                                item={item}
+                                defaultPassengers={Math.max(1, Number(action.meta?.passengers ?? 1))}
+                            />
+                        ))}
+                    </div>
+                </section>
+            ))}
+        </div>
+    )
+}
+
+function QuickReplyList({
+    message,
+    isLoading,
+    sendMessage,
+}: {
+    message: ChatMessage
+    isLoading: boolean
+    sendMessage: (text: string) => Promise<void>
+}) {
+    if (message.role !== 'assistant') {
+        return null
+    }
+
+    const quickReplyOptions = (message.uiActions ?? [])
+        .flatMap((action) => action.options ?? [])
+        .map(normalizeQuickReply)
+        .filter((value): value is ChatQuickReplyOption => Boolean(value))
+
+    const uniqueOptions = Array.from(new Map(quickReplyOptions.map((option) => [option.value.trim().toLowerCase(), option])).values()).slice(
+        0,
+        6,
+    )
+    if (uniqueOptions.length === 0) {
+        return null
+    }
+
+    return (
+        <div className="space-y-2 pl-2 pr-1">
+            <p className="text-xs font-medium text-muted-foreground">Gợi ý trả lời nhanh:</p>
+            <ChatQuickReplies options={uniqueOptions} disabled={isLoading} onSelect={(value) => void sendMessage(value)} />
+        </div>
+    )
+}
+
+function normalizeQuickReply(option: string | ChatQuickReplyOption): ChatQuickReplyOption | null {
+    if (typeof option === 'string') {
+        const value = option.trim()
+        return value ? { label: value, value } : null
+    }
+
+    const value = option.value.trim()
+    if (!value) {
+        return null
+    }
+
+    return {
+        label: option.label.trim() || value,
+        value,
+    }
 }
 
 function TypingIndicator() {
@@ -199,4 +282,21 @@ function TypingIndicator() {
             </div>
         </div>
     )
+}
+
+function formatMessageContent(content: string): Array<{ text: string; variant: 'body' | 'heading' | 'bullet' }> {
+    return content
+        .split('\n')
+        .map((line) => line.trim())
+        .filter((line, index, lines) => line.length > 0 || (index > 0 && lines[index - 1].length > 0))
+        .map((line) => {
+            const normalized = line.replace(/^#{1,6}\s*/, '').replace(/\*\*/g, '').trim()
+            if (line.startsWith('###') || line.startsWith('##')) {
+                return { text: normalized, variant: 'heading' as const }
+            }
+            if (normalized.startsWith('- ')) {
+                return { text: `• ${normalized.slice(2).trim()}`, variant: 'bullet' as const }
+            }
+            return { text: normalized, variant: 'body' as const }
+        })
 }

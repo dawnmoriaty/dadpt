@@ -119,7 +119,7 @@ export function VoiceBookingPanel({ disabled = false }: VoiceBookingPanelProps) 
                 />
 
                 <div className="flex flex-col gap-3 sm:flex-row">
-                    <Button type="button" onClick={executeBooking} disabled={isBusy} className="sm:flex-1">
+                    <Button type="button" onClick={() => void executeBooking()} disabled={isBusy} className="sm:flex-1">
                         {executePending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                         Đặt chuyến gần nhất
                     </Button>

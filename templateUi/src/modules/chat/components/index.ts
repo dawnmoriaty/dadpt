@@ -1,4 +1,6 @@
 export { ChatHeader } from './ChatHeader'
 export { ChatMessages } from './ChatMessages'
 export { ChatPage } from './ChatPage'
+export { ChatPageWidget } from './ChatPage'
+export { ChatPreviewSuggestions } from './ChatPreviewSuggestions'
 export { ChatTripActionCard } from './ChatTripActionCard'

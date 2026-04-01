@@ -61,6 +61,8 @@ from src.engine.supervisor import Supervisor
 from src.engine.task_registry import list_task_types
 from src.engine.workflow_context import WorkflowContext
 from src.engine.workflow_schema import WorkflowDefinitionSchema
+from src.engine.presentation import ResponseFormatter
+from src.grpc_server.session_store import build_session_key, get_or_create_context, save_session
 from src.platform.model_pool import get_model_pool
 from src.platform.providers.registry import get_provider_registry
 from src.platform.tenant_registry import get_tenant_registry
@@ -70,6 +72,14 @@ from src.phase4.policy_engine import POLICY_PROFILES
 from src.vectorstore.qdrant_manager import get_qdrant_manager
 
 logger = structlog.get_logger()
+
+formatter = ResponseFormatter()
+
+
+def _qdrant_enabled() -> bool:
+    import os
+
+    return os.getenv("ENABLE_QDRANT", "false").strip().lower() in {"1", "true", "yes", "on"}
 
 
 def _build_chat_metrics(ctx: WorkflowContext) -> dict[str, Any]:
@@ -661,7 +671,7 @@ async def diagnostics_qdrant(tenant_slug: str, q: str = "chuyen xe", top_k: int 
     if not tenant:
         raise HTTPException(404, f"Tenant '{tenant_slug}' not found")
 
-    qdrant = get_qdrant_manager()
+    qdrant = get_qdrant_manager() if _qdrant_enabled() else None
 
     collections = [
         f"{tenant.qdrant_prefix}_faq",
@@ -981,11 +991,9 @@ chat_router = APIRouter(prefix="/api/v1", tags=["chat"])
 @chat_router.post("/chat", response_model=ChatOutput)
 async def chat(data: ChatInput):
     """REST chat endpoint — mirrors gRPC Chat for convenience."""
-    from src.grpc_server.server import _build_session_key, _build_ui_actions, _get_or_create_context, _save_session
-
     raw_session_id = data.session_id or ""
     tenant_slug = data.tenant_slug
-    session_id = _build_session_key(tenant_slug, data.user_id or "", raw_session_id)
+    session_id = build_session_key(tenant_slug, data.user_id or "", raw_session_id)
 
     registry = get_tenant_registry()
 
@@ -994,7 +1002,7 @@ async def chat(data: ChatInput):
         raise HTTPException(404, f"Tenant '{tenant_slug}' not found")
 
     # Build context
-    ctx = _get_or_create_context(session_id, tenant_slug, data.message)
+    ctx = get_or_create_context(session_id, tenant_slug, data.message)
 
 
     # Build supervisor
@@ -1012,22 +1020,13 @@ async def chat(data: ChatInput):
     ctx = await supervisor.handle(ctx)
 
     # Save session
-    _save_session(session_id, ctx)
+    save_session(session_id, ctx)
 
 
     metrics = _build_chat_metrics(ctx)
     _record_chat_metrics(ctx, metrics)
 
-    return ChatOutput(
-        message=ctx.response,
-        status=ctx.status,
-        session_id=session_id,
-        workflow_slug=ctx.workflow_slug,
-        tool_calls=ctx.tool_calls_log,
-        ui_actions=_build_ui_actions(ctx),
-        trace_id=ctx.trace_id,
-        metrics=metrics,
-    )
+    return ChatOutput(**formatter.format(ctx, session_id=session_id, metrics=metrics))
 
 
 # ── Task Types info ────────────────────────────────────────────────────────

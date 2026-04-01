@@ -1,0 +1,3826 @@
+===== PAGE 1 =====
+MINISTRY  OF  EDUCATION  AND  TRAINING   
+   
+FPT  UNIVERSITY   
+Capstone
+ 
+Project
+ 
+Document
+ 
+ 
+READEE   Researching  and  developing  digital  education  
+library
+ 
+platform
+ 
+integrating
+ 
+AI
+ 
+applications
+ 
+in
+ 
+quality
+ 
+control
+ 
+and
+ 
+document
+ 
+summaries
+   Researching  and  developing  digital  education  library  platform  integrating  AI  applications  in  quality  control  and  document  summaries
+ 
+ 
+  Group  Members  
+Nguyen  Tat  Quan              -  HE187203  Vu  Hong  Quang                 -  HE176765  To  Duc  Anh                         -  HE170025  Vo  Dinh  Hung                     -  HE186864  Nghiem  Thi  Hong  Ngoc    -  HE186888  Supervisor  Miss.  Nguyen  Thi  Nguyet  Project  Code  READEE  Group  Code  SEP490_G49                                        -  Hanoi,  December  2025  -
+
+===== PAGE 2 =====
+Table  of  Contents  
+ 
+Acknowledgement ................................................................................................................................... 3 Definition  and  Acronyms ......................................................................................................................... 4 I.  Project  Introduction ............................................................................................................................. 5 1.  Overview ....................................................................................................................................... 5 2.  Product  Background ...................................................................................................................... 5 3.  Existing  Solutions .......................................................................................................................... 5 4.  Business  Opportunity .................................................................................................................... 7 5.  Software  Product  Vision ................................................................................................................ 7 6.  Project  Scope  &  Limitations .......................................................................................................... 8 II.  Project  Management  Plan ................................................................................................................... 9 1.  Overview ....................................................................................................................................... 9 2.  Management  Approach .............................................................................................................. 16 3.  Project  Deliverables .................................................................................................................... 18 4.  Responsibility  Assignments ......................................................................................................... 19 5.  Project  Communications ............................................................................................................. 20 6.  Configuration  Management ........................................................................................................ 21 III.  Software  Requirement  Specification ................................................................................................ 22 1.  Requirement  Overview ............................................................................................................... 22 2.  Functional  Specifications ............................................................................................................ 41 3.  Non-Functional  Requirements .................................................................................................. 241 4.  Requirement  Appendix ............................................................................................................. 242 IV.  Software  Design  Description .......................................................................................................... 251 1.  High  Level  Design ...................................................................................................................... 251 2.  Detailed  Design ......................................................................................................................... 273 2.  Detailed  Design ......................................................................................................................... 273 3.  Class  Specifications ................................................................................................................... 343 V.  Software  Testing  Documentation .................................................................................................... 479 1.  Scope  of  Testing ........................................................................................................................ 479 2.  Test  Strategy .............................................................................................................................. 480 3.  Test  Plan .................................................................................................................................... 481 4.  Test  Cases .................................................................................................................................. 482 5.  Test  Reports .............................................................................................................................. 482 VI.  Release  Package  &  User  Guides ..................................................................................................... 489 1.  Deliverable  Package .................................................................................................................. 489 2.  Installation  Guides .................................................................................................................... 490 3.  User  Manual .............................................................................................................................. 494 
+ 
+ ProjectCode  –  Final  Report  Page  2  /  10
+
+===== PAGE 3 =====
+Acknowledgement  The  authors  would  like  to  express  their  deepest  and  most  sincere  gratitude  to  FPT  University  Hanoi ,  
+which
+ 
+has
+ 
+been
+ 
+a
+ 
+constant
+ 
+source
+ 
+of
+ 
+support
+ 
+and
+ 
+inspiration
+ 
+throughout
+ 
+an
+ 
+enriching
+ 
+and
+ 
+memorable
+ 
+academic
+ 
+journey.
+ 
+The
+ 
+university
+ 
+has
+ 
+provided
+ 
+a
+ 
+rigorous
+ 
+academic
+ 
+environment,
+ 
+comprehensive
+ 
+learning
+ 
+resources,
+ 
+and
+ 
+valuable
+ 
+opportunities
+ 
+for
+ 
+both
+ 
+theoretical
+ 
+and
+ 
+practical
+ 
+development,
+ 
+all
+ 
+of
+ 
+which
+ 
+have
+ 
+significantly
+ 
+contributed
+ 
+to
+ 
+the
+ 
+successful
+ 
+realization
+ 
+of
+ 
+this
+ 
+project.
+ The  authors  are  especially  indebted  to  their  supervisor,  Ms.  Nguyen  Thi  Nguyet ,  for  her  dedicated  
+guidance,
+ 
+professional
+ 
+mentorship,
+ 
+and
+ 
+continuous
+ 
+encouragement
+ 
+throughout
+ 
+the
+ 
+research
+ 
+and
+ 
+development
+ 
+process.
+ 
+Her
+ 
+insightful
+ 
+comments,
+ 
+constructive
+ 
+criticism,
+ 
+and
+ 
+careful
+ 
+evaluations
+ 
+not
+ 
+only
+ 
+helped
+ 
+identify
+ 
+limitations
+ 
+and
+ 
+correct
+ 
+shortcomings,
+ 
+but
+ 
+also
+ 
+guided
+ 
+the
+ 
+authors
+ 
+in
+ 
+refining
+ 
+their
+ 
+ideas,
+ 
+strengthening
+ 
+the
+ 
+research
+ 
+direction,
+ 
+and
+ 
+maintaining
+ 
+academic
+ 
+rigor.
+ 
+Her
+ 
+patience,
+ 
+responsibility,
+ 
+and
+ 
+commitment
+ 
+were
+ 
+invaluable
+ 
+in
+ 
+ensuring
+ 
+the
+ 
+overall
+ 
+quality
+ 
+and
+ 
+coherence
+ 
+of
+ 
+this
+ 
+work.
+ The  authors  also  wish  to  acknowledge  the  substantial  contributions  of  all  team  members ,  whose  
+perseverance,
+ 
+teamwork,
+ 
+and
+ 
+sense
+ 
+of
+ 
+responsibility
+ 
+played
+ 
+a
+ 
+critical
+ 
+role
+ 
+in
+ 
+the
+ 
+completion
+ 
+of
+ 
+this
+ 
+project.
+ 
+Throughout
+ 
+more
+ 
+than
+ 
+three
+ 
+months
+ 
+of
+ 
+intensive
+ 
+collaboration,
+ 
+the
+ 
+team
+ 
+demonstrated
+ 
+remarkable
+ 
+determination,
+ 
+resilience,
+ 
+and
+ 
+mutual
+ 
+support,
+ 
+consistently
+ 
+overcoming
+ 
+technical
+ 
+and
+ 
+organizational
+ 
+challenges.
+ 
+Their
+ 
+collective
+ 
+efforts
+ 
+and
+ 
+shared
+ 
+commitment
+ 
+were
+ 
+fundamental
+ 
+to
+ 
+achieving
+ 
+the
+ 
+project
+ 
+objectives.
+ Finally,  the  authors  would  like  to  extend  their  heartfelt  appreciation  to  their  families,  friends,  and  
+colleagues
+ 
+for
+ 
+their
+ 
+unwavering
+ 
+encouragement,
+ 
+emotional
+ 
+support,
+ 
+and
+ 
+understanding
+ 
+during
+ 
+the
+ 
+course
+ 
+of
+ 
+this
+ 
+project.
+ 
+Their
+ 
+continuous
+ 
+motivation,
+ 
+trust,
+ 
+and
+ 
+provision
+ 
+of
+ 
+favorable
+ 
+conditions
+ 
+greatly
+ 
+contributed
+ 
+to
+ 
+maintaining
+ 
+focus
+ 
+and
+ 
+determination,
+ 
+thereby
+ 
+enabling
+ 
+the
+ 
+successful
+ 
+and
+ 
+comprehensive
+ 
+completion
+ 
+of
+ 
+the
+ 
+READEE
+ 
+project.
+  
+ ProjectCode  –  Final  Report  Page  3  /  10
+
+===== PAGE 4 =====
+Definition  and  Acronyms   
+Acronym  Definition  
+READEE  
+Researching  and  developing  digital  education  library  platform  integrating  AI  application  in  quality  control  and  document  summaries  
+AWS  Amazon  Web  Services  
+BA  Business  Analysis  
+BR  Business  Rule  
+ERD  Entity  Relationship  Diagram  
+GUI  Graphical  User  Interface  
+PM  Project  Manager  
+SDD  Software  Design  Description  
+SPMP  Software  Project  Management  Plan  
+SRS  Software  Requirement  Specification  
+UAT  User  Acceptance  Test  
+UC  Use  Case  
+API  Application  Program  Interface  
+IT  Integration  Test  
+UT  Unit  Test  
+ 
+ ProjectCode  –  Final  Report  Page  4  /  10
+
+===== PAGE 5 =====
+I.  Project  Introduction 1.  Overview  1.1  Project  Information  •  Project  name:   Researching  and  developing  digital  education  library  platform  integrating  AI  applications  
+in
+ 
+quality
+ 
+control
+ 
+and
+ 
+document
+ 
+summaries •  Project  code:   READEE  •  Group  name:   SEP490_G49 •  Software  type:   Website 1.2  Project  Team   
+Full  Name  Role  Email    Mobile  
+Nguyen  Thi  Nguyet   Lecturer  nguyetnt41@fe.edu.vn  0913566692  
+ Nguyen  Tat  Quan   Leader  quannthe187203@fpt.edu.vn  0829505619  
+ Vu  Hong  Quang   Member  quangvhhe176765@fpt.edu.vn  0385669226  
+ Vo  Dinh  Hung   Member  hungvdhe186864@fpt.edu.vn  0914421458  
+ Nghiem  Thi  Hong  Ngoc   Member  ngocnthhe186888@fpt.edu.vn  0898756885  
+ To  Duc  Anh   Member  anhtdhe170025@fpt.edu.vn  0395480412  
+ 2.  Product  Background  Technology  is  advancing  at  an  accelerating  pace,  and  with  it  the  imperative  for  digital  transformation  
+is
+ 
+gaining
+ 
+prominence.
+ 
+Education—despite
+ 
+its
+ 
+strategic
+ 
+importance—has
+ 
+yet
+ 
+to
+ 
+adopt
+ 
+digital
+ 
+transformation
+ 
+in
+ 
+a
+ 
+robust
+ 
+and
+ 
+systematic
+ 
+manner.
+ 
+Based
+ 
+on
+ 
+a
+ 
+clear-eyed
+ 
+appraisal
+ 
+of
+ 
+current
+ 
+conditions,
+ 
+together
+ 
+with
+ 
+market
+ 
+analysis
+ 
+and
+ 
+user-needs
+ 
+research,
+ 
+our
+ 
+team
+ 
+has
+ 
+identified
+ 
+digital
+ 
+libraries
+ 
+as
+ 
+a
+ 
+salient
+ 
+focus
+ 
+area.
+ 
+Although
+ 
+numerous
+ 
+solutions
+ 
+exist,
+ 
+they
+ 
+remain
+ 
+fragmented,
+ 
+insufficiently
+ 
+comprehensive,
+ 
+and
+ 
+often
+ 
+fail
+ 
+to
+ 
+address
+ 
+several
+ 
+core
+ 
+issues.
+ Accordingly,  we  will  research  and  develop  a  digital-library  solution  that  elevates  document  quality  
+and
+ 
+places
+ 
+the
+ 
+user
+ 
+experience
+ 
+at
+ 
+the
+ 
+centre.
+ 
+By
+ 
+leveraging
+ 
+artificial
+ 
+intelligence,
+ 
+the
+ 
+platform
+ 
+will
+ 
+augment
+ 
+human
+ 
+effort,
+ 
+provide
+ 
+a
+ 
+richer
+ 
+corpus
+ 
+of
+ 
+high-quality
+ 
+references,
+ 
+and
+ 
+enhance
+ 
+the
+ 
+objectivity
+ 
+and
+ 
+reliability
+ 
+of
+ 
+the
+ 
+system
+ 
+as
+ 
+a
+ 
+whole. 3.  Existing  Solutions  Team  has  researched  and  given  the  following  existed  system  with  relation  of  educational  library  
+platform:
+ -  StuDocu  _  Link  website -  Viblo  _  Link  website 
+ ProjectCode  –  Final  Report  Page  5  /  10
+
+===== PAGE 6 =====
+-  Course  Hero  _  Link  website -  Docsity  _  Link  website -  Academia  _   Link  website -  Scribd  _  Link  website -  TailieuVN  _  Link  website Overall,  existing  systems  are  reasonably  well-organized  and  user-oriented,  yet  they  are  not  
+sufficiently
+ 
+tailored
+ 
+to
+ 
+the
+ 
+specific
+ 
+demands
+ 
+of
+ 
+a
+ 
+library
+ 
+platform.
+ 
+Although
+ 
+these
+ 
+products
+ 
+execute
+ 
+their
+ 
+chosen
+ 
+focus
+ 
+areas
+ 
+effectively,
+ 
+several
+ 
+hallmark
+ 
+features
+ 
+of
+ 
+a
+ 
+true
+ 
+library
+ 
+system
+ 
+are
+ 
+not
+ 
+articulated
+ 
+with
+ 
+clarity.
+ Moreover,  with  respect  to  document  quality,  there  is  no  end-to-end  moderation  framework  in  place.  
+Current
+ 
+uses
+ 
+of
+ 
+artificial
+ 
+intelligence
+ 
+are
+ 
+largely
+ 
+confined
+ 
+to
+ 
+answering
+ 
+user
+ 
+queries,
+ 
+rather
+ 
+than
+ 
+being
+ 
+integrated
+ 
+with—and
+ 
+grounded
+ 
+in—the
+ 
+platform’s
+ 
+own
+ 
+document
+ 
+repository.
+ By  the  given  concrete  evaluations  below:  3.1  StuDocu  ●  Core  features:  User-generated  study  materials  organised  by  course  and  university ;  an  
+integrated
+ 
+AI
+ 
+toolkit
+ 
+(Ask
+ 
+AI,
+ 
+AI
+ 
+Notes,
+ 
+AI
+ 
+Quiz/Flashcards,
+ 
+Notes-to-Video/Audio);
+ 
+Premium
+ 
+on
+ 
+quarterly/annual
+ 
+plans;
+ 
+mobile
+ 
+“AI
+ 
+Homework
+ 
+Helper.”
+ ●  Technology  /  UX  (observed):  Rich  AI  study  tools;  mainstream  customer-support  stack;  
+modern
+ 
+commercial
+ 
+UX.
+ ●  User  reach  (VN  /  global):  High  ranking  in  Education  in  Viet  Nam;  global  monthly  visits  in  the  
+tens
+ 
+of
+ 
+millions
+ 
+(Aug
+ 
+2025
+ 
+estimates).
+ 3.2  Viblo   ●  Core  features:  Developer  knowledge-sharing  network  (articles,  Q&A,  tags,  follow  system);  
+Viblo
+ 
+CTF
+ 
+for
+ 
+cybersecurity
+ 
+practice
+ 
+and
+ 
+competitions;
+ 
+mobile
+ 
+app.
+ ●  Technology  /  UX  (observed):  Public  posts  indicate  Vue.js  +  Node.js ;  some  components  
+open-sourced;
+ 
+clean,
+ 
+community-centric
+ 
+UX.
+ ●  User  reach:  Hundreds  of  thousands  of  monthly  visits  (Aug  2025  estimates),  with  
+concentration
+ 
+in
+ 
+Viet
+ 
+Nam.
+ 3.3  Course  Hero   ●  Features:  Course-mapped  materials,  expert  Q&A ,  textbook  solutions,  AI  homework  help,  and  
+paid
+ 
+tutoring
+.
+ ●  Reach:  Millions  of  monthly  visits  (Aug  2025),  US-centric.  3.4  Docsity  ●  Features:  Student-shared  notes/exams;  document  marketplace ;  exam  preparation  emphasis.  ●  Reach:  Several  million  monthly  visits  (Aug  2025),  Italy  among  top  markets.  3.5  Academia  ●  Features:  Sharing  academic  papers ,  follower/alerts,  premium  search  and  analytics.  ●  Reach:  Dozens  of  millions  of  monthly  visits  (Aug  2025),  global.  3.6  Scribd  ●  Features:  Subscription  to  ebooks/audiobooks  plus  community  documents  and  SlideShare  
+content.
+ ●  Reach:  Hundreds  of  millions  of  monthly  visits  (Aug  2025),  global  footprint.  
+ ProjectCode  –  Final  Report  Page  6  /  10
+
+===== PAGE 7 =====
+3.7  TailieuVN   ●  Features:  Vietnamese  repository  of  study  materials:  exams,  lesson  plans,  theses,  templates.  ●  Reach:  Primarily  Vietnamese-language  audience.  The  system  identifies  StuDocu  and  Viblo  as  the  two  principal  competitors  for  this  release.  StuDocu  has  performed  strongly  in  aggregating  materials  from  diverse  sources  to  build  a  rich,  
+wide-ranging
+ 
+repository.
+ 
+The
+ 
+platform
+ 
+already
+ 
+applies
+ 
+AI
+ 
+to
+ 
+power
+ 
+Q&A
+ 
+and
+ 
+to
+ 
+capture
+ 
+user
+ 
+feedback.
+ 
+It
+ 
+also
+ 
+supports
+ 
+chat-based
+ 
+study
+ 
+groups
+,
+ 
+forming
+ 
+an
+ 
+effective
+ 
+model
+ 
+that
+ 
+offers
+ 
+users
+ 
+a
+ 
+variety
+ 
+of
+ 
+practical
+ 
+solutions.
+ 
+ 
+However,
+ 
+StuDocu
+ 
+does
+ 
+not
+ 
+moderate
+ 
+documents
+ 
+at
+ 
+the
+ 
+point
+ 
+of
+ 
+upload,
+ 
+which
+ 
+undermines
+ 
+strict
+ 
+governance
+ 
+and
+ 
+results
+ 
+in
+ 
+uneven
+ 
+quality
+ 
+across
+ 
+the
+ 
+repository.
+ 
+In
+ 
+addition,
+ 
+its
+ 
+pricing
+ 
+and
+ 
+billing
+ 
+practices
+ 
+have
+ 
+drawn
+ 
+criticism
+ 
+for
+ 
+a
+ 
+perceived
+ 
+lack
+ 
+of
+ 
+transparency,
+ 
+prompting
+ 
+considerable
+ 
+user
+ 
+backlash.
+  Viblo ,  by  contrast,  delivers  valuable,  application-oriented  solutions:  it  hosts  a  large  corpus  of  
+knowledge-sharing
+ 
+posts
+ 
+and
+ 
+detailed
+ 
+course
+ 
+guides
+.
+ 
+Posts
+ 
+are
+ 
+interlinked,
+ 
+and
+ 
+the
+ 
+platform
+ 
+enables
+ 
+open
+ 
+commenting
+ 
+and
+ 
+replies,
+ 
+fostering
+ 
+discussion.
+ 
+That
+ 
+said,
+ 
+Viblo
+ 
+lacks
+ 
+a
+ 
+formal
+ 
+quality-assurance
+ 
+process
+,
+ 
+and
+ 
+its
+ 
+current
+ 
+trajectory
+ 
+aligns
+ 
+more
+ 
+with
+ 
+a
+ 
+knowledge-sharing
+ 
+network
+ 
+than
+ 
+with
+ 
+a
+ 
+digital
+ 
+library.
+ 
+The
+ 
+platform
+ 
+also
+ 
+does
+ 
+not
+ 
+provide
+ 
+a
+ 
+clear
+ 
+user
+ 
+hierarchy
+ 
+or
+ 
+tiering
+,
+ 
+leading
+ 
+to
+ 
+limited
+ 
+differentiation
+ 
+between
+ 
+user
+ 
+segments.
+ 
+Moreover,
+ 
+Viblo
+ 
+does
+ 
+not
+ 
+yet
+ 
+leverage
+ 
+AI
+,
+ 
+so
+ 
+many
+ 
+workflows
+ 
+remain
+ 
+insufficiently
+ 
+streamlined
+ 
+for
+ 
+both
+ 
+the
+ 
+system
+ 
+and
+ 
+its
+ 
+users. 4.  Business  Opportunity  Upon  release,  the  platform  is  designed  to  deliver  a  solution  that  marries  technological  sophistication  
+with
+ 
+demonstrable
+ 
+quality.
+ For  the  platform  itself.  It  will  operate  as  a  high-assurance  environment  in  which  all  submissions  
+undergo
+ 
+rigorous,
+ 
+front-door
+ 
+moderation.
+ 
+This
+ 
+creates
+ 
+an
+ 
+independent,
+ 
+well-curated
+ 
+repository
+ 
+with
+ 
+clear
+ 
+provenance,
+ 
+robust
+ 
+quality
+ 
+controls,
+ 
+and
+ 
+auditable
+ 
+standards.
+ For  end-users.  Participants  will  engage  in  a  tightly  governed,  independent  ecosystem  where  content  
+quality
+ 
+and
+ 
+user
+ 
+safety
+ 
+are
+ 
+paramount.
+ 
+The
+ 
+experience
+ 
+prioritises
+ 
+reliability,
+ 
+transparency,
+ 
+and
+ 
+access
+ 
+to
+ 
+trustworthy
+ 
+materials.
+ For  authors.  Contributors  will  work  within  an  impartial,  standards-driven  setting  and  benefit  from  
+meaningful
+ 
+incentives—recognition,
+ 
+analytics,
+ 
+and
+ 
+merit-based
+ 
+visibility—while
+ 
+retaining
+ 
+clarity
+ 
+over
+ 
+rights
+ 
+and
+ 
+attribution.
+ For  institutions.  The  platform  functions  as  both  an  archival  store  and  a  collaborative  hub  for  learning  
+and
+ 
+development,
+ 
+improving
+ 
+educational
+ 
+quality
+ 
+while
+ 
+exemplifying
+ 
+a
+ 
+socially
+ 
+responsible,
+ 
+sustainable
+ 
+business
+ 
+model.
+ For  experts.  Subject-matter  specialists  can  leverage  their  expertise  to  raise  the  bar  on  content  quality  
+through
+ 
+review,
+ 
+curation,
+ 
+and
+ 
+targeted
+ 
+enhancement
+ 
+workflows.
+ In  summary,  The  system  aspires  to  be  a  multi-role,  highly  connected  platform  that  supports  diverse  
+use
+ 
+cases
+ 
+and
+ 
+operating
+ 
+models—yet
+ 
+consistently
+ 
+upholds
+ 
+discipline,
+ 
+rigorous
+ 
+oversight,
+ 
+and
+ 
+careful
+ 
+control
+ 
+without
+ 
+compromising
+ 
+user
+ 
+benefits
+ 
+or
+ 
+experience. 5.  Software  Product  Vision  This  digital  library  aims  to  establish  a  rigorously  structured  platform  that  tightly  couples  documents  
+with
+ 
+their
+ 
+semantic
+ 
+representations
+.
+ 
+All
+ 
+document
+ 
+operations
+ 
+must
+ 
+remain
+ 
+fully
+ 
+consistent
+ 
+with
+ 
+their
+ 
+summaries,
+ 
+content
+ 
+tags,
+ 
+and
+ 
+user-defined
+ 
+classifications,
+ 
+ensuring
+ 
+end-to-end
+ 
+coherence.
+  ProjectCode  –  Final  Report  Page  7  /  10
+
+===== PAGE 8 =====
+To  maximise  this  ambition,  the  system  will  first  complete  and  harden  core  user  interactions .  It  will  
+then
+ 
+deploy
+ 
+user-action
+ 
+recognition
+ 
+to
+ 
+capture
+ 
+behavioural
+ 
+signals
+ 
+for
+ 
+analysis
+ 
+and
+ 
+continuous
+ 
+improvement.
+ Crucially,  artificial  intelligence  will  be  embedded  as  a  first-class  pillar  of  the  operating  
+strategy—reflecting
+ 
+prevailing
+ 
+industry
+ 
+trends—to
+ 
+increase
+ 
+accuracy,
+ 
+technological
+ 
+depth,
+ 
+and
+ 
+objective
+ 
+quality
+ 
+without
+ 
+compromising
+ 
+user
+ 
+experience
+ 
+or
+ 
+functional
+ 
+breadth.
+ We  will  begin  by  finalising  user-facing  features,  then  introduce  AI  selectively  into  high-impact  
+capabilities
+.
+ 
+Over
+ 
+time,
+ 
+AI
+ 
+will
+ 
+be
+ 
+progressively
+ 
+extended
+ 
+across
+ 
+all
+ 
+workflows
+,
+ 
+while
+ 
+maintaining
+ 
+human-in-the-loop
+ 
+oversight
+ 
+for
+ 
+critical
+ 
+tasks
+ 
+to
+ 
+safeguard
+ 
+reliability
+ 
+and
+ 
+trust. 6.  Project  Scope  &  Limitations  In  this  first  development  cycle,  the  platform  prioritises  foundational  user  capabilities—covering  core  
+interactions
+ 
+with
+ 
+the
+ 
+system
+ 
+and
+ 
+with
+ 
+documents.
+ Administration  ●  A  comprehensive  admin  console  provides  management  and  reporting  across  key  domains:  
+security-related
+ 
+events,
+ 
+user
+ 
+traffic
+ 
+and
+ 
+engagement,
+ 
+document-quality
+ 
+indicators,
+ 
+and
+ 
+user-created
+ 
+contacts.
+ ●  Logs  and  metrics  are  presented  with  clear,  actionable  detail  to  support  oversight  and  
+continuous
+ 
+improvement.
+ Organisational  Workspaces  ●  Participating  organisations  operate  within  dedicated,  isolated  workspaces  (multi-tenant  by  
+design).
+ ●  Per-document  public/  private  visibility  can  be  configured,  and  each  organisation  may  
+establish
+ 
+its
+ 
+own
+ 
+management
+ 
+team
+ 
+and
+ 
+governance
+ 
+rules.
+ AI  Enablement  ●  From  the  outset,  the  release  integrates  AI-assisted  moderation  to  assess  the  quality  of  
+uploaded
+ 
+documents
+ 
+before
+ 
+publication.
+ ●  It  also  offers  tri-level  summarisation  for  readers:  1.  Quick  gist  (very  brief),  2.  Standard  summary ,  3.  Detailed  summary  (more  comprehensive  and  structured).  This  combination  delivers  a  disciplined  baseline  of  functionality  while  laying  the  groundwork  for  
+robust
+ 
+curation,
+ 
+accountability,
+ 
+and
+ 
+a
+ 
+high-quality
+ 
+reading
+ 
+experience.  
+ 
+ ProjectCode  –  Final  Report  Page  8  /  10
+
+===== PAGE 9 =====
+II.  Project  Management  Plan 1.  Overview  1.1  Scope  &  Estimation   
+#  WBS  Item  Complexity  
+Est.  Effort  (man-days)  
+1  Feature  1:  Common    
+1.1  Register  as  Reader  Simple  0.5  
+1.2  Register  as  Reviewer  Medium  2  
+1.3  Register  as  Organization  admin  Medium  2  
+1.4  Login  Simple  0.5  
+1.5  Reset  password  Simple  0.5  
+1.6  View  profile  Simple  0.5  
+1.7  Change  profile  Simple  0.5  
+1.8  Change  email  Simple  0.5  
+1.9  Change  password  Simple  0.5  
+1.10  Delete  account  Simple  0.5  
+1.11  Contact  admin  Simple  0.5  
+1.12  View  notification  Complex  5  
+1.13  View  introduction  landing  page  Simple  0.5  
+1.14  View  user  list  Simple  0.5  
+1.15  Deactive  user  Simple  0.5  
+1.16  Active  user  Simple  0.5  
+1.17  Update  reader  contact  Simple  0.5  
+2   Feature  2:  Organization  management    
+2.1  BA  -  View  organization  list  Simple  0.5  
+2.2  BA  -  View  organization  detail  Simple  0.5  
+2.3  BA  -  Approve  organization  registration  information  Simple  0.5  
+2.4  BA  -  Deactivate  organization  Simple  0.5  
+2.5  OA  -  View  organization  information  Simple  0.5  
+ ProjectCode  –  Final  Report  Page  9  /  10
+
+===== PAGE 10 =====
+2.6  OA  -  Update  organization  information  Simple  0.5  
+2.7  OA  -  Delete  organization  Simple  0.5  
+2.8  OA  -  View  readers  list  Simple  0.5  
+2.9  OA  -  Import  reader  list  Complex  5  
+2.10  OA  -  Change  reader  access  Simple  0.5  
+2.11  OA  -  View  import  history  Simple  0.5  
+2.12  Reader  -  View  organization  list  Simple  0.5  
+2.13  Reader  -  View  organization  detail  Simple  0.5  
+2.14  Reader  -  Join  organization  Complex  5  
+2.15  Reader  -  Leave  organization  Simple  0.5  
+3   Feature  3:  Document  management    
+3.1  Search  document  Complex  5  
+3.2  View  document  description  Simple  0.5  
+3.2  View  detail  document  Complex  5  
+3.3  Download  public  document  Simple  0.5  
+3.4  Upload  document  Complex  5  
+3.5  View  upload  history  Simple  0.5  
+3.6  View  library  Simple  0.5  
+3.7  Update  document  Complex  5  
+3.8  Delete  document  Simple  0.5  
+3.9  View  read  history  Simple  0.5  
+3.10  View  document  summarization  Simple  0.5  
+3.11  BA  -  View  document  list  Simple  0.5  
+3.12  BA  -  View  document  detail  Simple  0.5  
+3.13  BA  -  Active  document  Simple  0.5  
+3.14  BA  -  Deactivate  document  Simple  0.5  
+4   Feature  4:  Review  document    
+4.1  BA  -  Assign  review  document  Complex  5  
+4.2  BA  -  View  request  review  Simple  0.5  
+ ProjectCode  –  Final  Report  Page  10  /  10
+
+===== PAGE 11 =====
+4.3  RE  -  View  document  detail  Complex  5  
+4.4  RE  -  Accept  assigned  request  Simple  0.5  
+4.5  RE  -  View  document  in-reviewing  Simple  0.5  
+4.6  RE  -  Review  document  Medium  2  
+4.7  RE  -  View  review  history  Simple  0.5  
+5   Feature  5:  Type,  Domain,  Tag,  Specialization  management    
+5.1  BA  -  View  tag  list  Simple  0.5  
+5.2  BA  -  Add  tag  Simple  0.5  
+5.3  BA  -  Reject  tag  Simple  0.5  
+5.4  BA  -  Update  tag  Simple  0.5  
+5.5  BA  -  View  domain  list  Simple  0.5  
+5.6  BA  -  Add  domain  Simple  0.5  
+5.7  BA  -  Update  domain  Simple  0.5  
+5.8  BA  -  View  type  list  Simple  0.5  
+5.9  BA  -  Add  type  Simple  0.5  
+5.10  BA  -  Update  type  Simple  0.5  
+5.11  BA  -  View  list  specializations  Simple  0.5  
+5.12  BA  -  Add  specialization  Simple  0.5  
+5.13  BA  -  Update  specialization  Simple  0.5  
+5.14  Reader  -  Add  tag  Simple  0.5  
+6   Feature  6:  Interaction  &  Feedback    
+6.1  Comment  document  Simple  0.5  
+6.2  Update  comment  Simple  0.5  
+6.3  Delete  comment  Simple  0.5  
+6.4  Vote  document  Simple  0.5  
+6.5  Report  document  Simple  0.5  
+6.6  Redeem  document  Simple  0.5  
+6.7  BA  -  View  report  list  Simple  0.5  
+6.8  BA  -  View  report  detail  Simple  0.5  
+ ProjectCode  –  Final  Report  Page  11  /  10
+
+===== PAGE 12 =====
+6.9  BA  -  Update  report  Simple  0.5  
+7   Feature  7:  Policy  &  Configuration    
+7.1  View  policy  Simple  0.5  
+7.2  Update  policy  Simple  0.5  
+7.3  Configure  system  Simple  0.5  
+7.4  View  system  log  Simple  0.5  
+8   Feature  8:  Statistics    
+8.1  View  personal  document  statistics  Simple  0.5  
+8.2  View  document  review  statistics  Simple  0.5  
+8.3  View  organization  statistics  Simple  0.5  
+8.4  View  system  statistics  Simple  0.5  
+8.5  View  access  statistics  Simple  0.5  
+9   Feature  9:  SavedList  management    
+9.1  View  saved  document  list  Simple  0.5  
+9.2  Create  savedlist  Simple  0.5  
+9.3  Delete  savedlist  Simple  0.5  
+9.4  Rename  savedlist  Simple  0.5  
+9.5  View  savedlist  detail  Simple  0.5  
+9.6  Add  document  to  savedlist  Simple  0.5  
+9.7  Delete  document  in  savedlist  Simple  0.5  
+Total  Estimated  Effort  (man-days)  91   1.2  Project  Objectives  The  primary  objective  of  this  project  is  to  deliver  a  comprehensive  and  fully  functional  product  that  is  
+ready
+ 
+for
+ 
+practical
+ 
+application.
+ 
+To
+ 
+achieve
+ 
+this,
+ 
+the
+ 
+project
+ 
+must
+ 
+meet
+ 
+the
+ 
+following
+ 
+specific
+ 
+goals:
+ 1.2.1.  Source  Code  Completion  -  The  development  of  the  source  code  should  be  finalized  by  December  2nd ,  ensuring  that  all  
+planned
+ 
+features
+ 
+and
+ 
+functionalities
+ 
+are
+ 
+implemented.
+ -  Rigorous  testing  should  ensure  no  critical  bugs  or  major  issues  remain  unresolved,  allowing  for  a  
+smooth
+ 
+transition
+ 
+to
+ 
+the
+ 
+final
+ 
+testing
+ 
+and
+ 
+deployment
+ 
+phases.
+  1.2.2.  Completion  and  Review  of  Documentation  
+ ProjectCode  –  Final  Report  Page  12  /  10
+
+===== PAGE 13 =====
+All  required  project  documents  must  be  prepared,  thoroughly  reviewed,  and  approved  by  the  project  
+supervisor.
+ 
+These
+ 
+documents
+ 
+include:
+ -  Project  Introduction:  A  detailed  overview  of  the  project's  objectives,  scope,  and  significance.  -  Project  Management  Plan  (PMP) :  Comprehensive  planning  documents  outlining  timelines,  
+resource
+ 
+allocation,
+ 
+risk
+ 
+management
+ 
+strategies,
+ 
+and
+ 
+team
+ 
+roles.
+ -  Software  Requirements  Specification  (SRS) :  A  precise  description  of  all  functional  and  
+non-functional
+ 
+requirements
+ 
+for
+ 
+the
+ 
+software.
+ -  Software  Design  Description  (SDD):  Detailed  architectural  and  technical  design  specifications.  -  Software  Testing  Documentation  (STD):  Documentation  of  all  testing  plans,  strategies,  results,  and  
+fixes.
+ -  Software  User  Guides  (SUG):  Clear  and  concise  instructions  for  end-users  on  how  to  use  the  
+software
+ 
+effectively.
+ -  Final  Report:  A  summary  of  the  entire  project,  highlighting  the  methodology,  outcomes,  and  future  
+recommendations.
+ All  documents  should  be  finalized,  incorporating  feedback  from  the  supervisor,  and  must  be  ready  for  
+submission.
+  1.2.3.  Execution  of  Testing  Stages  All  testing  phases  must  be  planned  and  executed  to  ensure  the  product  meets  the  defined  quality  
+standards.
+ 
+This
+ 
+includes:
+ 
+#  Testing  Stage  
+Test  Coverage  
+No.  of  Defects  
+%  of  Defect  
+Notes  
+1  Reviewing  
+100%  of  documentation.  
+To  be  logged.  
+N/A  
+Since  it  focuses  on  documentation,  not  functional  issues.  
+2  Unit  Test  
+All  major  functions  and  components.  
+To  be  determined  during  testing.  
+N/A  until  testing  results  are  available.  
+ 
+3  
+Integration  Test  
+All  integrated  modules.  
+Expected  to  identify  issues  related  to  module  interaction.  
+Based  on  testing  outcomes.  
+ 
+4  System  Test  
+100%  of  system  functionality.  
+To  be  logged  during  system-
+Based  on  test  execution.  
+ 
+ ProjectCode  –  Final  Report  Page  13  /  10
+
+===== PAGE 14 =====
+wide  testing.  
+5  
+Acceptance  Test  
+Client-defined  critical  functionalities.  
+Expected  to  be  minimal  at  this  stage.  
+Should  be  the  lowest  in  the  cycle.  
+ 
+ 1.3  Project  Risks   #  Risk  Description  Impact  Possibility   Response  Plans  
+1  Technical  Risks  
+1.1  
+Integration  issues  with  real-time  database.  
+High  Medium  
+Allocate  time  for  thorough  testing  and  debugging.  Engage  with  the  support  community  or  the  provider  for  assistance.  
+1.2  
+Bugs  in  the  core  functionality.  
+High  Medium  
+Implement  a  robust  testing  process  including  unit  tests  and  integration  tests.  Use  a  bug  tracking  system  to  manage  and  resolve  issues  promptly.  
+1.3  
+Dependency  on  third-party  libraries  causing  compatibility  issues.  
+Medium  Medium  
+Regularly  update  and  test  dependencies.  Keep  an  eye  on  library  updates  and  their  impact  on  the  project.  
+1.4  
+Performance  issues  due  to  inefficient  code.  
+High  Low  
+Conduct  code  reviews  focused  on  performance.  Optimize  code  where  necessary  and  perform  load  testing.  
+1.5  
+Real-time  collaboration  lag.  
+High  Medium  
+Optimize  real-time  synchronization  algorithms  and  ensure  efficient  use  of  bandwidth  and  server  resources.  
+2  Schedule  Risks  
+2.1  
+Delays  in  task  completion.  
+High  Medium  
+Use  Scrum  to  manage  tasks  in  sprints.  Regularly  review  progress  and  adjust  plans  as  needed.  
+2.2  
+Unexpected  technical  challenges.  
+High  High  
+Include  buffer  time  in  the  schedule  to  accommodate  unforeseen  issues.  Regularly  review  and  adjust  timelines.  
+2.3  
+Team  member  availability.  
+Medium  Medium  
+Plan  for  backup  resources.  Ensure  clear  communication  and  documentation  to  enable  others  to  step  in  if  needed.  
+ ProjectCode  –  Final  Report  Page  14  /  10
+
+===== PAGE 15 =====
+3  Resource  Risks  
+3.1  
+Limited  access  to  necessary  tools  and  resources.  
+Medium  Low  
+Identify  and  secure  all  required  tools  early  in  the  project.  Maintain  a  list  of  alternative  resources.  
+3.2  
+Insufficient  knowledge  or  skills  within  the  team.  
+Medium  Medium  
+Provide  training  and  access  to  educational  resources.  Encourage  knowledge  sharing  within  the  team.  
+4  Quality  Risks  
+4.1  
+Inadequate  testing  coverage.  
+High  Medium  
+Develop  a  comprehensive  testing  plan  covering  unit,  integration,  and  system  tests.  Regularly  review  and  update  test  cases.  
+4.2  
+Poor  code  quality  leading  to  maintainability  issues.  
+High  Low  
+Implement  code  reviews  and  adhere  to  coding  standards.  Use  static  analysis  tools  to  enforce  quality.  
+4.3  
+Failure  to  meet  user  requirements.  
+High  Medium  
+Engage  users  early  and  often  through  feedback  sessions.  Use  iterative  development  to  refine  requirements.  
+5.  External  Risks  
+5.1  
+Changes  in  third-party  services'  APIs.  
+Medium  Medium  
+Monitor  third-party  services  for  updates.  Design  the  system  to  be  adaptable  to  API  changes.  
+5.2  Security  vulnerabilities.  High  Low  
+Conduct  regular  security  assessments.  Implement  best  practices  for  secure  coding  and  data  protection.  
+6  Organizational  Risks  
+6.1  
+Changes  in  team  structure  or  leadership.  
+Medium  Low  
+Document  roles  and  responsibilities  clearly.  Ensure  knowledge  transfer  and  backup  plans  are  in  place.  
+6.2  
+Lack  of  stakeholder  engagement.  
+Medium  Medium  
+Schedule  regular  stakeholder  meetings.  Provide  clear  and  concise  updates  on  project  progress.  
+6.4  
+Inadequate  communication  within  the  team.  
+High  Medium  
+Use  regular  meeting  and  foster  an  open  communication  culture.  
+6.5  Scope  creep.  High  Medium  
+Clearly  define  and  document  the  project  scope.  Use  change  management  processes  to  handle  new  requirements.  
+6.6  
+Failure  to  meet  project  deadlines.  
+High  Medium  
+Regularly  review  progress  against  milestones.  Adjust  resources  and   ProjectCode  –  Final  Report  Page  15  /  10
+
+===== PAGE 16 =====
+priorities  as  necessary  to  stay  on  track.   2.  Management  Approach 2.1  Project  Process  In  a  student  capstone  software  development  project,  the  Waterfall  model  provides  a  traditional  and  
+structured
+ 
+development
+ 
+approach.
+ 
+It
+ 
+follows
+ 
+a
+ 
+sequential
+ 
+process
+ 
+comprising
+ 
+requirements
+ 
+analysis,
+ 
+system
+ 
+design,
+ 
+implementation,
+ 
+testing,
+ 
+and
+ 
+deployment,
+ 
+making
+ 
+it
+ 
+well
+ 
+suited
+ 
+to
+ 
+projects
+ 
+that
+ 
+emphasize
+ 
+clarity
+ 
+and
+ 
+documentation
+ 
+within
+ 
+an
+ 
+academic
+ 
+context.
+ A  key  advantage  of  the  Waterfall  model  is  its  transparency,  as  each  phase  produces  clearly  defined  
+deliverables
+ 
+and
+ 
+allows
+ 
+progress
+ 
+to
+ 
+be
+ 
+monitored
+ 
+systematically.
+ 
+This
+ 
+structure
+ 
+supports
+ 
+comprehensive
+ 
+documentation,
+ 
+which
+ 
+is
+ 
+essential
+ 
+for
+ 
+academic
+ 
+evaluation
+ 
+and
+ 
+effective
+ 
+communication
+ 
+with
+ 
+supervisors.
+ 
+Moreover,
+ 
+its
+ 
+linear
+ 
+workflow
+ 
+is
+ 
+particularly
+ 
+suitable
+ 
+for
+ 
+teams
+ 
+with
+ 
+limited
+ 
+development
+ 
+experience,
+ 
+as
+ 
+it
+ 
+reduces
+ 
+coordination
+ 
+complexity
+ 
+and
+ 
+encourages
+ 
+thorough
+ 
+requirement
+ 
+validation
+ 
+before
+ 
+implementation.
+ Despite  these  benefits,  the  Waterfall  model  has  limitations,  notably  its  limited  flexibility  in  
+accommodating
+ 
+requirement
+ 
+changes
+ 
+and
+ 
+the
+ 
+lack
+ 
+of
+ 
+early
+ 
+feedback
+ 
+due
+ 
+to
+ 
+late-stage
+ 
+testing.
+ 
+Nevertheless,
+ 
+it
+ 
+remains
+ 
+an
+ 
+appropriate
+ 
+choice
+ 
+for
+ 
+student
+ 
+projects
+ 
+that
+ 
+prioritize
+ 
+methodological
+ 
+rigor,
+ 
+structured
+ 
+reporting,
+ 
+and
+ 
+well-documented
+ 
+development
+ 
+processes.
+ 2.2  Quality  Management  2.2.1  Defect  Prevention  -  Clearly  define  tasks  and  challenges :  Break  down  the  project  into  manageable  tasks  and  clearly  
+communicate
+ 
+them
+ 
+to
+ 
+all
+ 
+team
+ 
+members
+ 
+to
+ 
+ensure
+ 
+everyone
+ 
+understands
+ 
+their
+ 
+responsibilities
+ 
+and
+ 
+expectations.
+ -  Establish  clear  requirements :  Provide  detailed  documentation  and  ensure  all  members  
+comprehend
+ 
+the
+ 
+requirements.
+ 
+Use
+ 
+visual
+ 
+aids,
+ 
+flowcharts,
+ 
+or
+ 
+examples
+ 
+if
+ 
+necessary
+ 
+to
+ 
+prevent
+ 
+misunderstandings.
+ -  Role  assignment:  Assign  roles  and  tasks  based  on  each  team  member's  expertise,  strengths,  and  
+experience.
+ 
+Clearly
+ 
+define
+ 
+boundaries
+ 
+and
+ 
+responsibilities
+ 
+for
+ 
+each
+ 
+role
+ 
+to
+ 
+avoid
+ 
+overlap
+ 
+or
+ 
+gaps
+ 
+in
+ 
+coverage.
+ -  Encourage  proactive  problem  identification :  Foster  a  culture  where  team  members  are  encouraged  
+to
+ 
+identify
+ 
+potential
+ 
+issues
+ 
+early
+ 
+and
+ 
+suggest
+ 
+preventive
+ 
+measures.
+ 2.2.2  Reviewing  -  Thorough  and  structured  reviews:  Regularly  review  project  deliverables,  including  documents,  
+code,
+ 
+schedules,
+ 
+and
+ 
+designs,
+ 
+to
+ 
+identify
+ 
+errors
+ 
+or
+ 
+inconsistencies.
+ 
+Establish
+ 
+a
+ 
+checklist
+ 
+or
+ 
+review
+ 
+template
+ 
+to
+ 
+standardize
+ 
+the
+ 
+process.
+ -  Collaboration  in  reviews:  Involve  multiple  team  members  in  reviews  to  leverage  diverse  
+perspectives
+ 
+and
+ 
+expertise.
+ 
+Consider
+ 
+pair
+ 
+programming
+ 
+or
+ 
+peer
+ 
+reviews
+ 
+for
+ 
+critical
+ 
+code.
+ -  Bug  tracking  and  prioritization :  Use  a  bug-tracking  system  to  log  identified  issues,  categorizing  
+them
+ 
+by
+ 
+severity
+ 
+and
+ 
+priority.
+ 
+Examples
+ 
+include
+ 
+tools
+ 
+like
+ 
+Jira,
+ 
+Bugzilla,
+ 
+or
+ 
+Trello
+ 
+for
+ 
+tracking
+ 
+and
+ 
+resolution.
+ 
+ ProjectCode  –  Final  Report  Page  16  /  10
+
+===== PAGE 17 =====
+-  Set  review  frequency:  Schedule  regular  review  cycles  at  key  milestones  and  before  critical  deadlines  
+to
+ 
+catch
+ 
+errors
+ 
+early.
+ 2.2.3  Unit  Testing  -  Comprehensive  test  coverage:  Write  unit  tests  for  all  critical  functions  and  edge  cases.  Include  input  
+validation,
+ 
+boundary
+ 
+testing,
+ 
+and
+ 
+exception
+ 
+handling
+ 
+in
+ 
+your
+ 
+test
+ 
+cases.
+ -  Automated  testing:  Automate  as  many  tests  as  possible  to  increase  efficiency  and  consistency.  
+Regularly
+ 
+update
+ 
+automated
+ 
+tests
+ 
+to
+ 
+align
+ 
+with
+ 
+evolving
+ 
+codebases.
+ -  Code  review  for  tests :  Have  another  team  member  review  test  cases  to  ensure  they  are  robust  and  
+free
+ 
+from
+ 
+errors.
+ -  Accountability:  Ensure  that  developers  take  ownership  of  defects  found  in  their  code  and  provide  a  
+resolution
+ 
+plan
+ 
+with
+ 
+clear
+ 
+deadlines.
+ 2.2.4  Integration  Testing  -  Preconditions  for  integration  testing :  Verify  that  all  individual  modules  or  components  have  passed  
+unit
+ 
+testing
+ 
+and
+ 
+meet
+ 
+defined
+ 
+quality
+ 
+standards.
+ -  Systematic  integration :  Follow  a  structured  integration  plan,  testing  modules  in  logical  sequences  to  
+verify
+ 
+their
+ 
+interactions
+ 
+and
+ 
+dependencies.
+ -  Documentation  of  issues:  Log  any  integration  issues  found  in  a  centralized  system.  Include  detailed  
+descriptions,
+ 
+steps
+ 
+to
+ 
+reproduce,
+ 
+and
+ 
+any
+ 
+relevant
+ 
+logs
+ 
+or
+ 
+screenshots
+ 
+to
+ 
+aid
+ 
+in
+ 
+debugging.
+ -  Retesting  after  fixes:  After  resolving  integration  issues,  retest  the  affected  modules  to  ensure  the  
+fixes
+ 
+are
+ 
+effective
+ 
+and
+ 
+have
+ 
+not
+ 
+introduced
+ 
+new
+ 
+errors.
+ -  Scalability  checks:  During  integration,  test  how  well  components  scale  together  to  handle  increased  
+loads
+ 
+or
+ 
+user
+ 
+activity.
+ 2.2.5  System  Testing  -  Test  plan  and  entry/exit  criteria :  Develop  a  comprehensive  test  plan  outlining  the  scope,  objectives,  
+resources,
+ 
+and
+ 
+schedule
+ 
+for
+ 
+system
+ 
+testing.
+ 
+Define
+ 
+clear
+ 
+entry
+ 
+and
+ 
+exit
+ 
+criteria
+ 
+to
+ 
+determine
+ 
+when
+ 
+testing
+ 
+starts
+ 
+and
+ 
+concludes.
+ -  Validation  of  requirements:  Systematically  verify  that  the  integrated  system  meets  all  functional  
+and
+ 
+non-functional
+ 
+requirements
+ 
+specified
+ 
+in
+ 
+the
+ 
+project
+ 
+documentation.
+ -  End-to-end  testing:  Simulate  real-world  scenarios  to  validate  workflows,  ensuring  that  the  system  
+operates
+ 
+as
+ 
+intended
+ 
+across
+ 
+all
+ 
+components.
+ -  Performance  and  stress  testing:  Measure  the  system's  performance  under  typical  and  peak  load  
+conditions,
+ 
+identifying
+ 
+bottlenecks
+ 
+and
+ 
+areas
+ 
+for
+ 
+optimization.
+ -  Usability  testing:  Validate  the  system's  user  interface  and  user  experience  to  ensure  ease  of  use  and  
+alignment
+ 
+with
+ 
+user
+ 
+expectations.
+ -  Defect  tracking  and  resolution:  Document  all  system-level  defects,  prioritize  them  based  on  
+severity,
+ 
+and
+ 
+ensure
+ 
+retesting
+ 
+after
+ 
+fixes.
+ -  Deployment  readiness:  Confirm  that  the  system  is  stable,  fully  functional,  and  meets  all  
+deployment
+ 
+and
+ 
+operational
+ 
+readiness
+ 
+criteria.
+ 
+Conduct
+ 
+a
+ 
+final
+ 
+review
+ 
+with
+ 
+stakeholders
+ 
+before
+ 
+deployment.
+  ProjectCode  –  Final  Report  Page  17  /  10
+
+===== PAGE 18 =====
+2.3  Training  Plan   Training  Area  Participants  When,  Duration  Waiver  Criteria  
+Java  Spring  Boot  All  members  First  week  Mandatory  
+FrontEnd  NextJS  All  members  First  week  Mandatory   
+Business  analytics  NgocNTH  First  week  Mandatory   
+CICD  QuangVH  First  week  Mandatory   
+Project  management  QuanNT  First  week  Mandatory   
+Cloud  service  QuangVH  First  week  Mandatory   
+Artificial  Intelligence  QuanNT,  AnhTD  First  month  Mandatory    
+3.  Project  Deliverables   
+#  Deliverable  Due  Date  Notes  
+ 
+Web  Application  for  Scenario  Customization  
+30/11/2025  
+-A  web-based  interface  for  users  to  create  and  customize  automation  scenarios.  -  Drag-and-drop  interface  for  creating  automation  scenarios.  -  Ability  to  save,  edit,  and  delete  scenarios.  -  JSON-based  output  that  can  be  synced  with  the  Android  client.  -  User  authentication  and  role  management.  -  Visual  representation  of  workflow  and  task  dependencies.  
+ Documentation  5/12/2025  
+-Comprehensive  documentation  covering  all  aspects  of  the  READEE  project.  -  Step-by-step  installation  and  setup  guide.  -  User  manual  explaining  key  functionalities  for  both  the  Android  and  web  applications.  -  API  documentation  for  developers  extending  the  system.  -  Troubleshooting  guide  and  FAQs.  
+ 
+Testing  and  Validation  Reports  
+05/12/2025  
+-Reports  detailing  the  testing  and  validation  processes.  -  Detailed  reports  on  unit,  integration,  system,  and  acceptance  tests.  -  Coverage  of  all  functionalities,  including  edge  cases  and  error  scenarios.  -  Logs  of  identified  bugs,  fixes,  and  performance  metrics.  
+ 
+Support  and  Maintenance  Plan  
+15/12/2025  
+-  A  plan  outlining  ongoing  support  and  maintenance  for  READEE.   ProjectCode  –  Final  Report  Page  18  /  10
+
+===== PAGE 19 =====
+-  Regular  updates  to  address  bug  fixes  and  improve  performance.  -  User  support  via  email  or  ticketing  system.  -  Roadmap  for  future  feature  additions  and  improvements.  -  SLA  (Service  Level  Agreement)  outlining  response  times  and  support  availability.   
+4.  Responsibility  Assignments   
+No  Responsibility  
+QuanNT  
+QuangVH  
+AnhTD  
+NgocNTH  
+HungVD  
+1  Planning  
+1.1  Choose  Techstacks  D  S  S  S  S  
+1.2  Create  project  schedules  D  S  S  S  S  
+1.3  Choose  project  model  D  S  S  S  S  
+2  Documentation  &  Design  
+2.1  Introduction  Document  S,R  D  -  D  -  
+2.2  
+Project  management  plan  Document  
+D  -  -  -  -  
+2.3  
+Software  requirements  specification  
+D,R  D  D  D  D  
+2.4  Software  design  description  R  D  -  D  -  
+2.5  Software  testing  documentation  R  -  -  D  -  
+2.6  Software  user  guide  R  S  S  D  S  
+2.7  Design  System  R  D  -  D  -  
+2.8  Design  Database  R  D  -  -  -  
+2.9  Design  Use  Cases  D,R  -  D  D,R  D  
+2.10  Design  Screen  Flows  D  -  -  D  -  
+2.11  Design  Class  Diagrams  R  D  -  R  -  
+2.12  Design  Sequence  Diagrams  R  -  -  D  -  
+2.13  Describe  functional  requirements  R  -  -  D  -  
+2.14  Design  Mockups  D,R  D  D  D  D  
+3  Coding  
+3.1  Setup  Environment  D  D  -  -  -  
+3.2  Create  Coding  Convention  R  D  -  -  -  
+3.3  Create  API  code  base  D,R  D,R  -  -  D  
+ ProjectCode  –  Final  Report  Page  19  /  10
+
+===== PAGE 20 =====
+3.4  Create  Website  code  base  D,R  D,R  D  -  D  
+3.5  Modify  UI  D,R  D  D  -  D  
+3.6  Deploy  Code  -  D  -  -  -  
+4  Testing  
+4.1  Create  &  Control  test  plan  R  -  -  D  -  
+4.2  Unit  Test  R  -  -  D  -  
+4.3  Integration  Test  R  -  -  D  -  
+4.4  System  Test  R  -  -  D  -   
+5.  Project  Communications   Communication  Item  
+Who/  Target  
+Purpose  
+When,  Frequency  
+Type,  Tool,  Method(s)  
+Requirement  Confirmation  meeting  
+All  members  
+-  Validate  and  finalize  all  system  requirements  before  entering  the  design  phase  -  Ensure  shared  understanding  among  all  team  members  
+At  the  beginning  of  the  project;  additionally  if  clarification  is  required  
+-  Offline  meeting  -  Online  (Google  Meet)  
+System  design  meeting  
+All  Members  
+-  Review  the  overall  architecture  and  detailed  design  documents  -  Confirm  feasibility  before  implementation  begins  
+After  completing  the  design  phase  
+-  Offline  -  Online  (Google  Meet,  documents  on  Google  Docs)  
+Progress  Monitoring  meeting  
+All  members  
+-  Track  implementation  progress  -  Identify  obstacles  and  coordinate  solutions  -  Maintain  timeline  alignment  across  members  
+Weekly  or  Biweekly  depending  on  workload  
+-  Offline  -  Online  (Google  Meet)  
+Module  Implementation  discussion  
+Member  involve  in  specific  module  
+-  Resolve  technical  issues  related  to  implementation  -  Synchronize  coding  standards  and  integration  points  
+Whenever  issues  arise  During  implementation  
+-  Offline  -  Online  (Google  Meet)  
+Integration  &  Testing  Coordination  meeting  
+All  members  
+-  Coordinate  module  integration  -  Align  test  cases,  expected  results,  and  test  responsibilities  
+At  the  beginning  and  midpoint  of  the  testing  phase    
+-  Offline  -  Online  (Google  Meet,  group  chat)  
+ ProjectCode  –  Final  Report  Page  20  /  10
+
+===== PAGE 21 =====
+Review  meeting  with  supervisor  
+ All  members     
+-  Present  progress  at  major  milestones  -  Receive  academic  feedback  before  finalizing  each  phase  
+ At  the  end  of  Each  Waterfall  phase  or  per  supervisor  requirement     
+-  Chat  tools  (Messenger  /  Zalo)  -  Shared  documents  (Google  Docs)  
+Final  review  &  Documentation  meeting  
+All  members  
+-  Review  completed  system  -  Finalize  documentation  for  submission  and  defense  
+Before  Submitting  document  and  report  
+ 
+Team  building  
+All  members  
+-  Strengthen  team  cohesion  -  Re-align  expectations  at  major  project  milestones  
+ At  Project  Start  And  End     
+-  Offline  
+ 
+6.  Configuration  Management  6.1  Document  Management  The  READEE  team  utilizes  GoogleDrive  as  our  primary  platform  for  storing,  sharing,  and  managing  
+documents.
+ 
+GoogleDrive
+ 
+allows
+ 
+team
+ 
+members
+ 
+to
+ 
+collaborate
+ 
+seamlessly
+ 
+by
+ 
+enabling
+ 
+real-time
+ 
+editing,
+ 
+version
+ 
+control,
+ 
+and
+ 
+commenting
+ 
+features.
+ 
+This
+ 
+helps
+ 
+us
+ 
+track
+ 
+changes,
+ 
+identify
+ 
+contributors,
+ 
+and
+ 
+easily
+ 
+compare
+ 
+different
+ 
+versions
+ 
+of
+ 
+documents.
+ 
+The
+ 
+team
+ 
+also
+ 
+uses
+ 
+OneDrive
+ 
+to
+ 
+manage
+ 
+our
+ 
+weekly
+ 
+reports,
+ 
+ensuring
+ 
+consistent
+ 
+and
+ 
+secure
+ 
+storage.
+ 6.2  Source  Code  Management  For  source  code  management,  READEE  relies  on  GitHub ,  a  robust  and  widely  used  platform  
+that
+ 
+supports
+ 
+collaboration
+ 
+across
+ 
+all
+ 
+phases
+ 
+of
+ 
+software
+ 
+development.
+ 
+GitHub
+ 
+enables
+ 
+our
+ 
+team
+ 
+to
+ 
+work
+ 
+simultaneously
+ 
+on
+ 
+various
+ 
+features
+ 
+and
+ 
+fixes
+ 
+through
+ 
+branches,
+ 
+pull
+ 
+requests,
+ 
+and
+ 
+code
+ 
+reviews.
+ 
+It
+ 
+also
+ 
+offers
+ 
+integrations
+ 
+for
+ 
+continuous
+ 
+integration/continuous
+ 
+deployment
+ 
+(CI/CD),
+ 
+issue
+ 
+tracking,
+ 
+and
+ 
+task
+ 
+automation,
+ 
+ensuring
+ 
+a
+ 
+streamlined
+ 
+and
+ 
+efficient
+ 
+development
+ 
+workflow.
+ 6.3  Tools  &  Infrastructures   
+Category  Tools  /  Infrastructure  
+Technology  NextJS(FrontEnd),  Java/Springboot(Backend)   ProjectCode  –  Final  Report  Page  21  /  10
+
+===== PAGE 22 =====
+Database  Postgres  
+IDEs/Editors  Visual  studio  code,  Intelliji  
+Diagramming  Draw.IO  Documentation  Google  docs,  google  sheet  
+Version  Control  Github  (Source  Codes),  Google  Drive  (Documents)  
+Deployment  server  Amazon  Web  Service,  On  Render  service  
+Project  management  Google  Driver    
+III.  Software  Requirement  Specification  1.  Requirement  Overview  1.1  Context  Diagram  
+  1.2  User  Requirements  1.2.1  Actors   
+#  Actor  Description  
+1  Guest  Unregistered  visitor  who  can  browse  limited  documents  and  view  public  information.  
+2  Reader  
+User  who  uploads  their  own  document  and  has  the  ability  to  view  others'  uploaded  documents,  download,  interact  with  the  document.  
+ ProjectCode  –  Final  Report  Page  22  /  10
+
+===== PAGE 23 =====
+3  Reviewer  
+User  who  reviews  and  approves/rejects  documents  content  uploaded  by  users  to  ensure  quality  and  accuracy.  
+4  
+Organization  Admin  User  who  manages  an  organization  and  the  enrollment  of  reader  in  the  organization.  
+5  Business  Admin  
+Manages  the  business  in  the  system  includes  users,  documents,  organization,  documents  attributes  (type,  tag,  domain,  specification).  
+6  System  Admin  Maintains  system  infrastructure,  user  roles,  security,  and  backend  configuration.  
+7  
+Google  Mail  Service  External  Service  used  to  send  automated  notifications,  verification  emails.  
+8  AI  Model  
+Service  created  by  internal  team  provides  document  moderation  and  summarization  assist.  
+ 1.2.2  Use  Cases  (UC)  Table  1.2.2.1  –  User  Requirements  –  Use  Cases  (UC)  Feature  #  Use  Case  Description  
+Common  
+CM1  Register  As  Reader  
+Allows  a  new  user  to  create  an  account  as  a  reader.  
+CM2  Register  As  Reviewer  
+Allows  a  new  user  to  create  an  account  with  reviewer  privileges.  
+CM3  
+Register  As  Organization  Admin  
+Allows  a  new  user  to  create  a  new  organization  with  their  account  to  manage  the  organization.  
+CM4  Login  as  Normal  User  
+Allows  a  registered  user  role  READER,  REVIEWER,  ORGANIZATION  ADMIN  to  access  the  system  using  valid  credentials.  
+CM5  Login  as  Admin  
+Allows  admin  (BA,  SA)  to  access  the  system  using  valid  credentials.  
+CM6  Reset  Password  
+Allows  a  user  to  reset  their  account  password  if  forgotten.  Ensures  secure  access  to  the  system.  
+CM7  View  Profile  
+Enables  a  user  to  view  their  personal  account  information  and  profile  details.  
+CM8  Change  Profile  
+Allows  a  user  to  update  their  personal  information  to  keep  their  profile  current.  
+CM9  Change  Email  
+Enables  a  user  to  update  the  email  associated  with  their  account.  Ensures  notifications  are  sent  to  the  correct  address.  
+CM10  Change  Password  
+Allows  a  user  to  update  their  password  to  maintain  account  security.  
+ ProjectCode  –  Final  Report  Page  23  /  10
+
+===== PAGE 24 =====
+CM11  Delete  Account  
+Enables  a  user  to  permanently  remove  their  account.  
+CM12  Create  Support  Ticket  
+Allows  a  user  to  communicate  with  the  business  administrator  for  queries  or  issues.  
+CM13  View  Notification  
+Enables  a  user  to  view  all  notifications  relevant  to  their  account  and  activities.  
+CM14  View  landing  page  
+Displays  the  system’s  landing  page  to  provide  an  overview  and  navigation.  
+CM15  View  users  list  
+Allows  an  admin  to  view  all  registered  users  and  their  basic  information.  
+CM16  Deactive  User  
+Enables  an  admin  to  temporarily  disable  a  user  account  for  security  or  policy  reasons.  
+CM17  Active  user  
+Allows  an  admin  to  reactivate  a  previously  deactivated  user  account.  
+CM18  
+Update  User  Support  Ticket  
+Enables  an  admin  to  respond  to  user  support  tickets.  
+Organization  Management  
+ORG1  
+BA  -  View  Organizations  List  
+Allows  a  Business  Admin  to  view  organizations  they  manage.  
+ORG2  
+BA  -  View  Organization  detail  
+Enables  a  Business  Admin  to  view  detailed  information  about  an  organization.  
+ORG3  BA  -  Active  organization  
+Allows  a  Business  Admin  to  activate  an  organization  in  the  system  for  operations.  
+ORG4  
+BA  -  Deactive  organization  
+Enables  a  Business  Admin  to  deactivate  an  organization  from  the  system.  
+ORG5  
+View  Organization  Information  
+Enables  organization  admin  to  see  the  details  and  information  of  their  organization.  
+ORG6  
+Update  Organization  Information  
+Allows  an  Organization  Admin  to  edit  an  organization’s  information  for  accuracy.  
+ORG7  OA  -  Delete  Organization  
+Enables  an  Organization  Admin  to  remove  their  organization  from  the  system.  
+ORG8  View  Readers  List  
+Allows  an  organization  admin  to  see  all  readers  enrolled  in  the  organization.  
+ORG9  
+Import  Readers  List  To  Organization  
+Enables  an  Organization  Admin  to  add  multiple  readers  into  an  organization  at  once.  
+ORG10  
+Change  reader  access  
+Allows  an  Organization  Admin  to  revoke  a  reader’s  access  to  an  organization.  
+ ProjectCode  –  Final  Report  Page  24  /  10
+
+===== PAGE 25 =====
+ORG11  
+View  Import  History  
+Allows  an  organization  admin  to  review  the  history  of  imported  readers  or  data.  
+ORG12  
+View  Import  Detail  
+Allows  an  organization  admin  to  review  the  detail  of  imported  readers  or  data  in  a  batch  import.  
+ORG13  
+Reader  -  View  Organizations  List  
+Enables  a  reader  to  see  all  available  organizations  they  have  joined  in  the  system.  
+ORG14  
+Reader  -  View  Organization  Detail  
+Allows  a  reader  to  view  detailed  information  about  a  specific  organization.  
+ORG15  
+Join  Organization  
+Allows  a  user  to  join  an  organization  and  access  its  resources.  
+ORG16  
+Leave  Organization  
+Enables  a  user  to  leave  an  organization  they  are  part  of,  revoking  associated  access.  
+Document  Management  
+DOC1  Search  Document  
+Enables  a  user  to  search  documents  using  keywords  or  filters.  
+DOC2  
+View  Document  Description  Detail  
+Allows  a  user  to  see  the  detailed  description  and  metadata  of  a  document.  
+DOC3  
+View  Document  Content  Detail  
+Enables  a  user  to  view  the  full  content  of  a  document.  
+DOC4  Download  Document  
+Allows  a  user  to  download  a  document  for  offline  access.  
+DOC5  Upload  Document  
+Enables  a  user  to  upload  new  documents  to  the  system.  
+DOC6  
+View  Document  Upload  History  
+Allows  a  user  to  track  all  documents  they  have  uploaded.  
+DOC7  View  Library  
+Provides  access  to  the  document  library  for  browsing  and  searching  documents  uploaded  or  purchased  successfully.  
+DOC8  Update  Document  
+Enables  a  user  to  edit  an  existing  document  to  correct  or  update  information.  
+DOC9  
+Reader  -  Delete  Document  
+Allows  a  reader  to  remove  documents  they  previously  uploaded.  
+DOC10  
+View  Documents  Read  History  
+Enables  a  user  to  track  which  documents  they  have  read  and  when.  
+DOC11  
+Business  Admin  -  View  Documents  List  
+Enables  a  Business  Admin  to  view  all  documents  in  the  system.  
+DOC12  
+Business  Admin  -  View  Document  Detail  
+Allows  a  Business  Admin  to  see  detailed  information  about  a  document.  
+ ProjectCode  –  Final  Report  Page  25  /  10
+
+===== PAGE 26 =====
+DOC13  
+Active  document  
+Enables  a  Business  Admin  to  make  a  document  available  for  use.  
+DOC14  
+Business  Admin  -  Deactive  Document  
+Allows  a  Business  Admin  to  temporarily  disable  a  document  from  being  accessed.  
+Review  Document  
+RV1  
+Assign  Reviewer  for  Document  
+Enables  a  Business  Admin  to  assign  documents  to  reviewers  for  evaluation.  
+RV2  
+View  Review  Document  Request  
+Allows  a  user  to  see  pending  requests  for  document  reviews.  
+RV3  Reviewer  -  View  Document  Description  
+Enables  a  reviewer  to  access  full  document  description  to  consider  action  for  a  review  request.  
+RV4  
+Accept  Review  Document  Request  
+Allows  a  reviewer  to  accept  a  document  review  assignment.  
+RV5  
+Reject  Review  Document  Request  
+Allows  a  reviewer  to  reject  a  document  review  assignment.  
+RV6  
+View  Reviewing  Documents  List  
+Provides  reviewers  a  list  of  documents  assigned  for  review.  
+RV7  View  Document  Detail  
+Reviewer  view  content  of  the  document  need  to  review  and  take  actions  on  it.  
+RV8  Review  Document  
+Enables  a  reviewer  to  provide  feedback  and  evaluations  for  a  document.  
+RV9  
+View  Document  Review  History  
+Allows  a  reviewer  to  see  the  history  of  their  reviews  for  documents.  
+RV10  
+View  Pending  Approve  Review  
+Allows  a  Business  Admin  to  view  list  of  review  results  that  are  pending  approval  and  act  on  them.  
+RV11  Approve  Review  Result  
+Allows  a  Business  Admin  to  approve  the  result  of  reviewing  for  a  document.  
+RV12  Reject  Review  Result  
+Allows  a  Business  Admin  to  reject  the  review  result  of  a  reviewer  and  request  an  update.  
+Categorized  Document  
+DAM1  View  Tags  List  
+Enables  a  BA  to  view  all  tags  available  in  the  system.  
+DAM2  
+Business  Admin  -  Add  Tag  
+Allows  a  Business  Admin  to  create  a  new  tag  for  organizing  documents.  
+DAM3  Reader  -  Add  Tag  
+Enables  a  reader  to  add  tags  to  documents  for  better  categorization.  
+ ProjectCode  –  Final  Report  Page  26  /  10
+
+===== PAGE 27 =====
+DAM4  Reject  Document  Tag  
+Allows  a  BA  to  reject  inappropriate  or  incorrect  suggested  tags.  
+DAM5  Update  Tag  
+Enables  a  BA  to  modify  an  existing  tag’s  name  or  description.  
+DAM6  View  domains  List  
+Allows  a  BA  to  see  all  available  domains  in  the  system.  
+DAM7  Add  domain  
+Enables  a  BA  to  create  a  new  domain  for  document  categorization.  
+DAM8  Update  domain  Allows  a  BA  to  edit  details  of  an  existing  domain.  
+DAM9  View  Types  List  Enables  a  BA  to  see  all  available  document  types.  
+DAM10  
+Add  Type  
+Allows  a  BA  to  add  a  new  type  for  classifying  documents.  
+DAM11  
+Update  Type  
+Enables  a  BA  to  edit  the  details  of  an  existing  document  type.  
+DAM12  
+View  specializations  List  of  a  domain  
+Allows  a  BA  to  see  all  specializations  under  a  specific  domain.  
+DAM13  
+Add  specialization  into  domain  
+Enables  a  BA  to  add  a  new  specialization  under  a  domain.  
+DAM14  
+Update  specialization  in  domain  
+Allows  a  BA  to  modify  an  existing  specialization  in  a  domain.  
+Interaction  &  Feedback  
+INT1  Comment  Document  Enables  a  user  to  add  comments  on  a  document.  
+INT2  Update  comment  
+Allows  a  user  to  edit  comments  they  previously  added.  
+INT3  Delete  comment  
+Enables  a  user  to  remove  a  comment  from  a  document.  
+INT4  Vote  Document  
+Allows  a  user  to  vote  a  document  based  on  relevance  or  quality.  
+INT5  Report  Document  
+Enables  a  user  to  report  issues  or  inappropriate  content  in  a  document.  
+INT6  View  Reports  List  
+Allows  a  BA  to  see  all  reports  submitted  in  the  system.  
+INT7  View  report  detail  
+Enables  a  BA  to  access  detailed  information  about  a  specific  report.  
+INT8  Update  Report  
+Allows  a  BA  to  act  on  or  update  the  status  of  a  report.  
+ ProjectCode  –  Final  Report  Page  27  /  10
+
+===== PAGE 28 =====
+INT9  Redeem  Document  
+Enables  a  user  to  redeem  a  document  if  it  is  premium  content.  
+Policy  &  Configuration  
+CON1  View  Policies  
+Allows  a  user  to  read  system  policies  and  guidelines.  
+CON2  Update  Policy  
+Enables  an  admin  to  edit  or  update  system  policies.  
+CON3  Configure  System  
+Allows  an  admin  to  set  up  or  modify  system-wide  configurations.  
+CON4  
+View  User  Role  In  System  
+Enables  an  admin  to  view  roles  and  permissions  of  users.  
+CON5  
+Update  Role  Of  User  in  system  
+Allows  an  admin  to  update  or  change  a  user’s  role  in  the  system.  
+CON6  View  System  Log  
+Allows  an  admin  to  review  system  activity  and  logs  for  monitoring.  
+CON7  Add  a  new  version  Policy  Allows  an  admin  to  add  a  new  policy  version.  
+Statistics  
+STA1  
+View  Personal  Document  Statistics  
+Enables  a  user  to  see  their  own  document  activity  and  statistics.  
+STA2  
+View  Document  Review  Statistics  
+Allows  a  reviewer  to  track  review  activity  and  statistics  for  documents.  
+STA3  
+View  Organization  Statistics  
+Enables  an  Organization  Admin  to  view  performance  and  activity  statistics  of  an  organization.  
+STA4  View  System  Statistics  
+Allows  a  Business  Admin  to  see  overall  statistics  for  documents,  reports,  and  organizations.  
+STA5  View  Access  Statistics  Allows  an  admin  to  view  access-related  statistics.  
+SavedLists  Management  
+SLM1  
+View  Saved  Documents  List  
+Enables  a  user  to  see  all  documents  they  have  saved  for  future  reference.  
+SLM2  Create  SavedList  
+Allows  a  user  to  create  a  new  list  to  organize  saved  documents.  
+SLM3  Delete  SavedList  Enables  a  user  to  remove  a  saved  document  list.  
+SLM4  Rename  SavedList  
+Allows  a  user  to  change  the  name  of  a  saved  document  list.  
+SLM5  View  SavedList  Detail  
+Enables  a  user  to  see  the  contents  and  details  of  a  saved  list.  
+SLM6  
+Add  document  in  SavedList  
+Allows  a  user  to  add  a  document  to  an  existing  saved  list.  
+ ProjectCode  –  Final  Report  Page  28  /  10
+
+===== PAGE 29 =====
+SLM7  
+Delete  document  in  SavedList  
+Enables  a  user  to  remove  a  document  from  a  saved  list.  
+ 1.2.3  Use  Case  Diagrams  1.2.3.1  UCs  for  Guest,  Common  
+  1.2.3.2  UCs  for  Reader   
+ ProjectCode  –  Final  Report  Page  29  /  10
+
+===== PAGE 30 =====
+1.2.3.3  UCs  for  Organization,  Reviewer   
+ ProjectCode  –  Final  Report  Page  30  /  10
+
+===== PAGE 31 =====
+1.2.3.4  UCs  for  Business  Admin   
+ ProjectCode  –  Final  Report  Page  31  /  10
+
+===== PAGE 32 =====
+1.2.3.5  UCs  for  System  Admin   
+ ProjectCode  –  Final  Report  Page  32  /  10
+
+===== PAGE 33 =====
+1.3  System  Functionalities  1.3.1  Screens  Flow  
+  1.3.2  Screen  Authorization    
+Feature  Screen  Name  Guest  Reader  Reviewer  
+Organization  Admin  
+Business  Admin  
+System  Admin  
+Common  Sign  up  x       
+Common  Sign  in  x       
+Common  
+Forgot  Password  (Enter  Email)  x       
+Common  
+Forgot  Password  (Enter  OTP)  x       
+Common  Reset  Password  x       
+Common  User  Profile   x  x     
+ ProjectCode  –  Final  Report  Page  33  /  10
+
+===== PAGE 34 =====
+Common  Change  Profile   x  x     
+Common  
+Change  Email  -  Verify  Password   x  x  x    
+Common  
+Change  Email  -  Enter  New  Email   x  x  x    
+Common  
+Change  Email  -  Verify  OTP   x  x  x    
+Common  
+Change  Password   x  x  x    
+Common  
+Send  Support  Ticket  x  x  x  x    
+Common  Notification   x  x  x  x  x  
+Common  Notification  List   x  x  x  x  x  
+Common  
+Notification  Detail   x  x  x  x  x  
+Common  Landing  Page  x  x  x  x  x  x  
+Common  User  List      x   
+Common  User  Detail      x   
+Common  
+Support  Ticket  List      x   
+Common  
+Support  Ticket  Detail      x   
+Common  Policy  x  x  x  x  x  x  
+Common  Home   x      
+Organization  Organization  List      x   
+Organization  
+BA  -  Organization  Details      x   
+Organization  
+Manage  Organization     x    
+Organization  
+Edit  Organization     x    
+Organization  
+Manage  Readers     x    
+Organization  Import  History     x    
+Organization  Import  Readers     x    
+Organization  Import  Details     x    
+ ProjectCode  –  Final  Report  Page  34  /  10
+
+===== PAGE 35 =====
+Organization  
+My  Organizations   x      
+Organization  
+R  -  Organization  Detail   x      
+Document  Management  
+Search  Document   x      
+Document  Management  
+Document  Description   x  x   x   
+Document  Management  
+Document  Detail   x  x   x   
+Document  Management  
+Upload  Document   x      
+Document  Management  Upload  History   x      
+Document  Management  Library   x      
+Document  Management  
+Update  Document   x      
+Document  Management  Read  History   x      
+Document  Management  Document  List      x   
+Document  Management  
+BA  -  Document  Detail      x   
+Document  Management  Summary      x   
+Review  Document  Assign  Reviewer      x   
+Review  Document  
+Review  Document    x     
+Tag,  Domain,  Type,  specialization  Management  
+Tag  Management      x   
+Tag,  Domain,  Type,  specialization  Management  BA  -  Add  Tag      x   
+Tag,  Domain,  Type,  Update  Tag      x   
+ ProjectCode  –  Final  Report  Page  35  /  10
+
+===== PAGE 36 =====
+specialization  Management  
+Tag,  Domain,  Type,  specialization  Management  
+Domain  Management      x   
+Tag,  Domain,  Type,  specialization  Management  Add  Domain      x   
+Tag,  Domain,  Type,  specialization  Management  Update  domain      x   
+Tag,  Domain,  Type,  specialization  Management  
+Type  Management      x   
+Tag,  Domain,  Type,  specialization  Management  Add  Type      x   
+Tag,  Domain,  Type,  specialization  Management  Update  Type      x   
+Tag,  Domain,  Type,  specialization  Management  
+Specializtions  List      x   
+Tag,  Domain,  Type,  specialization  Management  
+Add  Specialization      x   
+Tag,  Domain,  Type,  specialization  Management  
+Update  Specialization      x   
+Interaction  &  Feedback  
+Report  Document   x      
+Interaction  &  Feedback  Report  List      x   
+Interaction  &  Feedback  Report  Detail      x   
+ ProjectCode  –  Final  Report  Page  36  /  10
+
+===== PAGE 37 =====
+Policy  &  Configuration  Policies       x  
+Policy  &  Configuration  Update  Policy       x  
+Policy  &  Configuration  
+Create  New  Version  Policy       x  
+Policy  &  Configuration  System  Config       x  
+Policy  &  Configuration  
+Role  Management       x  
+Policy  &  Configuration  
+Change  User  Role       x  
+Policy  &  Configuration  System  Log       x  
+Statistics  
+Personal  Statistics   x      
+Statistics  
+Dashboard  (Reviewer)    x     
+Statistics  
+Dashboard  (Business  Admin)      x   
+Statistics  
+Dashboard  (Organization  Admin)     x    
+Statistics  
+Dashboard  (System  Admin)       x  
+SavedLists  Management  
+Add  new  SavedList   x      
+SavedLists  Management  
+Add  To  Save  Lists   x      
+ 1.3.3  Non-UI  Functions  #  Feature  System  Function  Description  
+1  Common  User  Authentication  Validate  user  credentials,  generate  session/token,  and  enforce  role-based  access  control  (Reader,  Reviewer,  Business  Admin).  
+2  All  Features  Role  Permission  Validation  Verify  user  permissions  for  non-UI  actions  (upload,  approve  review  result,  activate  document,  delete  document).  
+ ProjectCode  –  Final  Report  Page  37  /  10
+
+===== PAGE 38 =====
+3  Document  Management  
+Document  Upload  Processing  
+Handle  file  upload,  validate  file  type/size,  store  file  securely,  and  create  document  metadata  record.  
+4  Document  Management  
+Document  Content  Storage  Persist  document  binary  content  in  storage  service  and  link  it  to  document  metadata.  
+5  Document  Management  
+Document  Status  Management  
+Manage  document  lifecycle  status  transitions  (Pending_Review,  Reviewing,  Pending_Approve,  Active,  Rejected,  Deleted).  
+6  Document  Management  
+Document  Activation  Activate  approved  documents  and  make  them  available  for  search,  view,  and  download.  
+7  Document  Management  
+Document  Deletion  Perform  deletion  of  documents  and  ensure  removed  documents  are  no  longer  retrievable.  
+8  Document  Management  
+Document  Search  Indexing  Index  document  metadata  and  content  to  support  search  and  filtering  without  UI  dependency.  
+9  Document  Management  
+Document  Retrieval  Service  Retrieve  document  metadata  and  content  for  view,  download,  or  processing  requests.  
+10  Review  Document  Review  Request  Creation  Create  review  request  records  when  a  reviewer  is  assigned  to  a  document.  
+11  Review  Document  Review  Request  Status  Handling  
+Update  review  request  statuses  (Pending,  Accepted,  Rejected,  Expired)  based  on  system  rules.  
+12  Review  Document  Review  Result  Creation  Persist  review  results  submitted  by  reviewers  and  link  them  to  documents  and  review  requests.  
+13  Review  Document  Review  Result  Approval  Process  admin  approval  or  rejection  of  review  results  and  update  related  document  status.  
+14  Review  Document,  Common  
+Review  Assignment  Notification  
+Send  notifications  when  reviewers  are  assigned  or  review  results  are  approved/rejected.  
+15  Document  Management  
+Read  History  Tracking  Log  document  read/view  events  for  user  access  history.  
+16  Policy  &  Configuration  Review  History  Tracking  Maintain  immutable  records  of  completed  review  actions  for  compliance  and  traceability.  
+17  Document  Management  
+Upload  Performance  Handling  
+Ensure  upload  requests  are  processed  within  SLA  under  normal  and  peak  load.  
+18  Document  Management,  Review  Document  
+Concurrency  Control  Prevent  data  inconsistency  during  simultaneous  uploads,  reviews,  or  approvals.  
+ 
+ ProjectCode  –  Final  Report  Page  38  /  10
+
+===== PAGE 39 =====
+1.3.4  ERD   
+ Entities  Description  Table  7  –  Entity  Relationship  Diagram  
+#  Entity  Description  1  Reader  A  user  who  reads  documents  in  the  system.  A  Reader  can  upload  documents,  create  saved  lists,  comment,  vote,  and  report  documents.  Each  Reader  has  a  fullName  and  points  (accumulated  score).  
+2  SavedList  A  list  of  saved  documents  created  by  a  Reader.  Each  list  has  a  unique  name  and  belongs  to  a  specific  Reader.  
+3  SavedDocument  A  linking  entity  between  SavedList  and  Document,  representing  which  documents  are  saved  in  which  lists.  
+4  Document  A  document  uploaded  to  the  system.  It  contains  information  about  the  uploader,  title,  and  premium  status.  A  Document  may  belong  to  an  Organization  and  is  categorized  by  Domain  and  Specialization.  
+5  Report  A  violation  report  created  by  a  Reader  for  a  document.  It  contains  the  report  reason.  
+ ProjectCode  –  Final  Report  Page  39  /  10
+
+===== PAGE 40 =====
+6  Comment  A  comment  made  by  a  Reader  on  a  document.  It  contains  the  comment  content.  
+7  Vote  A  rating  (upvote/downvote)  given  by  a  Reader  to  a  document.  It  contains  a  value  (+1  or  -1).  
+8  Domain  A  field  or  industry  used  to  classify  documents  (e.g.,  IT,  Healthcare,  Economics).  It  has  a  name  and  a  code.  One  Domain  can  contain  multiple  Specializations.  
+9  Specialization  A  sub-field  within  a  Domain  used  for  detailed  document  classification  (e.g.,  Web  Development  under  IT).  It  has  a  name  and  a  code.  
+10  Tag  A  label  used  to  tag  documents  to  support  searching  and  categorization.  Each  Tag  has  a  unique  name.  
+11  Organization  An  organization  or  institution  in  the  system.  It  can  own  multiple  documents  and  contains  a  name  and  contact  email.  
+12  Business  Admin  A  business  administrator  of  the  system.  Has  the  authority  to  assign  Reviewers  to  premium  documents  that  require  review.  Identified  by  fullName.  
+13  Reviewer  A  person  responsible  for  reviewing  premium  documents.  Has  a  fullName  and  credentials  (professional  certificates  or  qualifications).  Receives  review  requests  from  the  Business  Admin.  
+14  Review  Request  A  request  created  by  a  Business  Admin  to  assign  a  document  to  a  Reviewer  for  evaluation.  Contains  documentId,  reviewerId,  and  expiry  date.  
+15  ReviewResult  The  result  of  a  document  review  submitted  by  a  Reviewer.  Contains  the  decision  (isAccept),  a  review  report  file,  and  review  comments.  
+  
+ ProjectCode  –  Final  Report  Page  40  /  10
+
+===== PAGE 41 =====
+2.  Functional  Specifications 2.1  Common  2.1.1  Register  As  Reader  a.  UI  Specifications  
+ This  screen  allows  Guest  to:   ●  Create  new  account  to  Sign  in  and  use  system  service  On  the  screen,  s/he  can  also   ●  Choose  to  go  to  Sign  In  page  to  login  if  having  existing  account  Field  Description   Field  Name  Description  Full  Name  Text  input Email  Email  input  for  user   ProjectCode  –  Final  Report  Page  41  /  10
+
+===== PAGE 42 =====
+Date  Of  Birth  Data  type:  Date  Password  Password  input  for  user  Confirm  Password  
+Password  input  for  user  to  confirm  the  sign  up  password  
+Organization  Admin  
+Radio  button,  user  will  select  when  he  wants  to  create  and  manage  an  organization  
+Reviewer  Radio  button,  user  will  select  when  he  wants  to  become  reviewer  who  reviews  document  and  receive  benefits.  Register  Button  for  creating  new  account  in  the  system  Login  Link  to  redirect  to  Login  page  Terms  Of  Use  Link  to  open  policy  of  the  system   b.  UC  Specifications   ID  and  Name  CM1  -  Register  As  Reader  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Date  of  birth  -  Email  -  Password  -  Confirm  Password  
+2  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+3  The  system  validates  the  inputs.  
+4  The  system  sends  verification  email  for  user.  
+5  
+The  system  creates  a  new  READER  account  with  status  PENDING_EMAIL_VERIFY.  
+6  The  system  displays  a  success  message.  
+ ProjectCode  –  Final  Report  Page  42  /  10
+
+===== PAGE 43 =====
+Alternative  Flows  None  
+Exceptions  
+CM1E1.  Invalid  input:  Step  5:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR13,  BR143  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ ProjectCode  –  Final  Report  Page  43  /  10
+
+===== PAGE 44 =====
+2.1.2  Register  As  Reviewer  a.  UI  Specifications  
+ Field  Description   Field  Name  Description  ORCID  Text  input 
+ ProjectCode  –  Final  Report  Page  44  /  10
+
+===== PAGE 45 =====
+Education  Level  
+Select  from  a  list  of  defined  education  level  
+Review  Document  Domain  
+Select  from  a  list  of  domains  defined  in  the  system  (max:  3,  min:  1)  
+Review  Document  Specialization  
+Select  from  a  list  of  specialization  which  is  children  of  selected  domains  defined  in  the  system  (max:  5,  min:  1)  
+Reference  Organization  Name  
+Text  Input  
+Reference  Organization  Email  
+Email  Input  
+Upload  Verified  Background  
+File  Input  (pdf,  jpeg,  jpg,  png)  
+ b.  UC  Specifications   ID  and  Name  CM2  -  Register  As  Reviewer  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Date  of  birth  -  Email  -  Password  -  Confirm  Password  
+2  User  choose  to  Register  as  a  Reviewer  
+3  System  displays  reviewer  input  section  for  user  
+ ProjectCode  –  Final  Report  Page  45  /  10
+
+===== PAGE 46 =====
+4  
+User  inputs  information:  -  ORCID  -  Education  Level  -  Domains  -  Review  Specialization  -  Reference  Organization  Name  -  Reference  Organization  Email  -  Verified  Background  Upload  
+5  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+6  The  system  validates  the  inputs.  
+7  The  system  sends  email  verification  for  user.  
+8  
+The  system  creates  a  new  REVIEWER  account  with  status  PENDING_EMAIL_VERIFY.  
+9  The  system  displays  a  success  message.  
+Alternative  Flows  None  
+Exceptions  CM2E1.  Invalid  input:  Step  8:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR13,  BR160,  BR161,  BR20  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+ ProjectCode  –  Final  Report  Page  46  /  10
+
+===== PAGE 47 =====
+2.1.3  Register  As  Organization  Admin  a.  UI  Specifications  
+ Field  Description   Field  Name  Description  Organization  Name  
+Text  input 
+ ProjectCode  –  Final  Report  Page  47  /  10
+
+===== PAGE 48 =====
+Organization  Type  
+Select  from  a  list  of  defined  organization  types  
+Registration  Number  
+Text  input 
+Organization  Email  
+Email  Input  
+Hotline  Text  Input  Address  Text  Input  Upload  Organization  Certificate  
+File  Input  (pdf,  jpeg,  jpg,  png)  
+ b.  UC  Specifications   ID  and  Name  CM3  -  Register  As  Organization  Admin  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  Google  Mail  Service  
+Trigger  User  chooses  “Sign  Up”  link  on  “Sign  in”  screen/”Join  our  page”  button  or  access  by  Register  URL.  
+Description  -  This  use  case  allows  users  to  create  account  in  the  system.  
+Preconditions  -  The  user  is  not  currently  registered  in  the  system.  
+Postconditions  -  A  new  user  account  is  created  successfully.  
+Normal  Flows  Step  Step  Details  
+1  
+User  inputs  information:  -  Full  name  -  Email  -  Date  of  birth  -  Password  -  Confirm  Password  
+2  User  choose  to  Register  as  an  Organization  Admin  
+3  System  displays  organization  input  section  for  user  
+ ProjectCode  –  Final  Report  Page  48  /  10
+
+===== PAGE 49 =====
+4  
+User  inputs  information:  -  Organization  Name  -  Organization  Type  -  Registration  Number  -  Organization  Email  -  Hotline  -  Address  -  Logo  -  Organization  Certificate  Upload  
+5  
+User  clicks  "Create  Account"  button  to  submit  the  registration  form.  
+6  The  system  validates  the  inputs.  
+7  The  system  sends  email  verification  for  user.  
+8  
+The  system  creates  a  new  ORGANIZATION  ADMIN  account  with  status  PENDING_EMAIL_VERIFY.  
+9  The  system  displays  a  success  message.  
+Alternative  Flows  None  
+Exceptions  CM3E1.  Invalid  input:  Step  8:  The  system  displays  an  error  message.  
+Frequency  of  Use  High  
+Business  Rules  BR35,  BR41,  BR42,  BR98,  BR48,  BR49,  BR13,  BR167,  BR20  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+ ProjectCode  –  Final  Report  Page  49  /  10
+
+===== PAGE 50 =====
+2.1.4  Login  as  Normal  user  a.  UI  Specifications  
+ This  screen  allows  Guest  to:   ●  Sign  In  the  system  by  input  Account  On  the  screen,  s/he  can  also   ●  Choose  to  go  to  Sign  Up  page  to  create  account  if  having  no  accounts  ●  Choose  to  reset  password  if  forgot  password  Field  Description   Field  Name  Description  Role  Choose  to  Sign  in  as  Reader,  Reviewer  or  Organization  Admin  (Login  As  Normal  User)  or  BA,  SA  (Login  As  Admin) Email  Email  input  for  user  Password  Password  input  for  user  Register  Link  to  redirect  to  Sign  Up  page  Login  Button  to  sign  in  to  the  system  Forgot  Password  
+Link  to  redirect  to  Forgot  Password  page  
+ b.  UC  Specifications   ID  and  Name  CM4  -  Login  as  Normal  User  
+ ProjectCode  –  Final  Report  Page  50  /  10
+
+===== PAGE 51 =====
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  None  
+Trigger  User  clicks  "Sign  In"  link  in  "Sign  up"  page/  "Sign  In"  button  from  Landing  Page  or  access  through  Login  URL  
+Description  This  use  case  allows  users  to  log  in  to  the  system  and  use  system  service.  
+Preconditions  -  The  account  must  already  be  registered.  
+Postconditions  -  The  user  is  authenticated  and  granted  access.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Sign  In"  page  
+2  User  choose  role  to  login  
+3  User  enters  email  and  password.  
+4  The  system  validates  account  input.  
+5  
+The  system  redirects  user  to:  -  Home  Page  (Reader)  -  Reviewer  Dashboard  (Reviewer)  -  Organization  Dashboard  (Organization  Admin)  
+Alternative  Flows  None  
+Exceptions  CM4E1.  The  user  is  in  deleted  status.  Step  4.  The  system  displayed  error  message:  "Invalid  account".  CM4E2.  The  user  is  unverified  by  the  BA.  Step  4.  The  system  displayed  error  message:  "You  need  to  wait  for  admin  verification."  CM4E3.  User  inputs  account  not  exists  in  the  system.  Step  4.  The  system  displayed  error  message:  "Invalid  account"  
+Frequency  of  Use  High  
+Business  Rules  BR149  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+ ProjectCode  –  Final  Report  Page  51  /  10
+
+===== PAGE 52 =====
+2.1.5  Login  as  Admin  a.  UI  Specifications  b.  UC  Specifications   ID  and  Name  CM5  -  Login  as  Admin  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  None  
+Trigger  User  access  Admin  Sign  In  Page  through  URL  
+Description  This  use  case  allows  users  to  log  in  to  the  system  and  use  system  service  as  admin  privilege.  
+Preconditions  -  The  account  must  already  be  registered.  
+Postconditions  -  The  user  is  authenticated  and  granted  access.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Admin  Sign  In"  page  
+2  User  choose  role  to  login  
+3  User  enters  email  and  password.  
+4  The  system  validates  account  input.  
+5  
+The  system  redirects  user  to:  -  BA  Dashboard  (Business  Admin)  -  SA  Dashboard  (System  Admin)  
+Alternative  Flows  None  
+Exceptions  CM5E1.  User  inputs  account  not  exists  in  the  system.  Step  4.  The  system  displayed  error  message:  "Invalid  account"  
+Frequency  of  Use  High  
+Business  Rules  None  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+ ProjectCode  –  Final  Report  Page  52  /  10
+
+===== PAGE 53 =====
+2.1.6  Reset  Password  a.  UI  Specifications  
+ This  screen  allows  Guest  to:   ●  Enter  Email  for  system  to  send  OTP  for  resetting  password  Field  Description   Field  Name  Description  Email  Email  input  for  user  Send  OTP  Button  for  submitting  email  for  receiving  OTP  for  reset  password   
+ ProjectCode  –  Final  Report  Page  53  /  10
+
+===== PAGE 54 =====
+This  screen  allows  Guest  to:   ●  Enter  OTP  sent  in  email  to  reset  password  On  the  screen,  s/he  can  also   ●  Request  Resend  OTP  if  it  is  expired  Field  Description   Field  Name  Description  OTP  OTP  input  for  user  Verify  OTP  Button  for  submitting  OTP  for  resetting  password  Resend  OTP  Link  for  OTP  resend   
+ ProjectCode  –  Final  Report  Page  54  /  10
+
+===== PAGE 55 =====
+This  screen  allows  Guest  to:   ●  Enter  new  password  Field  Description   Field  Name  Description  New  Password  
+Password  Input  
+Old  Password  Password  Input  to  confirm  reset  password  Reset  password  
+Button  to  reset  a  new  password  
+ b.  UC  Specifications   ID  and  Name  CM6  -  Reset  password  
+Created  By  QuanNT  Date  Created  18/09/2025  
+Primary  Actor  Guest  Secondary  Actors  None  
+Trigger  User  clicks  "Forgot  Password"  link  in  "Login"  page  or  access  through  the  Forgot  Password  URL  
+Description  This  use  case  allows  users  to  reset  their  password  by  verifying  their  identity  with  email,  followed  by  OTP  confirmation.  
+ ProjectCode  –  Final  Report  Page  55  /  10
+
+===== PAGE 56 =====
+Preconditions  -  The  user  has  a  registered  account.  
+Postconditions  The  password  is  successfully  reset.  
+Normal  Flows  Step  Step  Details  
+1  User  accesses  "Forgot  Password  -  Enter  Email"  Page  
+2  User  enters  registered  email.  
+3  User  clicks  "Send  OTP"  button.  
+4  The  system  validates  user  email.  
+5  The  system  sends  an  OTP  to  the  registered  email.  
+6  
+The  system  redirects  user  to  the  "Forgot  Password  -  Enter  OTP"  Page  with  message  "Please  check  your  email.  We  have  sent  an  OTP  for  you.".  
+7  The  user  enters  the  OTP.  
+8  The  user  clicks  "Verify  OTP"  button.  
+9  The  system  validates  OTP.  
+10  The  system  redirects  user  to  the  "Reset  Password"  Page.  
+11  
+The  user  inputs  the  Reset  Password  form:  -  New  Password  -  Confirm  New  Password  
+12  The  user  clicks  "Reset  Password"  button.  
+13  The  system  verifies  the  password  input.  
+14  The  system  saves  the  user  new  password.  
+15  
+The  system  displays  message:  "Your  password  is  reset  successfully."  to  the  user.  
+Alternative  Flows  None  
+ ProjectCode  –  Final  Report  Page  56  /  10
+
+===== PAGE 57 =====
+Exceptions  CM6E1.  Email  does  not  exist  in  the  system  Step  5.  The  system  displays  message:  "Email  does  not  exist  in  the  system".  CM6E2.  OTP  is  incorrect  5  times.  Step  10.  The  system  updates  the  user  status  to  locked.  Step  11.  The  system  displays  message:  "Your  account  is  locked  because  of  too  many  times  trying.  Please  contact  admin  if  needed.".  CM6E3.  OTP  expired  Step  10.  The  system  displays  message:  "OTP  expired.  Click  Resend  OTP  button  to  receive  new  OTP."  CM6E4.  OTP  is  incorrect  Step  10.  The  system  displays  message:  "OTP  is  incorrect.".  
+Frequency  of  Use  Medium  
+Business  Rules  BR153,  BR155  
+Other  Information  None  
+Assumptions  The  system  is  stable,  the  network  connection  is  available  
+ 
+ ProjectCode  –  Final  Report  Page  57  /  10
+
+===== PAGE 58 =====
+2.1.7  View  Profile  a.  UI  Specifications  
+This  screen  allows  Reader/Reviewer  to:   ●  View  his  profile  On  the  screen,  s/he  can  also   ●  Choose  to  change  Avatar  ●  Choose  to  change  Profile  ●  Choose  to  change  Email  ●  Choose  to  change  Password  Field  Description   Field  Name  Description  Avatar  Displays  and  lets  you  update  your  profile  picture.  Full  name  Shows  your  full  name.  Date  Of  Birth  Shows  your  birth  date.  Email  Displays  your  current  email  address.  Change  Profile  Opens  options  to  edit  your  personal  profile  details.  
+ ProjectCode  –  Final  Report  Page  58  /  10
+
+===== PAGE 59 =====
+Change  Email  Allows  you  to  update  your  email  address.  Change  Password  
+Lets  you  create  a  new  password  for  your  account.  
+Delete  Account  
+Permanently  removes  your  account  and  all  associated  data.  
+ b.  UC  Specifications   ID  and  Name  CM7  -  View  profile  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer  Secondary  Actors  None  
+Trigger  User  selects  the  "Profile"  option  in  the  menu  or  access  through  URL  
+Description  This  use  case  allows  a  user  to  view  their  personal  account  details.  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  None  
+Normal  Flows  Step  Step  Details  
+1  The  user  logs  in  and  selects  "Profile".  
+2  
+The  system  retrieves  the  user’s  information  from  the  database.  
+3  
+The  system  displays  the  information  (including  name,  dob,  email,  username,  avatar).  
+Alternative  Flows  None  
+Exceptions  
+CM7E1.  Session  timeout  →  The  system  requests  the  member  to  log  in  again.  
+Frequency  of  Use  Simple  
+Business  Rules  BR10,  BR11  
+Other  Information  
+None  
+Assumptions  The  system  is  stable  and  the  network  connection  is  available.  
+ 
+ ProjectCode  –  Final  Report  Page  59  /  10
+
+===== PAGE 60 =====
+2.1.8  Change  Profile  a.  UI  Specifications  
+ This  modal  allows  Reader  to:   ●  Change  his  profile  Field  Description   Field  Name  Description  Full  name  Text  input  update  full  name  information.  Date  Of  Birth  Date  input  modify  birth  date  details.  Change  Profile  Button  save  changes  made  to  personal  information.   b.  UC  Specifications   ID  and  Name  CM8  -  Change  profile  
+Created  By  HungVD  Date  Created  19/09/2025  
+Primary  Actor  Reader,  Reviewer  Secondary  Actors  None  
+Trigger  User  click  to  the  "Update  Profile"  button  in  the  Profile  page  or  access  through  URL  
+Description  This  use  case  allows  a  user  to  updates  profile  information.  
+Preconditions  The  user  must  be  logged  into  the  system.  
+Postconditions  -  The  user’s  information  is  updated  in  the  system.  -  The  Profile  is  displayed  successfully.  
+Normal  Flows  Step  Step  Details  
+ ProjectCode  –  Final  Report  Page  60  /  10

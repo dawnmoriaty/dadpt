@@ -33,6 +33,8 @@ class HumanInputTask(BaseTask):
     async def execute(self, ctx: WorkflowContext) -> WorkflowContext:
         prompt_template = self.config.get("prompt_template", "Vui lòng trả lời:")
         output_key = self.config.get("output_key", "user_input")
+        friendly_prompt_template = self.config.get("friendly_prompt", "")
+        options = self.config.get("options", [])
 
         # If we're resuming (user already replied), capture their response
         if ctx.status == "resuming":
@@ -43,6 +45,21 @@ class HumanInputTask(BaseTask):
 
         # Otherwise, pause and send prompt to user
         prompt = self._render_template(prompt_template, ctx)
+        if isinstance(friendly_prompt_template, str) and friendly_prompt_template.strip():
+            prompt = self._render_template(friendly_prompt_template, ctx)
+
+        if isinstance(options, list) and options:
+            existing = ctx.get_var("ui_actions")
+            ui_actions = existing if isinstance(existing, list) else []
+            ui_actions.append(
+                {
+                    "type": "quick_replies",
+                    "prompt": prompt,
+                    "options": [str(option) for option in options if str(option).strip()],
+                }
+            )
+            ctx.set_var("ui_actions", ui_actions)
+
         ctx.response = prompt
         ctx.status = "paused"
         logger.debug("human_input.paused", output_key=output_key)

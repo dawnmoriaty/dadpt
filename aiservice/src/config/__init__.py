@@ -29,6 +29,7 @@ class Settings(BaseSettings):
             self.huggingfacehub_api_token = self.encryption_key
 
     # --- Qdrant ---
+    enable_qdrant: bool = False
 
     qdrant_host: str = "localhost"
     qdrant_port: int = 6333

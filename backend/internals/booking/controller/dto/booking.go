@@ -1,6 +1,7 @@
 package dto
 
 import (
+	"strings"
 	"time"
 
 	"backend/internals/booking/domain"
@@ -187,13 +188,24 @@ func ToBookingListResponse(output *domain.BookingListOutput) *BookingListRespons
 }
 
 func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingResponse {
-	return &CreateBookingResponse{
-		Booking:    ToBookingResponse(output.Booking),
-		OrderCode:  output.OrderCode,
-		PaymentURL: output.PaymentURL,
-		QRCode:     output.QRCode,
-		ResumeURL:  output.ResumeURL,
+	resp := &CreateBookingResponse{
+		Booking:   ToBookingResponse(output.Booking),
+		ResumeURL: output.ResumeURL,
 	}
+
+	paymentMethod := ""
+	if output.Booking != nil {
+		paymentMethod = output.Booking.PaymentMethod
+	}
+
+	if strings.EqualFold(strings.TrimSpace(paymentMethod), "cod") {
+		return resp
+	}
+
+	resp.OrderCode = output.OrderCode
+	resp.PaymentURL = output.PaymentURL
+	resp.QRCode = output.QRCode
+	return resp
 }
 
 // =============================================================================
