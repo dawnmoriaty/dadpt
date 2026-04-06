@@ -14,7 +14,11 @@ interface ChatState {
     isLoading: boolean
     error: string | null
     tenantSlug: string
+    page: number
+    limit: number
     sendMessage: (text: string) => Promise<void>
+    sendMessageWithPage: (text: string, page: number) => Promise<void>
+    loadNextPage: (text: string) => Promise<void>
     clearChat: () => void
 }
 
@@ -26,13 +30,18 @@ export const useChatStore = create<ChatState>()(
             isLoading: false,
             error: null,
             tenantSlug: 'bus',
+            page: 1,
+            limit: 10,
             sendMessage: async (text: string) => {
+                await get().sendMessageWithPage(text, 1)
+            },
+            sendMessageWithPage: async (text: string, page: number) => {
                 const trimmed = text.trim()
                 if (!trimmed) {
                     return
                 }
 
-                const { tenantSlug, sessionId } = get()
+                const { tenantSlug, sessionId, limit } = get()
                 const authState = useAuthStore.getState()
 
                 const userMessage = toUserMessage(trimmed)
@@ -53,6 +62,8 @@ export const useChatStore = create<ChatState>()(
                         message: trimmed,
                         session_id: sessionId ?? undefined,
                         user_id: authState.user ? String(authState.user.id) : undefined,
+                        page,
+                        limit,
                     })
 
                     const assistantMessage = toAssistantMessage(response)
@@ -61,6 +72,7 @@ export const useChatStore = create<ChatState>()(
                         (state) => ({
                             messages: [...state.messages, assistantMessage],
                             sessionId: response.session_id || state.sessionId,
+                            page,
                             isLoading: false,
                         }),
                         false,
@@ -82,12 +94,17 @@ export const useChatStore = create<ChatState>()(
                     )
                 }
             },
+            loadNextPage: async (text: string) => {
+                const next = get().page + 1
+                await get().sendMessageWithPage(text, next)
+            },
             clearChat: () =>
                 set(
                     {
                         messages: [],
                         sessionId: null,
                         error: null,
+                        page: 1,
                     },
                     false,
                     'chat/clear',

@@ -32,6 +32,11 @@ type LocationFilter struct {
 	City   string
 }
 
+const (
+	DefaultSearchLimit int32 = 50
+	MaxSearchLimit     int32 = 200
+)
+
 // Validate validates the location entity
 func (l *Location) Validate() error {
 	if l.Name == "" {

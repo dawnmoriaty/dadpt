@@ -1,0 +1,16 @@
+import asyncio
+import json
+import sys
+import io
+
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
+sys.path.append('d:/feature/dadpt/aiservice')
+from src.platform.tool_factory import ToolFactory
+
+async def test():
+    f = ToolFactory('http://localhost:8080')
+    res = await f._search_trips_http(origin='ninh bình', destination='hà nội', date='2026-04-09')
+    print('TOTAL:', json.loads(res)['total'])
+    print('TRIPS:', [f"{t['originName']} -> {t['destinationName']}" for t in json.loads(res)['trips']])
+
+asyncio.run(test())

@@ -11,8 +11,8 @@ package paging
 
 const (
 	defaultPage = 1
-	defaultSize = 20
-	maxPageSize = 100
+	defaultSize = 10
+	maxPageSize = 10
 )
 
 // Paging carries page + pageSize from query string and is used
@@ -20,6 +20,7 @@ const (
 type Paging struct {
 	Page     int   `json:"page"     form:"page"`
 	PageSize int   `json:"pageSize" form:"pageSize"`
+	Limit    int   `json:"-"        form:"limit"`
 	Total    int64 `json:"total"    form:"-"`
 }
 
@@ -27,6 +28,9 @@ type Paging struct {
 func (p *Paging) Process() {
 	if p.Page < 1 {
 		p.Page = defaultPage
+	}
+	if p.PageSize <= 0 && p.Limit > 0 {
+		p.PageSize = p.Limit
 	}
 	if p.PageSize < 1 || p.PageSize > maxPageSize {
 		p.PageSize = defaultSize

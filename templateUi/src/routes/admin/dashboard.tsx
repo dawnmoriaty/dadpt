@@ -17,15 +17,15 @@ function DashboardPage() {
         <div className="space-y-6">
             <div>
                 <h1 className="text-3xl font-bold tracking-tight">Tổng quan</h1>
-                <p className="text-muted-foreground">Số liệu booking và doanh thu cập nhật từ dữ liệu thực tế.</p>
+                <p className="text-muted-foreground">Số liệu đơn đặt vé và doanh thu cập nhật từ dữ liệu thực tế.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
-                    { title: 'Tổng booking', value: stats?.totalBookings ?? 0, icon: '🎫', color: 'bg-blue-500', note: 'Tất cả booking đã tạo' },
+                    { title: 'Tổng đơn đặt vé', value: stats?.totalBookings ?? 0, icon: '🎫', color: 'bg-blue-500', note: 'Tất cả đơn đặt vé đã tạo' },
                     { title: 'Doanh thu đã thu', value: formatVndCurrency(stats?.paidRevenue ?? 0), icon: '💰', color: 'bg-green-500', note: 'Chỉ tính vé đã thanh toán' },
-                    { title: 'Vé chưa thanh toán', value: stats?.unpaidBookings ?? 0, icon: '⏳', color: 'bg-yellow-500', note: 'Bao gồm vé COD và pending' },
-                    { title: 'Chuyến có booking', value: stats?.activeTripCount ?? 0, icon: '🚌', color: 'bg-purple-500', note: 'Chuyến đang có khách' },
+                    { title: 'Vé chưa thanh toán', value: stats?.unpaidBookings ?? 0, icon: '⏳', color: 'bg-yellow-500', note: 'Bao gồm vé COD và chờ xử lý' },
+                    { title: 'Chuyến có đặt vé', value: stats?.activeTripCount ?? 0, icon: '🚌', color: 'bg-purple-500', note: 'Chuyến đang có khách' },
                 ].map((stat) => (
                     <div key={stat.title} className="bg-background rounded-xl shadow-sm p-6 border">
                         <div className="flex items-center justify-between">
@@ -45,7 +45,7 @@ function DashboardPage() {
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <Card>
                     <CardHeader>
-                        <CardTitle>Dòng tiền booking</CardTitle>
+                        <CardTitle>Dòng tiền đặt vé</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4 text-sm">
                         <div className="flex items-center justify-between">
@@ -57,11 +57,11 @@ function DashboardPage() {
                             <span className="font-semibold">{formatVndCurrency(stats?.unpaidRevenue ?? 0)}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Booking chờ duyệt hoàn</span>
+                            <span className="text-muted-foreground">Đơn chờ duyệt hoàn</span>
                             <span className="font-semibold">{stats?.refundPendingBookings ?? 0}</span>
                         </div>
                         <div className="flex items-center justify-between">
-                            <span className="text-muted-foreground">Booking đã hủy</span>
+                            <span className="text-muted-foreground">Đơn đã hủy</span>
                             <span className="font-semibold">{stats?.cancelledBookings ?? 0}</span>
                         </div>
                     </CardContent>
@@ -90,7 +90,7 @@ function DashboardPage() {
                                         ))}
                                     </div>
                                     <div className="flex items-center justify-between text-xs text-muted-foreground">
-                                        <span>{item.totalBookings} booking</span>
+                                        <span>{item.totalBookings} đơn</span>
                                         <span>{item.paidBookings} đã thanh toán</span>
                                     </div>
                                 </div>
@@ -101,7 +101,7 @@ function DashboardPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Booking gần đây</CardTitle>
+                        <CardTitle>Đặt vé gần đây</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {(recentBookings?.items ?? []).map((booking) => (

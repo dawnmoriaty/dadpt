@@ -128,7 +128,17 @@ func (h *LocationHandler) Search(c *gin.Context) {
 		return
 	}
 
-	items, err := h.uc.Search(c.Request.Context(), query)
+	limit := int32(domain.DefaultSearchLimit)
+	if rawLimit := strings.TrimSpace(c.Query("limit")); rawLimit != "" {
+		parsedLimit, err := strconv.Atoi(rawLimit)
+		if err != nil || parsedLimit <= 0 {
+			response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
+			return
+		}
+		limit = int32(parsedLimit)
+	}
+
+	items, err := h.uc.Search(c.Request.Context(), query, limit)
 	if err != nil {
 		response.HandleError(c, mapDomainError(err))
 		return

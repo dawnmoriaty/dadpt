@@ -13,7 +13,7 @@ import { getUsersColumns } from './UsersColumns'
 
 export function UsersPage(): React.ReactElement {
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingUser, setEditingUser] = useState<User | null>(null)
     const [deletingUserId, setDeletingUserId] = useState<number | null>(null)

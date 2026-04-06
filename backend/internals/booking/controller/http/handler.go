@@ -24,12 +24,10 @@ type BookingHandler struct {
 	sseHub *infrastructure.SSEHub
 }
 
-// NewBookingHandler creates a new booking handler
 func NewBookingHandler(uc usecase.IBookingUseCase, sseHub *infrastructure.SSEHub) *BookingHandler {
 	return &BookingHandler{uc: uc, sseHub: sseHub}
 }
 
-// CreateBooking POST /bookings
 func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	var req dto.CreateBookingRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -37,7 +35,6 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (set by auth middleware, nullable for guest)
 	var userID *int64
 	if id, exists := c.Get("userID"); exists {
 		uid := id.(int64)
@@ -54,7 +51,6 @@ func (h *BookingHandler) CreateBooking(c *gin.Context) {
 	response.Created(c, dto.ToCreateBookingResponse(result))
 }
 
-// GetBooking GET /bookings/:id
 func (h *BookingHandler) GetBooking(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -71,7 +67,6 @@ func (h *BookingHandler) GetBooking(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(booking))
 }
 
-// GetBookingByCode GET /bookings/code/:code
 func (h *BookingHandler) GetBookingByCode(c *gin.Context) {
 	code := c.Param("code")
 	if code == "" {
@@ -88,7 +83,6 @@ func (h *BookingHandler) GetBookingByCode(c *gin.Context) {
 	response.Success(c, dto.ToCreateBookingResponse(h.buildBookingViewOutput(c, booking)))
 }
 
-// ListUserBookings GET /bookings/my
 func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 	var req dto.ListBookingsRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -96,7 +90,6 @@ func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (required for this endpoint)
 	userID, exists := c.Get("userID")
 	if !exists {
 		response.HandleError(c, pkgErrors.ErrUnauthorized)
@@ -129,7 +122,6 @@ func (h *BookingHandler) ListUserBookings(c *gin.Context) {
 	response.Success(c, dto.ToBookingListResponse(result))
 }
 
-// CancelBooking POST /bookings/:id/cancel
 func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -137,7 +129,6 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 		return
 	}
 
-	// Get user ID from context (optional)
 	var userID *int64
 	if id, exists := c.Get("userID"); exists {
 		uid := id.(int64)
@@ -156,7 +147,6 @@ func (h *BookingHandler) CancelBooking(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(booking))
 }
 
-// StreamMyEvents GET /bookings/events (SSE endpoint)
 func (h *BookingHandler) StreamMyEvents(c *gin.Context) {
 	if h.sseHub == nil {
 		response.HandleError(c, pkgErrors.Wrap(errors.New("sse unavailable"), 500, pkgErrors.ErrCodeInternal))
@@ -210,10 +200,6 @@ func (h *BookingHandler) StreamMyEvents(c *gin.Context) {
 	})
 }
 
-// =============================================================================
-// HELPERS
-// =============================================================================
-
 func parseID(c *gin.Context, param string) (int64, error) {
 	var id int64
 	if _, err := parseIntParam(c.Param(param), &id); err != nil {
@@ -234,10 +220,6 @@ func parseIntParam(s string, v *int64) (bool, error) {
 	*v = n
 	return true, nil
 }
-
-// =============================================================================
-// ERROR MAPPING - Convert domain errors to pkgs/errors.AppError
-// =============================================================================
 
 func mapDomainError(err error) error {
 	switch {

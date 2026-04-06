@@ -28,7 +28,6 @@ type VoiceBookingCommandRequest struct {
 	SeatCount           int      `json:"seatCount" binding:"required,min=1,max=4"`
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
 
-	// Explicitly disallow profile fields from AI command.
 	GuestInfo  map[string]any `json:"guestInfo"`
 	GuestName  *string        `json:"guestName"`
 	GuestPhone *string        `json:"guestPhone"`
@@ -54,8 +53,6 @@ type VoiceBookingValidationResponse struct {
 	MaskedEmail   string                         `json:"maskedEmail,omitempty"`
 }
 
-// ValidateVoiceBookingCommand validates AI-generated booking command.
-// This endpoint requires authenticated user context and rejects profile fields in payload.
 func (h *ChatHandler) ValidateVoiceBookingCommand(c *gin.Context) {
 	var req VoiceBookingCommandRequest
 	if err := c.ShouldBindJSON(&req); err != nil {

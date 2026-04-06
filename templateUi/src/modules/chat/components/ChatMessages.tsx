@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { cn } from '@/lib/utils'
 
-import type { ChatMessage, ChatQuickReplyOption } from '../types'
+import type { BookingConfirmationPayload, ChatMessage, ChatQuickReplyOption } from '../types'
 
 import { ChatPreviewSuggestions } from './ChatPreviewSuggestions'
 import { ChatQuickReplies } from './ChatQuickReplies'
@@ -19,9 +19,10 @@ interface ChatMessagesProps {
     onInputChange: (value: string) => void
     onSend: () => void
     sendMessage: (text: string) => Promise<void>
+    loadNextPage: (text: string) => Promise<void>
 }
 
-export function ChatMessages({ messages, isLoading, input, onInputChange, onSend, sendMessage }: ChatMessagesProps) {
+export function ChatMessages({ messages, isLoading, input, onInputChange, onSend, sendMessage, loadNextPage }: ChatMessagesProps) {
     const scrollRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
 
@@ -52,7 +53,8 @@ export function ChatMessages({ messages, isLoading, input, onInputChange, onSend
                         {messages.map((message) => (
                             <div key={message.id} className="space-y-2">
                                 <MessageBubble message={message} />
-                                <TripActionList message={message} />
+                                <TripActionList message={message} isLoading={isLoading} loadNextPage={loadNextPage} />
+                                <BookingConfirmationList message={message} />
                                 <QuickReplyList message={message} isLoading={isLoading} sendMessage={sendMessage} />
                             </div>
                         ))}
@@ -182,7 +184,15 @@ function MessageBubble({ message }: { message: ChatMessage }) {
     )
 }
 
-function TripActionList({ message }: { message: ChatMessage }) {
+function TripActionList({
+    message,
+    isLoading,
+    loadNextPage,
+}: {
+    message: ChatMessage
+    isLoading: boolean
+    loadNextPage: (text: string) => Promise<void>
+}) {
     const actions = (message.uiActions ?? []).filter(
         (action) =>
             (action.type === 'trip_recommendations' || action.type === 'related_trip_recommendations') &&
@@ -201,6 +211,14 @@ function TripActionList({ message }: { message: ChatMessage }) {
                         <div className="space-y-1 px-1">
                             {action.title ? <p className="text-sm font-semibold text-foreground">{action.title}</p> : null}
                             {action.prompt ? <p className="text-xs text-muted-foreground">{action.prompt}</p> : null}
+                            {(action.meta?.origin_province ?? action.meta?.origin) &&
+                            (action.meta?.destination_province ?? action.meta?.destination) ? (
+                                <p className="text-[11px] text-muted-foreground/90">
+                                    Đang tìm theo toàn bộ bến xe: {action.meta?.origin_province ?? action.meta?.origin}
+                                    {' -> '}
+                                    {action.meta?.destination_province ?? action.meta?.destination}
+                                </p>
+                            ) : null}
                         </div>
                     )}
 
@@ -213,6 +231,30 @@ function TripActionList({ message }: { message: ChatMessage }) {
                             />
                         ))}
                     </div>
+
+                    {action.type === 'trip_recommendations' && (action.items?.length ?? 0) > 0 ? (
+                        <div className="px-1">
+                            <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                disabled={isLoading}
+                                onClick={() => {
+                                    const origin = action.meta?.origin_province ?? action.meta?.origin
+                                    const destination = action.meta?.destination_province ?? action.meta?.destination
+                                    if (!origin || !destination) {
+                                        return
+                                    }
+
+                                    const dateText = action.meta?.date ? ` ngay ${action.meta.date}` : ''
+                                    const text = `tim cac chuyen tu ${origin} ve ${destination}${dateText}`
+                                    void loadNextPage(text)
+                                }}
+                            >
+                                Xem them chuyen
+                            </Button>
+                        </div>
+                    ) : null}
                 </section>
             ))}
         </div>
@@ -268,6 +310,78 @@ function normalizeQuickReply(option: string | ChatQuickReplyOption): ChatQuickRe
         label: option.label.trim() || value,
         value,
     }
+}
+
+function BookingConfirmationList({ message }: { message: ChatMessage }) {
+    if (message.role !== 'assistant') {
+        return null
+    }
+
+    const confirmations = (message.uiActions ?? []).filter(
+        (action) => action.type === 'booking_confirmation' && action.payload,
+    )
+
+    if (confirmations.length === 0) {
+        return null
+    }
+
+    return (
+        <div className="space-y-2 pl-2 pr-1">
+            {confirmations.map((action, index) => (
+                <BookingConfirmationCard
+                    key={`booking-confirm-${message.id}-${index}`}
+                    payload={action.payload!}
+                />
+            ))}
+        </div>
+    )
+}
+
+function BookingConfirmationCard({ payload }: { payload: BookingConfirmationPayload }) {
+    const isMock = payload.mode === 'mock'
+
+    return (
+        <div className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
+            <div className="flex items-center gap-2 mb-3">
+                <span className="text-lg">🎫</span>
+                <span className="text-sm font-semibold text-foreground">Xác nhận đặt vé</span>
+                {isMock && (
+                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                        MOCK
+                    </span>
+                )}
+            </div>
+
+            <div className="space-y-1.5 text-sm">
+                <div className="flex justify-between">
+                    <span className="text-muted-foreground">Mã vé</span>
+                    <span className="font-mono font-medium text-foreground">{payload.booking_code}</span>
+                </div>
+                {payload.seat_codes && payload.seat_codes.length > 0 && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Ghế</span>
+                        <span className="font-medium text-foreground">{payload.seat_codes.join(', ')}</span>
+                    </div>
+                )}
+                {payload.status && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Trạng thái</span>
+                        <span className="font-medium text-foreground">{payload.status}</span>
+                    </div>
+                )}
+                {payload.payment_method && (
+                    <div className="flex justify-between">
+                        <span className="text-muted-foreground">Thanh toán</span>
+                        <span className="font-medium text-foreground">{payload.payment_method.toUpperCase()}</span>
+                    </div>
+                )}
+            </div>
+
+            {payload.message && (
+                <p className="mt-3 text-xs text-muted-foreground italic">{payload.message}</p>
+            )}
+        </div>
+    )
 }
 
 function TypingIndicator() {

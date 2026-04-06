@@ -59,7 +59,7 @@ func TestVoiceTranscribe_Success(t *testing.T) {
 	client := &fakeAIClient{
 		resp: &aiagent.VoiceTranscribeResponse{Transcript: "xin chao", Engine: "faster-whisper"},
 	}
-	h := NewChatHandler(client, nil, nil)
+	h := NewChatHandler(client, nil, nil, nil, nil)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -135,7 +135,7 @@ func TestVoicePipeline_ParseOnlyWithoutCommand(t *testing.T) {
 			Message:       "missing fields",
 		},
 	}
-	h := NewChatHandler(client, nil, nil)
+	h := NewChatHandler(client, nil, nil, nil, nil)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
@@ -201,7 +201,7 @@ func TestVoicePipeline_CommandButNoVoiceHandler(t *testing.T) {
 			Message:    "ok",
 		},
 	}
-	h := NewChatHandler(client, nil, nil)
+	h := NewChatHandler(client, nil, nil, nil, nil)
 
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)

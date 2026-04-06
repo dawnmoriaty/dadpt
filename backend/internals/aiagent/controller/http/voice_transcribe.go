@@ -17,8 +17,6 @@ import (
 
 const maxVoiceUploadSize = 15 * 1024 * 1024
 
-// VoiceTranscribe handles POST /api/v1/ai/voice/booking/transcribe.
-// FE uploads audio -> Go forwards to AI service via gRPC.
 func (h *ChatHandler) VoiceTranscribe(c *gin.Context) {
 	if h.client == nil {
 		response.HandleError(c, pkgErrors.Wrap(fmt.Errorf("ai client unavailable"), 503, pkgErrors.ErrCodeInternal))

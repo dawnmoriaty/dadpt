@@ -35,7 +35,7 @@ func (h *TripHandler) Search(c *gin.Context) {
 		return
 	}
 
-	pg := &paging.Paging{Page: req.Page, PageSize: req.Limit}
+	pg := &paging.Paging{Page: req.Page, Limit: req.Limit}
 	pg.Process()
 
 	response.Success(c, paging.Of(dto.ToTripResponseList(trips), total, pg.Page))
@@ -54,7 +54,7 @@ func (h *TripHandler) Browse(c *gin.Context) {
 		return
 	}
 
-	pg := &paging.Paging{Page: req.Page, PageSize: req.Limit}
+	pg := &paging.Paging{Page: req.Page, Limit: req.Limit}
 	pg.Process()
 
 	response.Success(c, paging.Of(dto.ToTripResponseList(trips), total, pg.Page))

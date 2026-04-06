@@ -4,9 +4,10 @@ import (
 	"encoding/base64"
 	"fmt"
 	"io"
-	"net/http"
 	"strings"
 
+	bookingDto "backend/internals/booking/controller/dto"
+	bookingHttp "backend/internals/booking/controller/http"
 	"backend/pkgs/aiagent"
 	pkgErrors "backend/pkgs/errors"
 	"backend/pkgs/response"
@@ -14,27 +15,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type voicePlanRequest struct {
-	Origin              string   `json:"origin"`
-	Destination         string   `json:"destination"`
-	TravelDate          string   `json:"travelDate"`
-	SeatCount           int      `json:"seatCount"`
-	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
-}
-
-type voiceExecuteRequest struct {
-	Origin              string   `json:"origin"`
-	Destination         string   `json:"destination"`
-	TravelDate          string   `json:"travelDate"`
-	SeatCount           int      `json:"seatCount"`
-	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
-}
-
 type voicePipelineRequest struct {
 	Execute bool `form:"execute"`
 }
 
-// VoicePipeline handles full flow: transcribe -> parse (gRPC) -> plan/execute (Go backend logic).
 func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	if h.client == nil {
 		response.HandleError(c, pkgErrors.Wrap(fmt.Errorf("ai client unavailable"), 503, pkgErrors.ErrCodeInternal))
@@ -61,12 +45,12 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	}
 	defer file.Close()
 
-	bytes, err := io.ReadAll(file)
+	audioBytes, err := io.ReadAll(file)
 	if err != nil {
 		response.HandleError(c, pkgErrors.Wrap(err, 400, pkgErrors.ErrCodeInvalidFile))
 		return
 	}
-	if len(bytes) == 0 {
+	if len(audioBytes) == 0 {
 		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeInvalidFile))
 		return
 	}
@@ -79,7 +63,7 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	transcribed, err := h.client.TranscribeAudio(c.Request.Context(), &aiagent.VoiceTranscribeRequest{
 		Filename:    fileHeader.Filename,
 		ContentType: contentType,
-		AudioBase64: base64.StdEncoding.EncodeToString(bytes),
+		AudioBase64: base64.StdEncoding.EncodeToString(audioBytes),
 	})
 	if err != nil {
 		response.HandleError(c, mapVoiceTranscribeError(err))
@@ -100,22 +84,30 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 		return
 	}
 
-	planPayload := voicePlanRequest{
+	userID, err := bookingHttp.ExtractUserID(c)
+	if err != nil {
+		response.HandleError(c, err)
+		return
+	}
+
+	seatCount := parsed.Command.SeatCount
+	if seatCount <= 0 {
+		seatCount = 1
+	}
+	travelDate := strings.TrimSpace(parsed.Command.TravelDate)
+	if travelDate == "" {
+		travelDate = "auto"
+	}
+
+	planReq := &bookingDto.VoicePlanRequest{
 		Origin:              strings.TrimSpace(parsed.Command.Origin),
 		Destination:         strings.TrimSpace(parsed.Command.Destination),
-		TravelDate:          strings.TrimSpace(parsed.Command.TravelDate),
-		SeatCount:           parsed.Command.SeatCount,
+		TravelDate:          travelDate,
+		SeatCount:           seatCount,
 		SeatPreferenceOrder: parsed.Command.SeatPreferenceOrder,
 	}
 
-	if planPayload.SeatCount <= 0 {
-		planPayload.SeatCount = 1
-	}
-	if planPayload.TravelDate == "" {
-		planPayload.TravelDate = "auto"
-	}
-
-	planResp, planErr := h.callInternalJSON(c, http.MethodPost, "/api/v1/bookings/voice/plan", planPayload)
+	planResp, planErr := h.callPlanDirect(c.Request.Context(), userID, planReq)
 	if planErr != nil {
 		response.HandleError(c, planErr)
 		return
@@ -128,15 +120,15 @@ func (h *ChatHandler) VoicePipeline(c *gin.Context) {
 	}
 
 	if req.Execute {
-		execPayload := voiceExecuteRequest{
-			Origin:              planPayload.Origin,
-			Destination:         planPayload.Destination,
-			TravelDate:          planPayload.TravelDate,
-			SeatCount:           planPayload.SeatCount,
-			SeatPreferenceOrder: planPayload.SeatPreferenceOrder,
+		execReq := &bookingDto.VoiceExecuteRequest{
+			Origin:              planReq.Origin,
+			Destination:         planReq.Destination,
+			TravelDate:          planReq.TravelDate,
+			SeatCount:           planReq.SeatCount,
+			SeatPreferenceOrder: planReq.SeatPreferenceOrder,
 		}
 
-		execResp, execErr := h.callInternalJSON(c, http.MethodPost, "/api/v1/bookings/voice/execute", execPayload)
+		execResp, execErr := h.callExecuteDirect(c.Request.Context(), userID, execReq)
 		if execErr != nil {
 			response.HandleError(c, execErr)
 			return

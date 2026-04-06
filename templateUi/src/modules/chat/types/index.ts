@@ -71,13 +71,29 @@ export interface ChatUiAction {
     items?: TripUiActionItem[]
     options?: Array<string | ChatQuickReplyOption>
     prompt?: string
+    payload?: BookingConfirmationPayload
     meta?: {
         origin?: string
         destination?: string
+        origin_province?: string
+        destination_province?: string
         date?: string
         time?: string
         passengers?: number
+        page?: number
+        limit?: number
+        count?: number
     }
+}
+
+export interface BookingConfirmationPayload {
+    mode: 'mock' | 'live'
+    booking_code: string
+    trip_id?: number
+    status?: string
+    seat_codes?: string[]
+    payment_method?: string
+    message?: string
 }
 
 export interface ChatRequest {
@@ -85,6 +101,8 @@ export interface ChatRequest {
     message: string
     session_id?: string
     user_id?: string
+    page?: number
+    limit?: number
 }
 
 export interface ChatResponse {

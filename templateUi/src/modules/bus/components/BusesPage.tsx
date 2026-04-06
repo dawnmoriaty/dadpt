@@ -14,7 +14,7 @@ import { BusFormDialog } from './BusFormDialog'
 
 export function BusesPage(): React.ReactElement {
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBus, setEditingBus] = useState<Bus | null>(null)
     const [deletingBusId, setDeletingBusId] = useState<number | null>(null)

@@ -349,14 +349,14 @@ func (u *bookingUseCase) ListUserBookings(ctx context.Context, input *domain.Lis
 
 	if page > 0 {
 		if pageSize <= 0 {
-			pageSize = 20
+			pageSize = 10
 		}
 		limit = pageSize
 		offset = (page - 1) * pageSize
 	}
 
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 	if offset < 0 {
 		offset = 0
@@ -386,14 +386,14 @@ func (u *bookingUseCase) ListAdminBookings(ctx context.Context, input *domain.Ad
 
 	if page > 0 {
 		if pageSize <= 0 {
-			pageSize = 20
+			pageSize = 10
 		}
 		limit = pageSize
 		offset = (page - 1) * pageSize
 	}
 
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 	if offset < 0 {
 		offset = 0
@@ -576,14 +576,14 @@ func (u *bookingUseCase) ListRefundRequests(ctx context.Context, input *domain.R
 
 	if page > 0 {
 		if pageSize <= 0 {
-			pageSize = 20
+			pageSize = 10
 		}
 		limit = pageSize
 		offset = (page - 1) * pageSize
 	}
 
 	if limit <= 0 {
-		limit = 20
+		limit = 10
 	}
 	if offset < 0 {
 		offset = 0

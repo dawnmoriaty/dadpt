@@ -28,7 +28,7 @@ export function TripsPage() {
     const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null)
     const [editingTrip, setEditingTrip] = useState<Trip | null>(null)
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
 
     const { data, isLoading } = useTrips({
         page: page + 1,

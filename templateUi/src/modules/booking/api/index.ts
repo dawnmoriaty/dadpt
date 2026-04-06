@@ -35,7 +35,7 @@ export const bookingApi = {
         return response.data.data
     },
 
-    listMine: async (page = 1, pageSize = 20): Promise<PaginatedResponse<Booking>> => {
+    listMine: async (page = 1, pageSize = 10): Promise<PaginatedResponse<Booking>> => {
         const response = await api.get('/bookings/my', {
             params: { page, pageSize },
         })
@@ -66,7 +66,7 @@ export const bookingApi = {
     }): Promise<PaginatedResponse<Trip>> => {
         const query: Record<string, unknown> = {
             page: params?.page ?? 1,
-            limit: params?.limit ?? 20,
+            limit: params?.limit ?? 10,
         }
         if (params?.providerIds?.length) query.providerId = params.providerIds[0]
         if (params?.busTypeIds?.length) query.busTypeId = params.busTypeIds[0]
@@ -122,7 +122,7 @@ export const adminBookingApi = {
         return response.data as Blob
     },
 
-    listRefundRequests: async (page = 1, pageSize = 20): Promise<RefundRequestListResponse> => {
+    listRefundRequests: async (page = 1, pageSize = 10): Promise<RefundRequestListResponse> => {
         const response = await api.get('/admin/bookings/refund-requests', {
             params: { page, pageSize },
         })

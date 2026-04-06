@@ -12,6 +12,7 @@ from __future__ import annotations
 import json
 import logging
 import re
+import unicodedata
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -212,14 +213,22 @@ class AgentRouter:
     def _keyword_score(message: str, keywords: list[str]) -> float:
         if not message or not keywords:
             return 0.0
+
+        normalized_message = AgentRouter._normalize_text(message)
         hits = 0
         for kw in keywords:
-            token = (kw or "").strip().lower()
-            if token and token in message:
+            token = AgentRouter._normalize_text(kw)
+            if token and token in normalized_message:
                 hits += 1
         if hits == 0:
             return 0.0
         return min(1.0, hits / max(1, len(keywords)))
+
+    @staticmethod
+    def _normalize_text(value: str) -> str:
+        normalized = unicodedata.normalize("NFKD", str(value or "").strip().lower())
+        ascii_text = "".join(char for char in normalized if not unicodedata.combining(char))
+        return " ".join(ascii_text.replace("đ", "d").replace("Đ", "D").split())
 
     def _select_agent_by_rules(self, message: str, agents: list[AgentConfig]) -> tuple[AgentConfig | None, float]:
         best_agent = None

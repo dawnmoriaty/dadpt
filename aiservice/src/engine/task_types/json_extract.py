@@ -88,22 +88,30 @@ class JsonExtractTask(BaseTask):
         for target_key, source_key in fields.items():
             value = source_data.get(source_key)
 
-            if str(target_key).lower() in {"origin", "from", "origin_name", "destination", "to", "destination_name"}:
+            source_key_lower = str(source_key).lower()
+            target_key_lower = str(target_key).lower()
+            is_route_field = target_key_lower in {"origin", "from", "origin_name", "destination", "to", "destination_name"}
+
+            if is_route_field:
                 value = self._sanitize_location(value)
 
             if self._is_blank(value):
                 value = self._extract_from_text(raw_text, source_key)
 
-            source_key_lower = str(source_key).lower()
             if fallback_text and source_key_lower in context_first_fields:
                 fallback_value = self._extract_from_text(fallback_text, source_key)
                 if not self._is_blank(fallback_value):
                     value = fallback_value
 
+            if self._is_blank(value):
+                context_value = self._extract_from_context(ctx, source_key_lower, target_key_lower)
+                if not self._is_blank(context_value):
+                    value = context_value
+
             if self._is_blank(value) and fallback_text:
                 value = self._extract_from_text(fallback_text, source_key)
 
-            if str(target_key).lower() in {"origin", "from", "origin_name", "destination", "to", "destination_name"}:
+            if is_route_field:
                 value = self._sanitize_location(value)
 
             value = self._cast_value(value, casts.get(target_key))
@@ -121,6 +129,44 @@ class JsonExtractTask(BaseTask):
 
         logger.debug("json_extract.done", input_key=input_key, extracted=list(extracted.keys()))
         return ctx
+
+    @staticmethod
+    def _extract_from_context(ctx: WorkflowContext, source_key_lower: str, target_key_lower: str) -> Any:
+        route_keys = {
+            "origin": ("origin", "from", "origin_name", "originName"),
+            "from": ("origin", "from", "origin_name", "originName"),
+            "origin_name": ("origin", "from", "origin_name", "originName"),
+            "destination": ("destination", "to", "destination_name", "destinationName"),
+            "to": ("destination", "to", "destination_name", "destinationName"),
+            "destination_name": ("destination", "to", "destination_name", "destinationName"),
+            "date": ("date", "departure_date", "travel_date", "departureDate", "travelDate"),
+            "departure_date": ("date", "departure_date", "travel_date", "departureDate", "travelDate"),
+            "travel_date": ("date", "departure_date", "travel_date", "departureDate", "travelDate"),
+            "time": ("time", "departure_time", "departure_time_hint", "departureTime"),
+            "departure_time": ("time", "departure_time", "departure_time_hint", "departureTime"),
+            "departure_time_hint": ("time", "departure_time", "departure_time_hint", "departureTime"),
+            "passengers": ("passengers", "passenger", "seats"),
+            "passenger": ("passengers", "passenger", "seats"),
+            "seats": ("passengers", "passenger", "seats"),
+            "budget": ("budget", "max_price", "price", "maxPrice"),
+            "max_price": ("budget", "max_price", "price", "maxPrice"),
+            "price": ("budget", "max_price", "price", "maxPrice"),
+            "maxprice": ("budget", "max_price", "price", "maxPrice"),
+        }
+
+        lookup_keys = route_keys.get(source_key_lower) or route_keys.get(target_key_lower)
+        if not lookup_keys:
+            lookup_keys = (source_key_lower, target_key_lower)
+
+        for key in lookup_keys:
+            value = ctx.get_var(key)
+            if value is None:
+                continue
+            if isinstance(value, str) and not value.strip():
+                continue
+            return value
+
+        return None
 
     @staticmethod
     def _load_json(raw_value: Any) -> Any:
@@ -223,7 +269,7 @@ class JsonExtractTask(BaseTask):
 
         if key_lower in {"origin", "from", "origin_name", "destination", "to", "destination_name"}:
             route_match = re.search(
-                r"t[uừ]\s+(.+?)\s+[đd][ếe]n\s+(.+?)(?:\s+ng[àa]y\s+\d{4}-\d{2}-\d{2}|\s+ng[àa]y\s+mai|\s+h[oô]m\s+nay|\s+ng[àa]y\s+kia|\s+l[úu]c\s+\d{1,2}(?::\d{1,2}|h\d{0,2})?|\s+\d{1,2}(?::\d{1,2}|h\d{0,2})|\s+\d+\s*(?:gh[eế]|ve|vé|ch[oỗ])|$)",
+                r"t[uừ]\s+(.+?)\s+(?:[đd][ếe]n|v[eề]|t[ớo]i)\s+(.+?)(?:\s+ng[àa]y\s+\d{4}-\d{2}-\d{2}|\s+ng[àa]y\s+mai|\s+h[oô]m\s+nay|\s+ng[àa]y\s+kia|\s+l[úu]c\s+\d{1,2}(?::\d{1,2}|h\d{0,2})?|\s+\d{1,2}(?::\d{1,2}|h\d{0,2})|\s+\d+\s*(?:gh[eế]|ve|vé|ch[oỗ])|$)",
                 raw_text,
                 flags=re.IGNORECASE,
             )
@@ -251,33 +297,148 @@ class JsonExtractTask(BaseTask):
 
     @staticmethod
     def _extract_route_from_normalized_text(value: str) -> tuple[str, str] | None:
-        text = f" {value} "
-        if " di " not in text:
-            return None
+        text = f" {value.strip()} "
+        origin = ""
+        destination = ""
 
-        left, right = text.split(" di ", 1)
-        origin = left.strip()
-        for prefix in ("tim chuyen ", "tim xe ", "chuyen ", "xe "):
-            if origin.startswith(prefix):
-                origin = origin[len(prefix):].strip()
-                break
+        tu_route_match = re.search(r"\btu\s+(.+?)\s+(?:den|ve|toi)\s+(.+)$", text)
+        if tu_route_match:
+            origin = tu_route_match.group(1).strip()
+            destination = tu_route_match.group(2).strip()
+        else:
+            reverse_route_match = re.search(r"\b(?:ve|den)\s+(.+?)\s+tu\s+(.+)$", text)
+            if not reverse_route_match:
+                reverse_route_match = re.search(r"\bdi\s+toi\s+(.+?)\s+tu\s+(.+)$", text)
 
-        destination = right.strip()
-        for marker in (" ngay ", " hom nay", " ngay mai", " ngay kia", " luc ", " vao "):
-            if marker in destination:
-                destination = destination.split(marker, 1)[0].strip()
-                break
+            if reverse_route_match:
+                destination = reverse_route_match.group(1).strip()
+                origin = reverse_route_match.group(2).strip()
+            else:
+                arrow_route_match = re.search(r"\b(.+?)\s*(?:->|=>|→)\s*(.+)$", text)
+                if arrow_route_match:
+                    origin = arrow_route_match.group(1).strip()
+                    destination = arrow_route_match.group(2).strip()
+                else:
+                    direct_route_match = re.search(r"\b(.+?)\s+(?:den|ve)\s+(.+)$", text)
+                    if direct_route_match:
+                        origin = direct_route_match.group(1).strip()
+                        destination = direct_route_match.group(2).strip()
+                    elif " di " in text:
+                        left, right = text.split(" di ", 1)
+                        origin = left.strip()
+                        destination = right.strip()
+                    else:
+                        return None
 
-        destination = re.sub(r"\b\d{1,2}(?::\d{1,2}|h\d{0,2})\b.*$", "", destination).strip()
-        destination = re.sub(r"\b\d+\s*(?:ghe|cho|ve)\b.*$", "", destination).strip()
+        origin = JsonExtractTask._clean_route_segment(origin, is_origin=True)
+        destination = JsonExtractTask._clean_route_segment(destination, is_origin=False)
 
         if not origin or not destination:
             return None
+        if not JsonExtractTask._is_location_like_segment(origin):
+            return None
+        if not JsonExtractTask._is_location_like_segment(destination):
+            return None
+
         return origin, destination
+
+    @staticmethod
+    def _clean_route_segment(value: str, *, is_origin: bool) -> str:
+        segment = value.strip(" ,.")
+        if not segment:
+            return ""
+
+        if is_origin:
+            for prefix in (
+                "tim chuyen ",
+                "tim xe ",
+                "chuyen ",
+                "xe ",
+                "toi muon ",
+                "minh muon ",
+                "cho toi ",
+                "di ",
+                "tu ",
+            ):
+                if segment.startswith(prefix):
+                    segment = segment[len(prefix):].strip()
+                    break
+
+        for marker in (
+            " ngay ",
+            " hom nay",
+            " ngay mai",
+            " ngay kia",
+            " luc ",
+            " vao ",
+            " gio ",
+            " cho ",
+        ):
+            if marker in segment:
+                segment = segment.split(marker, 1)[0].strip()
+                break
+
+        segment = re.sub(r"\b\d{1,2}(?::\d{1,2}|h\d{0,2})\b.*$", "", segment).strip()
+        segment = re.sub(r"\b\d+\s*(?:ghe|cho|ve)\b.*$", "", segment).strip()
+        return segment.strip(" ,.")
+
+    @staticmethod
+    def _is_location_like_segment(value: str) -> bool:
+        tokens = [token for token in value.split() if token]
+        if not tokens or len(tokens) > 8:
+            return False
+
+        stopwords = {
+            "toi",
+            "minh",
+            "ban",
+            "anh",
+            "chi",
+            "em",
+            "muon",
+            "tim",
+            "chuyen",
+            "xe",
+            "di",
+            "tu",
+            "den",
+            "ve",
+            "ngay",
+            "hom",
+            "nay",
+            "mai",
+            "kia",
+            "luc",
+            "gio",
+            "khoang",
+            "cho",
+            "nguoi",
+            "ghe",
+            "can",
+            "dat",
+            "gia",
+            "ngan",
+            "sach",
+            "kiem",
+            "tra",
+            "cua",
+            "booking",
+            "ve",
+        }
+
+        meaningful = [
+            token
+            for token in tokens
+            if token not in stopwords and not re.fullmatch(r"\d+", token)
+        ]
+        return len(meaningful) > 0
 
     @staticmethod
     def _extract_departure_time(raw_text: str, normalized_text: str) -> str | None:
         del raw_text
+
+        hour = -1
+        minute = 0
 
         hh_mm_match = re.search(r"\b([01]?\d|2[0-3])[:h]([0-5]?\d)\b", normalized_text)
         if hh_mm_match:

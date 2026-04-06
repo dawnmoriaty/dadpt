@@ -53,6 +53,12 @@ class Settings(BaseSettings):
     # --- Default gRPC target for backend ---
     default_grpc_target: str = "localhost:50052"
 
+    # --- Booking call mode: "mock" (safe, no real booking) or "live" ---
+    booking_call_mode: str = "mock"
+
+    # --- CORS: comma-separated allowed origins (empty = "*" in dev) ---
+    allowed_origins: str = ""
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8", "extra": "ignore"}
 
     @property

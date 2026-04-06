@@ -9,7 +9,7 @@ interface PagedResponse<T> {
 }
 
 export const busApi = {
-    list: async (page = 1, pageSize = 20, providerId?: number): Promise<PagedResponse<Bus>> => {
+    list: async (page = 1, pageSize = 10, providerId?: number): Promise<PagedResponse<Bus>> => {
         const { data } = await api.get<{ data: PagedResponse<Bus> }>('/admin/buses', {
             params: { page, pageSize, providerId }
         })

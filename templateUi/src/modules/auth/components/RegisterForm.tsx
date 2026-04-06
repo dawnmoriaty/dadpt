@@ -107,7 +107,7 @@ export function RegisterForm({ onSuccess }: RegisterFormProps) {
                             <FormControl>
                                 <Input 
                                     type="email" 
-                                    placeholder="email@example.com" 
+                                    placeholder="ten@email.com" 
                                     autoComplete="email"
                                     {...field} 
                                 />

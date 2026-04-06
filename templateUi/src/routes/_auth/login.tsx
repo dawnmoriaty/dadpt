@@ -1,5 +1,4 @@
 import { createFileRoute, Link, redirect, useNavigate, useSearch } from '@tanstack/react-router'
-import { Bus } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import * as z from 'zod'
@@ -26,6 +25,7 @@ export const Route = createFileRoute('/_auth/login')({
 
 function AuthPage() {
     const search = useSearch({ from: '/_auth/login' })
+    const logoSrc = `${import.meta.env.BASE_URL}LOGOBUS.png`
     const { t } = useTranslation()
     const navigate = useNavigate()
     const [tab, setTab] = useState<'login' | 'register'>(search.tab ?? 'login')
@@ -49,7 +49,7 @@ function AuthPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/40" />
                 <div className="relative z-10 flex flex-col justify-between p-12 text-white">
                     <Link to="/" className="flex items-center gap-3">
-                        <Bus className="h-8 w-8" />
+                        <img src={logoSrc} alt="Dat Ve Xe logo" className="h-8 w-8 rounded-lg object-cover" />
                         <span className="text-2xl font-bold">{t('nav.brand')}</span>
                     </Link>
 
@@ -88,7 +88,7 @@ function AuthPage() {
                     {/* Mobile branding */}
                     <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
                         <Link to="/" className="flex items-center gap-2 text-primary">
-                            <Bus className="h-6 w-6" />
+                            <img src={logoSrc} alt="Dat Ve Xe logo" className="h-6 w-6 rounded-md object-cover" />
                             <span className="text-xl font-bold">{t('nav.brand')}</span>
                         </Link>
                     </div>

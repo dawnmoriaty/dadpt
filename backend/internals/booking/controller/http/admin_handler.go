@@ -22,18 +22,15 @@ type eventTypeEnvelope struct {
 	EventType string `json:"eventType"`
 }
 
-// AdminBookingHandler handles admin refund management endpoints.
 type AdminBookingHandler struct {
 	uc     usecase.IBookingUseCase
 	sseHub *infrastructure.SSEHub
 }
 
-// NewAdminBookingHandler creates a new admin booking handler.
 func NewAdminBookingHandler(uc usecase.IBookingUseCase, sseHub *infrastructure.SSEHub) *AdminBookingHandler {
 	return &AdminBookingHandler{uc: uc, sseHub: sseHub}
 }
 
-// ListBookings GET /admin/bookings
 func (h *AdminBookingHandler) ListBookings(c *gin.Context) {
 	var req dto.AdminListBookingsParams
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -56,7 +53,6 @@ func (h *AdminBookingHandler) ListBookings(c *gin.Context) {
 	response.Success(c, dto.ToBookingListResponse(result))
 }
 
-// GetStats GET /admin/bookings/stats
 func (h *AdminBookingHandler) GetStats(c *gin.Context) {
 	stats, err := h.uc.GetAdminBookingStats(c.Request.Context())
 	if err != nil {
@@ -67,7 +63,6 @@ func (h *AdminBookingHandler) GetStats(c *gin.Context) {
 	response.Success(c, dto.ToAdminBookingStatsResponse(stats))
 }
 
-// GetRevenueSeries GET /admin/bookings/revenue-series
 func (h *AdminBookingHandler) GetRevenueSeries(c *gin.Context) {
 	daysValue := strings.TrimSpace(c.DefaultQuery("days", "7"))
 	days, err := strconv.Atoi(daysValue)
@@ -85,7 +80,6 @@ func (h *AdminBookingHandler) GetRevenueSeries(c *gin.Context) {
 	response.Success(c, dto.ToAdminRevenueSeriesResponse(series))
 }
 
-// GetBookingDetail GET /admin/bookings/:id
 func (h *AdminBookingHandler) GetBookingDetail(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -106,7 +100,6 @@ func (h *AdminBookingHandler) GetBookingDetail(c *gin.Context) {
 	response.Success(c, dto.ToBookingDetailResponse(booking))
 }
 
-// UpdateBookingStatus PATCH /admin/bookings/:id/status
 func (h *AdminBookingHandler) UpdateBookingStatus(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -132,8 +125,6 @@ func (h *AdminBookingHandler) UpdateBookingStatus(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(updated))
 }
 
-// ConfirmCOD POST /admin/bookings/:id/confirm-cod
-// Phase 1: allow admin/COD signal to move booking from pending -> paid.
 func (h *AdminBookingHandler) ConfirmCOD(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -164,7 +155,6 @@ func (h *AdminBookingHandler) ConfirmCOD(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(updated))
 }
 
-// ExportBookingsCSV GET /admin/bookings/export
 func (h *AdminBookingHandler) ExportBookingsCSV(c *gin.Context) {
 	status := strings.TrimSpace(c.Query("status"))
 	search := strings.TrimSpace(c.Query("search"))
@@ -219,7 +209,6 @@ func (h *AdminBookingHandler) ExportBookingsCSV(c *gin.Context) {
 	c.String(200, buffer.String())
 }
 
-// GetTripSeatManifest GET /admin/bookings/trips/:tripId/seats
 func (h *AdminBookingHandler) GetTripSeatManifest(c *gin.Context) {
 	tripID, err := parseID(c, "tripId")
 	if err != nil {
@@ -236,7 +225,6 @@ func (h *AdminBookingHandler) GetTripSeatManifest(c *gin.Context) {
 	response.Success(c, dto.ToTripSeatManifestResponse(manifest))
 }
 
-// ListRefundRequests GET /admin/bookings/refund-requests
 func (h *AdminBookingHandler) ListRefundRequests(c *gin.Context) {
 	var req dto.ListRefundRequestsParams
 	if err := c.ShouldBindQuery(&req); err != nil {
@@ -256,7 +244,6 @@ func (h *AdminBookingHandler) ListRefundRequests(c *gin.Context) {
 	response.Success(c, dto.ToRefundRequestListResponse(result))
 }
 
-// CountRefundPending GET /admin/bookings/refund-pending-count
 func (h *AdminBookingHandler) CountRefundPending(c *gin.Context) {
 	count, err := h.uc.CountRefundPending(c.Request.Context())
 	if err != nil {
@@ -267,7 +254,6 @@ func (h *AdminBookingHandler) CountRefundPending(c *gin.Context) {
 	response.Success(c, map[string]int64{"count": count})
 }
 
-// ApproveRefund POST /admin/bookings/:id/approve-refund
 func (h *AdminBookingHandler) ApproveRefund(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -276,7 +262,6 @@ func (h *AdminBookingHandler) ApproveRefund(c *gin.Context) {
 	}
 
 	var req dto.RefundActionRequest
-	// Body is optional for approve
 	_ = c.ShouldBindJSON(&req)
 
 	booking, err := h.uc.ApproveRefund(c.Request.Context(), &domain.RefundRequestInput{
@@ -294,7 +279,6 @@ func (h *AdminBookingHandler) ApproveRefund(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(booking))
 }
 
-// RejectRefund POST /admin/bookings/:id/reject-refund
 func (h *AdminBookingHandler) RejectRefund(c *gin.Context) {
 	id, err := parseID(c, "id")
 	if err != nil {
@@ -318,25 +302,21 @@ func (h *AdminBookingHandler) RejectRefund(c *gin.Context) {
 	response.Success(c, dto.ToBookingResponse(booking))
 }
 
-// StreamRefundEvents GET /admin/bookings/refund-events (SSE endpoint)
 func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 	if h.sseHub == nil {
 		c.JSON(500, gin.H{"error": "SSE not available"})
 		return
 	}
 
-	// Set SSE headers
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
 	c.Header("Access-Control-Allow-Origin", "*")
 
-	// Register client channel (buffered to avoid blocking)
 	clientCh := make(chan []byte, 10)
 	h.sseHub.Register(clientCh)
 	defer h.sseHub.Unregister(clientCh)
 
-	// Send initial connection event
 	c.SSEvent("connected", `{"message":"connected"}`)
 	c.Writer.Flush()
 
@@ -352,7 +332,6 @@ func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 			}
 			c.SSEvent(getAdminSSEEventName(data), string(data))
 			c.Writer.Flush()
-			// Also write a comment as keepalive
 			fmt.Fprint(w, "")
 			return true
 		}

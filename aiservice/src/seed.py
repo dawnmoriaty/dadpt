@@ -846,7 +846,7 @@ async def seed():
                         {"source": "done", "target": "END", "flow_type": "SEQUENCE"},
                     ],
                 },
-                enabled=False,
+                enabled=True,
             ),
         ])
 

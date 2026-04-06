@@ -187,7 +187,7 @@ func (uc *tripUseCase) Search(ctx context.Context, input *domain.SearchTripsInpu
 		return nil, 0, domain.ErrTripDepartureInPast // reuse sentinel for bad date
 	}
 
-	pg := &paging.Paging{Page: input.Page, PageSize: input.Limit}
+	pg := &paging.Paging{Page: input.Page, Limit: input.Limit}
 	pg.Process()
 
 	originID := input.OriginID
@@ -205,7 +205,7 @@ func (uc *tripUseCase) Search(ctx context.Context, input *domain.SearchTripsInpu
 }
 
 func (uc *tripUseCase) Browse(ctx context.Context, input *domain.BrowseTripsInput) ([]*domain.Trip, int64, error) {
-	pg := &paging.Paging{Page: input.Page, PageSize: input.Limit}
+	pg := &paging.Paging{Page: input.Page, Limit: input.Limit}
 	pg.Process()
 
 	filter := &domain.TripFilter{

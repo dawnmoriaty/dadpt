@@ -43,7 +43,7 @@ export function VoiceTripForm({
                         id="voice-date"
                         value={travelDate}
                         onChange={(event) => onTravelDateChange(event.target.value)}
-                        placeholder="YYYY-MM-DD, hôm nay, ngày mai hoặc auto"
+                        placeholder="YYYY-MM-DD, hôm nay, ngày mai hoặc tự động"
                     />
                 </div>
                 <div className="space-y-2">

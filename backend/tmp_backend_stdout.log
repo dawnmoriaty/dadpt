@@ -1,0 +1,35 @@
+[90m16:23:29[0m [32mINF[0m [1mDatabase connection established[0m
+[90m16:23:29[0m [32mINF[0m [1mRedis connection established[0m
+[90m16:23:29[0m [32mINF[0m [1mgRPC connection established: 127.0.0.1:50051[0m
+[90m16:23:29[0m [32mINF[0m [1mMinIO: public-read policy applied on bucket bus-ticketing for prefixes [buses providers avatars uploads locations][0m
+[90m16:23:29[0m [32mINF[0m [1mMinIO connection established (bucket=bus-ticketing)[0m
+[GIN-debug] [WARNING] Creating an Engine instance with the Logger and Recovery middleware already attached.
+
+[GIN-debug] [WARNING] Running in "debug" mode. Switch to "release" mode in production.
+ - using env:	export GIN_MODE=release
+ - using code:	gin.SetMode(gin.ReleaseMode)
+
+[90m16:23:29[0m [32mINF[0m [1mRabbitMQ connected[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka client initialized: brokers=localhost:9092, clientID=bus-backend[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka topic registry initialized: 1 topics[0m
+[90m16:23:29[0m [32mINF[0m [1mStarting Bus Ticketing Backend...[0m
+[90m16:23:29[0m [32mINF[0m [1mRabbitMQ central topology set up successfully[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka topics ensured: count=1[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka topics ensured successfully (count=1)[0m
+[90m16:23:29[0m [32mINF[0m [1mExpiry worker started (interval=1m0s)[0m
+[90m16:23:29[0m [32mINF[0m [1mSystem OutboxProcessor started (poll interval: 5s)[0m
+[90m16:23:29[0m [32mINF[0m [1mRefundNotificationConsumer started listening to cloud.admin.refund.queue[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka consumer created: topic=cloud-booking-events-v1, group=cloud-booking-workers[0m
+[90m16:23:29[0m [32mINF[0m [1mPayOS payment gateway initialized[0m
+[90m16:23:29[0m [32mINF[0m [1mBookingNotificationConsumer started listening to cloud-booking-events-v1[0m
+[90m16:23:29[0m [32mINF[0m [1mKafka consumer started: topic=cloud-booking-events-v1, group=cloud-booking-workers[0m
+[90m16:23:29[0m [32mINF[0m [1mRefundRMQConsumer connected (queue=cloud.admin.refund.queue)[0m
+[90m16:32:44[0m [32mINF[0m [1mShutting down...[0m
+[90m16:32:44[0m [32mINF[0m [1mExpiry worker stopped[0m
+[90m16:32:44[0m [32mINF[0m [1mSystem OutboxProcessor stopped[0m
+[90m16:32:44[0m [32mINF[0m [1mRefundNotificationConsumer stopped gracefully[0m
+[90m16:32:44[0m [32mINF[0m [1mKafka consumer stopped: topic=cloud-booking-events-v1, group=cloud-booking-workers[0m
+[90m16:32:44[0m [32mINF[0m [1mBookingNotificationConsumer stopped gracefully[0m
+[90m16:32:44[0m [32mINF[0m [1mRabbitMQ closed[0m
+[90m16:32:44[0m [32mINF[0m [1mKafka client closed[0m
+[90m16:32:44[0m [32mINF[0m [1mDatabase connection closed[0m

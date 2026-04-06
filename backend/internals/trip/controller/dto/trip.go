@@ -14,8 +14,8 @@ type SearchTripsRequest struct {
 	DestinationID int    `form:"destinationId" binding:"required"`
 	DepartureDate string `form:"departureDate" binding:"required"` // YYYY-MM-DD
 	MinSeats      int    `form:"minSeats"`
-	Page          int    `form:"page"`
-	Limit         int    `form:"limit"`
+	Page          int    `form:"page" binding:"omitempty,min=1"`
+	Limit         int    `form:"limit" binding:"omitempty,min=1,max=10"`
 }
 
 type CreateTripRequest struct {
@@ -152,8 +152,8 @@ func (r *AdminTripListRequest) ToInput() *domain.AdminListInput {
 type BrowseTripsRequest struct {
 	ProviderID *int `form:"providerId"`
 	BusTypeID  *int `form:"busTypeId"`
-	Page       int  `form:"page"`
-	Limit      int  `form:"limit"`
+	Page       int  `form:"page" binding:"omitempty,min=1"`
+	Limit      int  `form:"limit" binding:"omitempty,min=1,max=10"`
 }
 
 func (r *BrowseTripsRequest) ToInput() *domain.BrowseTripsInput {

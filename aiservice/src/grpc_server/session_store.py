@@ -14,10 +14,13 @@ _sessions: dict[str, dict[str, Any]] = {}
 
 
 def build_session_key(tenant_slug: str, user_id: str, session_id: str) -> str:
-    if user_id:
-        return f"{tenant_slug}:{user_id}"
     if session_id:
         return session_id
+    # Start a fresh conversation when client does not provide session_id.
+    # This avoids leaking old context between independent chats of the same user.
+    # `user_id` remains available in request payload for business logic, but is not
+    # used as the session key anymore.
+    del tenant_slug, user_id
     return str(uuid.uuid4())
 
 

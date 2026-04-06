@@ -141,7 +141,7 @@ export function UserFormDialog({
                                 <FormItem>
                                     <FormLabel>Email liên hệ</FormLabel>
                                     <FormControl>
-                                        <Input type="email" placeholder="email@example.com" {...field} />
+                                        <Input type="email" placeholder="ten@email.com" {...field} />
                                     </FormControl>
                                     <FormMessage />
                                 </FormItem>

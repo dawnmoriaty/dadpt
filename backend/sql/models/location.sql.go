@@ -180,11 +180,16 @@ WHERE city ILIKE '%' || $1 || '%'
 OR name ILIKE '%' || $1 || '%'
 OR keywords ILIKE '%' || $1 || '%'
 ORDER BY city, name
-LIMIT 20
+LIMIT $2
 `
 
-func (q *Queries) SearchLocations(ctx context.Context, dollar_1 *string) ([]Location, error) {
-	rows, err := q.db.Query(ctx, searchLocations, dollar_1)
+type SearchLocationsParams struct {
+	Query *string `json:"query"`
+	Limit int32   `json:"limit"`
+}
+
+func (q *Queries) SearchLocations(ctx context.Context, arg SearchLocationsParams) ([]Location, error) {
+	rows, err := q.db.Query(ctx, searchLocations, arg.Query, arg.Limit)
 	if err != nil {
 		return nil, err
 	}

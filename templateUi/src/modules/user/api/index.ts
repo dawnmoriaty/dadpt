@@ -9,7 +9,7 @@ interface PagedResponse<T> {
 }
 
 export const userApi = {
-    list: async (page = 1, pageSize = 20): Promise<PagedResponse<User>> => {
+    list: async (page = 1, pageSize = 10): Promise<PagedResponse<User>> => {
         const { data } = await api.get<{ data: PagedResponse<User> }>('/admin/users', {
             params: { page, pageSize }
         })

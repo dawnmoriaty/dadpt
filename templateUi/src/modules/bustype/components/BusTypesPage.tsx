@@ -14,7 +14,7 @@ import { getBusTypesColumns } from './BusTypesColumns'
 
 export function BusTypesPage(): React.ReactElement {
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
     const [isFormOpen, setIsFormOpen] = useState(false)
     const [editingBusType, setEditingBusType] = useState<BusType | null>(null)
     const [deletingId, setDeletingId] = useState<number | null>(null)

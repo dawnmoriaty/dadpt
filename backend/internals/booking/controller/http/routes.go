@@ -56,8 +56,6 @@ func Routes(
 	authenticated.POST("/voice/execute", voiceHandler.Execute)
 }
 
-// AdminRoutes registers admin booking endpoints (refund management).
-// Must be called with an admin-protected router group.
 func AdminRoutes(
 	admin *gin.RouterGroup,
 	database *db.Database,

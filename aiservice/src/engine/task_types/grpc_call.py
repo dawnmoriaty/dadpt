@@ -110,6 +110,10 @@ class GRPCCallTask(BaseTask):
                 # Keep a direct list for downstream tasks that read `trips`.
                 ctx.set_var("trips", trips)
                 ctx.set_var("search_trip_count", len(trips))
+            if isinstance(result, dict):
+                resolved_date = str(result.get("resolved_date", "") or "").strip()
+                if resolved_date:
+                    ctx.set_var("date", resolved_date)
             ctx.set_var("search_results_raw", result)
 
         ctx.set_var(output_key, result)

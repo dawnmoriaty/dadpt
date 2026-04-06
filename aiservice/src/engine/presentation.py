@@ -91,7 +91,22 @@ class QuickRepliesAction(BaseModel):
     meta: SearchMeta = Field(default_factory=SearchMeta)
 
 
-UIAction = TripRecommendationsAction | QuickRepliesAction
+class BookingConfirmationPayload(BaseModel):
+    mode: str = "mock"
+    booking_code: str
+    trip_id: int = 0
+    status: str = ""
+    seat_codes: list[str] = Field(default_factory=list)
+    payment_method: str = ""
+    message: str = ""
+
+
+class BookingConfirmationAction(BaseModel):
+    type: Literal["booking_confirmation"]
+    payload: BookingConfirmationPayload
+
+
+UIAction = TripRecommendationsAction | QuickRepliesAction | BookingConfirmationAction
 
 
 class ToolCallLog(BaseModel):
@@ -148,6 +163,11 @@ class ResponseFormatter:
         return calls
 
     def _build_ui_actions(self, ctx: WorkflowContext) -> list[UIAction]:
+        # NEW: Check for successful booking creation
+        confirmation = self._check_booking_confirmation(ctx)
+        if confirmation:
+            return [confirmation]
+
         trips = self._extract_trip_items(ctx)
         if not trips:
             return self._build_guided_actions(ctx)
@@ -199,6 +219,32 @@ class ResponseFormatter:
 
         return actions
 
+    def _check_booking_confirmation(self, ctx: WorkflowContext) -> BookingConfirmationAction | None:
+        for tool_call in reversed(ctx.tool_calls_log):
+            if tool_call.get("tool") == "create_booking":
+                output = tool_call.get("output")
+                if isinstance(output, str):
+                    try:
+                        output = json.loads(output)
+                    except Exception:
+                        pass
+                
+                if isinstance(output, dict):
+                    booking = output.get("booking", {})
+                    # Need an actual valid booking code to emit confirmation.
+                    if booking and booking.get("code"):
+                        payload = BookingConfirmationPayload(
+                            mode=str(output.get("mode", "mock")),
+                            booking_code=str(booking.get("code", "")),
+                            trip_id=self._to_int(booking.get("tripId")),
+                            status=str(booking.get("status", "")),
+                            seat_codes=booking.get("seatCodes", []),
+                            payment_method=str(booking.get("paymentMethod", "")),
+                            message="Đặt vé thành công",
+                        )
+                        return BookingConfirmationAction(type="booking_confirmation", payload=payload)
+        return None
+
     def _build_guided_actions(self, ctx: WorkflowContext) -> list[UIAction]:
         meta = self._extract_search_meta(ctx)
         if not self._has_search_meta(meta):
@@ -232,6 +278,23 @@ class ResponseFormatter:
             isinstance(action, TripRecommendationsAction) and action.items for action in ui_actions
         )
 
+        search_error = self._extract_latest_search_error(ctx)
+        if search_error:
+            meta = self._extract_search_meta(ctx)
+            lowered_error = search_error.lower()
+            if "origin/destination" in lowered_error:
+                origin = self._clean_location(meta.origin)
+                destination = self._clean_location(meta.destination)
+
+                if not origin and not destination:
+                    return "Mình chưa tách được điểm đi và điểm đến từ câu của bạn. Bạn nhập theo mẫu: đi từ [điểm đi] đến [điểm đến]."
+                if not origin:
+                    return f"Mình đã nhận điểm đến {destination}. Bạn cho mình thêm điểm đi nhé."
+                if not destination:
+                    return f"Mình đã nhận điểm đi {origin}. Bạn cho mình thêm điểm đến nhé."
+
+                return f"Mình đã nhận tuyến {origin} -> {destination}. Bạn gửi lại đúng 1 câu ngắn để mình query lại ngay."
+
         technical_markers = [
             "unresolved placeholders",
             "cannot connect",
@@ -259,6 +322,34 @@ class ResponseFormatter:
             return "Mình cần thêm thông tin để tìm chuyến cho bạn."
 
         return "Mình có thể giúp bạn tìm chuyến xe phù hợp."
+
+    @staticmethod
+    def _extract_latest_search_error(ctx: WorkflowContext) -> str:
+        for tool_call in reversed(ctx.tool_calls_log):
+            if tool_call.get("tool") != "search_trips":
+                continue
+
+            output = tool_call.get("output")
+            if isinstance(output, str):
+                parsed = output.strip()
+                if not parsed:
+                    return ""
+                try:
+                    output = json.loads(parsed)
+                except json.JSONDecodeError:
+                    output = parsed
+
+            if isinstance(output, dict):
+                error = output.get("error")
+                if isinstance(error, str) and error.strip():
+                    return error.strip()
+
+            if isinstance(output, str) and "error" in output.lower():
+                return output
+
+            return ""
+
+        return ""
 
     def _extract_search_meta(self, ctx: WorkflowContext) -> SearchMeta:
         message_meta = self._extract_meta_from_message(ctx.user_message)
@@ -512,13 +603,13 @@ class ResponseFormatter:
         if not origin:
             return (
                 "Bạn muốn xuất phát từ đâu?",
-                ["Xuất phát từ Sài Gòn", "Xuất phát từ Hà Nội", "Xuất phát từ Đà Nẵng"],
+                ["Xuất phát từ Hà Nội", "Xuất phát từ Hải Phòng", "Xuất phát từ Ninh Bình"],
             )
 
         if not destination:
             return (
                 f"Bạn muốn đi từ {origin} đến đâu?",
-                [f"{origin} đi Nha Trang", f"{origin} đi Đà Lạt", f"{origin} đi Đà Nẵng"],
+                [f"{origin} đi Hà Nội", f"{origin} đi Quảng Ninh", f"{origin} đi Hải Phòng"],
             )
 
         if not date:
@@ -566,6 +657,21 @@ class ResponseFormatter:
                 text,
                 flags=re.IGNORECASE,
             )
+        if not route_match:
+            reverse_route_match = re.search(
+                r"(?:v[eề]|[đd][ếe]n)\s+(.+?)\s+(?:t[uừ]|xu[ấa]t\s+ph[aá]t\s+t[uừ])\s+(.+?)(?=\s+(?:ng[àa]y|l[úu]c|luc|gi[ờo]|ng[aâ]n\s+s[aá]ch|gi[aá]|cho\s+\d+\s+(?:ng[ườu]i|ve|v[eé]))|[,.!?]|$)",
+                text,
+                flags=re.IGNORECASE,
+            )
+            if not reverse_route_match:
+                reverse_route_match = re.search(
+                    r"(?:đi|di)\s+t[ớo]i\s+(.+?)\s+(?:t[uừ]|xu[ấa]t\s+ph[aá]t\s+t[uừ])\s+(.+?)(?=\s+(?:ng[àa]y|l[úu]c|luc|gi[ờo]|ng[aâ]n\s+s[aá]ch|gi[aá]|cho\s+\d+\s+(?:ng[ườu]i|ve|v[eé]))|[,.!?]|$)",
+                    text,
+                    flags=re.IGNORECASE,
+                )
+            if reverse_route_match:
+                meta.origin = self._clean_location(reverse_route_match.group(2))
+                meta.destination = self._clean_location(reverse_route_match.group(1))
         if route_match:
             meta.origin = self._clean_location(route_match.group(1))
             meta.destination = self._clean_location(route_match.group(2))
@@ -623,12 +729,20 @@ class ResponseFormatter:
             "toi muon",
             "mình muốn",
             "minh muon",
+            "muốn",
+            "muon",
             "cho tôi",
             "cho toi",
             "đi ",
             "di ",
             "từ ",
             "tu ",
+            "về ",
+            "ve ",
+            "đến ",
+            "den ",
+            "tới ",
+            "toi ",
         )
         for prefix in banned_prefixes:
             if lowered.startswith(prefix):

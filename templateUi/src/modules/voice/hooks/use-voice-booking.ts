@@ -171,7 +171,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
 
             mediaRecorder.start()
             setIsRecording(true)
-            toast.success('Dang ghi am. Nhan dung khi doc xong.')
+            toast.success('Đang ghi âm. Nhấn dừng khi đọc xong.')
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         }
@@ -184,7 +184,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
 
     const planTrips = async () => {
         if (!origin.trim() || !destination.trim() || !travelDate.trim()) {
-            toast.error('Vui long nhap du diem di, diem den va ngay di.')
+            toast.error('Vui lòng nhập đủ điểm đi, điểm đến và ngày đi.')
             return
         }
 
@@ -198,7 +198,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             })
             setPlanResult(planned)
             setSelectedTripId(planned.recommendedTripId)
-            toast.success('Da tim duoc chuyen phu hop. Ban chon chuyen de dat ve.')
+            toast.success('Đã tìm được chuyến phù hợp. Bạn chọn chuyến để đặt vé.')
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         }
@@ -209,7 +209,7 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
             return
         }
         if (!origin.trim() || !destination.trim() || !travelDate.trim()) {
-            toast.error('Vui long nhap du diem di, diem den va ngay di.')
+            toast.error('Vui lòng nhập đủ điểm đi, điểm đến và ngày đi.')
             return
         }
 
@@ -222,14 +222,20 @@ export function useVoiceBooking(options: UseVoiceBookingOptions = {}) {
                 paymentMethod: 'cod',
             })
 
+            const bookingCode = result.bookingResult?.booking?.code
+            if (!bookingCode) {
+                toast.error('Không lấy được mã booking từ hệ thống.')
+                return
+            }
+
             const paymentUrl = result.bookingResult.paymentUrl
-            upsertPendingBookingHistory(result.bookingResult.booking.code, result.bookingResult.orderCode)
+            upsertPendingBookingHistory(bookingCode, result.bookingResult.orderCode)
             if (paymentUrl) {
                 await copyPaymentLink(paymentUrl)
                 return
             }
 
-            toast.success('Đã đặt vé cho chuyến đã chọn.')
+            toast.success(`Da dat ve thanh cong. Ma ve: ${bookingCode}`)
         } catch (error) {
             toast.error(getVoiceErrorMessage(error))
         } finally {

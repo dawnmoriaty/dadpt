@@ -19,7 +19,7 @@ interface ChatPageWidgetProps {
 }
 
 export function ChatPageWidget({ onClose }: ChatPageWidgetProps) {
-    const { messages, isLoading, clearChat, sendMessage } = useChatStore()
+    const { messages, isLoading, clearChat, sendMessage, loadNextPage } = useChatStore()
     const { input, setInput, send } = useChatInput()
 
     useEffect(() => {
@@ -66,6 +66,7 @@ export function ChatPageWidget({ onClose }: ChatPageWidgetProps) {
                             onInputChange={setInput}
                             onSend={send}
                             sendMessage={sendMessage}
+                            loadNextPage={loadNextPage}
                         />
                     </div>
                 </div>

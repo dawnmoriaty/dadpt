@@ -1,10 +1,10 @@
 import type { TripStatus } from '../types'
 
 const statusConfig: Record<TripStatus, { color: string; bg: string; label: string }> = {
-    scheduled: { color: 'text-blue-600', bg: 'bg-blue-500', label: 'Scheduled' },
-    departed: { color: 'text-yellow-600', bg: 'bg-yellow-500', label: 'Departed' },
-    completed: { color: 'text-emerald-600', bg: 'bg-emerald-500', label: 'Completed' },
-    cancelled: { color: 'text-red-600', bg: 'bg-red-500', label: 'Cancelled' },
+    scheduled: { color: 'text-blue-600', bg: 'bg-blue-500', label: 'Đã lên lịch' },
+    departed: { color: 'text-yellow-600', bg: 'bg-yellow-500', label: 'Đã xuất bến' },
+    completed: { color: 'text-emerald-600', bg: 'bg-emerald-500', label: 'Hoàn thành' },
+    cancelled: { color: 'text-red-600', bg: 'bg-red-500', label: 'Đã hủy' },
 }
 
 interface TripStatusBadgeProps {

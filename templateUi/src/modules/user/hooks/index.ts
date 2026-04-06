@@ -14,7 +14,7 @@ export const userKeys = {
     detail: (id: number) => [...userKeys.all, 'detail', id] as const,
 }
 
-export function useUsers(page = 1, pageSize = 20) {
+export function useUsers(page = 1, pageSize = 10) {
     return useQuery({
         queryKey: userKeys.list(page, pageSize),
         queryFn: () => userApi.list(page, pageSize),

@@ -1,5 +1,5 @@
 import { Link, useLocation } from '@tanstack/react-router'
-import { Bus, ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 
 import { Badge } from '@/components/ui/badge'
@@ -11,6 +11,7 @@ import { useRefundSSE } from '@/modules/booking/hooks/use-refund-sse'
 import { navigationItems } from './navigation'
 
 export function Sidebar() {
+    const logoSrc = `${import.meta.env.BASE_URL}LOGOBUS.png`
     const [collapsed, setCollapsed] = useState(false)
     const location = useLocation()
     const { data: refundCountData } = useRefundPendingCount()
@@ -32,9 +33,7 @@ export function Sidebar() {
                 'flex h-16 items-center px-4 shrink-0',
                 collapsed ? 'justify-center' : 'gap-3'
             )}>
-                <div className="p-2 rounded-xl bg-gradient-to-br from-primary via-primary to-primary/80 shadow-lg shadow-primary/25">
-                    <Bus className="h-5 w-5 text-primary-foreground" />
-                </div>
+                <img src={logoSrc} alt="BusAdmin logo" className="h-9 w-9 rounded-xl object-cover shadow-lg shadow-primary/20" />
                 {!collapsed && (
                     <div className="flex flex-col">
                         <span className="font-bold text-lg tracking-tight">BusAdmin</span>

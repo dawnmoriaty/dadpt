@@ -35,7 +35,7 @@ interface UseRefundRequestsPageResult {
     handleConfirm: () => void
 }
 
-export function useRefundRequestsPage(pageSize = 20): UseRefundRequestsPageResult {
+export function useRefundRequestsPage(pageSize = 10): UseRefundRequestsPageResult {
     const [page, setPage] = useState(1)
     const [confirmAction, setConfirmAction] = useState<RefundConfirmAction | null>(null)
     const [refundReference, setRefundReference] = useState('')

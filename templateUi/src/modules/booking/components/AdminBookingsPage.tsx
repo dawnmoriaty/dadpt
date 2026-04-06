@@ -56,7 +56,7 @@ export function AdminBookingsPage() {
 
     const params: AdminBookingListParams = {
         page,
-        pageSize: 20,
+        pageSize: 10,
         status: status === 'all' ? '' : status,
         tripId,
         search,
@@ -79,13 +79,13 @@ export function AdminBookingsPage() {
                 const downloadUrl = URL.createObjectURL(blob)
                 const link = document.createElement('a')
                 link.href = downloadUrl
-                link.download = 'admin-bookings.csv'
+                link.download = 'admin-don-dat-ve.csv'
                 link.click()
                 URL.revokeObjectURL(downloadUrl)
-                toast.success('Đã export CSV booking.')
+                toast.success('Đã xuất CSV đơn đặt vé.')
             },
             onError: (error) => {
-                toast.error(getApiErrorMessage(error, 'Không thể export danh sách booking.'))
+                toast.error(getApiErrorMessage(error, 'Không thể xuất danh sách đơn đặt vé.'))
             },
         })
     }
@@ -95,16 +95,16 @@ export function AdminBookingsPage() {
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                     <h1 className="text-3xl font-bold tracking-tight">Quản lý vé xe</h1>
-                    <p className="text-muted-foreground">Xem booking, trạng thái thanh toán, chi tiết vé và ghế đang được giữ.</p>
+                    <p className="text-muted-foreground">Xem đơn đặt vé, trạng thái thanh toán, chi tiết vé và ghế đang được giữ.</p>
                 </div>
                 <Button type="button" variant="outline" className="gap-2" onClick={handleExportCsv} disabled={exportMutation.isPending}>
                     <Download className="h-4 w-4" />
-                    Export CSV
+                    Xuất CSV
                 </Button>
             </div>
 
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatsCard title="Tổng booking" value={stats?.totalBookings ?? 0} icon={<Ticket className="h-5 w-5" />} loading={statsLoading} />
+                <StatsCard title="Tổng đơn đặt vé" value={stats?.totalBookings ?? 0} icon={<Ticket className="h-5 w-5" />} loading={statsLoading} />
                 <StatsCard title="Chưa thanh toán" value={stats?.unpaidBookings ?? 0} icon={<Clock3 className="h-5 w-5" />} loading={statsLoading} />
                 <StatsCard title="Đã thanh toán" value={stats?.paidBookings ?? 0} icon={<Wallet className="h-5 w-5" />} loading={statsLoading} />
                 <StatsCard title="Doanh thu đã thu" value={formatVndCurrency(stats?.paidRevenue ?? 0)} icon={<Wallet className="h-5 w-5" />} loading={statsLoading} />
@@ -187,14 +187,14 @@ export function AdminBookingsPage() {
                                         setPage(1)
                                     }}
                                 >
-                                    Reset
+                                    Đặt lại
                                 </Button>
                             </div>
                         </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
                         <div className="flex items-center justify-between text-sm text-muted-foreground">
-                            <span>{total} booking</span>
+                            <span>{total} đơn đặt vé</span>
                             <span>Trang {page}/{totalPages}</span>
                         </div>
                         <Table>
@@ -212,11 +212,11 @@ export function AdminBookingsPage() {
                             <TableBody>
                                 {isLoading ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-muted-foreground">Đang tải booking...</TableCell>
+                                        <TableCell colSpan={7} className="text-center text-muted-foreground">Đang tải đơn đặt vé...</TableCell>
                                     </TableRow>
                                 ) : bookings.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={7} className="text-center text-muted-foreground">Không có booking phù hợp.</TableCell>
+                                        <TableCell colSpan={7} className="text-center text-muted-foreground">Không có đơn đặt vé phù hợp.</TableCell>
                                     </TableRow>
                                 ) : (
                                     bookings.map((booking) => (
@@ -246,14 +246,14 @@ export function AdminBookingsPage() {
 
                 <Card>
                     <CardHeader>
-                        <CardTitle>Ghế đã booking</CardTitle>
+                        <CardTitle>Ghế đã đặt</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
                         {selectedBooking !== null && (
                             <div className="rounded-lg border bg-muted/20 p-4 text-sm">
                                 <div className="flex items-start justify-between gap-3">
                                     <div>
-                                        <p className="font-semibold">Booking đang chọn: {selectedBooking.code}</p>
+                                        <p className="font-semibold">Đơn đang chọn: {selectedBooking.code}</p>
                                         <p className="mt-2">Khách: {selectedBooking.guestInfo.name}</p>
                                         <p>SĐT: {selectedBooking.guestInfo.phone}</p>
                                         <p>Thanh toán: {selectedBooking.paymentMethod}</p>
@@ -264,7 +264,7 @@ export function AdminBookingsPage() {
                                 <Button asChild variant="outline" size="sm" className="mt-3 w-full">
                                     <Link to="/admin/bookings/$bookingId" params={{ bookingId: String(selectedBooking.id) }}>
                                         <Eye className="mr-2 h-4 w-4" />
-                                        Xem chi tiết booking
+                                        Xem chi tiết đơn đặt vé
                                     </Link>
                                 </Button>
                             </div>
@@ -272,11 +272,11 @@ export function AdminBookingsPage() {
 
                         {typeof tripId !== 'number' ? (
                             <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                                Chọn một chuyến hoặc bấm vào booking để xem ai đang giữ ghế.
+                                Chọn một chuyến hoặc bấm vào đơn để xem ai đang giữ ghế.
                             </div>
                         ) : seatManifestLoading ? (
                             <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-                                Đang tải danh sách ghế đã booking...
+                                Đang tải danh sách ghế đã đặt...
                             </div>
                         ) : seatManifest.length === 0 ? (
                             <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
@@ -302,7 +302,7 @@ export function AdminBookingsPage() {
             <div className="grid gap-4 md:grid-cols-3">
                 <MiniInfoCard title="Doanh thu chờ thu" value={formatVndCurrency(stats?.unpaidRevenue ?? 0)} />
                 <MiniInfoCard title="Chờ duyệt hoàn" value={String(stats?.refundPendingBookings ?? 0)} />
-                <MiniInfoCard title="Chuyến đang có booking" value={String(stats?.activeTripCount ?? 0)} />
+                <MiniInfoCard title="Chuyến đang có đặt vé" value={String(stats?.activeTripCount ?? 0)} />
             </div>
         </div>
     )

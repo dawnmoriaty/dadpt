@@ -2,117 +2,49 @@
 tags:
   - module
   - auth
-  - security
 created: 2026-04-01
 updated: 2026-04-01
 ---
 
 # MODULE AUTH
 
-> [!abstract] Mục tiêu
-> Cung cấp lớp xác thực và phân quyền chuẩn hóa cho toàn hệ thống, bảo đảm chỉ chủ thể hợp lệ mới được thực hiện hành vi nghiệp vụ tương ứng.
+> [!abstract] M?c ti�u
+> Qu?n l� x�c th?c v� ph�n quy?n ngu?i d�ng trong h? th?ng (c? admin, provider, v� user). 
 
-## 1. Bối cảnh nghiệp vụ
+## 1. B?i c?nh nghi?p v?
 
-Trong nền tảng đặt vé, dữ liệu booking và giao dịch thanh toán có tính nhạy cảm cao. Nếu lớp Auth không chặt chẽ, mọi ưu thế về tính đúng đắn nghiệp vụ ở module khác đều có thể bị triệt tiêu do truy cập trái phép hoặc giả mạo danh tính.
+H? th?ng y�u c?u authentication d?a tr�n JWT token (Access Token & Refresh Token). C�c endpoint y�u c?u ki?m tra t�nh h?p l? c?a th�ng tin (phone, email, password) tru?c khi dang k� ho?c dang nh?p. Token h?p l? m?i du?c s? d?ng ? c�c module kh�c th�ng qua middleware (VD: API d?t v�...). Ki?n tr�c du?c thi?t k? theo d?ng Hexagonal Architecture v?i Dependency Injection r� r�ng.
 
-## 2. Yêu cầu chức năng
+## 2. Y�u c?u ch?c nang v� API Endpoints
 
-| ID | Yêu cầu |
-|---|---|
-| AUTH-01 | Đăng ký tài khoản bằng phone/password |
-| AUTH-02 | Đăng nhập và phát hành access/refresh token |
-| AUTH-03 | Đăng xuất và thu hồi refresh token |
-| AUTH-04 | Lấy profile người dùng hiện tại |
-| AUTH-05 | Middleware kiểm tra quyền theo role |
+H? th?ng authentication cung c?p danh s�ch HTTP handlers tr�n nh�m \/auth\.
 
-## 3. Cơ sở lý thuyết bảo mật áp dụng
+| ID | Ch?c nang | Phuong th?c & URL | �?i tu?ng | Module / Dependencies |
+|---|---|---|---|---|
+| AUTH-01 | �ang k� th�nh vi�n | \POST /api/v1/auth/register\ | User / System | db, hasher, jwt, redis |
+| AUTH-02 | �ang nh?p | \POST /api/v1/auth/login\ | User | db, hasher, jwt, redis |
+| AUTH-03 | L?y token m?i | \POST /api/v1/auth/refresh\ | App/Browser | Cookie \efresh_token\ ho?c JSON body |
+| AUTH-04 | �ang xu?t | \POST /api/v1/auth/logout\ | App/Browser | G?n JWT Auth, x�a token |
 
-### 3.1 Authentication vs Authorization
+## 3. Ki?n tr�c lu?ng x? l� (Th?c t? Backend)
 
-- **Authentication** trả lời câu hỏi “Bạn là ai?”.
-- **Authorization** trả lời câu hỏi “Bạn được làm gì?”.
+- **HTTP Handler:** X? l� request, Bind JSON v� tr? v? JWT token ho?c set Cookie \efresh_token\.
+- **Infrastructure (Adapters):** 
+  - \epository\: Tuong t�c v?i Database b?ng sqlc/PostgreSQL.
+  - \infrastructure.NewBcryptHasher()\: S? d?ng thu?t to�n Bcrypt bam m?t kh?u.
+  - \edis\: Qu?n l� session / token cache.
+  - \jwtProvider\: Qu?n l� sinh v� d?nh d?ng ch? k� s? cho token.
+- **UseCase (\IAuthUseCase\):** X? l� nghi?p v? x�c th?c m?t kh?u, ki?m tra tr�ng l?p SDT/email v� qu?n l� lu?ng dang xu?t. 
 
-Tách biệt hai bước giúp hệ thống minh bạch quyền hạn và dễ kiểm soát audit.
+## 4. Quy t?c nghi?p v? & B?t l?i
 
-### 3.2 Token-based Security
+Module Auth qu?n l� m?t b? mapping l?i t? \domain error\ sang \pkgErrors\. 
+- **Validation Errors (400):** \ErrInvalidPhone\, \ErrInvalidEmail\, \ErrInvalidFullName\, \ErrInvalidUsername\, \ErrInvalidPassword\, \ErrInvalidRole\.
+- **Conflict Errors (409):** \ErrPhoneAlreadyExists\, \ErrEmailAlreadyExists\.
+- **Auth Errors (401-403):** \ErrInvalidCredentials\, \ErrTokenInvalid\, \ErrTokenExpired\, \ErrUserInactive\.
 
-Module sử dụng JWT để đại diện danh tính phiên truy cập. Access token dùng cho request thường xuyên; refresh token dùng tái cấp access token theo chính sách hạn dùng.
+## 5. Ti�u ch� ch?p nh?n
 
-### 3.3 Principle of Least Privilege
-
-Mỗi role chỉ được cấp quyền tối thiểu đủ để hoàn thành nhiệm vụ. Ví dụ: khách hàng không có quyền thao tác endpoint admin.
-
-## 4. Tác nhân và vai trò
-
-- Guest
-- Authenticated User
-- Admin
-
-## 5. Use Case trọng yếu - Login
-
-- **Tiền điều kiện:** Tài khoản tồn tại, active, mật khẩu hợp lệ.
-- **Hậu điều kiện:** Client nhận token hợp lệ để truy cập endpoint phù hợp role.
-
-```plantuml
-@startuml
-actor User
-participant "Auth API" as API
-database "users" as DB
-
-User -> API : login(identifier,password)
-API -> DB : verify account
-DB --> API : user record
-API --> User : accessToken + refreshToken
-@enduml
-```
-
-## 6. API Endpoints
-
-| Method | Endpoint | Mô tả |
-|---|---|---|
-| POST | `/api/v1/auth/register` | Đăng ký |
-| POST | `/api/v1/auth/login` | Đăng nhập |
-| POST | `/api/v1/auth/refresh` | Cấp lại access token |
-| POST | `/api/v1/auth/logout` | Đăng xuất |
-| GET | `/api/v1/auth/profile` | Lấy profile |
-
-## 7. Quy tắc nghiệp vụ
-
-- Số điện thoại là duy nhất.
-- Mật khẩu lưu dưới dạng hash an toàn.
-- Role mặc định khi đăng ký là `customer`.
-- Endpoint admin bắt buộc role `admin`.
-
-## 8. Yêu cầu phi chức năng
-
-### 8.1 Security
-
-- Không log mật khẩu/token thô.
-- Xác thực chữ ký token và thời hạn sử dụng.
-- Thu hồi refresh token khi logout.
-
-### 8.2 Reliability
-
-- Luồng refresh token phải idempotent theo policy.
-- Trạng thái thu hồi token phải phản ánh nhanh ở middleware.
-
-### 8.3 Observability
-
-- Ghi log truy cập với `user_id`, `role`, `trace_id`.
-- Có thống kê tỷ lệ login thất bại theo thời gian.
-
-## 9. Kịch bản kiểm thử
-
-| Mã | Kịch bản | Kỳ vọng |
-|---|---|---|
-| AUTH-TC-01 | Login sai mật khẩu | `401` |
-| AUTH-TC-02 | Token hết hạn gọi endpoint protected | `401` |
-| AUTH-TC-03 | Refresh token đã thu hồi | Từ chối cấp token mới |
-| AUTH-TC-04 | User role gọi endpoint admin | `403` |
-
-## 10. Tiêu chí chấp nhận
-
-- Chỉ user hợp lệ mới truy cập được tài nguyên bảo vệ.
-- Cơ chế token đáp ứng đúng vòng đời bảo mật.
-- Phân quyền role hoạt động chính xác trên toàn bộ endpoint.
+- Tu�n th? Hexagonal pattern.
+- Dependencies du?c ti�m (\Inject\) ngo�i \Routes()\ v� ph�n t�ch UseCase (Application) v?i Repository (Infrastructure).
+- Qu?n l� JWT Token qua Response API cho App, d?ng th?i set Cookie an to�n cho phi�n dang nh?p t? Frontend/Browser.

@@ -27,7 +27,7 @@ export function VoiceCandidateCard({ candidate, selected, recommended, onSelect 
                 {candidate.departureTime} - {candidate.arrivalTime}
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-                Nhà xe: {candidate.providerName || 'N/A'} | Loại xe: {candidate.busTypeName || 'N/A'}
+                Nhà xe: {candidate.providerName || 'Không rõ'} | Loại xe: {candidate.busTypeName || 'Không rõ'}
             </p>
             <p className="mt-1 text-sm font-semibold">{Math.round(candidate.finalPrice).toLocaleString('vi-VN')} VND</p>
             {candidate.suggestedSeatCodes?.length ? (

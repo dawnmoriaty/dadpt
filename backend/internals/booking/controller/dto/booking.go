@@ -34,8 +34,8 @@ type PointInfoDTO struct {
 
 type ListBookingsRequest struct {
 	Page     int32 `form:"page,default=1" binding:"omitempty,min=1"`
-	PageSize int32 `form:"pageSize,default=20" binding:"omitempty,min=1,max=50"`
-	Limit    int32 `form:"limit" binding:"omitempty,min=1,max=50"`
+	PageSize int32 `form:"pageSize,default=10" binding:"omitempty,min=1,max=10"`
+	Limit    int32 `form:"limit" binding:"omitempty,min=1,max=10"`
 	Offset   int32 `form:"offset" binding:"omitempty,min=0"`
 }
 
@@ -214,12 +214,12 @@ func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingRespons
 
 type ListRefundRequestsParams struct {
 	Page     int32 `form:"page,default=1" binding:"omitempty,min=1"`
-	PageSize int32 `form:"pageSize,default=20" binding:"omitempty,min=1,max=50"`
+	PageSize int32 `form:"pageSize,default=10" binding:"omitempty,min=1,max=10"`
 }
 
 type AdminListBookingsParams struct {
 	Page     int32  `form:"page,default=1" binding:"omitempty,min=1"`
-	PageSize int32  `form:"pageSize,default=20" binding:"omitempty,min=1,max=100"`
+	PageSize int32  `form:"pageSize,default=10" binding:"omitempty,min=1,max=10"`
 	Status   string `form:"status" binding:"omitempty,oneof=pending paid cancelled expired refund_pending refunded"`
 	TripID   int64  `form:"tripId" binding:"omitempty,min=1"`
 	Search   string `form:"search" binding:"omitempty,max=100"`

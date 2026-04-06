@@ -203,7 +203,7 @@ export function BookingForm({ trip, passengers, defaultPaymentMethod, onSuccess 
                                 {t('booking.selected', {
                                     current: seatRules.userExistingSeats.length,
                                     total: MAX_BOOKING_SEATS,
-                                    defaultValue: 'Da co {{current}}/{{total}} ghe tren chuyen nay',
+                                    defaultValue: 'Đã có {{current}}/{{total}} ghế trên chuyến này',
                                 })}
                             </p>
                         )}

@@ -19,12 +19,12 @@ func TestPickBestLocationMatch_NoiseAndAccentInsensitive(t *testing.T) {
 		{ID: 2, Name: "Bến xe Yên Nghĩa", City: "Hà Nội", Keywords: "yen nghia"},
 	}
 
-	best := pickBestLocationMatch("ben xe gia lam", candidates)
-	if best == nil {
+	best := pickTopLocationMatches("ben xe gia lam", candidates, 4)
+	if len(best) == 0 {
 		t.Fatalf("expected a best match")
 	}
-	if best.ID != 1 {
-		t.Fatalf("expected location id=1, got %d", best.ID)
+	if best[0].ID != 1 {
+		t.Fatalf("expected location id=1, got %d", best[0].ID)
 	}
 }
 
@@ -33,9 +33,9 @@ func TestPickBestLocationMatch_ReturnsNilOnWeakMatch(t *testing.T) {
 		{ID: 1, Name: "Bến xe Gia Lâm", City: "Hà Nội", Keywords: "gia lam"},
 	}
 
-	best := pickBestLocationMatch("sai gon center", candidates)
-	if best != nil {
-		t.Fatalf("expected nil for weak match, got id=%d", best.ID)
+	best := pickTopLocationMatches("sai gon center", candidates, 4)
+	if len(best) != 0 {
+		t.Fatalf("expected nil for weak match, got id=%d", best[0].ID)
 	}
 }
 
@@ -45,11 +45,11 @@ func TestPickBestLocationMatch_HandlesTranscriptTypos(t *testing.T) {
 		{ID: 2, Name: "Bến xe Yên Nghĩa", City: "Hà Nội", Keywords: "yen nghia"},
 	}
 
-	best := pickBestLocationMatch("ben xe ra lam", candidates)
-	if best == nil {
-		t.Fatalf("expected a fuzzy best match")
+	best := pickTopLocationMatches("ben xe ra lam", candidates, 4)
+	if len(best) == 0 {
+		t.Fatalf("expected robust edge matching to find id=1")
 	}
-	if best.ID != 1 {
-		t.Fatalf("expected location id=1, got %d", best.ID)
+	if best[0].ID != 1 {
+		t.Fatalf("expected location id=1, got %d", best[0].ID)
 	}
 }

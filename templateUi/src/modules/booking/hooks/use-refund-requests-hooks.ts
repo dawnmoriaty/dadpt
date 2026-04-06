@@ -18,7 +18,7 @@ export function useRefundRequestEventFeed() {
     })
 }
 
-export function useRefundRequests(page = 1, pageSize = 20) {
+export function useRefundRequests(page = 1, pageSize = 10) {
     return useQuery<RefundRequestListResponse>({
         queryKey: refundRequestKeys.list(page, pageSize),
         queryFn: () => adminBookingApi.listRefundRequests(page, pageSize),

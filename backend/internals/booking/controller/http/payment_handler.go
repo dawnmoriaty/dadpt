@@ -16,13 +16,11 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// PaymentStatusResponse is the response for payment status queries
 type PaymentStatusResponse struct {
 	OrderCode string `json:"orderCode"`
 	Status    string `json:"status"`
 }
 
-// PaymentWebhookResponse is the response to the webhook
 type PaymentWebhookResponse struct {
 	Message   string `json:"message"`
 	BookingID int64  `json:"bookingId,omitempty"`
@@ -39,29 +37,23 @@ type PaymentHandler struct {
 	paymentGw paymentDomain.PaymentGateway
 }
 
-// NewPaymentHandler creates a new payment handler
 func NewPaymentHandler(uc usecase.IBookingUseCase, paymentGw paymentDomain.PaymentGateway) *PaymentHandler {
 	return &PaymentHandler{uc: uc, paymentGw: paymentGw}
 }
 
-// HandleWebhook POST /payments/webhook
-// Receives payment confirmation from gateway, verifies signature, updates booking.
 func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
-	// 1. Read raw body
 	bodyBytes, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
-	// 2. Parse as generic map for signature verification
 	var webhookBody map[string]interface{}
 	if err := json.Unmarshal(bodyBytes, &webhookBody); err != nil {
 		response.HandleError(c, pkgErrors.ValidationError(pkgErrors.ErrCodeValidation))
 		return
 	}
 
-	// 3. Verify signature and extract data
 	var orderCodeStr string
 	var paymentStatus string
 
@@ -93,7 +85,6 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// 4. Call usecase
 	result, err := h.uc.ConfirmPayment(c.Request.Context(), &domain.ConfirmPaymentInput{
 		OrderCode:   orderCodeStr,
 		Status:      paymentStatus,
@@ -104,7 +95,6 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 		return
 	}
 
-	// 5. Response
 	response.Success(c, PaymentWebhookResponse{
 		Message:   "payment processed",
 		BookingID: result.Booking.ID,
@@ -112,8 +102,6 @@ func (h *PaymentHandler) HandleWebhook(c *gin.Context) {
 	})
 }
 
-// GetPaymentStatus GET /payments/:orderCode/status
-// Returns payment status for frontend polling.
 func (h *PaymentHandler) GetPaymentStatus(c *gin.Context) {
 	orderCode := c.Param("orderCode")
 	if orderCode == "" {
@@ -121,7 +109,6 @@ func (h *PaymentHandler) GetPaymentStatus(c *gin.Context) {
 		return
 	}
 
-	// Try gateway first
 	if h.paymentGw != nil {
 		orderCodeInt, err := strconv.ParseInt(orderCode, 10, 64)
 		if err == nil {
@@ -138,7 +125,6 @@ func (h *PaymentHandler) GetPaymentStatus(c *gin.Context) {
 		}
 	}
 
-	// Fallback: check DB
 	payment, err := h.uc.GetPaymentByOrderCode(c.Request.Context(), orderCode)
 	if err != nil {
 		response.HandleError(c, mapPaymentError(err))
@@ -170,7 +156,6 @@ func (h *PaymentHandler) reconcileSuccessIfNeeded(c *gin.Context, orderCode stri
 	}
 }
 
-// mapGatewayStatus maps gateway-specific status to internal status.
 func mapGatewayStatus(gatewayStatus string) string {
 	switch gatewayStatus {
 	case "PAID":

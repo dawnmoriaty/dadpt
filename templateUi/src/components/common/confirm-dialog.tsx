@@ -28,10 +28,10 @@ interface ConfirmDialogProps {
 export function ConfirmDialog({
     open,
     onOpenChange,
-    title = 'Are you sure?',
+    title = 'Bạn có chắc chắn?',
     description,
-    confirmLabel = 'Confirm',
-    cancelLabel = 'Cancel',
+    confirmLabel = 'Xác nhận',
+    cancelLabel = 'Hủy',
     variant = 'destructive',
     onConfirm,
     loading = false,
@@ -53,7 +53,7 @@ export function ConfirmDialog({
                         disabled={loading || disabled}
                         className={variant === 'destructive' ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90' : ''}
                     >
-                        {loading ? 'Processing...' : confirmLabel}
+                        {loading ? 'Đang xử lý...' : confirmLabel}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

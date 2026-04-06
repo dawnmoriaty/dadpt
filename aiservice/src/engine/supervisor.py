@@ -257,12 +257,13 @@ class Supervisor:
                 tenant_name=self.tenant.name,
                 supervisor_prompt=self.tenant.supervisor_prompt or "",
             )
+            from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
             messages = [
                 SystemMessage(content=system),
                 *[
                     HumanMessage(content=m["content"])
                     if m["role"] == "user"
-                    else SystemMessage(content=m["content"])
+                    else AIMessage(content=m["content"])
                     for m in ctx.messages[-10:]  # last 10 messages for context
                 ],
                 HumanMessage(content=ctx.user_message),

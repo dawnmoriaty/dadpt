@@ -18,7 +18,7 @@ export function ProvidersPage() {
     const [editingProvider, setEditingProvider] = useState<Provider | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
 
     const { data, isLoading } = useProviders({ page: page + 1, pageSize })
     const createMutation = useCreateProvider()

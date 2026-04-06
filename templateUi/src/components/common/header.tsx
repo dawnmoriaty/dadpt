@@ -1,7 +1,7 @@
 'use client'
 
 import { Link, useNavigate } from '@tanstack/react-router'
-import { Bus, LogOut, Menu, Ticket, X } from 'lucide-react'
+import { LogOut, Menu, Ticket, X } from 'lucide-react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 
@@ -17,6 +17,7 @@ import {
 import { useAuthStore } from '@/stores/use-auth-store'
 
 export function Header() {
+    const logoSrc = `${import.meta.env.BASE_URL}LOGOBUS.png`
     const { user, isAuthenticated, logout } = useAuthStore()
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
     useTranslation()
@@ -38,9 +39,7 @@ export function Header() {
             <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
                 {/* Logo */}
                 <Link to="/" className="flex items-center gap-2.5 font-bold text-lg text-primary transition-transform hover:scale-105">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-primary to-primary/70">
-                        <Bus className="h-6 w-6 text-white" />
-                    </div>
+                    <img src={logoSrc} alt="Dat Ve Xe logo" className="h-10 w-10 rounded-lg object-cover" />
                     <span className="hidden sm:inline">Đặt Vé Xe</span>
                 </Link>
 

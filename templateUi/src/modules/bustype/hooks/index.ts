@@ -13,7 +13,7 @@ export const busTypeKeys = {
     detail: (id: number) => [...busTypeKeys.all, 'detail', id] as const,
 }
 
-export function useBusTypes(page = 1, pageSize = 20) {
+export function useBusTypes(page = 1, pageSize = 10) {
     return useQuery({
         queryKey: busTypeKeys.list(page, pageSize),
         queryFn: () => busTypeApi.list(page, pageSize),

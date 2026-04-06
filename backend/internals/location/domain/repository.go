@@ -10,5 +10,5 @@ type Repository interface {
 	Delete(ctx context.Context, id int32) error
 	List(ctx context.Context, filter *LocationFilter) ([]*Location, error)
 	Count(ctx context.Context, filter *LocationFilter) (int64, error)
-	Search(ctx context.Context, query string) ([]*Location, error)
+	Search(ctx context.Context, query string, limit int32) ([]*Location, error)
 }

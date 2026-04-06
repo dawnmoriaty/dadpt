@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-	"unicode"
 
 	"backend/internals/location/domain"
+	"backend/pkgs/stringutils"
 	"golang.org/x/sync/errgroup"
-	"golang.org/x/text/unicode/norm"
 )
 
 type LocationUseCase interface {
@@ -18,7 +17,7 @@ type LocationUseCase interface {
 	Update(ctx context.Context, id int32, input *domain.UpdateLocationInput) (*domain.Location, error)
 	Delete(ctx context.Context, id int32) error
 	List(ctx context.Context, filter *domain.LocationFilter) ([]*domain.Location, int64, error)
-	Search(ctx context.Context, query string) ([]*domain.Location, error)
+	Search(ctx context.Context, query string, limit int32) ([]*domain.Location, error)
 }
 
 type locationUseCase struct {
@@ -132,17 +131,30 @@ func (uc *locationUseCase) List(ctx context.Context, filter *domain.LocationFilt
 	return items, total, nil
 }
 
-func (uc *locationUseCase) Search(ctx context.Context, query string) ([]*domain.Location, error) {
+func (uc *locationUseCase) Search(ctx context.Context, query string, limit int32) ([]*domain.Location, error) {
 	rawQuery := strings.TrimSpace(query)
 	if rawQuery == "" {
 		return nil, domain.ErrLocationNameRequired
+	}
+
+	normalizedLimit := limit
+	if normalizedLimit <= 0 {
+		normalizedLimit = domain.DefaultSearchLimit
+	}
+	if normalizedLimit > domain.MaxSearchLimit {
+		normalizedLimit = domain.MaxSearchLimit
+	}
+
+	fallbackLimit := normalizedLimit
+	if fallbackLimit < 1000 {
+		fallbackLimit = 1000
 	}
 
 	queries := buildSearchQueries(rawQuery)
 	resultByID := make(map[int32]*domain.Location)
 
 	for _, item := range queries {
-		result, err := uc.repo.Search(ctx, item)
+		result, err := uc.repo.Search(ctx, item, normalizedLimit)
 		if err != nil {
 			return nil, fmt.Errorf("locationUseCase.Search: %w", err)
 		}
@@ -157,7 +169,7 @@ func (uc *locationUseCase) Search(ctx context.Context, query string) ([]*domain.
 	}
 
 	if len(resultByID) == 0 {
-		allLocations, err := uc.repo.List(ctx, &domain.LocationFilter{Limit: 1000, Offset: 0})
+		allLocations, err := uc.repo.List(ctx, &domain.LocationFilter{Limit: fallbackLimit, Offset: 0})
 		if err != nil {
 			return nil, fmt.Errorf("locationUseCase.Search.List: %w", err)
 		}
@@ -173,13 +185,17 @@ func (uc *locationUseCase) Search(ctx context.Context, query string) ([]*domain.
 	}
 
 	sort.Slice(results, func(i, j int) bool {
-		left := normalizeSearchText(results[i].Name)
-		right := normalizeSearchText(results[j].Name)
+		left := stringutils.NormalizeLocationText(results[i].Name)
+		right := stringutils.NormalizeLocationText(results[j].Name)
 		if left == right {
 			return results[i].ID < results[j].ID
 		}
 		return left < right
 	})
+
+	if int32(len(results)) > normalizedLimit {
+		results = results[:normalizedLimit]
+	}
 
 	return results, nil
 }
@@ -190,8 +206,8 @@ func buildSearchQueries(query string) []string {
 		return nil
 	}
 
-	normalized := normalizeSearchText(raw)
-	stripped := stripLocationNoise(normalized)
+	normalized := stringutils.NormalizeLocationText(raw)
+	stripped := stringutils.StripLocationNoise(normalized)
 	bxQuery := buildBXVariant(stripped)
 
 	queries := []string{raw}
@@ -220,7 +236,7 @@ func buildSearchQueries(query string) []string {
 }
 
 func scoreLocationCandidates(query string, candidates []*domain.Location) []*domain.Location {
-	normTarget := stripLocationNoise(normalizeSearchText(query))
+	normTarget := stringutils.StripLocationNoise(stringutils.NormalizeLocationText(query))
 	if normTarget == "" {
 		return nil
 	}
@@ -235,7 +251,11 @@ func scoreLocationCandidates(query string, candidates []*domain.Location) []*dom
 		if loc == nil {
 			continue
 		}
-		score := scoreLocationMatch(normTarget, loc)
+		score := stringutils.ScoreLocationMatch(normTarget, stringutils.LocationCandidate{
+			Name:     loc.Name,
+			City:     loc.City,
+			Keywords: loc.Keywords,
+		})
 		if score > 0 {
 			scored = append(scored, scoredLocation{location: loc, score: score})
 		}
@@ -259,138 +279,6 @@ func scoreLocationCandidates(query string, candidates []*domain.Location) []*dom
 	return results
 }
 
-func scoreLocationMatch(target string, location *domain.Location) int {
-	name := stripLocationNoise(normalizeSearchText(location.Name))
-	if name == "" {
-		return 0
-	}
-
-	if name == target {
-		return 100
-	}
-
-	if strings.Contains(name, target) || strings.Contains(target, name) {
-		return 90
-	}
-
-	if score := fuzzyLocationNameScore(target, name); score > 0 {
-		return score
-	}
-
-	targetTokens := strings.Fields(target)
-	nameTokens := strings.Fields(name)
-	if len(targetTokens) == 0 || len(nameTokens) == 0 {
-		return 0
-	}
-
-	overlap := 0
-	used := make([]bool, len(nameTokens))
-	for _, token := range targetTokens {
-		for i, candidate := range nameTokens {
-			if used[i] {
-				continue
-			}
-			if token == candidate {
-				overlap += 20
-				used[i] = true
-				break
-			}
-			if isApproximateLocationToken(token, candidate) {
-				overlap += 15
-				used[i] = true
-				break
-			}
-		}
-	}
-
-	score := overlap
-	if strings.Contains(normalizeSearchText(location.City), target) {
-		score += 10
-	}
-	if strings.Contains(normalizeSearchText(location.Keywords), target) {
-		score += 20
-	}
-
-	return score
-}
-
-func fuzzyLocationNameScore(target string, name string) int {
-	distance := levenshteinDistance(target, name)
-	maxLength := maxInt(len(target), len(name))
-	if maxLength >= 6 && distance <= 2 {
-		return 80 - (distance * 5)
-	}
-	if maxLength >= 4 && distance == 1 {
-		return 75
-	}
-	return 0
-}
-
-func isApproximateLocationToken(left string, right string) bool {
-	distance := levenshteinDistance(left, right)
-	maxLength := maxInt(len(left), len(right))
-	if maxLength <= 3 {
-		return distance <= 2 && sharesTokenEdge(left, right)
-	}
-	return distance <= 1
-}
-
-func sharesTokenEdge(left string, right string) bool {
-	if left == "" || right == "" {
-		return false
-	}
-	return left[0] == right[0] || left[len(left)-1] == right[len(right)-1]
-}
-
-func levenshteinDistance(left string, right string) int {
-	if left == right {
-		return 0
-	}
-	if left == "" {
-		return len(right)
-	}
-	if right == "" {
-		return len(left)
-	}
-
-	prev := make([]int, len(right)+1)
-	for j := 0; j <= len(right); j++ {
-		prev[j] = j
-	}
-
-	for i := 1; i <= len(left); i++ {
-		current := make([]int, len(right)+1)
-		current[0] = i
-		for j := 1; j <= len(right); j++ {
-			cost := 0
-			if left[i-1] != right[j-1] {
-				cost = 1
-			}
-			current[j] = minInt(
-				minInt(current[j-1]+1, prev[j]+1),
-				prev[j-1]+cost,
-			)
-		}
-		prev = current
-	}
-
-	return prev[len(right)]
-}
-
-func minInt(left int, right int) int {
-	if left < right {
-		return left
-	}
-	return right
-}
-
-func maxInt(left int, right int) int {
-	if left > right {
-		return left
-	}
-	return right
-}
-
 func buildBXVariant(value string) string {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
@@ -400,36 +288,4 @@ func buildBXVariant(value string) string {
 		return trimmed
 	}
 	return strings.TrimSpace("bx " + trimmed)
-}
-
-func stripLocationNoise(text string) string {
-	value := strings.TrimSpace(strings.ToLower(text))
-	value = strings.ReplaceAll(value, "ben xe", "")
-	value = strings.ReplaceAll(value, "bx", "")
-	value = strings.ReplaceAll(value, "tram", "")
-	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
-}
-
-func normalizeSearchText(text string) string {
-	trimmed := strings.TrimSpace(strings.ToLower(text))
-	if trimmed == "" {
-		return ""
-	}
-
-	normValue := norm.NFD.String(trimmed)
-	builder := strings.Builder{}
-	builder.Grow(len(normValue))
-	for _, r := range normValue {
-		if unicode.Is(unicode.Mn, r) {
-			continue
-		}
-		switch r {
-		case 'đ':
-			builder.WriteRune('d')
-		default:
-			builder.WriteRune(r)
-		}
-	}
-
-	return strings.Join(strings.Fields(builder.String()), " ")
 }

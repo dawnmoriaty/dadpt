@@ -24,7 +24,7 @@ export function LocationsPage() {
     const [searchQuery, setSearchQuery] = useState('')
     const [viewMode, setViewMode] = useState<ViewMode>('grid')
     const [page, setPage] = useState(0)
-    const [pageSize, setPageSize] = useState(20)
+    const [pageSize, setPageSize] = useState(10)
 
     const { data, isLoading } = useLocations({ page: page + 1, pageSize })
     const createMutation = useCreateLocation()

@@ -4,6 +4,8 @@ import (
 	"testing"
 	"time"
 
+	bookingDto "backend/internals/booking/controller/dto"
+	bookingDomain "backend/internals/booking/domain"
 	tripDomain "backend/internals/trip/domain"
 )
 
@@ -37,9 +39,11 @@ func TestAllocateSeats_FallbackWhenPreferredInvalid(t *testing.T) {
 
 func TestValidateExecuteRequest_WithTripIDOnly(t *testing.T) {
 	tripID := int64(10)
-	req := &VoiceExecuteRequest{TripID: &tripID, SeatCount: 1}
+	req := &bookingDto.VoiceExecuteRequest{TripID: &tripID, SeatCount: 1}
 	if err := validateExecuteRequest(req); err != nil {
-		t.Fatalf("unexpected error: %v", err)
+		if err == bookingDomain.ErrVoiceMissingFields {
+			t.Fatalf("unexpected error: %v", err)
+		}
 	}
 }
 

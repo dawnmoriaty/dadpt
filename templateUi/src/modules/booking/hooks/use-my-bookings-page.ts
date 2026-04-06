@@ -29,7 +29,7 @@ interface UseMyBookingsPageResult {
     copyPaymentLink: (code: string) => void
 }
 
-const PAGE_SIZE = 20
+const PAGE_SIZE = 10
 
 export function useMyBookingsPage(): UseMyBookingsPageResult {
     const navigate = useNavigate()

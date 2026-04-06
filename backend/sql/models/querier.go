@@ -104,7 +104,7 @@ type Querier interface {
 	// Release seats when booking cancelled/expired (using array subtraction)
 	ReleaseTripSeats(ctx context.Context, arg ReleaseTripSeatsParams) (Trip, error)
 	RevertBookingToPaid(ctx context.Context, id int64) (Booking, error)
-	SearchLocations(ctx context.Context, dollar_1 *string) ([]Location, error)
+	SearchLocations(ctx context.Context, arg SearchLocationsParams) ([]Location, error)
 	SearchTrips(ctx context.Context, arg SearchTripsParams) ([]SearchTripsRow, error)
 	ToggleProviderActive(ctx context.Context, id int32) (Provider, error)
 	UpdateBookingStatus(ctx context.Context, arg UpdateBookingStatusParams) (Booking, error)

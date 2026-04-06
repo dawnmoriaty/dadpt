@@ -133,8 +133,11 @@ func (r *locationRepository) Count(ctx context.Context, filter *domain.LocationF
 	return count, nil
 }
 
-func (r *locationRepository) Search(ctx context.Context, query string) ([]*domain.Location, error) {
-	locations, err := r.queries.SearchLocations(ctx, &query)
+func (r *locationRepository) Search(ctx context.Context, query string, limit int32) ([]*domain.Location, error) {
+	locations, err := r.queries.SearchLocations(ctx, models.SearchLocationsParams{
+		Query: &query,
+		Limit: limit,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("locationRepository.Search: %w", err)
 	}

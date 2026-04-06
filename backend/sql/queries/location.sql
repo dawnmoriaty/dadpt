@@ -3,11 +3,11 @@ SELECT * FROM locations WHERE id = $1;
 
 -- name: SearchLocations :many
 SELECT * FROM locations 
-WHERE city ILIKE '%' || $1 || '%'
-OR name ILIKE '%' || $1 || '%'
-OR keywords ILIKE '%' || $1 || '%'
+WHERE city ILIKE '%' || sqlc.arg('query') || '%'
+OR name ILIKE '%' || sqlc.arg('query') || '%'
+OR keywords ILIKE '%' || sqlc.arg('query') || '%'
 ORDER BY city, name
-LIMIT 20;
+LIMIT sqlc.arg('limit');
 
 -- name: ListLocationsByCity :many
 SELECT * FROM locations WHERE city = $1 ORDER BY name;

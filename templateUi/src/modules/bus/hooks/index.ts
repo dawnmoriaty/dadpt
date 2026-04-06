@@ -14,7 +14,7 @@ export const busKeys = {
     detail: (id: number) => [...busKeys.all, 'detail', id] as const,
 }
 
-export function useBuses(page = 1, pageSize = 20, providerId?: number) {
+export function useBuses(page = 1, pageSize = 10, providerId?: number) {
     return useQuery({
         queryKey: busKeys.list(page, pageSize, providerId),
         queryFn: () => busApi.list(page, pageSize, providerId),

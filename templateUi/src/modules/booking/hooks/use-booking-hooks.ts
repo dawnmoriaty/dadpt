@@ -9,7 +9,7 @@ import type { Booking, CreateBookingRequest, CreateBookingResponse, PaymentStatu
 
 import { bookingKeys } from './query-keys'
 
-export function useMyBookings(page = 1, pageSize = 20, enabled = true) {
+export function useMyBookings(page = 1, pageSize = 10, enabled = true) {
     return useQuery({
         queryKey: bookingKeys.mine(page, pageSize),
         queryFn: () => bookingApi.listMine(page, pageSize),
