@@ -18,7 +18,6 @@ type paymentRepository struct {
 	queries *models.Queries
 }
 
-// NewPaymentRepository creates a new payment repository
 func NewPaymentRepository(database *db.Database) domain.PaymentRepository {
 	return &paymentRepository{
 		db:      database,

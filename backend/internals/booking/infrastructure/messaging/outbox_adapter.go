@@ -7,8 +7,6 @@ import (
 	"backend/pkgs/messaging/outbox"
 )
 
-// OutboxAdapter adapts the booking domain outbox repository to the generic outbox processor repository.
-// This preserves clean architecture by ensuring the domain layer doesn't depend on messaging pkgs.
 type OutboxAdapter struct {
 	repo domain.OutboxRepository
 }
@@ -39,6 +37,5 @@ func (a *OutboxAdapter) MarkEventPublished(ctx context.Context, id string) error
 }
 
 func (a *OutboxAdapter) MarkEventFailed(ctx context.Context, id string, errStr string) error {
-	// The booking outbox domain doesn't currently log the error string, just the failure state
 	return a.repo.MarkFailed(ctx, id)
 }

@@ -42,11 +42,7 @@ func sanitizeFilename(name string) string {
 	return base + ext
 }
 
-// ---------------------------------------------------------------------------
-// MinioClient — the only struct exported from this package.
-// ---------------------------------------------------------------------------
 
-// MinioClient wraps the minio SDK and owns bucket + URL config.
 type MinioClient struct {
 	client       *minio.Client
 	bucket       string
@@ -65,14 +61,11 @@ func NewMinioClient(endpoint, accessKey, secretKey, bucket, baseURL string, useS
 
 	ctx := context.Background()
 
-	// 1) Ensure bucket
 	if err := ensureBucket(ctx, client, bucket); err != nil {
 		return nil, err
 	}
 
-	// 2) Ensure scoped public-read policy (idempotent — skips if unchanged)
 	if err := ensurePublicReadPolicy(ctx, client, bucket); err != nil {
-		// Non-fatal: the proxy path still works, only direct MinIO URLs break.
 		logger.Warn("MinIO: could not apply public-read policy on %s: %v", bucket, err)
 	}
 
@@ -86,12 +79,7 @@ func NewMinioClient(endpoint, accessKey, secretKey, bucket, baseURL string, useS
 	}, nil
 }
 
-// ---------------------------------------------------------------------------
-// Upload / Get / Delete
-// ---------------------------------------------------------------------------
 
-// UploadFile stores a multipart file and returns a proxy-safe relative URL.
-// Returned path: /api/v1/files/<folder>/<timestamp>-<safe-name>
 func (m *MinioClient) UploadFile(ctx context.Context, file *multipart.FileHeader, folder string) (string, error) {
 	src, err := file.Open()
 	if err != nil {
@@ -116,8 +104,6 @@ func (m *MinioClient) UploadFile(ctx context.Context, file *multipart.FileHeader
 	return fmt.Sprintf("%s/%s", m.proxyBaseURL, objectName), nil
 }
 
-// GetObject retrieves an object from MinIO.
-// Caller MUST close the returned ReadCloser.
 func (m *MinioClient) GetObject(ctx context.Context, objectName string) (io.ReadCloser, string, int64, error) {
 	obj, err := m.client.GetObject(ctx, m.bucket, objectName, minio.GetObjectOptions{})
 	if err != nil {
@@ -164,7 +150,6 @@ func ensurePublicReadPolicy(ctx context.Context, client *minio.Client, bucket st
 		return fmt.Errorf("marshal policy: %w", err)
 	}
 
-	// Compare with current policy — skip SetBucketPolicy if identical.
 	current, err := client.GetBucketPolicy(ctx, bucket)
 	if err == nil && current == string(desiredJSON) {
 		return nil // already up-to-date
@@ -177,24 +162,6 @@ func ensurePublicReadPolicy(ctx context.Context, client *minio.Client, bucket st
 	return nil
 }
 
-// buildPublicReadPolicy generates an S3 bucket policy that grants anonymous
-// s3:GetObject **only** on the listed folder prefixes.
-//
-//	{
-//	  "Version": "2012-10-17",
-//	  "Statement": [
-//	    {
-//	      "Effect": "Allow",
-//	      "Principal": "*",
-//	      "Action": ["s3:GetObject"],
-//	      "Resource": [
-//	        "arn:aws:s3:::bus-ticketing/buses/*",
-//	        "arn:aws:s3:::bus-ticketing/providers/*",
-//	        ...
-//	      ]
-//	    }
-//	  ]
-//	}
 func buildPublicReadPolicy(bucket string) map[string]interface{} {
 	resources := make([]string, len(publicReadPrefixes))
 	for i, prefix := range publicReadPrefixes {

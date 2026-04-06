@@ -15,30 +15,23 @@ const (
 )
 
 type Config struct {
-	// Server
 	Environment string `mapstructure:"ENVIRONMENT"`
 	HTTPPort    int    `mapstructure:"HTTP_PORT"`
 
-	// Booking
 	BookingExpiryDuration time.Duration `mapstructure:"BOOKING_EXPIRY_DURATION"`
 
-	// Database
 	DatabaseURI string `mapstructure:"DATABASE_URI"`
 
-	// Redis
 	RedisURI      string `mapstructure:"REDIS_URI"`
 	RedisPassword string `mapstructure:"REDIS_PASSWORD"`
 	RedisDB       int    `mapstructure:"REDIS_DB"`
 
-	// RabbitMQ
 	RabbitMQURI string `mapstructure:"RABBITMQ_URI"`
 
-	// Kafka (connection-level only — topic definitions in kafka.Registry)
 	KafkaEnabled  bool   `mapstructure:"KAFKA_ENABLED"`
 	KafkaBrokers  string `mapstructure:"KAFKA_BROKERS"`
 	KafkaClientID string `mapstructure:"KAFKA_CLIENT_ID"`
 
-	// MinIO
 	MinioEndpoint  string `mapstructure:"MINIO_ENDPOINT"`
 	MinioAccessKey string `mapstructure:"MINIO_ACCESS_KEY"`
 	MinioSecretKey string `mapstructure:"MINIO_SECRET_KEY"`
@@ -46,15 +39,12 @@ type Config struct {
 	MinioBaseURL   string `mapstructure:"MINIO_BASE_URL"`
 	MinioUseSSL    bool   `mapstructure:"MINIO_USE_SSL"`
 
-	// JWT
 	AuthSecret           string        `mapstructure:"AUTH_SECRET"`
 	AccessTokenDuration  time.Duration `mapstructure:"ACCESS_TOKEN_DURATION"`
 	RefreshTokenDuration time.Duration `mapstructure:"REFRESH_TOKEN_DURATION"`
 
-	// AI Agent
 	AIAgentGRPCAddr string `mapstructure:"AI_AGENT_GRPC_ADDR"`
 
-	// PayOS
 	PayOSClientID    string `mapstructure:"PAYOS_CLIENT_ID"`
 	PayOSAPIKey      string `mapstructure:"PAYOS_API_KEY"`
 	PayOSChecksumKey string `mapstructure:"PAYOS_CHECKSUM_KEY"`
@@ -104,7 +94,6 @@ func LoadConfig() *Config {
 		PayOSCancelURL:        viper.GetString("PAYOS_CANCEL_URL"),
 	}
 
-	// Defaults
 	if cfg.HTTPPort == 0 {
 		cfg.HTTPPort = 8080
 	}

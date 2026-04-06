@@ -12,5 +12,4 @@ func RegisterSystemTopics(registry *kafka.Registry) {
 		ConsumerGroup:     GroupBookingWorkers,
 	})
 
-	// Register other domain standard topics here
 }

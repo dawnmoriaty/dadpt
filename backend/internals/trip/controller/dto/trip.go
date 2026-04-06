@@ -81,10 +81,8 @@ type TripResponse struct {
 	DropoffPoints   []PointDTO `json:"dropoffPoints"`
 	BookedSeats     []string   `json:"bookedSeats"`
 
-	// Image URL from related bus
 	BusImageURL string `json:"busImageUrl,omitempty"`
 
-	// Seat layout from bus type (JSONB)
 	SeatLayout json.RawMessage `json:"seatLayout,omitempty"`
 }
 

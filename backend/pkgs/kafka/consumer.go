@@ -10,18 +10,13 @@ import (
 	kg "github.com/segmentio/kafka-go"
 )
 
-// IConsumer reads messages from a Kafka topic using a consumer group.
 type IConsumer interface {
-	// Start begins consuming and blocks until the context is cancelled or a fatal error occurs.
 	Start(ctx context.Context) error
-	// Close releases the consumer's resources.
 	Close() error
 }
 
-// MessageHandler processes a consumed message. Return nil to commit; return error to retry.
 type MessageHandler func(ctx context.Context, msg Message) error
 
-// ConsumerOption configures the consumer.
 type ConsumerOption func(*consumerConfig)
 
 type consumerConfig struct {
@@ -33,7 +28,6 @@ type consumerConfig struct {
 	retryBackoff   RetryBackoff
 }
 
-// RetryBackoff defines the backoff strategy for consumer reconnections.
 type RetryBackoff struct {
 	Min    time.Duration
 	Max    time.Duration
@@ -55,13 +49,10 @@ func defaultConsumerConfig() consumerConfig {
 	}
 }
 
-// WithStartOffset sets where to start reading when no committed offset exists.
-// Use kafka.FirstOffset (-2) to read from beginning, kafka.LastOffset (-1) for latest.
 func WithStartOffset(offset int64) ConsumerOption {
 	return func(c *consumerConfig) { c.startOffset = offset }
 }
 
-// WithMaxBytes sets the maximum bytes the broker returns per fetch.
 func WithMaxBytes(n int) ConsumerOption {
 	return func(c *consumerConfig) {
 		if n > 0 {
@@ -70,7 +61,6 @@ func WithMaxBytes(n int) ConsumerOption {
 	}
 }
 
-// WithCommitInterval sets how often offsets are auto-committed.
 func WithCommitInterval(d time.Duration) ConsumerOption {
 	return func(c *consumerConfig) {
 		if d > 0 {
@@ -79,7 +69,6 @@ func WithCommitInterval(d time.Duration) ConsumerOption {
 	}
 }
 
-// WithMaxWait sets the maximum time the broker waits for MinBytes before responding.
 func WithMaxWait(d time.Duration) ConsumerOption {
 	return func(c *consumerConfig) {
 		if d > 0 {
@@ -88,7 +77,6 @@ func WithMaxWait(d time.Duration) ConsumerOption {
 	}
 }
 
-// WithRetryBackoff configures the reconnection backoff strategy.
 func WithRetryBackoff(min, max time.Duration, jitter float64) ConsumerOption {
 	return func(c *consumerConfig) {
 		if min > 0 {
@@ -140,8 +128,6 @@ func newConsumer(brokers []string, topic, group string, handler MessageHandler, 
 	}
 }
 
-// Start begins consuming messages. It reconnects with exponential backoff on errors.
-// Blocks until ctx is cancelled.
 func (c *consumer) Start(ctx context.Context) error {
 	logger.Info("Kafka consumer started: topic=%s, group=%s", c.topic, c.group)
 	defer logger.Info("Kafka consumer stopped: topic=%s, group=%s", c.topic, c.group)
@@ -171,18 +157,15 @@ func (c *consumer) Start(ctx context.Context) error {
 			continue
 		}
 
-		// Reset backoff on successful fetch
 		attempt = 0
 
 		consumed := fromKafkaGoMessage(msg)
 		if err := c.handler(ctx, consumed); err != nil {
 			logger.Error("Kafka consumer handler error (topic=%s, partition=%d, offset=%d): %v",
 				c.topic, msg.Partition, msg.Offset, err)
-			// Don't commit — message will be re-delivered
 			continue
 		}
 
-		// Commit offset after successful processing
 		if err := c.reader.CommitMessages(ctx, msg); err != nil {
 			logger.Error("Kafka consumer commit error (topic=%s, partition=%d, offset=%d): %v",
 				c.topic, msg.Partition, msg.Offset, err)
@@ -199,7 +182,6 @@ func (c *consumer) Close() error {
 	return nil
 }
 
-// fromKafkaGoMessage converts a kafka-go Message to our Message type.
 func fromKafkaGoMessage(msg kg.Message) Message {
 	headers := make(map[string]string, len(msg.Headers))
 	for _, h := range msg.Headers {
@@ -217,7 +199,6 @@ func fromKafkaGoMessage(msg kg.Message) Message {
 	}
 }
 
-// calcBackoff computes exponential backoff with jitter.
 func calcBackoff(attempt int, rb RetryBackoff) time.Duration {
 	if attempt < 1 {
 		return rb.Min

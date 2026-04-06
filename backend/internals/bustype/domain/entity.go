@@ -5,8 +5,6 @@ import (
 	"errors"
 )
 
-// Sentinel errors — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
 	ErrBusTypeNotFound           = errors.New("bus type not found")
 	ErrBusTypeNameRequired       = errors.New("bus type name required")
@@ -15,7 +13,6 @@ var (
 	ErrBusTypeSeatLayoutRequired = errors.New("seat layout required")
 )
 
-// BusType represents a type of bus with seat layout configuration
 type BusType struct {
 	ID         int32
 	Name       string
@@ -23,7 +20,6 @@ type BusType struct {
 	SeatLayout json.RawMessage
 }
 
-// Validate validates the bus type entity
 func (bt *BusType) Validate() error {
 	if bt.Name == "" {
 		return ErrBusTypeNameRequired
@@ -40,14 +36,12 @@ func (bt *BusType) Validate() error {
 	return nil
 }
 
-// CreateBusTypeInput is the input for creating a new bus type
 type CreateBusTypeInput struct {
 	Name       string
 	TotalSeats int32
 	SeatLayout json.RawMessage
 }
 
-// UpdateBusTypeInput is the input for updating a bus type (partial update)
 type UpdateBusTypeInput struct {
 	Name       *string
 	TotalSeats *int32

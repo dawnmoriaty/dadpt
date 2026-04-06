@@ -42,17 +42,13 @@ type Container struct {
 func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 	c := dig.New()
 
-	// Provide the SSE hub (created externally, shared between server and consumer)
 	if err := c.Provide(func() *bookingInfra.SSEHub { return sseHub }); err != nil {
 		return nil, fmt.Errorf("failed to provide SSE hub: %w", err)
 	}
 
-	// Register all providers
 	providers := []interface{}{
-		// Config
 		configs.LoadConfig,
 
-		// Infrastructure
 		provideDatabase,
 		provideRedis,
 		provideRabbitMQ,
@@ -63,7 +59,6 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		provideGRPCConn,
 		providePaymentGateway,
 
-		// Booking voice deps for AI pipeline proxy
 		bookingRepo.NewBookingRepository,
 		bookingRepo.NewTripLocker,
 		bookingRepo.NewOutboxRepository,
@@ -76,20 +71,16 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		tripUc.NewTripUseCase,
 		bookingHttp.NewVoiceBookingHandler,
 
-		// Auth Module
 		authInfra.NewBcryptHasher,
 		authRepo.NewAuthRepository,
 		authUc.NewAuthUseCase,
 		authHttp.NewAuthHandler,
 
-		// AI Agent Module
 		provideAIAgentClient,
 		aiagentHttp.NewChatHandler,
 
-		// Upload Module
 		uploadHttp.NewUploadHandler,
 
-		// Server
 		httpServer.NewServer,
 	}
 
@@ -99,7 +90,6 @@ func NewContainer(sseHub *bookingInfra.SSEHub) (*Container, error) {
 		}
 	}
 
-	// Initialize logger
 	if err := c.Invoke(func(cfg *configs.Config) {
 		logger.Initialize(cfg.Environment)
 	}); err != nil {
@@ -143,7 +133,6 @@ func provideRabbitMQ(cfg *configs.Config) rabbitmq.IRabbitMQ {
 
 func provideKafkaRegistry() *kafka.Registry {
 	registry := kafka.NewRegistry()
-	// All modules register their topics here — single place for topic catalog
 	kafka_config.RegisterSystemTopics(registry)
 	logger.Info("Kafka topic registry initialized: %d topics", registry.Len())
 	return registry
@@ -222,7 +211,6 @@ func provideJWTProvider(cfg *configs.Config) jwt.JWTProvider {
 	return jwt.NewJWTProvider(cfg.AuthSecret)
 }
 
-// Invoke runs a function with dependencies injected
 func (c *Container) Invoke(fn interface{}) error {
 	return c.Container.Invoke(fn)
 }

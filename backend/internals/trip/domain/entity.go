@@ -6,10 +6,6 @@ import (
 	"time"
 )
 
-// =============================================================================
-// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
-// =============================================================================
 
 var (
 	ErrTripNotFound            = errors.New("trip not found")
@@ -27,9 +23,6 @@ var (
 	ErrTripHasActiveBookings   = errors.New("trip has active bookings")
 )
 
-// =============================================================================
-// VALUE OBJECTS
-// =============================================================================
 
 type TripStatus string
 
@@ -63,9 +56,6 @@ func (p Point) ToJSON() json.RawMessage {
 	return data
 }
 
-// =============================================================================
-// CORE ENTITY
-// =============================================================================
 
 type Trip struct {
 	ID             int64
@@ -85,7 +75,6 @@ type Trip struct {
 	Status         TripStatus
 	CreatedAt      time.Time
 
-	// Joined fields (for search results)
 	ProviderName    string
 	BusTypeName     string
 	SeatLayout      json.RawMessage
@@ -94,13 +83,9 @@ type Trip struct {
 	DestinationName string
 	DestinationCity string
 
-	// Joined image URL (from bus table)
 	BusImageURL string
 }
 
-// =============================================================================
-// VALIDATION METHODS - All business rules live here
-// =============================================================================
 
 func (t *Trip) Validate() error {
 	if t.ProviderID <= 0 {
@@ -124,7 +109,6 @@ func (t *Trip) Validate() error {
 	return nil
 }
 
-// CanTransitionTo checks if status transition is valid
 func (t *Trip) CanTransitionTo(newStatus TripStatus) error {
 	switch t.Status {
 	case TripStatusScheduled:
@@ -136,12 +120,10 @@ func (t *Trip) CanTransitionTo(newStatus TripStatus) error {
 			return nil
 		}
 	case TripStatusCompleted, TripStatusCancelled:
-		// Terminal states
 	}
 	return ErrTripTransitionInvalid
 }
 
-// CanBeModified checks if trip can be updated
 func (t *Trip) CanBeModified() error {
 	if t.Status != TripStatusScheduled {
 		return ErrTripCannotModify
@@ -149,7 +131,6 @@ func (t *Trip) CanBeModified() error {
 	return nil
 }
 
-// CanBeDeleted checks if trip can be deleted
 func (t *Trip) CanBeDeleted() error {
 	if t.Status != TripStatusScheduled {
 		return ErrTripCannotDelete
@@ -157,7 +138,6 @@ func (t *Trip) CanBeDeleted() error {
 	return nil
 }
 
-// FinalPrice calculates the final price with modifier
 func (t *Trip) FinalPrice() float64 {
 	return t.BasePrice * t.PriceModifier
 }

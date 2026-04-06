@@ -12,19 +12,11 @@ import (
 	kg "github.com/segmentio/kafka-go"
 )
 
-// IKafka is the main Kafka client interface.
-// It manages the broker connection, topic lifecycle, and provides factories
-// for creating producers and consumers.
 type IKafka interface {
-	// Close releases all resources held by the client.
 	Close() error
-	// Brokers returns a copy of the broker addresses.
 	Brokers() []string
-	// EnsureTopics creates topics if they don't already exist.
 	EnsureTopics(ctx context.Context, topics []TopicDefinition) error
-	// NewProducer creates a producer for the given topic.
 	NewProducer(topic string, opts ...ProducerOption) IProducer
-	// NewConsumer creates a consumer for the given topic and consumer group.
 	NewConsumer(topic, group string, handler MessageHandler, opts ...ConsumerOption) IConsumer
 }
 
@@ -33,7 +25,6 @@ type client struct {
 	clientID string
 }
 
-// NewKafka creates a new Kafka client. Returns (nil, nil) when Kafka is disabled.
 func NewKafka(cfg Config) (IKafka, error) {
 	if !cfg.Enabled {
 		return nil, nil
@@ -73,8 +64,6 @@ func (c *client) Close() error {
 	return nil
 }
 
-// EnsureTopics creates topics on the Kafka cluster if they don't exist.
-// Retries with exponential backoff since Kafka (KRaft) may take time to elect a controller.
 func (c *client) EnsureTopics(ctx context.Context, topics []TopicDefinition) error {
 	if len(topics) == 0 {
 		return nil
@@ -129,9 +118,6 @@ func (c *client) EnsureTopics(ctx context.Context, topics []TopicDefinition) err
 	return fmt.Errorf("kafka: ensure topics after %d retries: %w", maxRetries, lastErr)
 }
 
-// createTopics dials the broker and creates topics.
-// Uses the broker address directly (instead of conn.Controller()) to avoid
-// Docker-internal hostname resolution issues in single-node KRaft mode.
 func (c *client) createTopics(ctx context.Context, topics []kg.TopicConfig) error {
 	conn, err := kg.DialContext(ctx, "tcp", c.brokers[0])
 	if err != nil {
@@ -139,15 +125,11 @@ func (c *client) createTopics(ctx context.Context, topics []kg.TopicConfig) erro
 	}
 	defer conn.Close()
 
-	// Get the controller info and dial it via our own resolver
 	controller, err := conn.Controller()
 	if err != nil {
 		return fmt.Errorf("kafka: get controller: %w", err)
 	}
 
-	// In single-node KRaft mode, the controller IS the broker.
-	// The controller may advertise a Docker-internal hostname (e.g. bus.kafka:29092)
-	// that isn't reachable from the host. Use the original broker address instead.
 	controllerAddr := fmt.Sprintf("%s:%d", controller.Host, controller.Port)
 	if !c.isReachable(controllerAddr) {
 		controllerAddr = c.brokers[0]
@@ -170,7 +152,6 @@ func (c *client) createTopics(ctx context.Context, topics []kg.TopicConfig) erro
 	return nil
 }
 
-// isReachable checks if a host:port is reachable with a short timeout.
 func (c *client) isReachable(addr string) bool {
 	conn, err := net.DialTimeout("tcp", addr, 2*time.Second)
 	if err != nil {
@@ -180,12 +161,10 @@ func (c *client) isReachable(addr string) bool {
 	return true
 }
 
-// NewProducer creates a new producer for the specified topic.
 func (c *client) NewProducer(topic string, opts ...ProducerOption) IProducer {
 	return newProducer(c.brokers, topic, opts...)
 }
 
-// NewConsumer creates a new consumer for the specified topic and consumer group.
 func (c *client) NewConsumer(topic, group string, handler MessageHandler, opts ...ConsumerOption) IConsumer {
 	return newConsumer(c.brokers, topic, group, handler, opts...)
 }

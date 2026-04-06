@@ -6,10 +6,6 @@ import (
 	"strings"
 )
 
-// =============================================================================
-// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
-// =============================================================================
 
 var (
 	ErrInvalidPhone       = errors.New("invalid phone format")
@@ -93,7 +89,6 @@ func (u Username) String() string {
 	return string(u)
 }
 
-// ROLES
 type Role string
 
 const (
@@ -114,12 +109,10 @@ func (r Role) String() string {
 	return string(r)
 }
 
-// check permission
 func (r Role) CanAccessAdmin() bool {
 	return r == RoleAdmin || r == RoleOperator
 }
 
-// Core Enitty: User
 type User struct {
 	ID           int64
 	Phone        Phone
@@ -131,16 +124,12 @@ type User struct {
 	IsActive     bool
 }
 
-// Validation regex patterns
 var (
 	phoneRegex    = regexp.MustCompile(`^(0|\+84)[0-9]{9,10}$`)
 	emailRegex    = regexp.MustCompile(`^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$`)
 	usernameRegex = regexp.MustCompile(`^[a-zA-Z0-9_]{3,30}$`)
 )
 
-// =============================================================================
-// VALIDATION METHODS - All business rules live here
-// =============================================================================
 
 func ValidateFullName(name string) error {
 	if len(strings.TrimSpace(name)) < 2 {
@@ -182,9 +171,6 @@ func (u *User) CanLogin() error {
 	return nil
 }
 
-// =============================================================================
-// ROLE-BASED ACCESS CONTROL - Business logic in domain
-// =============================================================================
 
 func (u *User) IsCustomer() bool {
 	return u.Role == RoleCustomer
@@ -202,9 +188,6 @@ func (u *User) HasAdminAccess() bool {
 	return u.Role.CanAccessAdmin()
 }
 
-// =============================================================================
-// FACTORY FUNCTIONS - Ensure valid entity creation
-// =============================================================================
 
 type NewUserParams struct {
 	Phone    string
@@ -214,10 +197,7 @@ type NewUserParams struct {
 	Password string // Raw password, will be validated
 }
 
-// NewUser creates a new User entity with validation
-// Returns the user without password hash - UseCase must handle hashing
 func NewUser(params NewUserParams) (*User, error) {
-	// Validate and create value objects
 	phone, err := NewPhone(params.Phone)
 	if err != nil {
 		return nil, err

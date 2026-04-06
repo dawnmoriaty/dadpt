@@ -171,9 +171,6 @@ func (h *TripHandler) List(c *gin.Context) {
 	response.Success(c, paging.Of(dto.ToTripResponseList(trips), total, pg.Page))
 }
 
-// =============================================================================
-// ERROR MAPPING - Convert domain errors to pkgs/errors.AppError
-// =============================================================================
 
 func mapDomainError(err error) error {
 	switch {

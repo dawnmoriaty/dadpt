@@ -34,20 +34,16 @@ func Created(c *gin.Context, data interface{}) {
 	})
 }
 
-// HandleError resolves the localized message from the error code using Accept-Language,
-// then sends the JSON error response. Domain errors → AppError codes → i18n messages.
 func HandleError(c *gin.Context, err error) {
 	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 
 	if appErr, ok := err.(*errors.AppError); ok {
-		// Log error with stack trace for 5xx errors or when Raw error exists
 		if appErr.Status >= 500 || appErr.Raw != nil {
 			logger.LogAppError(appErr)
 		} else {
 			logger.ErrorWithCaller(appErr, "Request Error")
 		}
 
-		// Resolve localized message from error code
 		message := i18n.T(lang, appErr.Code)
 
 		c.JSON(appErr.Status, Response{
@@ -58,7 +54,6 @@ func HandleError(c *gin.Context, err error) {
 		return
 	}
 
-	// Fallback for unknown errors - always log with stack
 	logger.ErrorWithStack(err, "Unhandled Error")
 	c.JSON(http.StatusInternalServerError, Response{
 		Code:    http.StatusInternalServerError,
@@ -103,7 +98,6 @@ func InternalServerError(c *gin.Context) {
 	})
 }
 
-// Error sends a generic error response with custom status, code and i18n message.
 func Error(c *gin.Context, status int, code string) {
 	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(status, Response{
@@ -113,7 +107,6 @@ func Error(c *gin.Context, status int, code string) {
 	})
 }
 
-// Forbidden sends a 403 Forbidden response.
 func Forbidden(c *gin.Context, code string) {
 	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusForbidden, Response{
@@ -123,7 +116,6 @@ func Forbidden(c *gin.Context, code string) {
 	})
 }
 
-// Conflict sends a 409 Conflict response.
 func Conflict(c *gin.Context, code string) {
 	lang := i18n.ParseLang(c.GetHeader("Accept-Language"))
 	c.JSON(http.StatusConflict, Response{
@@ -133,7 +125,6 @@ func Conflict(c *gin.Context, code string) {
 	})
 }
 
-// SuccessWithPagination sends a 200 response with data and pagination metadata.
 func SuccessWithPagination(c *gin.Context, data interface{}, meta interface{}) {
 	c.JSON(http.StatusOK, gin.H{
 		"code":    http.StatusOK,

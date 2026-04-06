@@ -24,7 +24,6 @@ func NewProviderRepository(database *db.Database) domain.Repository {
 	}
 }
 
-// Mappers
 
 func sqlcToEntity(m models.Provider) *domain.Provider {
 	return &domain.Provider{

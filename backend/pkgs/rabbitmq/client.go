@@ -8,15 +8,12 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// IRabbitMQ defines the broker operations acting as a factory for producers and consumers.
 type IRabbitMQ interface {
 	Close()
 
-	// Factories
 	NewProducer(exchange string) IProducer
 	NewConsumer(queue string) IConsumer
 
-	// Topology Operations
 	SetupTopology(exchange, exchangeKind, queue, routingKey string) error
 	SetupTopologyWithQueueArgs(exchange, exchangeKind, queue, routingKey string, args amqp.Table) error
 	DeclareExchange(name, kind string) error
@@ -29,7 +26,6 @@ type rabbitMQ struct {
 	Channel *amqp.Channel
 }
 
-// NewRabbitMQ creates a connection and returns the interface.
 func NewRabbitMQ(uri string) (IRabbitMQ, error) {
 	conn, err := amqp.Dial(uri)
 	if err != nil {

@@ -5,8 +5,6 @@ import (
 	"regexp"
 )
 
-// Sentinel errors — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
 	ErrProviderNotFound       = errors.New("provider not found")
 	ErrProviderNameRequired   = errors.New("provider name required")
@@ -19,7 +17,6 @@ var (
 	ErrProviderCannotDelete   = errors.New("provider cannot delete")
 )
 
-// Provider is a pure domain entity for bus service providers
 type Provider struct {
 	ID           int32
 	Name         string
@@ -29,7 +26,6 @@ type Provider struct {
 	IsActive     bool
 }
 
-// ProviderFilter for listing providers
 type ProviderFilter struct {
 	Limit    int32
 	Offset   int32
@@ -37,13 +33,11 @@ type ProviderFilter struct {
 	IsActive *bool
 }
 
-// Validation patterns
 var (
 	hotlineRegex = regexp.MustCompile(`^[0-9\s\-]+$`)
 	slugRegex    = regexp.MustCompile(`^[a-z0-9\-]+$`)
 )
 
-// Validate validates the provider entity
 func (p *Provider) Validate() error {
 	if p.Name == "" {
 		return ErrProviderNameRequired
@@ -68,13 +62,11 @@ func (p *Provider) Validate() error {
 	return nil
 }
 
-// GenerateSlug creates a URL-friendly slug from name
 func (p *Provider) GenerateSlug() string {
 	slug := regexp.MustCompile(`[^a-z0-9\-]`).ReplaceAllString(p.Name, "")
 	return slug
 }
 
-// CreateProviderInput is the input for creating a new provider
 type CreateProviderInput struct {
 	Name         string
 	Hotline      string
@@ -82,7 +74,6 @@ type CreateProviderInput struct {
 	PolicyRefund string
 }
 
-// UpdateProviderInput is the input for updating a provider (partial update)
 type UpdateProviderInput struct {
 	Name         *string
 	Hotline      *string
@@ -90,7 +81,6 @@ type UpdateProviderInput struct {
 	PolicyRefund *string
 }
 
-// CanBeDeleted checks if provider can be deleted
 func (p *Provider) CanBeDeleted() error {
 	if p.IsActive {
 		return ErrProviderCannotDelete

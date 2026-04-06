@@ -22,7 +22,6 @@ const (
 	DLXRoutingKey             = "booking.events.dead"
 )
 
-// SetupRefundTopology declares the exchange, queues, and bindings for the refund module on RabbitMQ.
 func SetupRefundTopology(rmq rabbitmq.IRabbitMQ) error {
 	if rmq == nil {
 		logger.Warn("RabbitMQ not available, skipping topology setup")
@@ -34,12 +33,10 @@ func SetupRefundTopology(rmq rabbitmq.IRabbitMQ) error {
 		"x-dead-letter-routing-key": DLXRoutingKey,
 	}
 
-	// We only bind the refund events to the admin refund queue
 	if err := rmq.SetupTopologyWithQueueArgs(BookingExchange, ExchangeKind, QueueAdminRefundEvents, "booking.refund.*", adminQueueArgs); err != nil {
 		return err
 	}
 
-	// DLQ for failed refund admin processing
 	if err := rmq.SetupTopology(DLXName, ExchangeKind, QueueAdminRefundEventsDLQ, DLXRoutingKey); err != nil {
 		return err
 	}

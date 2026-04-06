@@ -4,8 +4,6 @@ import (
 	"errors"
 )
 
-// Sentinel errors — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
 	ErrBusNotFound                  = errors.New("bus not found")
 	ErrBusProviderIDRequired        = errors.New("bus provider required")
@@ -16,7 +14,6 @@ var (
 	ErrBusLicensePlateAlreadyExists = errors.New("license plate already exists")
 )
 
-// Bus represents a specific bus vehicle
 type Bus struct {
 	ID           int32
 	ProviderID   int32
@@ -25,13 +22,11 @@ type Bus struct {
 	Status       string // active, maintenance, retired
 	ImageURL     string
 
-	// Joined fields
 	BusTypeName  string
 	TotalSeats   int32
 	ProviderName string
 }
 
-// Validate validates the bus entity
 func (b *Bus) Validate() error {
 	if b.ProviderID <= 0 {
 		return ErrBusProviderIDRequired

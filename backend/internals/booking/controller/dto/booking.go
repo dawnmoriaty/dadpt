@@ -7,9 +7,6 @@ import (
 	"backend/internals/booking/domain"
 )
 
-// =============================================================================
-// REQUESTS
-// =============================================================================
 
 type CreateBookingRequest struct {
 	TripID        int64        `json:"tripId" binding:"required"`
@@ -39,9 +36,6 @@ type ListBookingsRequest struct {
 	Offset   int32 `form:"offset" binding:"omitempty,min=0"`
 }
 
-// =============================================================================
-// RESPONSES
-// =============================================================================
 
 type BookingResponse struct {
 	ID              int64        `json:"id"`
@@ -87,9 +81,6 @@ type CreateBookingResponse struct {
 	ResumeURL  string           `json:"resumeUrl,omitempty"`
 }
 
-// =============================================================================
-// MAPPERS - Request to Domain
-// =============================================================================
 
 func (r *CreateBookingRequest) ToInput(userID *int64) *domain.CreateBookingInput {
 	return &domain.CreateBookingInput{
@@ -115,9 +106,6 @@ func (r *CreateBookingRequest) ToInput(userID *int64) *domain.CreateBookingInput
 	}
 }
 
-// =============================================================================
-// MAPPERS - Domain to Response
-// =============================================================================
 
 func ToBookingResponse(b *domain.Booking) *BookingResponse {
 	resp := &BookingResponse{
@@ -208,9 +196,6 @@ func ToCreateBookingResponse(output *domain.BookingOutput) *CreateBookingRespons
 	return resp
 }
 
-// =============================================================================
-// ADMIN REFUND DTOs
-// =============================================================================
 
 type ListRefundRequestsParams struct {
 	Page     int32 `form:"page,default=1" binding:"omitempty,min=1"`

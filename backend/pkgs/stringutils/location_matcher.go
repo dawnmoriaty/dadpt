@@ -7,7 +7,6 @@ import (
 	"golang.org/x/text/unicode/norm"
 )
 
-// LevenshteinDistance returns the edit distance between two strings.
 func LevenshteinDistance(left string, right string) int {
 	if left == right {
 		return 0
@@ -43,7 +42,6 @@ func LevenshteinDistance(left string, right string) int {
 	return prev[len(right)]
 }
 
-// MinInt returns the smaller of two ints.
 func MinInt(left int, right int) int {
 	if left < right {
 		return left
@@ -51,7 +49,6 @@ func MinInt(left int, right int) int {
 	return right
 }
 
-// MaxInt returns the larger of two ints.
 func MaxInt(left int, right int) int {
 	if left > right {
 		return left
@@ -59,7 +56,6 @@ func MaxInt(left int, right int) int {
 	return right
 }
 
-// NormalizeLocationText strips Vietnamese diacritics and lowercases text.
 func NormalizeLocationText(text string) string {
 	trimmed := strings.TrimSpace(strings.ToLower(text))
 	if trimmed == "" {
@@ -84,7 +80,6 @@ func NormalizeLocationText(text string) string {
 	return strings.Join(strings.Fields(builder.String()), " ")
 }
 
-// StripLocationNoise removes common bus-station prefixes from text.
 func StripLocationNoise(text string) string {
 	value := strings.TrimSpace(strings.ToLower(text))
 	value = strings.ReplaceAll(value, "ben xe", "")
@@ -93,7 +88,6 @@ func StripLocationNoise(text string) string {
 	return strings.TrimSpace(strings.Join(strings.Fields(value), " "))
 }
 
-// SharesTokenEdge returns true if the first or last character of two tokens match.
 func SharesTokenEdge(left string, right string) bool {
 	if left == "" || right == "" {
 		return false
@@ -101,7 +95,6 @@ func SharesTokenEdge(left string, right string) bool {
 	return left[0] == right[0] || left[len(left)-1] == right[len(right)-1]
 }
 
-// IsApproximateToken checks if two tokens are approximately equal via edit distance.
 func IsApproximateToken(left string, right string) bool {
 	distance := LevenshteinDistance(left, right)
 	maxLength := MaxInt(len(left), len(right))
@@ -111,8 +104,6 @@ func IsApproximateToken(left string, right string) bool {
 	return distance <= 1
 }
 
-// FuzzyLocationNameScore returns a fuzzy-match score between two normalized names.
-// Returns 0 if the match is too weak.
 func FuzzyLocationNameScore(target string, name string) int {
 	distance := LevenshteinDistance(target, name)
 	maxLength := MaxInt(len(target), len(name))
@@ -125,14 +116,12 @@ func FuzzyLocationNameScore(target string, name string) int {
 	return 0
 }
 
-// LocationCandidate is a minimal location interface for scoring.
 type LocationCandidate struct {
 	Name     string
 	City     string
 	Keywords string
 }
 
-// ScoreLocationMatch scores how well a normalized target matches a location candidate.
 func ScoreLocationMatch(target string, candidate LocationCandidate) int {
 	name := StripLocationNoise(NormalizeLocationText(candidate.Name))
 	if name == "" {

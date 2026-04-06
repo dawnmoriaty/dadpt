@@ -132,7 +132,7 @@ function UpcomingTripCard({ trip }: { trip: Trip }) {
 export function UpcomingTrips() {
     const { t } = useTranslation()
     const navigate = useNavigate()
-    const { data, isLoading } = useBrowseTrips({ page: 1, limit: 12 })
+    const { data, isLoading } = useBrowseTrips({ page: 1, limit: 10 })
 
     if (isLoading) {
         return (

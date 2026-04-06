@@ -9,7 +9,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// IProducer handles message publishing for a specific exchange.
 type IProducer interface {
 	PublishJSON(ctx context.Context, routingKey string, body interface{}) error
 	PublishRaw(ctx context.Context, routingKey string, body []byte) error

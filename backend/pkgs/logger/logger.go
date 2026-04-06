@@ -40,14 +40,11 @@ func Error(msg string, args ...interface{}) {
 	log.Error().Msgf(msg, args...)
 }
 
-// ErrorWithStack logs error with full stack trace (like Java)
-// Click on file:line in terminal to jump to error location
 func ErrorWithStack(err error, msg string) {
 	if err == nil {
 		return
 	}
 
-	// Build stack trace
 	var stackLines []string
 	for i := 1; i < 15; i++ { // Skip this function, capture up to 15 frames
 		pc, file, line, ok := runtime.Caller(i)
@@ -58,7 +55,6 @@ func ErrorWithStack(err error, msg string) {
 		fnName := "unknown"
 		if fn != nil {
 			fnName = fn.Name()
-			// Get short function name
 			if idx := strings.LastIndex(fnName, "/"); idx >= 0 {
 				fnName = fnName[idx+1:]
 			}
@@ -72,7 +68,6 @@ func ErrorWithStack(err error, msg string) {
 		Msg(msg)
 }
 
-// ErrorWithCaller logs error with caller info (file:line)
 func ErrorWithCaller(err error, msg string) {
 	if err == nil {
 		return
@@ -90,21 +85,17 @@ func ErrorWithCaller(err error, msg string) {
 		Msg(msg)
 }
 
-// AppError interface for errors that carry stack traces
 type AppErrorInterface interface {
 	Error() string
 	GetStack() string
 	GetRaw() error
 }
 
-// LogAppError logs an AppError with its captured stack trace
-// This is designed to work with errors.AppError
 func LogAppError(err interface{}) {
 	if err == nil {
 		return
 	}
 
-	// Use reflection-free approach via interface assertion
 	type stackedError interface {
 		Error() string
 	}
@@ -114,25 +105,21 @@ func LogAppError(err interface{}) {
 
 	errStr := fmt.Sprintf("%v", err)
 
-	// Try to get the underlying raw error
 	var rawErr error
 	if re, ok := err.(rawError); ok {
 		rawErr = re.Unwrap()
 	}
 
-	// Check if error has Stack field (using type assertion trick)
 	type hasStack interface {
 		GetStackTrace() string
 	}
 
-	// Build a detailed log
 	event := log.Error()
 
 	if rawErr != nil {
 		event = event.Err(rawErr)
 	}
 
-	// Capture current stack as fallback
 	var stackLines []string
 	for i := 2; i < 15; i++ {
 		pc, file, line, ok := runtime.Caller(i)

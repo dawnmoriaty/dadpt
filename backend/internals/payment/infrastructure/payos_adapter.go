@@ -12,17 +12,14 @@ import (
 	payos "github.com/payOSHQ/payos-lib-golang/v2"
 )
 
-// Compile-time interface check
 var _ paymentDomain.PaymentGateway = (*PayOSAdapter)(nil)
 
-// PayOSAdapter implements PaymentGateway using PayOS SDK v2.
 type PayOSAdapter struct {
 	client    *payos.PayOS
 	returnURL string
 	cancelURL string
 }
 
-// NewPayOSAdapter creates a new PayOS adapter from config.
 func NewPayOSAdapter(cfg *configs.Config) (*PayOSAdapter, error) {
 	client, err := payos.NewPayOS(&payos.PayOSOptions{
 		ClientId:    cfg.PayOSClientID,
@@ -40,7 +37,6 @@ func NewPayOSAdapter(cfg *configs.Config) (*PayOSAdapter, error) {
 	}, nil
 }
 
-// CreatePaymentLink creates a new payment link via PayOS.
 func (a *PayOSAdapter) CreatePaymentLink(ctx context.Context, orderCode int64, amount int, description string, expiresAt int64, returnURL, cancelURL string) (*paymentDomain.PaymentLinkResult, error) {
 	finalReturnURL := a.returnURL
 	finalCancelURL := a.cancelURL
@@ -76,14 +72,12 @@ func (a *PayOSAdapter) CreatePaymentLink(ctx context.Context, orderCode int64, a
 	}, nil
 }
 
-// VerifyWebhookData verifies PayOS webhook payload signature and returns parsed data.
 func (a *PayOSAdapter) VerifyWebhookData(ctx context.Context, body map[string]interface{}) (*paymentDomain.WebhookResult, error) {
 	data, err := a.client.Webhooks.VerifyData(ctx, body)
 	if err != nil {
 		return nil, fmt.Errorf("payos.VerifyWebhookData: %w", err)
 	}
 
-	// data is interface{} — marshal/unmarshal to get typed fields
 	raw, err := json.Marshal(data)
 	if err != nil {
 		return nil, fmt.Errorf("marshaling webhook data: %w", err)
@@ -104,7 +98,6 @@ func (a *PayOSAdapter) VerifyWebhookData(ctx context.Context, body map[string]in
 	}, nil
 }
 
-// GetPaymentStatus retrieves payment link status from PayOS.
 func (a *PayOSAdapter) GetPaymentStatus(ctx context.Context, orderCode int64) (string, error) {
 	result, err := a.client.PaymentRequests.Get(ctx, orderCode)
 	if err != nil {
@@ -114,8 +107,6 @@ func (a *PayOSAdapter) GetPaymentStatus(ctx context.Context, orderCode int64) (s
 	return string(result.Status), nil
 }
 
-// CancelPaymentLink cancels a payment link via PayOS.
-// If the payment was already paid, PayOS handles the refund to the original bank account.
 func (a *PayOSAdapter) CancelPaymentLink(ctx context.Context, orderCode int64, reason string) error {
 	var reasonPtr *string
 	if reason != "" {

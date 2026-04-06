@@ -9,7 +9,6 @@ import (
 	"backend/pkgs/paging"
 )
 
-// ITripUseCase defines the interface for trip use case
 type ITripUseCase interface {
 	Create(ctx context.Context, input *domain.CreateTripInput) (*domain.Trip, error)
 	GetByID(ctx context.Context, id int64) (*domain.Trip, error)
@@ -46,7 +45,6 @@ func (uc *tripUseCase) Create(ctx context.Context, input *domain.CreateTripInput
 		Status:         domain.TripStatusScheduled,
 	}
 
-	// Domain validation
 	if err := trip.Validate(); err != nil {
 		return nil, err
 	}
@@ -69,12 +67,10 @@ func (uc *tripUseCase) Update(ctx context.Context, id int64, input *domain.Updat
 		return nil, err
 	}
 
-	// Domain validation
 	if err := existing.CanBeModified(); err != nil {
 		return nil, err
 	}
 
-	// Apply partial updates
 	if input.OriginID != nil {
 		existing.OriginID = *input.OriginID
 	}
@@ -151,7 +147,6 @@ func (uc *tripUseCase) Delete(ctx context.Context, id int64) error {
 		return err
 	}
 
-	// Safety check: refuse if trip has pending/paid bookings
 	activeCount, err := uc.repo.CountActiveBookings(ctx, id)
 	if err != nil {
 		return fmt.Errorf("checking active bookings: %w", err)

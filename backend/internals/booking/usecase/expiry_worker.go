@@ -76,20 +76,16 @@ func (w *ExpiryWorker) processExpired(ctx context.Context) {
 }
 
 func (w *ExpiryWorker) expireBooking(ctx context.Context, booking *domain.Booking) error {
-	// 1. Release seats back to trip
 	seatCount := int32(len(booking.SeatCodes))
 	if err := w.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
 		logger.Warn("Expiry worker: failed to release seats for booking %d: %v", booking.ID, err)
-		// Continue — marking expired is more important
 	}
 
-	// 2. Mark booking as expired
 	_, err := w.repo.MarkExpired(ctx, booking.ID)
 	if err != nil {
 		return err
 	}
 
-	// 3. Create outbox event
 	eventPayload := domain.NewBookingEventEnvelope(TopicBookingExpired, booking, "expiry-worker")
 	if err := w.outboxRepo.CreateEvent(ctx, TopicBookingExpired, eventPayload); err != nil {
 		logger.Error("Expiry worker: failed to create outbox event for booking %d: %v", booking.ID, err)

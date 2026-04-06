@@ -39,7 +39,6 @@ type Server struct {
 	sseHub        *infrastructure.SSEHub
 }
 
-// NewServer is injectable by DI container
 func NewServer(
 	cfg *configs.Config,
 	database *db.Database,
@@ -66,18 +65,14 @@ func NewServer(
 func (s *Server) Run() error {
 	_ = s.engine.SetTrustedProxies(nil)
 
-	// Initialize i18n translator (must be called before any handler)
 	i18n.Init()
 
-	// Disable debug logs
 	gin.SetMode(gin.ReleaseMode)
 
-	// Middlewares
 	s.engine.Use(middlewares.RecoveryMiddleware())
 	s.engine.Use(middlewares.LoggerMiddleware())
 	s.engine.Use(middlewares.CorsMiddleware())
 
-	// Health check
 	s.engine.GET("/health", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"status": "healthy"})
 	})
@@ -88,20 +83,16 @@ func (s *Server) Run() error {
 		})
 	})
 
-	// Map routes
 	s.MapRoutes()
 
-	// Run server
 	return s.engine.Run(fmt.Sprintf(":%d", s.cfg.HTTPPort))
 }
 
 func (s *Server) MapRoutes() {
 	v1 := s.engine.Group("/api/v1")
 
-	// Public file serving — proxy images from MinIO (no auth)
 	uploadHttp.RegisterPublicRoutes(v1, s.uploadHandler)
 
-	// Auth routes
 	authGroup := v1.Group("/auth")
 	{
 		authGroup.POST("/register", s.authHandler.Register)
@@ -110,9 +101,6 @@ func (s *Server) MapRoutes() {
 		authGroup.POST("/logout", s.authHandler.Logout)
 	}
 
-	// Location routes (self-contained, deps created inside Routes)
-	// Provider routes (self-contained, deps created inside Routes)
-	// Payment gateway setup
 	var paymentGw paymentDomain.PaymentGateway
 	if s.cfg.PayOSClientID != "" && s.cfg.PayOSAPIKey != "" && s.cfg.PayOSChecksumKey != "" {
 		adapter, err := paymentInfra.NewPayOSAdapter(s.cfg)
@@ -124,20 +112,17 @@ func (s *Server) MapRoutes() {
 		}
 	}
 
-	// Booking routes (self-contained, deps created inside Routes)
 	bookingGroup := v1.Group("/bookings")
 	authBooking := bookingGroup.Group("")
 	authBooking.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 	bookingHttp.Routes(bookingGroup, authBooking, s.db, s.cfg, s.cache, paymentGw, s.sseHub)
 
-	// AI Agent routes (public — chatbot endpoint)
 	if s.chatHandler != nil {
 		aiGroup := v1.Group("/ai")
 		{
 			aiGroup.POST("/chat", s.chatHandler.Chat)
 		}
 
-		// AI voice booking command validation (authenticated users only)
 		aiAuth := v1.Group("/ai")
 		aiAuth.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 		{
@@ -146,7 +131,6 @@ func (s *Server) MapRoutes() {
 			aiAuth.POST("/voice/booking/pipeline", s.chatHandler.VoicePipeline)
 		}
 
-		// AI sync (admin only — push data to vector DB)
 		aiAdmin := v1.Group("/ai")
 		aiAdmin.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 		aiAdmin.Use(middlewares.RoleMiddleware("admin", "operator"))
@@ -155,33 +139,24 @@ func (s *Server) MapRoutes() {
 		}
 	}
 
-	// Admin routes - requires auth + admin/operator role
 	admin := v1.Group("/admin")
 	admin.Use(middlewares.AuthMiddleware(s.jwtProvider, s.cache))
 	admin.Use(middlewares.RoleMiddleware("admin", "operator"))
 	{
-		// Trip routes (self-contained, deps created inside Routes)
 		tripHttp.Routes(v1, admin, s.db)
 
-		// Location routes (public + admin, self-contained)
 		locationHttp.Routes(v1, admin, s.db)
 
-		// Provider routes (public + admin, self-contained)
 		providerHttp.Routes(v1, admin, s.db)
 
-		// BusType routes (admin-only, self-contained)
 		bustypeHttp.Routes(admin, s.db)
 
-		// Bus routes (admin-only, self-contained)
 		busHttp.Routes(admin, s.db)
 
-		// Upload routes
 		uploadHttp.RegisterRoutes(admin, s.uploadHandler)
 
-		// Admin booking routes (refund management)
 		bookingHttp.AdminRoutes(admin, s.db, s.cfg, s.cache, paymentGw, s.sseHub)
 	}
 
-	// Public bus-types route (no auth required)
 	bustypeHttp.PublicRoutes(v1, s.db)
 }

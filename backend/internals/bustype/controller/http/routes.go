@@ -8,7 +8,6 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// Routes registers bus type routes following Hexagonal Architecture
 func Routes(admin *gin.RouterGroup, database *db.Database) {
 	repo := repository.NewBusTypeRepository(database)
 	uc := usecase.NewBusTypeUseCase(repo)
@@ -24,7 +23,6 @@ func Routes(admin *gin.RouterGroup, database *db.Database) {
 	}
 }
 
-// PublicRoutes registers public bus type routes (no auth required)
 func PublicRoutes(public *gin.RouterGroup, database *db.Database) {
 	repo := repository.NewBusTypeRepository(database)
 	uc := usecase.NewBusTypeUseCase(repo)

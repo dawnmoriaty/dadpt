@@ -8,7 +8,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// BusTypeUseCase defines bus type use case contract
 type BusTypeUseCase interface {
 	Create(ctx context.Context, input *domain.CreateBusTypeInput) (*domain.BusType, error)
 	GetByID(ctx context.Context, id int32) (*domain.BusType, error)

@@ -24,16 +24,13 @@ import (
 )
 
 func main() {
-	// Create SSE hub (shared between server and consumer)
 	sseHub := infrastructure.NewSSEHub()
 
-	// Create DI container
 	container, err := di.NewContainer(sseHub)
 	if err != nil {
 		logger.Fatal("Failed to create DI container: ", err)
 	}
 
-	// Run with injected dependencies
 	err = container.Invoke(func(
 		server *httpServer.Server,
 		cfg *configs.Config,
@@ -44,20 +41,13 @@ func main() {
 	) {
 		logger.Info("Starting Bus Ticketing Backend...")
 
-		// Context for background workers — cancelled on SIGINT/SIGTERM
 		ctx, cancel := context.WithCancel(context.Background())
 
-		// =====================================================================
-		// BACKGROUND WORKERS
-		// =====================================================================
 
-		// Setup RabbitMQ topology for refund events via central messaging
 		if err := rmq_config.SetupRabbitMQTopology(rmq); err != nil {
 			logger.Error("Failed to setup central RabbitMQ topology: %v", err)
-			// Continue without RabbitMQ — degraded mode
 		}
 
-		// Ensure all registered Kafka topics exist
 		if kafkaClient != nil {
 			topics := kafkaRegistry.All()
 			if err := kafkaClient.EnsureTopics(ctx, topics); err != nil {
@@ -67,28 +57,22 @@ func main() {
 			}
 		}
 
-		// Start Generic Outbox Processor
 		outboxRepo := repository.NewOutboxRepository(database)
 		outboxAdapter := messaging.NewOutboxAdapter(outboxRepo)
 		outboxProcessor := outbox.NewProcessor(outboxAdapter, rmq, kafkaClient)
 		go outboxProcessor.Start(ctx)
 
-		// Start booking expiry worker (checks expired pending bookings every 60s)
 		bookingRepo := repository.NewBookingRepository(database)
 		tripLocker := repository.NewTripLocker(database)
 		expiryWorker := usecase.NewExpiryWorker(bookingRepo, tripLocker, outboxRepo)
 		go expiryWorker.Start(ctx)
 
-		// Start Admin Consumers (SSE Hub broadcast)
 		adminRMQConsumer := rmq_consumer.NewRefundNotificationConsumer(rmq, sseHub)
 		go adminRMQConsumer.Start(ctx)
 
 		adminKafkaConsumer := kafka_consumer.NewBookingNotificationConsumer(kafkaClient, sseHub)
 		go adminKafkaConsumer.Start(ctx)
 
-		// =====================================================================
-		// GRACEFUL SHUTDOWN
-		// =====================================================================
 		go func() {
 			quit := make(chan os.Signal, 1)
 			signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
@@ -107,7 +91,6 @@ func main() {
 			os.Exit(0)
 		}()
 
-		// Run HTTP server (blocking)
 		if err := server.Run(); err != nil {
 			logger.Fatal("Server error: ", err)
 		}

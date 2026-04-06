@@ -18,7 +18,6 @@ type outboxRepository struct {
 	queries *models.Queries
 }
 
-// NewOutboxRepository creates a new outbox repository
 func NewOutboxRepository(database *db.Database) domain.OutboxRepository {
 	return &outboxRepository{
 		db:      database,

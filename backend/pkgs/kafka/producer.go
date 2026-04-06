@@ -10,17 +10,12 @@ import (
 	kg "github.com/segmentio/kafka-go"
 )
 
-// IProducer writes messages to a Kafka topic.
 type IProducer interface {
-	// Publish sends a single message to Kafka.
 	Publish(ctx context.Context, msg Message) error
-	// PublishBatch sends multiple messages to Kafka in a single batch.
 	PublishBatch(ctx context.Context, msgs []Message) error
-	// Close flushes pending writes and releases resources.
 	Close() error
 }
 
-// ProducerOption configures the producer.
 type ProducerOption func(*producerConfig)
 
 type producerConfig struct {
@@ -47,17 +42,14 @@ func defaultProducerConfig() producerConfig {
 	}
 }
 
-// WithBalancer sets the partition balancer strategy.
 func WithBalancer(b kg.Balancer) ProducerOption {
 	return func(c *producerConfig) { c.balancer = b }
 }
 
-// WithHashBalancer uses key-based hash partitioning (messages with same key → same partition).
 func WithHashBalancer() ProducerOption {
 	return func(c *producerConfig) { c.balancer = &kg.Hash{} }
 }
 
-// WithBatchSize sets the maximum number of messages in a write batch.
 func WithBatchSize(n int) ProducerOption {
 	return func(c *producerConfig) {
 		if n > 0 {
@@ -66,7 +58,6 @@ func WithBatchSize(n int) ProducerOption {
 	}
 }
 
-// WithBatchTimeout sets the max time to wait for a batch to fill before flushing.
 func WithBatchTimeout(d time.Duration) ProducerOption {
 	return func(c *producerConfig) {
 		if d > 0 {
@@ -75,12 +66,10 @@ func WithBatchTimeout(d time.Duration) ProducerOption {
 	}
 }
 
-// WithAsync enables fire-and-forget mode. Errors are logged, not returned.
 func WithAsync() ProducerOption {
 	return func(c *producerConfig) { c.async = true }
 }
 
-// WithMaxAttempts sets the number of retries for failed writes.
 func WithMaxAttempts(n int) ProducerOption {
 	return func(c *producerConfig) {
 		if n > 0 {
@@ -89,12 +78,10 @@ func WithMaxAttempts(n int) ProducerOption {
 	}
 }
 
-// WithRequireAllAcks waits for all in-sync replicas to acknowledge (strongest durability).
 func WithRequireAllAcks() ProducerOption {
 	return func(c *producerConfig) { c.requiredAcks = kg.RequireAll }
 }
 
-// WithCompression enables message compression (e.g. kg.Snappy, kg.Gzip, kg.Lz4, kg.Zstd).
 func WithCompression(codec kg.Compression) ProducerOption {
 	return func(c *producerConfig) { c.compressor = codec }
 }
@@ -160,16 +147,12 @@ func (p *producer) Close() error {
 	return nil
 }
 
-// toKafkaGoMessage converts our Message to kafka-go's Message format.
 func toKafkaGoMessage(msg Message, defaultTopic string) kg.Message {
 	kgMsg := kg.Message{
 		Key:   msg.Key,
 		Value: msg.Value,
 	}
 
-	// kafka-go forbids specifying topic on both Writer and Message.
-	// Our producers are created per-topic, so only propagate Message.Topic
-	// when the writer itself has no default topic configured.
 	if defaultTopic == "" && msg.Topic != "" {
 		kgMsg.Topic = msg.Topic
 	}

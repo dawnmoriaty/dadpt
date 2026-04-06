@@ -25,7 +25,6 @@ func (s *kafkaProducerService) PublishEvent(ctx context.Context, topic string, k
 		return nil
 	}
 
-	// We open a temporary producer (or we could pool them) for the target topic
 	p := s.client.NewProducer(topic)
 	defer p.Close()
 

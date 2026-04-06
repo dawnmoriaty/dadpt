@@ -12,21 +12,18 @@ import (
 	rmq "backend/pkgs/rabbitmq"
 )
 
-// Event is the generic outbox event representation
 type Event struct {
 	ID      string
 	Topic   string
 	Payload []byte
 }
 
-// IRepository must be implemented by the module providing outbox logic (e.g., Booking)
 type IRepository interface {
 	FetchPendingEvents(ctx context.Context, batchSize int32) ([]Event, error)
 	MarkEventPublished(ctx context.Context, id string) error
 	MarkEventFailed(ctx context.Context, id string, errStr string) error
 }
 
-// Processor is the generic scheduler that forwards outbox entries to message brokers
 type Processor struct {
 	repo         IRepository
 	rmq          rmq.IRabbitMQ
@@ -83,8 +80,6 @@ func (p *Processor) processBatch(ctx context.Context) {
 }
 
 func (p *Processor) publishEvent(ctx context.Context, event *Event) error {
-	// Hybrid Routing based on topic pattern.
-	// This makes the Outbox processor completely module-agnostic.
 	if strings.Contains(event.Topic, "refund") || strings.Contains(event.Topic, "dlq") {
 		if p.rmq == nil {
 			logger.Warn("Outbox: RabbitMQ not available, skipping event %s", event.ID)
@@ -95,14 +90,11 @@ func (p *Processor) publishEvent(ctx context.Context, event *Event) error {
 		return producer.PublishRaw(ctx, event.Topic, event.Payload)
 	}
 
-	// Default to Kafka for standard event streams
 	if p.kafkaClient == nil {
 		logger.Warn("Outbox: Kafka not available, skipping event %s", event.ID)
 		return nil
 	}
 
-	// All main lifecycle events go to unified booking topic for now
-	// Ideally event.Topic maps cleanly to Kafka topic.
 	topicToPublish := kafka_config.TopicBookingEvents
 
 	producer := p.kafkaClient.NewProducer(topicToPublish)

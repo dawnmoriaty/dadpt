@@ -16,7 +16,6 @@ type tripLocker struct {
 	queries *models.Queries
 }
 
-// NewTripLocker creates a new trip locker for seat operations
 func NewTripLocker(database *db.Database) domain.TripLocker {
 	return &tripLocker{
 		db:      database,
@@ -24,21 +23,16 @@ func NewTripLocker(database *db.Database) domain.TripLocker {
 	}
 }
 
-// =============================================================================
-// TRIP LOCKER IMPLEMENTATION
-// =============================================================================
 
 func (t *tripLocker) LockTrip(ctx context.Context, tripID int64) (*domain.TripSnapshot, error) {
 	trip, err := t.queries.LockTripForBooking(ctx, tripID)
 	if err != nil {
-		// Check if it's a lock not available error (NOWAIT)
 		if strings.Contains(err.Error(), "could not obtain lock") {
 			return nil, domain.ErrTripLocked
 		}
 		return nil, fmt.Errorf("locking trip: %w", err)
 	}
 
-	// Check if trip is bookable
 	if utils.PtrToString(trip.Status) != "scheduled" {
 		return nil, domain.ErrTripNotBookable
 	}
@@ -63,7 +57,6 @@ func (t *tripLocker) UpdateSeatsAtomic(ctx context.Context, tripID int64, seatCo
 		Version:        &version,
 	})
 	if err != nil {
-		// If no rows affected, it means version mismatch or not enough seats
 		if strings.Contains(err.Error(), "no rows") {
 			return domain.ErrConcurrentModification
 		}

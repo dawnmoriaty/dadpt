@@ -10,10 +10,6 @@ import (
 	"time"
 )
 
-// =============================================================================
-// SENTINEL ERRORS — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
-// =============================================================================
 
 var (
 	ErrSeatsNotAvailable         = errors.New("seats not available")
@@ -42,9 +38,6 @@ var (
 	ErrInvalidStatusTransition   = errors.New("invalid booking status transition")
 )
 
-// =============================================================================
-// VALUE OBJECTS
-// =============================================================================
 
 type BookingCode string
 
@@ -75,9 +68,6 @@ func (s BookingStatus) String() string {
 	return string(s)
 }
 
-// =============================================================================
-// CORE ENTITY
-// =============================================================================
 
 type Booking struct {
 	ID              int64
@@ -98,7 +88,6 @@ type Booking struct {
 	CreatedAt       time.Time
 	UpdatedAt       time.Time
 
-	// Joined fields (for list results)
 	DepartureTime   time.Time
 	ArrivalTime     time.Time
 	OriginName      string
@@ -118,7 +107,6 @@ type PointInfo struct {
 	Surcharge float64 `json:"surcharge,omitempty"`
 }
 
-// PaymentTransaction tracks payment lifecycle
 type PaymentTransaction struct {
 	ID            string
 	BookingID     int64
@@ -134,7 +122,6 @@ type PaymentTransaction struct {
 	RefundedAt    time.Time
 }
 
-// TripSnapshot - read-only trip data for booking validation
 type TripSnapshot struct {
 	ID             int64
 	ProviderID     int32
@@ -146,11 +133,7 @@ type TripSnapshot struct {
 	Status         string
 }
 
-// =============================================================================
-// VALIDATION METHODS
-// =============================================================================
 
-// RefundWindow is the maximum time after booking creation within which a refund is allowed.
 const RefundWindow = 5 * time.Minute
 
 const MaxSeatsPerBooking = 4
@@ -169,14 +152,10 @@ func (b *Booking) CanBeCancelled() bool {
 	return b.Status == StatusPending
 }
 
-// CanRequestRefund checks if the booking is eligible for a refund request.
-// Conditions: status must be 'paid' and within the refund window since payment.
-// We use UpdatedAt because MarkBookingPaid sets updated_at = NOW().
 func (b *Booking) CanRequestRefund() bool {
 	return b.Status == StatusPaid && time.Since(b.UpdatedAt) <= RefundWindow
 }
 
-// IsRefundPending checks if the booking is waiting for admin approval.
 func (b *Booking) IsRefundPending() bool {
 	return b.Status == StatusRefundPending
 }
@@ -185,29 +164,18 @@ func (b *Booking) IsExpired() bool {
 	return b.Status == StatusPending && time.Now().After(b.ExpiresAt)
 }
 
-// =============================================================================
-// SEAT VALIDATION
-// =============================================================================
 
-// seatPattern matches seat codes like "A01", "B12", "C3".
-// Prefix = letters, Suffix = digits.
 var seatPattern = regexp.MustCompile(`^([A-Za-z]+)(\d+)$`)
 
-// ValidateConsecutiveSeats validates:
-// 1. Max 4 seats per booking
-// 2. All seats share the same row number (e.g. A01, B01, C01 — same physical row)
-// Single seat bookings always pass the check.
 func ValidateConsecutiveSeats(seatCodes []string) error {
 	if len(seatCodes) > MaxSeatsPerBooking {
 		return fmt.Errorf("%w: maximum %d seats allowed, got %d", ErrTooManySeats, MaxSeatsPerBooking, len(seatCodes))
 	}
 
-	// Single seat is always valid
 	if len(seatCodes) <= 1 {
 		return nil
 	}
 
-	// Parse all seat codes
 	numbers := make([]int, 0, len(seatCodes))
 	prefixes := make([]string, 0, len(seatCodes))
 	for _, code := range seatCodes {
@@ -220,7 +188,6 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 		numbers = append(numbers, num)
 	}
 
-	// All seats must share the same row number (horizontal booking)
 	baseNumber := numbers[0]
 	for _, n := range numbers[1:] {
 		if n != baseNumber {
@@ -228,7 +195,6 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 		}
 	}
 
-	// Seat columns must be adjacent (A,B,C...) without gaps.
 	sort.Strings(prefixes)
 	for i := 1; i < len(prefixes); i++ {
 		if prefixes[i] == prefixes[i-1] {
@@ -244,11 +210,7 @@ func ValidateConsecutiveSeats(seatCodes []string) error {
 	return nil
 }
 
-// =============================================================================
-// BUSINESS LOGIC HELPERS
-// =============================================================================
 
-// SeatsAvailable checks if requested seats are not in bookedSeats
 func SeatsAvailable(bookedSeats, requestedSeats []string) bool {
 	bookedMap := make(map[string]bool)
 	for _, seat := range bookedSeats {
@@ -274,7 +236,6 @@ func normalizeSeatCode(code string) string {
 	return fmt.Sprintf("%s%02d", strings.ToUpper(matches[1]), num)
 }
 
-// CalculatePrice calculates total price for seats
 func CalculatePrice(basePrice, priceModifier float64, seatCount int) float64 {
 	return basePrice * priceModifier * float64(seatCount)
 }

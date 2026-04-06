@@ -11,13 +11,11 @@ import (
 	"github.com/jackc/pgx/v5"
 )
 
-// DI
 type authRepository struct {
 	db      *db.Database
 	queries *models.Queries
 }
 
-// Implementation of domain.Repository
 func NewAuthRepository(database *db.Database) domain.Repository {
 	return &authRepository{
 		db:      database,
@@ -53,7 +51,6 @@ func stringToPtr(s string) *string {
 }
 
 func (r *authRepository) Create(ctx context.Context, user *domain.User) (*domain.User, error) {
-	// Default role if not set
 	role := string(user.Role)
 	if role == "" {
 		role = string(domain.RoleCustomer)
@@ -118,14 +115,11 @@ func (r *authRepository) PhoneExists(ctx context.Context, phone domain.Phone) (b
 	return true, nil
 }
 
-// TODO: Implement Update and UpdatePassword methods - before using them
 
 func (r *authRepository) Update(ctx context.Context, user *domain.User) (*domain.User, error) {
-	// TODO: Implement UpdateUser query in SQL
 	return nil, errors.New("not implemented")
 }
 
 func (r *authRepository) UpdatePassword(ctx context.Context, userID int64, passwordHash string) error {
-	// TODO: Implement UpdateUserPassword query in SQL
 	return errors.New("not implemented")
 }

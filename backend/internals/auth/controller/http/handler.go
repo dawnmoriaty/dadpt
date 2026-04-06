@@ -95,13 +95,9 @@ func (h *AuthHandler) RefreshToken(c *gin.Context) {
 	response.Success(c, dto.ToAuthResponse(result))
 }
 
-// =============================================================================
-// ERROR MAPPING - Convert domain errors to pkgs/errors.AppError
-// =============================================================================
 
 func mapDomainError(err error) error {
 	switch {
-	// Validation errors -> 400
 	case errors.Is(err, domain.ErrInvalidPhone):
 		return pkgErrors.ErrInvalidPhone
 	case errors.Is(err, domain.ErrInvalidEmail):
@@ -113,17 +109,14 @@ func mapDomainError(err error) error {
 	case errors.Is(err, domain.ErrInvalidPassword):
 		return pkgErrors.ErrInvalidPassword
 
-	// Role -> 400
 	case errors.Is(err, domain.ErrInvalidRole):
 		return pkgErrors.ErrInvalidRole
 
-	// Conflict errors -> 409
 	case errors.Is(err, domain.ErrPhoneAlreadyExists):
 		return pkgErrors.ErrPhoneExists
 	case errors.Is(err, domain.ErrEmailAlreadyExists):
 		return pkgErrors.ErrEmailExists
 
-	// Auth errors -> 401
 	case errors.Is(err, domain.ErrInvalidCredentials):
 		return pkgErrors.ErrInvalidCredentials
 	case errors.Is(err, domain.ErrTokenInvalid):
@@ -131,15 +124,12 @@ func mapDomainError(err error) error {
 	case errors.Is(err, domain.ErrTokenExpired):
 		return pkgErrors.ErrTokenExpired
 
-	// Forbidden -> 403
 	case errors.Is(err, domain.ErrUserInactive):
 		return pkgErrors.ErrUserInactive
 
-	// Not found -> 404
 	case errors.Is(err, domain.ErrUserNotFound):
 		return pkgErrors.ErrUserNotFound
 
-	// Default -> 500 with wrapped error
 	default:
 		return pkgErrors.Wrap(err, 500, pkgErrors.ErrCodeInternal)
 	}

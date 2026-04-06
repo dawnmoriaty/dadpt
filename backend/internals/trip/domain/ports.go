@@ -2,7 +2,6 @@ package domain
 
 import "context"
 
-// Repository defines the port for trip persistence
 type Repository interface {
 	Create(ctx context.Context, trip *Trip) (*Trip, error)
 	GetByID(ctx context.Context, id int64) (*Trip, error)

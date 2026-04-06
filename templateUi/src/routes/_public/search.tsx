@@ -50,13 +50,13 @@ function SearchPage() {
     // Browse mode (no search params — show upcoming trips)
     const { data: browseData, isLoading: browseLoading } = useBrowseTrips(
         hasSearchParams
-            ? undefined
-            : {
-                  providerIds: filters.providerIds,
-                  busTypeIds: filters.busTypeIds,
-                  page: 1,
-                  limit: 40,
-              },
+              ? undefined
+              : {
+                    providerIds: filters.providerIds,
+                    busTypeIds: filters.busTypeIds,
+                    page: 1,
+                    limit: 10,
+                },
     )
 
     const handleSearch = (data: SearchTripsFormData) => {

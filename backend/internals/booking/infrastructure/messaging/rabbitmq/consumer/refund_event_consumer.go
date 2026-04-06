@@ -25,7 +25,6 @@ const (
 
 var ErrInvalidEnvelope = errors.New("invalid event envelope")
 
-// RefundNotificationConsumer listens to RabbitMQ refund queues and broadcasts via SSE
 type RefundNotificationConsumer struct {
 	rmq rabbitmq.IRabbitMQ
 	hub *infrastructure.SSEHub
@@ -123,7 +122,6 @@ func (c *RefundNotificationConsumer) handleMessage(body []byte) error {
 	return nil
 }
 
-// Helper methods 
 
 func shouldRequeueMessage(msg amqp.Delivery, err error) bool {
 	if errors.Is(err, ErrInvalidEnvelope) {

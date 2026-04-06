@@ -2,7 +2,6 @@ package domain
 
 import "time"
 
-// TripFilter is used by the repository for filtering queries
 type TripFilter struct {
 	OriginID      *int32
 	DestinationID *int32
@@ -15,11 +14,7 @@ type TripFilter struct {
 	Offset        int32
 }
 
-// =============================================================================
-// INPUT DTOs - Used by UseCase layer
-// =============================================================================
 
-// CreateTripInput is the input for creating a new trip
 type CreateTripInput struct {
 	ProviderID     int32
 	BusID          int32
@@ -33,7 +28,6 @@ type CreateTripInput struct {
 	DropoffPoints  []Point
 }
 
-// UpdateTripInput is the input for updating a trip (partial update)
 type UpdateTripInput struct {
 	OriginID       *int32
 	DestinationID  *int32
@@ -46,7 +40,6 @@ type UpdateTripInput struct {
 	DropoffPoints  []Point
 }
 
-// SearchTripsInput is the input for searching trips (public)
 type SearchTripsInput struct {
 	OriginID      int32
 	DestinationID int32
@@ -56,7 +49,6 @@ type SearchTripsInput struct {
 	Limit         int
 }
 
-// BrowseTripsInput is the input for browsing upcoming trips (public, no required params)
 type BrowseTripsInput struct {
 	ProviderID *int
 	BusTypeID  *int
@@ -64,7 +56,6 @@ type BrowseTripsInput struct {
 	Limit      int
 }
 
-// AdminListInput is the input for listing trips (admin)
 type AdminListInput struct {
 	ProviderID *int
 	Status     *string

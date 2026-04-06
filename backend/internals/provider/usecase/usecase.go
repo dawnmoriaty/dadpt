@@ -28,7 +28,6 @@ func NewProviderUseCase(repo domain.Repository) ProviderUseCase {
 }
 
 func (uc *providerUseCase) Create(ctx context.Context, input *domain.CreateProviderInput) (*domain.Provider, error) {
-	// Check slug uniqueness if provided
 	if input.Slug != "" {
 		existing, err := uc.repo.GetBySlug(ctx, input.Slug)
 		if err != nil && !errors.Is(err, domain.ErrProviderNotFound) {
@@ -72,7 +71,6 @@ func (uc *providerUseCase) Update(ctx context.Context, id int32, input *domain.U
 		return nil, fmt.Errorf("providerUseCase.Update.GetByID: %w", err)
 	}
 
-	// Check slug uniqueness if changing
 	if input.Slug != nil && *input.Slug != existing.Slug {
 		other, slugErr := uc.repo.GetBySlug(ctx, *input.Slug)
 		if slugErr != nil && !errors.Is(slugErr, domain.ErrProviderNotFound) {

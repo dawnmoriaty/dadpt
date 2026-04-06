@@ -40,7 +40,6 @@ func (p *jwtProvider) GenerateToken(userID int64, role string, atDuration time.D
 	td := &TokenDetails{}
 	td.AtExpires = time.Now().Add(atDuration).Unix()
 
-	// Access Token (HS512)
 	atClaims := jwt.MapClaims{}
 	atClaims["authorized"] = true
 	atClaims["user_id"] = userID

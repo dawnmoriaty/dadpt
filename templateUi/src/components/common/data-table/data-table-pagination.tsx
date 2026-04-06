@@ -19,6 +19,9 @@ export function DataTablePagination<TData>({
     table,
     pageSizeOptions = [10],
 }: DataTablePaginationProps<TData>) {
+    const pageCount = table.getPageCount()
+    const currentPage = table.getState().pagination.pageIndex + 1
+
     return (
         <div className="flex flex-col-reverse items-center justify-between gap-4 px-2 py-4 sm:flex-row">
             <div className="flex-1 text-sm text-muted-foreground">
@@ -46,9 +49,31 @@ export function DataTablePagination<TData>({
                         </SelectContent>
                     </Select>
                 </div>
+                <div className="flex items-center space-x-2">
+                    <p className="whitespace-nowrap text-sm font-medium">Đi đến trang</p>
+                    <Select
+                        value={`${currentPage}`}
+                        onValueChange={(value) => {
+                            table.setPageIndex(Math.max(0, Number(value) - 1))
+                        }}
+                    >
+                        <SelectTrigger className="h-8 w-[88px]">
+                            <SelectValue placeholder={`${currentPage}`} />
+                        </SelectTrigger>
+                        <SelectContent side="top">
+                            {Array.from({ length: pageCount }, (_, index) => {
+                                const page = index + 1
+                                return (
+                                    <SelectItem key={page} value={`${page}`}>
+                                        {page}
+                                    </SelectItem>
+                                )
+                            })}
+                        </SelectContent>
+                    </Select>
+                </div>
                 <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-                    Trang {table.getState().pagination.pageIndex + 1} /{' '}
-                    {table.getPageCount()}
+                    Trang {currentPage} / {pageCount}
                 </div>
                 <div className="flex items-center space-x-2">
                     <Button
@@ -81,7 +106,7 @@ export function DataTablePagination<TData>({
                     <Button
                         variant="outline"
                         className="hidden h-8 w-8 p-0 lg:flex"
-                        onClick={() => table.setPageIndex(table.getPageCount() - 1)}
+                        onClick={() => table.setPageIndex(pageCount - 1)}
                         disabled={!table.getCanNextPage()}
                     >
                         <span className="sr-only">Đến trang cuối</span>

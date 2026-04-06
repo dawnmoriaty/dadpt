@@ -4,8 +4,6 @@ import (
 	"errors"
 )
 
-// Sentinel errors — stable English identifiers for errors.Is() matching.
-// User-facing messages are resolved by the i18n translator at the HTTP edge.
 var (
 	ErrLocationNotFound     = errors.New("location not found")
 	ErrLocationNameRequired = errors.New("location name required")
@@ -14,7 +12,6 @@ var (
 	ErrLocationCityTooShort = errors.New("location city too short")
 )
 
-// Location is a pure domain entity representing a bus terminal/station
 type Location struct {
 	ID       int32
 	Name     string
@@ -24,7 +21,6 @@ type Location struct {
 	ImageURL string
 }
 
-// LocationFilter for listing/searching locations
 type LocationFilter struct {
 	Limit  int32
 	Offset int32
@@ -37,7 +33,6 @@ const (
 	MaxSearchLimit     int32 = 200
 )
 
-// Validate validates the location entity
 func (l *Location) Validate() error {
 	if l.Name == "" {
 		return ErrLocationNameRequired
@@ -54,7 +49,6 @@ func (l *Location) Validate() error {
 	return nil
 }
 
-// CreateLocationInput is the input for creating a new location
 type CreateLocationInput struct {
 	Name     string
 	City     string
@@ -63,7 +57,6 @@ type CreateLocationInput struct {
 	ImageURL string
 }
 
-// UpdateLocationInput is the input for updating a location (partial update)
 type UpdateLocationInput struct {
 	Name     *string
 	City     *string

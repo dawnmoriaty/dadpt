@@ -2,7 +2,6 @@ package domain
 
 import "context"
 
-// Repository defines the port for provider persistence
 type Repository interface {
 	Create(ctx context.Context, provider *Provider) (*Provider, error)
 	GetByID(ctx context.Context, id int32) (*Provider, error)

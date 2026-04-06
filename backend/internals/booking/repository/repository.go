@@ -19,7 +19,6 @@ type bookingRepository struct {
 	queries *models.Queries
 }
 
-// NewBookingRepository creates a new booking repository
 func NewBookingRepository(database *db.Database) domain.Repository {
 	return &bookingRepository{
 		db:      database,
@@ -27,9 +26,6 @@ func NewBookingRepository(database *db.Database) domain.Repository {
 	}
 }
 
-// =============================================================================
-// MAPPERS
-// =============================================================================
 
 func sqlcToEntity(m models.Booking) *domain.Booking {
 	return &domain.Booking{
@@ -179,9 +175,6 @@ func pointInfoToJSON(info domain.PointInfo) json.RawMessage {
 	return data
 }
 
-// =============================================================================
-// REPOSITORY IMPLEMENTATION
-// =============================================================================
 
 func (r *bookingRepository) Create(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
 	result, err := r.queries.CreateBookingWithExpiry(ctx, models.CreateBookingWithExpiryParams{

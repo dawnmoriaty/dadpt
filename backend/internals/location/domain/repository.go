@@ -2,7 +2,6 @@ package domain
 
 import "context"
 
-// Repository defines the port for location persistence (hexagonal architecture)
 type Repository interface {
 	Create(ctx context.Context, loc *Location) (*Location, error)
 	GetByID(ctx context.Context, id int32) (*Location, error)

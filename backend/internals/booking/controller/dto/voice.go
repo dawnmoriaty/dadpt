@@ -1,6 +1,5 @@
 package dto
 
-// VoiceExecuteRequest is the request body for /bookings/voice/execute.
 type VoiceExecuteRequest struct {
 	TripID              *int64   `json:"tripId"`
 	Origin              string   `json:"origin"`
@@ -10,7 +9,6 @@ type VoiceExecuteRequest struct {
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
 }
 
-// VoicePlanRequest is the request body for /bookings/voice/plan.
 type VoicePlanRequest struct {
 	Origin              string   `json:"origin" binding:"required"`
 	Destination         string   `json:"destination" binding:"required"`
@@ -19,7 +17,6 @@ type VoicePlanRequest struct {
 	SeatPreferenceOrder []string `json:"seatPreferenceOrder"`
 }
 
-// VoiceTripCandidate represents a candidate trip for voice booking suggestions.
 type VoiceTripCandidate struct {
 	TripID             int64    `json:"tripId"`
 	ProviderName       string   `json:"providerName,omitempty"`
@@ -34,7 +31,6 @@ type VoiceTripCandidate struct {
 	SuggestedSeatCodes []string `json:"suggestedSeatCodes,omitempty"`
 }
 
-// VoicePlanResponse is the typed response for PlanDirect.
 type VoicePlanResponse struct {
 	Flow              string               `json:"flow"`
 	Origin            string               `json:"origin"`
@@ -45,7 +41,6 @@ type VoicePlanResponse struct {
 	Candidates        []VoiceTripCandidate `json:"candidates"`
 }
 
-// VoiceExecuteResponse is the typed response for ExecuteDirect.
 type VoiceExecuteResponse struct {
 	Flow          string                 `json:"flow"`
 	TripID        int64                  `json:"tripId"`

@@ -23,7 +23,6 @@ func NewTripRepository(database *db.Database) domain.Repository {
 	}
 }
 
-// Mappers
 
 func sqlcToEntity(m models.Trip) *domain.Trip {
 	return &domain.Trip{
@@ -133,7 +132,6 @@ func listAdminRowToEntity(m models.ListTripsAdminRow) *domain.Trip {
 	}
 }
 
-// Domain-specific JSON converters (keep local - depends on domain.Point)
 func jsonToPoints(data json.RawMessage) []domain.Point {
 	if data == nil {
 		return nil
@@ -151,7 +149,6 @@ func pointsToJSON(points []domain.Point) json.RawMessage {
 	return data
 }
 
-// Repository implementations
 
 func (r *tripRepository) Create(ctx context.Context, trip *domain.Trip) (*domain.Trip, error) {
 	result, err := r.queries.CreateTrip(ctx, models.CreateTripParams{
@@ -223,7 +220,6 @@ func (r *tripRepository) Delete(ctx context.Context, id int64) error {
 }
 
 func (r *tripRepository) List(ctx context.Context, filter *domain.TripFilter) ([]*domain.Trip, int64, error) {
-	// Convert domain TripStatus pointer to *string for sqlc
 	var status *string
 	if filter.Status != nil {
 		s := string(*filter.Status)

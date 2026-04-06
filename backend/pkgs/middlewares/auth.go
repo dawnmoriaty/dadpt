@@ -15,7 +15,6 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 	return func(c *gin.Context) {
 		var token string
 
-		// Use Authorization header only.
 		authHeader := c.GetHeader("Authorization")
 		if authHeader != "" {
 			parts := strings.Split(authHeader, " ")
@@ -32,7 +31,6 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 
 		tokenString := token
 
-		// 1. Validate Token Signature
 		claims, err := jwtProv.ValidateToken(tokenString)
 		if err != nil {
 			response.HandleError(c, errors.ErrInvalidToken)
@@ -40,7 +38,6 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 			return
 		}
 
-		// 2. Check Blacklist (Redis)
 		if cache != nil && cache.IsConnected() {
 			blacklistKey := fmt.Sprintf("blacklist:%s", tokenString)
 			var val string
@@ -52,7 +49,6 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 			}
 		}
 
-		// 3. Set User Claims to Context
 		if userID, ok := (*claims)["user_id"].(float64); ok {
 			c.Set("userID", int64(userID))
 		}
@@ -67,8 +63,6 @@ func AuthMiddleware(jwtProv jwt.JWTProvider, cache redis.IRedis) gin.HandlerFunc
 	}
 }
 
-// RoleMiddleware checks if user has required role(s)
-// Usage: RoleMiddleware("admin", "operator") - allows admin OR operator
 func RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		role, exists := c.Get("role")
@@ -85,7 +79,6 @@ func RoleMiddleware(allowedRoles ...string) gin.HandlerFunc {
 			return
 		}
 
-		// Check if user role is in allowed roles
 		for _, allowed := range allowedRoles {
 			if userRole == allowed {
 				c.Next()

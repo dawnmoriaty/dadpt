@@ -26,7 +26,6 @@ const (
 
 var seatCodePattern = regexp.MustCompile(`^([A-Za-z]+)(\d+)$`)
 
-// Outbox event topics
 const (
 	TopicBookingCreated         = "booking.created"
 	TopicBookingPaid            = "booking.paid"
@@ -38,7 +37,6 @@ const (
 	TopicBookingStatusUpdated   = "booking.status.updated"
 )
 
-// IBookingUseCase defines the interface for booking use case
 type IBookingUseCase interface {
 	CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error)
 	GetBooking(ctx context.Context, id int64) (*domain.Booking, error)
@@ -56,7 +54,6 @@ type IBookingUseCase interface {
 	GetTripSeatManifest(ctx context.Context, tripID int64) (*domain.TripSeatManifestOutput, error)
 	GetAdminRevenueSeries(ctx context.Context, days int32) (*domain.AdminRevenueSeriesOutput, error)
 	AdminUpdateBookingStatus(ctx context.Context, input *domain.AdminUpdateBookingStatusInput) (*domain.Booking, error)
-	// Admin refund flow
 	ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error)
 	CountRefundPending(ctx context.Context) (int64, error)
 	ApproveRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error)
@@ -73,7 +70,6 @@ type bookingUseCase struct {
 	cfg         *configs.Config
 }
 
-// NewBookingUseCase creates a new booking use case
 func NewBookingUseCase(
 	repo domain.Repository,
 	tripLocker domain.TripLocker,
@@ -94,7 +90,6 @@ func NewBookingUseCase(
 	}
 }
 
-// CreateBooking creates a new booking with race condition protection
 func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.CreateBookingInput) (*domain.BookingOutput, error) {
 	if len(input.SeatCodes) == 0 {
 		return nil, domain.ErrInvalidSeatCode
@@ -103,7 +98,6 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		input.SeatCodes[i] = normalizeSeatCode(seat)
 	}
 
-	// 0. Validate consecutive seats (max 4, same row, sequential numbers)
 	if err := domain.ValidateConsecutiveSeats(input.SeatCodes); err != nil {
 		return nil, err
 	}
@@ -153,12 +147,10 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		}
 	}
 
-	// 1. Acquire Redis distributed lock - prevent thundering herd
 	lockKey := fmt.Sprintf("booking:trip:%d", input.TripID)
 	acquired, err := u.lock.Acquire(ctx, lockKey, lockTTL)
 	if err != nil {
 		logger.Error("Failed to acquire lock: %v", err)
-		// Continue without lock in degraded mode
 	}
 	if !acquired {
 		return nil, domain.ErrSeatsBeingBooked
@@ -169,37 +161,30 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		}
 	}()
 
-	// 2. Lock trip row and validate (PostgreSQL FOR UPDATE NOWAIT)
 	trip, err := u.tripLocker.LockTrip(ctx, input.TripID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Validate seats are available
 	if !domain.SeatsAvailable(trip.BookedSeats, input.SeatCodes) {
 		return nil, domain.ErrSeatsNotAvailable
 	}
 
-	// 4. Check enough available seats
 	seatCount := int32(len(input.SeatCodes))
 	if trip.AvailableSeats < seatCount {
 		return nil, domain.ErrSeatsNotAvailable
 	}
 
-	// 5. Update trip seats atomically (optimistic locking with version)
 	err = u.tripLocker.UpdateSeatsAtomic(ctx, input.TripID, input.SeatCodes, seatCount, trip.Version)
 	if err != nil {
 		return nil, err
 	}
 
-	// 6. Calculate total price
 	totalAmount := domain.CalculatePrice(trip.BasePrice, trip.PriceModifier, int(seatCount))
 
-	// 7. Generate booking code and order code
 	bookingCode := generateBookingCode()
 	orderCode := generateOrderCode()
 
-	// 8. Create booking record with expiry
 	booking := &domain.Booking{
 		Code:          domain.BookingCode(bookingCode),
 		TripID:        input.TripID,
@@ -214,21 +199,17 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		ExpiresAt:     time.Now().Add(u.cfg.BookingExpiryDuration),
 	}
 
-	// Validate booking entity
 	if err := booking.Validate(); err != nil {
-		// Rollback: release the seats
 		_ = u.tripLocker.ReleaseSeats(ctx, input.TripID, input.SeatCodes, seatCount)
 		return nil, err
 	}
 
 	created, err := u.repo.Create(ctx, booking)
 	if err != nil {
-		// Rollback: release the seats
 		_ = u.tripLocker.ReleaseSeats(ctx, input.TripID, input.SeatCodes, seatCount)
 		return nil, fmt.Errorf("creating booking: %w", err)
 	}
 
-	// 9. Create payment link via gateway (only for online methods)
 	var checkoutURL, qrCode string
 	paymentMethod := strings.TrimSpace(strings.ToLower(input.PaymentMethod))
 	shouldCreatePaymentLink := u.paymentGw != nil && paymentMethod != "cod"
@@ -255,7 +236,6 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		return nil, domain.ErrPaymentLinkUnavailable
 	}
 
-	// 10. Create payment transaction only for online methods
 	if paymentMethod != "cod" {
 		_, err = u.paymentRepo.CreateTransaction(ctx, &domain.PaymentTransaction{
 			BookingID:     created.ID,
@@ -267,13 +247,11 @@ func (u *bookingUseCase) CreateBooking(ctx context.Context, input *domain.Create
 		})
 		if err != nil {
 			logger.Error("Failed to create payment transaction: %v", err)
-			// Don't rollback booking — payment can be retried
 		}
 	} else {
 		orderCode = ""
 	}
 
-	// 11. Create outbox event (transactional outbox pattern)
 	correlationID := getCorrelationIDFromContext(ctx)
 	eventPayload := domain.NewBookingEventEnvelope(TopicBookingCreated, created, correlationID)
 	if err := u.outboxRepo.CreateEvent(ctx, TopicBookingCreated, eventPayload); err != nil {
@@ -524,18 +502,15 @@ func (u *bookingUseCase) AdminUpdateBookingStatus(ctx context.Context, input *do
 }
 
 func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.CancelBookingInput) (*domain.Booking, error) {
-	// 1. Get booking
 	booking, err := u.repo.GetByID(ctx, input.BookingID)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Check authorization (if userID provided)
 	if input.UserID != nil && booking.UserID != nil && *booking.UserID != *input.UserID {
 		return nil, domain.ErrBookingNotFound // Don't reveal existence
 	}
 
-	// 3. Route to appropriate flow based on booking status
 	switch booking.Status {
 	case domain.StatusPending:
 		return u.requestRefundForBooking(ctx, booking)
@@ -546,8 +521,6 @@ func (u *bookingUseCase) CancelBooking(ctx context.Context, input *domain.Cancel
 	}
 }
 
-// requestRefundForBooking marks booking as refund_pending for both pending and paid bookings.
-// Actual cancellation/refund is finalized only after admin ApproveRefund.
 func (u *bookingUseCase) requestRefundForBooking(ctx context.Context, booking *domain.Booking) (*domain.Booking, error) {
 	if booking.Status == domain.StatusPaid && !booking.CanRequestRefund() {
 		return nil, domain.ErrRefundWindowExpired
@@ -567,7 +540,6 @@ func (u *bookingUseCase) requestRefundForBooking(ctx context.Context, booking *d
 	return pending, nil
 }
 
-// ListRefundRequests returns bookings with refund_pending status for admin review.
 func (u *bookingUseCase) ListRefundRequests(ctx context.Context, input *domain.RefundRequestListInput) (*domain.RefundRequestListOutput, error) {
 	page := input.Page
 	pageSize := input.PageSize
@@ -606,7 +578,6 @@ func (u *bookingUseCase) ListRefundRequests(ctx context.Context, input *domain.R
 	}, nil
 }
 
-// CountRefundPending returns the count of bookings in refund_pending status.
 func (u *bookingUseCase) CountRefundPending(ctx context.Context) (int64, error) {
 	count, err := u.repo.CountRefundPending(ctx)
 	if err != nil {
@@ -615,9 +586,7 @@ func (u *bookingUseCase) CountRefundPending(ctx context.Context) (int64, error) 
 	return count, nil
 }
 
-// ApproveRefund approves a refund request: simulate PayOS cancel, mark refunded, release seats.
 func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error) {
-	// 1. Get booking and verify status
 	booking, err := u.repo.GetByID(ctx, input.BookingID)
 	if err != nil {
 		return nil, err
@@ -642,7 +611,6 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 		return nil, domain.ErrInvalidRefundReference
 	}
 
-	// 2. Handle payment transaction if booking was paid
 	if booking.Status == domain.StatusPaid {
 		payment, err := u.paymentRepo.GetSuccessByBookingID(ctx, booking.ID)
 		if err != nil {
@@ -652,37 +620,27 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 			return nil, domain.ErrInvalidRefundReference
 		}
 
-		// 3. Simulate PayOS cancel (no sandbox available — log and skip real call)
 		if u.paymentGw != nil && booking.PaymentMethod == "bank_transfer" {
 			orderCodeInt := orderCodeToInt64(payment.OrderCode)
 			reason := fmt.Sprintf("Admin approved refund for booking %s", booking.Code)
 			logger.Info("[SIMULATED] PayOS CancelPaymentLink: orderCode=%d, reason=%s (skipped — no sandbox)", orderCodeInt, reason)
-			// In production with real PayOS sandbox, uncomment the following:
-			// if err := u.paymentGw.CancelPaymentLink(ctx, orderCodeInt, reason); err != nil {
-			//     logger.Error("Failed to cancel payment link for booking %d: %v", booking.ID, err)
-			//     return nil, fmt.Errorf("uc.ApproveRefund: cancelling payment: %w", err)
-			// }
 		}
 
-		// 4. Mark payment transaction as refunded
 		if _, err := u.paymentRepo.MarkRefunded(ctx, booking.ID); err != nil {
 			logger.Error("Failed to mark payment refunded for booking %d: %v", booking.ID, err)
 		}
 	}
 
-	// 5. Release seats
 	seatCount := int32(len(booking.SeatCodes))
 	if err := u.tripLocker.ReleaseSeats(ctx, booking.TripID, booking.SeatCodes, seatCount); err != nil {
 		logger.Warn("Failed to release seats for refunded booking %d: %v", booking.ID, err)
 	}
 
-	// 6. Mark booking as refunded with admin confirmation metadata
 	refunded, err := u.repo.MarkRefundedWithMeta(ctx, booking.ID, input.RefundReference, input.RefundNote)
 	if err != nil {
 		return nil, fmt.Errorf("uc.ApproveRefund: marking refunded: %w", err)
 	}
 
-	// 7. Simulated email notification to customer
 	logger.Info("[SIMULATED EMAIL] To: %s <%s> | Subject: Hoàn tiền vé %s đã được duyệt | Body: Kính gửi %s, yêu cầu hoàn tiền cho vé %s (%.0f VND) đã được quản trị viên duyệt. Số tiền sẽ được hoàn về tài khoản của bạn trong 1-3 ngày làm việc.",
 		booking.GuestInfo.Name, booking.GuestInfo.Email,
 		booking.Code, booking.GuestInfo.Name, booking.Code, booking.TotalAmount)
@@ -695,9 +653,7 @@ func (u *bookingUseCase) ApproveRefund(ctx context.Context, input *domain.Refund
 	return refunded, nil
 }
 
-// RejectRefund rejects a refund request: revert booking back to paid status.
 func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundRequestInput) (*domain.Booking, error) {
-	// 1. Get booking and verify status
 	booking, err := u.repo.GetByID(ctx, input.BookingID)
 	if err != nil {
 		return nil, err
@@ -711,13 +667,11 @@ func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundR
 		return nil, domain.ErrRefundConfirmCodeMismatch
 	}
 
-	// 2. Revert booking to paid
 	reverted, err := u.repo.RevertToPaid(ctx, booking.ID)
 	if err != nil {
 		return nil, fmt.Errorf("uc.RejectRefund: reverting to paid: %w", err)
 	}
 
-	// 3. Simulated email notification to customer about rejection
 	reason := input.Reason
 	if reason == "" {
 		reason = "Không đủ điều kiện hoàn tiền"
@@ -734,30 +688,24 @@ func (u *bookingUseCase) RejectRefund(ctx context.Context, input *domain.RefundR
 	return reverted, nil
 }
 
-// ConfirmPayment processes a payment webhook callback
 func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.ConfirmPaymentInput) (*domain.PaymentConfirmOutput, error) {
-	// 1. Find payment transaction
 	payment, err := u.paymentRepo.GetByOrderCode(ctx, input.OrderCode)
 	if err != nil {
 		return nil, err
 	}
 
-	// 2. Process based on webhook status
 	switch input.Status {
 	case "success":
-		// Update payment → success
 		updatedPayment, err := u.paymentRepo.MarkSuccess(ctx, input.OrderCode, input.WebhookData)
 		if err != nil {
 			return nil, err
 		}
 
-		// Update booking → paid
 		updatedBooking, err := u.repo.MarkPaid(ctx, payment.BookingID)
 		if err != nil {
 			return nil, fmt.Errorf("marking booking paid: %w", err)
 		}
 
-		// Create outbox event for booking.paid
 		eventPayload := domain.NewBookingEventEnvelope(TopicBookingPaid, updatedBooking, getCorrelationIDFromContext(ctx))
 		if err := u.outboxRepo.CreateEvent(ctx, TopicBookingPaid, eventPayload); err != nil {
 			logger.Error("Failed to create outbox event for payment: %v", err)
@@ -771,13 +719,11 @@ func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.Confi
 		}, nil
 
 	case "failed", "cancelled":
-		// Update payment → failed
 		updatedPayment, err := u.paymentRepo.MarkFailed(ctx, input.OrderCode, input.WebhookData)
 		if err != nil {
 			return nil, err
 		}
 
-		// Release seats and expire booking
 		booking, err := u.repo.GetByID(ctx, payment.BookingID)
 		if err != nil {
 			return nil, err
@@ -807,7 +753,6 @@ func (u *bookingUseCase) ConfirmPayment(ctx context.Context, input *domain.Confi
 	}
 }
 
-// GetPaymentByOrderCode retrieves payment transaction by order code
 func (u *bookingUseCase) GetPaymentByOrderCode(ctx context.Context, orderCode string) (*domain.PaymentTransaction, error) {
 	return u.paymentRepo.GetByOrderCode(ctx, orderCode)
 }
@@ -857,9 +802,6 @@ func (u *bookingUseCase) RegeneratePaymentLink(ctx context.Context, booking *dom
 	}, nil
 }
 
-// =============================================================================
-// HELPERS
-// =============================================================================
 
 func generateBookingCode() string {
 	bytes := make([]byte, bookingCodeLen/2)
@@ -867,8 +809,6 @@ func generateBookingCode() string {
 	return "VX" + strings.ToUpper(hex.EncodeToString(bytes))
 }
 
-// generateOrderCode generates a numeric order code as string (for PayOS int64 compatibility).
-// Format: timestamp milliseconds + 3 random digits (ensures uniqueness).
 func generateOrderCode() string {
 	ts := time.Now().UnixMilli() % 9007199254740991 // PayOS max safe int
 	rb := make([]byte, 2)
@@ -885,7 +825,6 @@ func getCorrelationIDFromContext(ctx context.Context) string {
 	return ""
 }
 
-// orderCodeToInt64 converts order code string to int64 for PayOS API.
 func orderCodeToInt64(code string) int64 {
 	var result int64
 	fmt.Sscanf(code, "%d", &result)

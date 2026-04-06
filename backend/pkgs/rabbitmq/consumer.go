@@ -4,7 +4,6 @@ import (
 	amqp "github.com/rabbitmq/amqp091-go"
 )
 
-// IConsumer abstracts the message consumption.
 type IConsumer interface {
 	Consume() (<-chan amqp.Delivery, error)
 }
