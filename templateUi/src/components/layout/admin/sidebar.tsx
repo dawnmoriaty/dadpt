@@ -33,11 +33,11 @@ export function Sidebar() {
                 'flex h-16 items-center px-4 shrink-0',
                 collapsed ? 'justify-center' : 'gap-3'
             )}>
-                <img src={logoSrc} alt="BusAdmin logo" className="h-9 w-9 rounded-xl object-cover shadow-lg shadow-primary/20" />
+                <img src={logoSrc} alt="DADPT logo" className="h-12 w-12 rounded-xl object-cover shadow-lg shadow-primary/20" />
                 {!collapsed && (
                     <div className="flex flex-col">
-                        <span className="font-bold text-lg tracking-tight">BusAdmin</span>
-                        <span className="text-[10px] text-muted-foreground -mt-0.5">Quản lý vé xe</span>
+                        <span className="font-bold text-lg tracking-tight">DADPT</span>
+                        <span className="text-[10px] text-muted-foreground -mt-0.5">Hệ thống quản trị</span>
                     </div>
                 )}
             </div>

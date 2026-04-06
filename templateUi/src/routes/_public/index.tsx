@@ -2,6 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Clock, Shield, Star, Users } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 
+import { env } from '@/config/env'
 import { SearchForm, UpcomingTrips, type SearchTripsFormData } from '@/modules/booking'
 
 function HomePage() {
@@ -49,8 +50,7 @@ function HomePage() {
                 </div>
             </section>
 
-            {/* Upcoming Trips */}
-            <UpcomingTrips />
+            {env.VITE_ENABLE_UPCOMING_TRIPS && <UpcomingTrips />}
 
             {/* Why Choose Us */}
             <section className="bg-gradient-to-b from-white to-blue-50/30 py-20">
@@ -137,7 +137,7 @@ function HomePage() {
                     </div>
                     
                     <div className="border-t pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-                        <p>© 2025 Đặt Vé Xe. Tất cả quyền được bảo lưu.</p>
+                        <p>© 2025 DADPT. Tất cả quyền được bảo lưu.</p>
                         <div className="flex gap-6">
                             <a href="#" className="hover:text-primary transition-colors">Điều khoản sử dụng</a>
                             <a href="#" className="hover:text-primary transition-colors">Chính sách bảo mật</a>

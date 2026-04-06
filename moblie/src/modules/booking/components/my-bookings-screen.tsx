@@ -4,6 +4,7 @@ import { useRouter } from 'expo-router'
 import { ArrowRight, Clock, Copy, Ticket, Undo2, XCircle } from 'lucide-react-native'
 
 import { tw } from '@/src/lib/utils'
+import { useAuthStore } from '@/src/stores/use-auth-store'
 
 import { useCancelBooking, useMyBookings } from '../hooks'
 import type { Booking } from '../types'
@@ -76,6 +77,8 @@ function formatCurrency(amount: number) {
 
 export function MyBookingsScreen() {
     const router = useRouter()
+    const logout = useAuthStore((state) => state.logout)
+    const user = useAuthStore((state) => state.user)
     const { data, isLoading } = useMyBookings({ page: 1, pageSize: 20 })
     const cancelBooking = useCancelBooking()
 
@@ -206,7 +209,19 @@ export function MyBookingsScreen() {
         <SafeAreaView style={tw`flex-1 bg-gray-50`}>
             <View style={tw`border-b border-gray-100 bg-white px-4 py-4 shadow-sm`}>
                 <Text style={tw`text-xl font-bold text-gray-900`}>Ve cua toi</Text>
-                <Text style={tw`mt-1 text-xs text-gray-500`}>Quan ly ve da dat, thanh toan va huy/hoan ve</Text>
+                <Text style={tw`mt-1 text-xs text-gray-500`}>
+                    {user?.fullName ? `Xin chao ${user.fullName}. ` : ''}
+                    Quan ly ve da dat, thanh toan va huy/hoan ve
+                </Text>
+                <TouchableOpacity
+                    style={tw`mt-3 self-start rounded-lg border border-gray-200 bg-gray-50 px-3 py-2`}
+                    onPress={() => {
+                        logout()
+                        router.replace('/login')
+                    }}
+                >
+                    <Text style={tw`text-xs font-semibold text-gray-700`}>Dang xuat</Text>
+                </TouchableOpacity>
             </View>
 
             <View style={tw`flex-1 px-4 pt-4`}>

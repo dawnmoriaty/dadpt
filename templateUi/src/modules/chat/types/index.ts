@@ -87,7 +87,7 @@ export interface ChatUiAction {
 }
 
 export interface BookingConfirmationPayload {
-    mode: 'mock' | 'live'
+    mode: 'live'
     booking_code: string
     trip_id?: number
     status?: string

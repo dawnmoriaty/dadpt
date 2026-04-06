@@ -311,7 +311,6 @@ func (h *AdminBookingHandler) StreamRefundEvents(c *gin.Context) {
 	c.Header("Content-Type", "text/event-stream")
 	c.Header("Cache-Control", "no-cache")
 	c.Header("Connection", "keep-alive")
-	c.Header("Access-Control-Allow-Origin", "*")
 
 	clientCh := make(chan []byte, 10)
 	h.sseHub.Register(clientCh)

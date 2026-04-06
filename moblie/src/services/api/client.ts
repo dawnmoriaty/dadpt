@@ -1,9 +1,11 @@
 import axios from 'axios'
 import { Platform } from 'react-native'
 
-// Replace with your actual backend URL, note that localhost on physical devices or android emulator refers to the device itself.
-// 10.0.2.2 is usually the alias to host loopback interface in Android Emulator.
-const BASE_URL = Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1'
+import { useAuthStore } from '@/src/stores/use-auth-store'
+
+const localBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1'
+const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
+const BASE_URL = envBaseUrl && /^https?:\/\//.test(envBaseUrl) ? envBaseUrl.replace(/\/$/, '') : localBaseUrl
 
 export const api = axios.create({
     baseURL: BASE_URL,
@@ -13,7 +15,14 @@ export const api = axios.create({
     },
 })
 
-// Add Auth store integration and interceptors here later if required
+api.interceptors.request.use((config) => {
+    const token = useAuthStore.getState().token
+    if (token) {
+        config.headers.Authorization = `Bearer ${token}`
+    }
+    return config
+})
+
 export const refreshApi = axios.create({
     baseURL: BASE_URL,
     timeout: 5000,

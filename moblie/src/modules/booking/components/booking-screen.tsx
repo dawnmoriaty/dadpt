@@ -5,6 +5,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router'
 
 import { tw } from '@/src/lib/utils'
 import { usePublicTrip } from '@/src/modules/trip'
+import { useAuthStore } from '@/src/stores/use-auth-store'
 
 import { useCreateBooking } from '../hooks'
 import type { CreateBookingResponse, PaymentMethod } from '../types'
@@ -19,6 +20,7 @@ const PAYMENT_OPTIONS: { label: string; value: PaymentMethod }[] = [
 
 export function BookingScreen() {
     const router = useRouter()
+    const user = useAuthStore((state) => state.user)
     const { id, passengers } = useLocalSearchParams()
     const tripId = Number(id)
     const requiredPassengers = Math.max(Number(passengers ?? 1), 1)
@@ -26,9 +28,9 @@ export function BookingScreen() {
     const { data: trip, isLoading: isTripLoading } = usePublicTrip(tripId)
     const { mutateAsync: createBooking, isPending: isSubmitting } = useCreateBooking()
 
-    const [name, setName] = useState('')
-    const [phone, setPhone] = useState('')
-    const [email, setEmail] = useState('')
+    const [name, setName] = useState(user?.fullName ?? '')
+    const [phone, setPhone] = useState(user?.phone ?? '')
+    const [email, setEmail] = useState(user?.email ?? '')
     const [selectedSeat, setSelectedSeat] = useState<string>('')
     const [selectedSeats, setSelectedSeats] = useState<string[]>([])
     const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('bank_transfer')

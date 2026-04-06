@@ -8,7 +8,6 @@ import { cn } from '@/lib/utils'
 
 import type { BookingConfirmationPayload, ChatMessage, ChatQuickReplyOption } from '../types'
 
-import { ChatPreviewSuggestions } from './ChatPreviewSuggestions'
 import { ChatQuickReplies } from './ChatQuickReplies'
 import { ChatTripActionCard } from './ChatTripActionCard'
 
@@ -113,10 +112,6 @@ function EmptyState({ sendMessage, isLoading }: EmptyStateProps) {
                     onClick={() => sendMessage('Kiểm tra booking của tôi')}
                     disabled={isLoading}
                 />
-            </div>
-
-            <div className="w-full max-w-5xl">
-                <ChatPreviewSuggestions />
             </div>
         </div>
     )
@@ -338,18 +333,11 @@ function BookingConfirmationList({ message }: { message: ChatMessage }) {
 }
 
 function BookingConfirmationCard({ payload }: { payload: BookingConfirmationPayload }) {
-    const isMock = payload.mode === 'mock'
-
     return (
         <div className="rounded-xl border border-border/60 bg-background p-4 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
                 <span className="text-lg">🎫</span>
                 <span className="text-sm font-semibold text-foreground">Xác nhận đặt vé</span>
-                {isMock && (
-                    <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
-                        MOCK
-                    </span>
-                )}
             </div>
 
             <div className="space-y-1.5 text-sm">

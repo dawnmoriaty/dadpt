@@ -49,7 +49,7 @@ function AuthPage() {
                 <div className="absolute inset-0 bg-gradient-to-br from-primary/80 to-primary/40" />
                 <div className="relative z-10 flex flex-col justify-between p-12 text-white">
                     <Link to="/" className="flex items-center gap-3">
-                        <img src={logoSrc} alt="Dat Ve Xe logo" className="h-8 w-8 rounded-lg object-cover" />
+                        <img src={logoSrc} alt="DADPT logo" className="h-12 w-12 rounded-lg object-cover" />
                         <span className="text-2xl font-bold">{t('nav.brand')}</span>
                     </Link>
 
@@ -88,7 +88,7 @@ function AuthPage() {
                     {/* Mobile branding */}
                     <div className="lg:hidden flex items-center justify-center gap-2 mb-4">
                         <Link to="/" className="flex items-center gap-2 text-primary">
-                            <img src={logoSrc} alt="Dat Ve Xe logo" className="h-6 w-6 rounded-md object-cover" />
+                            <img src={logoSrc} alt="DADPT logo" className="h-9 w-9 rounded-md object-cover" />
                             <span className="text-xl font-bold">{t('nav.brand')}</span>
                         </Link>
                     </div>

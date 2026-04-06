@@ -38,9 +38,8 @@ export function Header() {
         <header className="sticky top-0 z-50 w-full border-b bg-gradient-to-r from-white to-blue-50/30 backdrop-blur supports-backdrop-filter:bg-white/80">
             <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
                 {/* Logo */}
-                <Link to="/" className="flex items-center gap-2.5 font-bold text-lg text-primary transition-transform hover:scale-105">
-                    <img src={logoSrc} alt="Dat Ve Xe logo" className="h-10 w-10 rounded-lg object-cover" />
-                    <span className="hidden sm:inline">Đặt Vé Xe</span>
+                <Link to="/" className="flex items-center font-bold text-lg text-primary transition-transform hover:scale-105">
+                    <img src={logoSrc} alt="DADPT logo" className="h-20 w-20 rounded-lg object-cover" />
                 </Link>
 
                 {/* Desktop Navigation */}

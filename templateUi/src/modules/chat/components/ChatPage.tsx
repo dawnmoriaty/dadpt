@@ -1,4 +1,4 @@
-import { Link } from '@tanstack/react-router'
+import { Link, useNavigate } from '@tanstack/react-router'
 import { Mic, X } from 'lucide-react'
 import { useEffect } from 'react'
 
@@ -19,8 +19,23 @@ interface ChatPageWidgetProps {
 }
 
 export function ChatPageWidget({ onClose }: ChatPageWidgetProps) {
+    const navigate = useNavigate()
     const { messages, isLoading, clearChat, sendMessage, loadNextPage } = useChatStore()
     const { input, setInput, send } = useChatInput()
+
+    const handleClose = () => {
+        if (onClose) {
+            onClose()
+            return
+        }
+
+        if (window.history.length > 1) {
+            window.history.back()
+            return
+        }
+
+        void navigate({ to: '/' })
+    }
 
     useEffect(() => {
         const handler = (event: Event) => {
@@ -51,11 +66,9 @@ export function ChatPageWidget({ onClose }: ChatPageWidgetProps) {
                                         Voice
                                     </Link>
                                 </Button>
-                                {onClose && (
-                                    <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={onClose}>
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                )}
+                                <Button size="icon" variant="ghost" className="h-8 w-8 shrink-0" onClick={handleClose}>
+                                    <X className="h-4 w-4" />
+                                </Button>
                             </div>
                         </div>
 
