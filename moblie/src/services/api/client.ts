@@ -4,8 +4,11 @@ import { Platform } from 'react-native'
 import { useAuthStore } from '@/src/stores/use-auth-store'
 
 const localBaseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8080/api/v1' : 'http://localhost:8080/api/v1'
+const deployedBaseUrl = 'https://dadpt.vercel.app/api/v1'
 const envBaseUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.trim()
-const BASE_URL = envBaseUrl && /^https?:\/\//.test(envBaseUrl) ? envBaseUrl.replace(/\/$/, '') : localBaseUrl
+const BASE_URL = envBaseUrl && /^https?:\/\//.test(envBaseUrl)
+    ? envBaseUrl.replace(/\/$/, '')
+    : deployedBaseUrl
 
 export const api = axios.create({
     baseURL: BASE_URL,

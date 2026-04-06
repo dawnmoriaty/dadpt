@@ -19,7 +19,7 @@ cp .env.example .env
 3. Cấu hình backend API trong `.env`:
 
 ```bash
-EXPO_PUBLIC_API_BASE_URL=https://your-backend-domain/api/v1
+EXPO_PUBLIC_API_BASE_URL=https://dadpt.vercel.app/api/v1
 ```
 
 Nếu không có env, app sẽ fallback:
