@@ -3,6 +3,7 @@ import { useEffect } from 'react'
 import { Alert, Linking, ScrollView, Text, TouchableOpacity, View } from 'react-native'
 import { CheckCircle2, Clock3, Copy, CreditCard, ExternalLink } from 'lucide-react-native'
 
+import { userTheme } from '@/src/constants/user-theme'
 import { tw } from '@/src/lib/utils'
 
 import { usePaymentStatus } from '../hooks'
@@ -28,7 +29,7 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
 
     useEffect(() => {
         if (paymentStatus?.status === 'success') {
-            router.replace('/(tabs)/bookings')
+            router.replace('/my-bookings' as never)
         }
     }, [paymentStatus?.status, router])
 
@@ -73,7 +74,7 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
 
             <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4`}>
                 <Text style={tw`text-xs text-gray-500`}>Ma dat cho</Text>
-                <Text style={tw`mt-1 text-2xl font-bold text-blue-700`}>{booking.code}</Text>
+                <Text style={[tw`mt-1 text-2xl font-bold`, { color: userTheme.colors.primaryStrong }]}>{booking.code}</Text>
 
                 <View style={tw`mt-4 flex-row items-center justify-between`}>
                     <View>
@@ -97,14 +98,14 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
                 <Text style={tw`mb-1 text-sm text-gray-600`}>Tuyen: {booking.originName ?? '-'} - {booking.destinationName ?? '-'}</Text>
                 <Text style={tw`mb-1 text-sm text-gray-600`}>Diem don: {booking.pickupInfo?.name ?? '-'}</Text>
                 <Text style={tw`mb-1 text-sm text-gray-600`}>Diem tra: {booking.dropoffInfo?.name ?? '-'}</Text>
-                <Text style={tw`mt-2 text-lg font-bold text-blue-700`}>{formatVndCurrency(booking.totalAmount)}</Text>
+                <Text style={[tw`mt-2 text-lg font-bold`, { color: userTheme.colors.primaryStrong }]}>{formatVndCurrency(booking.totalAmount)}</Text>
             </View>
 
             {!isPaid && (
                 <View style={tw`mb-4 rounded-2xl border border-blue-100 bg-blue-50 p-4`}>
                     <View style={tw`mb-2 flex-row items-center`}>
-                        <CreditCard size={18} color="#1D4ED8" />
-                        <Text style={tw`ml-2 text-base font-bold text-blue-700`}>Huong dan thanh toan</Text>
+                        <CreditCard size={18} color={userTheme.colors.primaryStrong} />
+                        <Text style={[tw`ml-2 text-base font-bold`, { color: userTheme.colors.primaryStrong }]}>Huong dan thanh toan</Text>
                     </View>
                     {!!qrCode && (
                         <Text style={tw`text-sm text-blue-700`}>
@@ -118,8 +119,8 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
                             onPress={handleOpenPayment}
                         >
                             <View style={tw`flex-row items-center justify-center`}>
-                                <ExternalLink size={15} color="#1D4ED8" />
-                                <Text style={tw`ml-2 text-sm font-semibold text-blue-700`}>Mo trang thanh toan</Text>
+                                <ExternalLink size={15} color={userTheme.colors.primaryStrong} />
+                                <Text style={[tw`ml-2 text-sm font-semibold`, { color: userTheme.colors.primaryStrong }]}>Mo trang thanh toan</Text>
                             </View>
                         </TouchableOpacity>
                     )}
@@ -130,7 +131,7 @@ export function BookingSuccessScreen({ data, onReset }: BookingSuccessScreenProp
                 <TouchableOpacity style={tw`mr-2 flex-1 rounded-xl border border-gray-200 py-3`} onPress={onReset}>
                     <Text style={tw`text-center font-semibold text-gray-700`}>Dat ve moi</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={tw`flex-1 rounded-xl bg-blue-600 py-3`} onPress={() => router.replace('/(tabs)/bookings')}>
+                <TouchableOpacity style={[tw`flex-1 rounded-xl py-3`, { backgroundColor: userTheme.colors.primaryStrong }]} onPress={() => router.replace('/my-bookings' as never)}>
                     <Text style={tw`text-center font-semibold text-white`}>Xem ve cua toi</Text>
                 </TouchableOpacity>
             </View>

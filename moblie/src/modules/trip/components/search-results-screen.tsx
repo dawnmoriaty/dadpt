@@ -3,6 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 import { ArrowRight, Calendar, ChevronLeft, Clock, Users } from 'lucide-react-native'
 
+import { userTheme } from '@/src/constants/user-theme'
+import { ResponsiveFrame } from '@/src/components/common/responsive-frame'
 import { tw } from '@/src/lib/utils'
 
 import { useSearchTrips } from '../hooks'
@@ -51,7 +53,7 @@ export function SearchResultsScreen() {
     }
 
     const renderTripCard = ({ item: trip }: { item: Trip }) => (
-        <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm`}>
+        <View style={[tw`mb-4 rounded-2xl bg-white p-4 shadow-sm`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}>
             <View style={tw`mb-4 flex-row items-start justify-between`}>
                 <View style={tw`flex-1 pr-3`}>
                     <Text style={tw`text-lg font-bold text-gray-900`}>{trip.providerName}</Text>
@@ -64,10 +66,10 @@ export function SearchResultsScreen() {
                         </Text>
                     </View>
                     <Text style={tw`mt-1 text-xs text-gray-400`}>
-                        Thoi gian di chuyen: {getDuration(trip.departureTime, trip.arrivalTime)}
+                        Thời gian di chuyển: {getDuration(trip.departureTime, trip.arrivalTime)}
                     </Text>
                 </View>
-                <Text style={tw`text-right text-xl font-bold text-blue-600`}>{formatCurrency(trip.finalPrice)}</Text>
+                <Text style={[tw`text-right text-xl font-bold`, { color: userTheme.colors.primaryStrong }]}>{formatCurrency(trip.finalPrice)}</Text>
             </View>
 
             <View style={tw`flex-row items-center justify-between`}>
@@ -77,20 +79,20 @@ export function SearchResultsScreen() {
                 </View>
 
                 <TouchableOpacity
-                    style={tw`rounded-lg bg-blue-50 px-4 py-2`}
+                    style={[tw`rounded-lg px-4 py-2`, { backgroundColor: userTheme.colors.primarySoft }]}
                     onPress={() => handleBookTrip(trip.id)}
                 >
-                    <Text style={tw`font-bold text-blue-600`}>Chon chuyen</Text>
+                    <Text style={[tw`font-bold`, { color: userTheme.colors.primaryStrong }]}>Chọn chuyến</Text>
                 </TouchableOpacity>
             </View>
         </View>
     )
 
     return (
-        <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-            <View style={tw`z-10 flex-row items-center border-b border-gray-100 bg-white px-4 py-3 shadow-sm`}>
+        <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
+            <View style={[tw`z-10 flex-row items-center bg-white px-4 py-3 shadow-sm`, { borderBottomColor: userTheme.colors.border, borderBottomWidth: 1 }]}> 
                 <TouchableOpacity onPress={() => router.back()} style={tw`mr-4 p-1`}>
-                    <ChevronLeft size={24} color="#1F2937" />
+                    <ChevronLeft size={24} color={userTheme.colors.text} />
                 </TouchableOpacity>
                 <View style={tw`flex-1 flex-row items-center`}>
                     <Text style={tw`text-base font-bold text-gray-900`} numberOfLines={1}>{originName}</Text>
@@ -99,35 +101,36 @@ export function SearchResultsScreen() {
                 </View>
             </View>
 
-            <View style={tw`flex-row items-center bg-blue-50 px-4 py-2`}>
-                <Calendar size={16} color="#3B82F6" />
-                <Text style={tw`ml-2 font-medium text-blue-700`}>{departureDate}</Text>
+            <View style={[tw`flex-row items-center px-4 py-2`, { backgroundColor: userTheme.colors.primarySoft }]}> 
+                <Calendar size={16} color={userTheme.colors.primaryStrong} />
+                <Text style={[tw`ml-2 font-medium`, { color: userTheme.colors.primaryStrong }]}>{departureDate}</Text>
             </View>
 
-            <View style={tw`flex-1 px-4 pt-4`}>
+            <View style={tw`flex-1 pt-4`}>
+                <ResponsiveFrame style={tw`flex-1`}>
                 {isLoading ? (
                     <View style={tw`flex-1 items-center justify-center`}>
-                        <ActivityIndicator size="large" color="#3B82F6" />
-                        <Text style={tw`mt-4 text-gray-500`}>Dang tim chuyen xe...</Text>
+                        <ActivityIndicator size="large" color={userTheme.colors.primaryStrong} />
+                        <Text style={tw`mt-4 text-gray-500`}>Đang tìm chuyến xe...</Text>
                     </View>
                 ) : error ? (
                     <View style={tw`flex-1 items-center justify-center`}>
-                        <Text style={tw`text-center text-red-500`}>Co loi xay ra khi tai du lieu.</Text>
+                        <Text style={tw`text-center text-red-500`}>Có lỗi xảy ra khi tải dữ liệu.</Text>
                         <TouchableOpacity style={tw`mt-4 rounded bg-gray-200 px-4 py-2`} onPress={() => router.back()}>
-                            <Text>Quay lai</Text>
+                            <Text>Quay lại</Text>
                         </TouchableOpacity>
                     </View>
                 ) : !data || data.items.length === 0 ? (
                     <View style={tw`flex-1 items-center justify-center`}>
-                        <Text style={tw`text-center text-lg text-gray-500`}>Khong tim thay chuyen xe phu hop.</Text>
-                        <TouchableOpacity style={tw`mt-4 rounded-xl bg-blue-600 px-6 py-3`} onPress={() => router.back()}>
-                            <Text style={tw`font-bold text-white`}>Tim ngay khac</Text>
+                        <Text style={tw`text-center text-lg text-gray-500`}>Không tìm thấy chuyến xe phù hợp.</Text>
+                        <TouchableOpacity style={[tw`mt-4 rounded-xl px-6 py-3`, { backgroundColor: userTheme.colors.primaryStrong }]} onPress={() => router.back()}>
+                            <Text style={tw`font-bold text-white`}>Tìm ngày khác</Text>
                         </TouchableOpacity>
                     </View>
                 ) : (
                     <>
                         <View style={tw`mb-3 rounded-xl bg-white px-3 py-2`}>
-                            <Text style={tw`text-xs text-gray-500`}>Tim thay {data.items.length} chuyen phu hop</Text>
+                            <Text style={tw`text-xs text-gray-500`}>Tìm thấy {data.items.length} chuyến phù hợp</Text>
                         </View>
                         <FlatList
                             data={data.items}
@@ -138,6 +141,7 @@ export function SearchResultsScreen() {
                         />
                     </>
                 )}
+                </ResponsiveFrame>
             </View>
         </SafeAreaView>
     )

@@ -1,7 +1,7 @@
 export function buildPaymentResumePath(bookingCode: string, orderCode?: string): string {
     const safeCode = bookingCode.trim()
     if (!safeCode) {
-        return '/(tabs)/bookings'
+        return '/my-bookings'
     }
 
     if (orderCode?.trim()) {

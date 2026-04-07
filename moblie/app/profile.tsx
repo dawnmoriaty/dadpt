@@ -1,13 +1,13 @@
-import { MyBookingsScreen } from '@/src/modules/booking'
 import { LoginScreen } from '@/src/modules/auth'
+import ProfileScreen from '@/src/modules/profile/profile-screen'
 import { useAuthStore } from '@/src/stores/use-auth-store'
 
-export default function BookingsPage() {
+export default function ProfilePage() {
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
 
     if (!isAuthenticated) {
         return <LoginScreen />
     }
 
-    return <MyBookingsScreen />
+    return <ProfileScreen />
 }

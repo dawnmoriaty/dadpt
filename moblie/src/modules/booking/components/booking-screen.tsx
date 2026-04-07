@@ -3,6 +3,8 @@ import { Alert, ScrollView, Text, TextInput, TouchableOpacity, View, ActivityInd
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useLocalSearchParams, useRouter } from 'expo-router'
 
+import { userTheme } from '@/src/constants/user-theme'
+import { ResponsiveFrame } from '@/src/components/common/responsive-frame'
 import { tw } from '@/src/lib/utils'
 import { usePublicTrip } from '@/src/modules/trip'
 import { useAuthStore } from '@/src/stores/use-auth-store'
@@ -14,8 +16,8 @@ import { BookingSuccessScreen } from './booking-success-screen'
 import { SeatMapMobile } from './seat-map-mobile'
 
 const PAYMENT_OPTIONS: { label: string; value: PaymentMethod }[] = [
-    { label: 'Chuyen khoan ngan hang', value: 'bank_transfer' },
-    { label: 'Thanh toan khi len xe (COD)', value: 'cod' },
+    { label: 'Chuyển khoản ngân hàng', value: 'bank_transfer' },
+    { label: 'Thanh toán khi lên xe (COD)', value: 'cod' },
 ]
 
 export function BookingScreen() {
@@ -61,11 +63,11 @@ export function BookingScreen() {
             return
         }
         if (!name.trim() || !phone.trim()) {
-            Alert.alert('Thieu thong tin', 'Vui long nhap ho ten va so dien thoai.')
+            Alert.alert('Thiếu thông tin', 'Vui lòng nhập họ tên và số điện thoại.')
             return
         }
         if (selectedSeats.length === 0) {
-            Alert.alert('Chua chon ghe', 'Vui long chon ghe hop le de dat ve.')
+            Alert.alert('Chưa chọn ghế', 'Vui lòng chọn ghế hợp lệ để đặt vé.')
             return
         }
 
@@ -73,7 +75,7 @@ export function BookingScreen() {
         const dropoffPoint = trip.dropoffPoints?.[0]
 
         if (!pickupPoint || !dropoffPoint) {
-            Alert.alert('Thieu du lieu', 'Khong tim thay diem don/tra cua chuyen xe.')
+            Alert.alert('Thiếu dữ liệu', 'Không tìm thấy điểm đón/trả của chuyến xe.')
             return
         }
 
@@ -102,27 +104,27 @@ export function BookingScreen() {
             setBookingResponse(result)
 
             if (paymentMethod === 'cod') {
-                Alert.alert('Thanh cong', 'Dat ve thanh cong!')
+                Alert.alert('Thành công', 'Đặt vé thành công!')
             }
         } catch {
-            Alert.alert('Loi', 'Co loi xay ra khi dat ve')
+            Alert.alert('Lỗi', 'Có lỗi xảy ra khi đặt vé')
         }
     }
 
     if (isTripLoading) {
         return (
             <View style={tw`flex-1 items-center justify-center`}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color={userTheme.colors.primaryStrong} />
             </View>
         )
     }
 
     if (!trip) {
         return (
-            <SafeAreaView style={tw`flex-1 items-center justify-center bg-gray-50 p-4`}>
-                <Text style={tw`text-center text-base text-gray-600`}>Khong tim thay chuyen xe.</Text>
-                <TouchableOpacity style={tw`mt-4 rounded-xl bg-blue-600 px-6 py-3`} onPress={() => router.back()}>
-                    <Text style={tw`font-bold text-white`}>Quay lai</Text>
+            <SafeAreaView style={[tw`flex-1 items-center justify-center p-4`, { backgroundColor: userTheme.colors.background }]}>
+                <Text style={tw`text-center text-base text-gray-600`}>Không tìm thấy chuyến xe.</Text>
+                <TouchableOpacity style={[tw`mt-4 rounded-xl px-6 py-3`, { backgroundColor: userTheme.colors.primaryStrong }]} onPress={() => router.back()}>
+                    <Text style={tw`font-bold text-white`}>Quay lại</Text>
                 </TouchableOpacity>
             </SafeAreaView>
         )
@@ -130,7 +132,7 @@ export function BookingScreen() {
 
     if (bookingResponse) {
         return (
-            <SafeAreaView style={tw`flex-1 bg-gray-50`}>
+            <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
                 <BookingSuccessScreen
                     data={bookingResponse}
                     onReset={() => {
@@ -142,55 +144,56 @@ export function BookingScreen() {
     }
 
     return (
-        <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-            <View style={tw`border-b border-gray-100 bg-white px-4 py-3`}>
-                <Text style={tw`text-lg font-bold text-gray-900`}>Xac nhan dat ve</Text>
-                <Text style={tw`text-xs text-gray-500`}>{trip.originName} - {trip.destinationName}</Text>
-                <Text style={tw`text-xs text-gray-500`}>So hanh khach: {requiredPassengers}</Text>
+        <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
+            <View style={[tw`bg-white px-4 py-3`, { borderBottomColor: userTheme.colors.border, borderBottomWidth: 1 }]}> 
+                <Text style={[tw`text-lg font-bold`, { color: userTheme.colors.text }]}>Xác nhận đặt vé</Text>
+                <Text style={[tw`text-xs`, { color: userTheme.colors.mutedText }]}>{trip.originName} - {trip.destinationName}</Text>
+                <Text style={[tw`text-xs`, { color: userTheme.colors.mutedText }]}>Số hành khách: {requiredPassengers}</Text>
             </View>
 
-            <ScrollView contentContainerStyle={tw`p-4 pb-20`}>
-                <View style={tw`mb-4 rounded-2xl border border-emerald-100 bg-emerald-50 p-3`}>
-                    <Text style={tw`text-xs text-emerald-700`}>
-                        Dat cho dang duoc giu tam thoi. Vui long hoan tat thong tin de tranh mat cho.
+            <ScrollView contentContainerStyle={tw`pb-20`}>
+                <ResponsiveFrame style={tw`pt-4`}>
+                <View style={[tw`mb-4 rounded-2xl p-3`, { borderColor: '#BEECD8', borderWidth: 1, backgroundColor: '#ECFDF5' }]}> 
+                        <Text style={tw`text-xs text-emerald-700`}>
+                        Đặt chỗ đang được giữ tạm thời. Vui lòng hoàn tất thông tin để tránh mất chỗ.
                     </Text>
                 </View>
 
-                <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4`}>
-                    <Text style={tw`mb-3 text-base font-bold text-gray-900`}>Thong tin lien he</Text>
+                <View style={[tw`mb-4 rounded-2xl bg-white p-4`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}>
+                    <Text style={[tw`mb-3 text-base font-bold`, { color: userTheme.colors.text }]}>Thông tin liên hệ</Text>
 
-                    <Text style={tw`mb-1 text-xs text-gray-500`}>Ho ten</Text>
+                    <Text style={[tw`mb-1 text-xs`, { color: userTheme.colors.mutedText }]}>Họ tên</Text>
                     <TextInput
                         value={name}
                         onChangeText={setName}
-                        placeholder="Nhap ho ten"
-                        style={tw`mb-3 rounded-xl border border-gray-200 px-3 py-3 text-base text-gray-900`}
+                        placeholder="Nhập họ tên"
+                        style={[tw`mb-3 rounded-xl px-3 py-3 text-base`, { borderColor: userTheme.colors.border, borderWidth: 1, color: userTheme.colors.text }]}
                     />
 
-                    <Text style={tw`mb-1 text-xs text-gray-500`}>So dien thoai</Text>
+                    <Text style={[tw`mb-1 text-xs`, { color: userTheme.colors.mutedText }]}>Số điện thoại</Text>
                     <TextInput
                         value={phone}
                         onChangeText={setPhone}
-                        placeholder="Nhap so dien thoai"
+                        placeholder="Nhập số điện thoại"
                         keyboardType="phone-pad"
-                        style={tw`mb-3 rounded-xl border border-gray-200 px-3 py-3 text-base text-gray-900`}
+                        style={[tw`mb-3 rounded-xl px-3 py-3 text-base`, { borderColor: userTheme.colors.border, borderWidth: 1, color: userTheme.colors.text }]}
                     />
 
-                    <Text style={tw`mb-1 text-xs text-gray-500`}>Email (tuy chon)</Text>
+                    <Text style={[tw`mb-1 text-xs`, { color: userTheme.colors.mutedText }]}>Email (tùy chọn)</Text>
                     <TextInput
                         value={email}
                         onChangeText={setEmail}
                         placeholder="email@example.com"
                         keyboardType="email-address"
                         autoCapitalize="none"
-                        style={tw`rounded-xl border border-gray-200 px-3 py-3 text-base text-gray-900`}
+                        style={[tw`rounded-xl px-3 py-3 text-base`, { borderColor: userTheme.colors.border, borderWidth: 1, color: userTheme.colors.text }]}
                     />
                 </View>
 
-                <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4`}>
-                    <Text style={tw`mb-3 text-base font-bold text-gray-900`}>Chon ghe</Text>
+                <View style={[tw`mb-4 rounded-2xl bg-white p-4`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}>
+                    <Text style={[tw`mb-3 text-base font-bold`, { color: userTheme.colors.text }]}>Chọn ghế</Text>
                     {availableSeatOptions.length === 0 ? (
-                        <Text style={tw`text-gray-500`}>Khong con ghe trong.</Text>
+                        <Text style={tw`text-gray-500`}>Không còn ghế trống.</Text>
                     ) : (
                         trip.seatLayout ? (
                             <SeatMapMobile
@@ -227,18 +230,23 @@ export function BookingScreen() {
                     )}
                 </View>
 
-                <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4`}>
-                    <Text style={tw`mb-3 text-base font-bold text-gray-900`}>Phuong thuc thanh toan</Text>
+                <View style={[tw`mb-4 rounded-2xl bg-white p-4`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}>
+                    <Text style={[tw`mb-3 text-base font-bold`, { color: userTheme.colors.text }]}>Phương thức thanh toán</Text>
                     <View style={tw`flex-row flex-wrap`}>
                         {PAYMENT_OPTIONS.map((option) => {
                             const isSelected = option.value === paymentMethod
                             return (
                                 <TouchableOpacity
                                     key={option.value}
-                                    style={tw`${isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 bg-white'} mb-2 mr-2 rounded-lg border px-3 py-2`}
+                                    style={[
+                                        tw`mb-2 mr-2 rounded-lg border px-3 py-2`,
+                                        isSelected
+                                            ? { borderColor: userTheme.colors.primaryStrong, backgroundColor: userTheme.colors.primarySoft }
+                                            : { borderColor: userTheme.colors.border, backgroundColor: userTheme.colors.surface },
+                                    ]}
                                     onPress={() => setPaymentMethod(option.value)}
                                 >
-                                    <Text style={tw`${isSelected ? 'text-blue-700' : 'text-gray-700'} font-medium`}>
+                                    <Text style={[tw`font-medium`, { color: isSelected ? userTheme.colors.primaryStrong : userTheme.colors.text }]}>
                                         {option.label}
                                     </Text>
                                 </TouchableOpacity>
@@ -247,22 +255,26 @@ export function BookingScreen() {
                     </View>
                 </View>
 
-                <View style={tw`rounded-2xl border border-blue-100 bg-blue-50 p-4`}>
-                    <Text style={tw`text-sm text-gray-600`}>Tong tien</Text>
-                    <Text style={tw`mt-1 text-2xl font-bold text-blue-700`}>
+                <View style={[tw`rounded-2xl p-4`, { borderColor: userTheme.colors.primary, borderWidth: 1, backgroundColor: userTheme.colors.primarySoft }]}>
+                    <Text style={[tw`text-sm`, { color: userTheme.colors.mutedText }]}>Tổng tiền</Text>
+                    <Text style={[tw`mt-1 text-2xl font-bold`, { color: userTheme.colors.primaryStrong }]}> 
                         {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(trip.finalPrice * Math.max(selectedSeats.length, 1))}
                     </Text>
 
                     <TouchableOpacity
-                        style={tw`${isSubmitting || selectedSeats.length === 0 ? 'bg-blue-300' : 'bg-blue-600'} mt-4 rounded-xl py-4`}
+                        style={[
+                            tw`mt-4 rounded-xl py-4`,
+                            { backgroundColor: isSubmitting || selectedSeats.length === 0 ? '#7CDDD9' : userTheme.colors.primaryStrong },
+                        ]}
                         onPress={onSubmit}
                         disabled={isSubmitting || selectedSeats.length === 0}
                     >
                         <Text style={tw`text-center text-base font-bold text-white`}>
-                            {isSubmitting ? 'Dang dat ve...' : 'Xac nhan dat ve'}
+                            {isSubmitting ? 'Đang đặt vé...' : 'Xác nhận đặt vé'}
                         </Text>
                     </TouchableOpacity>
                 </View>
+                </ResponsiveFrame>
             </ScrollView>
         </SafeAreaView>
     )

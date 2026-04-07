@@ -2,6 +2,7 @@ import { FlatList, Image, Text, TouchableOpacity, View } from 'react-native'
 import { useRouter } from 'expo-router'
 import { ArrowRight, Clock, Flame, MapPin, Ticket, Users } from 'lucide-react-native'
 
+import { userTheme } from '@/src/constants/user-theme'
 import { tw } from '@/src/lib/utils'
 
 import { useBrowseTrips } from '../hooks'
@@ -40,7 +41,7 @@ function TripCard({ trip }: { trip: Trip }) {
     return (
         <TouchableOpacity
             activeOpacity={0.9}
-            style={tw`mb-4 overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-sm`}
+            style={[tw`mb-4 overflow-hidden rounded-2xl bg-white shadow-sm`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}
             onPress={() =>
                 router.push({
                     pathname: '/booking/[id]',
@@ -99,7 +100,7 @@ function TripCard({ trip }: { trip: Trip }) {
                         {!!trip.isHotDeal && trip.finalPrice < trip.basePrice && (
                             <Text style={tw`text-xs text-gray-400 line-through`}>{formatVndCurrency(trip.basePrice)}</Text>
                         )}
-                        <Text style={tw`text-lg font-bold text-blue-700`}>{formatVndCurrency(trip.finalPrice)}</Text>
+                        <Text style={[tw`text-lg font-bold`, { color: userTheme.colors.primaryStrong }]}>{formatVndCurrency(trip.finalPrice)}</Text>
                     </View>
                     <View style={tw`flex-row items-center`}>
                         <Users size={14} color={trip.availableSeats <= 5 ? '#D97706' : '#16A34A'} />

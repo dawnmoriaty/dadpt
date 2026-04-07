@@ -1,8 +1,10 @@
-import { ActivityIndicator, Alert, FlatList, Text, TouchableOpacity, View } from 'react-native'
+import { ActivityIndicator, Alert, FlatList, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { ArrowRight, Clock, Copy, Ticket, Undo2, XCircle } from 'lucide-react-native'
 
+import { userTheme } from '@/src/constants/user-theme'
+import { ResponsiveFrame } from '@/src/components/common/responsive-frame'
 import { tw } from '@/src/lib/utils'
 import { useAuthStore } from '@/src/stores/use-auth-store'
 
@@ -35,28 +37,28 @@ function getStatusBadgeStyle(status: Booking['status']) {
                 text: 'text-green-600',
                 bg: 'bg-green-50',
                 border: 'border-green-200',
-                label: 'Da thanh toan',
+                label: 'Đã thanh toán',
             }
         case 'pending':
             return {
                 text: 'text-yellow-600',
                 bg: 'bg-yellow-50',
                 border: 'border-yellow-200',
-                label: 'Cho thanh toan',
+                label: 'Chờ thanh toán',
             }
         case 'cancelled':
             return {
                 text: 'text-red-600',
                 bg: 'bg-red-50',
                 border: 'border-red-200',
-                label: 'Da huy',
+                label: 'Đã hủy',
             }
         case 'expired':
             return {
                 text: 'text-gray-600',
                 bg: 'bg-gray-50',
                 border: 'border-gray-200',
-                label: 'Het han',
+                label: 'Hết hạn',
             }
         default:
             return {
@@ -77,6 +79,8 @@ function formatCurrency(amount: number) {
 
 export function MyBookingsScreen() {
     const router = useRouter()
+    const { width } = useWindowDimensions()
+    const isDesktop = width >= 768
     const logout = useAuthStore((state) => state.logout)
     const user = useAuthStore((state) => state.user)
     const { data, isLoading } = useMyBookings({ page: 1, pageSize: 20 })
@@ -86,15 +90,15 @@ export function MyBookingsScreen() {
         try {
             await navigator.clipboard?.writeText?.(code)
         } catch {
-            Alert.alert('Khong the copy', 'Thiet bi khong ho tro copy trong che do nay.')
+            Alert.alert('Không thể copy', 'Thiết bị không hỗ trợ copy trong chế độ này.')
         }
     }
 
     const handleCancelBooking = (booking: Booking) => {
-        Alert.alert('Xac nhan huy ve', `Ban co chac chan huy ve ${booking.code}?`, [
-            { text: 'Khong' },
+        Alert.alert('Xác nhận hủy vé', `Bạn có chắc chắn hủy vé ${booking.code}?`, [
+            { text: 'Không' },
             {
-                text: 'Huy ve',
+                text: 'Hủy vé',
                 style: 'destructive',
                 onPress: () => {
                     cancelBooking.mutate(booking.id)
@@ -108,11 +112,11 @@ export function MyBookingsScreen() {
         const canRefund = item.status === 'paid' && getRefundRemainingMs(item) > 0
 
         return (
-            <View style={tw`mb-4 rounded-2xl border border-gray-100 bg-white p-4 shadow-sm`}>
+            <View style={[tw`mb-4 rounded-2xl bg-white p-4 shadow-sm`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}>
                 <View style={tw`mb-3 flex-row items-center justify-between`}>
                     <TouchableOpacity onPress={() => void copyCode(item.code)}>
                         <View style={tw`flex-row items-center`}>
-                            <Text style={tw`text-sm text-gray-500`}>Ma: <Text style={tw`font-bold text-gray-900`}>{item.code}</Text></Text>
+                            <Text style={[tw`text-sm`, { color: userTheme.colors.mutedText }]}>Mã: <Text style={[tw`font-bold`, { color: userTheme.colors.text }]}>{item.code}</Text></Text>
                             <Copy size={13} color="#6B7280" style={tw`ml-1`} />
                         </View>
                     </TouchableOpacity>
@@ -145,8 +149,8 @@ export function MyBookingsScreen() {
                 </View>
 
                 <View style={tw`rounded-lg bg-gray-50 p-3`}>
-                    <Text style={tw`text-gray-600`}>Tong tien</Text>
-                    <Text style={tw`mt-1 text-lg font-bold text-blue-600`}>{formatCurrency(item.totalAmount)}</Text>
+                    <Text style={tw`text-gray-600`}>Tổng tiền</Text>
+                    <Text style={[tw`mt-1 text-lg font-bold`, { color: userTheme.colors.primaryStrong }]}>{formatCurrency(item.totalAmount)}</Text>
                 </View>
 
                 {!!item.originName && !!item.destinationName && (
@@ -157,7 +161,7 @@ export function MyBookingsScreen() {
 
                 {item.status === 'paid' && (
                     <Text style={tw`mt-2 text-xs font-medium text-orange-600`}>
-                        Hoan ve trong: {formatCountdown(getRefundRemainingMs(item))}
+                        Hoàn vé trong: {formatCountdown(getRefundRemainingMs(item))}
                     </Text>
                 )}
 
@@ -169,7 +173,7 @@ export function MyBookingsScreen() {
                         >
                             <View style={tw`flex-row items-center justify-center`}>
                                 <XCircle size={14} color="#DC2626" />
-                                <Text style={tw`ml-1 text-sm font-semibold text-red-600`}>Huy ve</Text>
+                                <Text style={tw`ml-1 text-sm font-semibold text-red-600`}>Hủy vé</Text>
                             </View>
                         </TouchableOpacity>
                         <TouchableOpacity
@@ -183,8 +187,8 @@ export function MyBookingsScreen() {
                             }}
                         >
                             <View style={tw`flex-row items-center justify-center`}>
-                                <Undo2 size={14} color="#2563EB" />
-                                <Text style={tw`ml-1 text-sm font-semibold text-blue-600`}>Tiep tuc TT</Text>
+                                <Undo2 size={14} color={userTheme.colors.primaryStrong} />
+                                <Text style={[tw`ml-1 text-sm font-semibold`, { color: userTheme.colors.primaryStrong }]}>Tiếp tục TT</Text>
                             </View>
                         </TouchableOpacity>
                     </View>
@@ -193,11 +197,11 @@ export function MyBookingsScreen() {
                 {canRefund && (
                     <TouchableOpacity
                         style={tw`mt-3 rounded-lg border border-orange-200 bg-orange-50 py-2`}
-                        onPress={() => Alert.alert('Thong bao', 'Flow refund user se bo sung tiep theo backend policy.')}
+                        onPress={() => Alert.alert('Thông báo', 'Flow refund user sẽ bổ sung tiếp theo backend policy.')}
                     >
                         <View style={tw`flex-row items-center justify-center`}>
                             <Undo2 size={14} color="#EA580C" />
-                            <Text style={tw`ml-1 text-sm font-semibold text-orange-600`}>Yeu cau hoan ve</Text>
+                            <Text style={tw`ml-1 text-sm font-semibold text-orange-600`}>Yêu cầu hoàn vé</Text>
                         </View>
                     </TouchableOpacity>
                 )}
@@ -206,43 +210,47 @@ export function MyBookingsScreen() {
     }
 
     return (
-        <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-            <View style={tw`border-b border-gray-100 bg-white px-4 py-4 shadow-sm`}>
-                <Text style={tw`text-xl font-bold text-gray-900`}>Ve cua toi</Text>
-                <Text style={tw`mt-1 text-xs text-gray-500`}>
-                    {user?.fullName ? `Xin chao ${user.fullName}. ` : ''}
-                    Quan ly ve da dat, thanh toan va huy/hoan ve
-                </Text>
-                <TouchableOpacity
-                    style={tw`mt-3 self-start rounded-lg border border-gray-200 bg-gray-50 px-3 py-2`}
-                    onPress={() => {
-                        logout()
-                        router.replace('/login')
-                    }}
-                >
-                    <Text style={tw`text-xs font-semibold text-gray-700`}>Dang xuat</Text>
-                </TouchableOpacity>
-            </View>
+        <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
+            {isDesktop && (
+                <View style={[tw`bg-white px-4 py-4 shadow-sm`, { borderBottomColor: userTheme.colors.border, borderBottomWidth: 1 }]}> 
+                    <Text style={[tw`text-xl font-bold`, { color: userTheme.colors.text }]}>Vé của tôi</Text>
+                    <Text style={[tw`mt-1 text-xs`, { color: userTheme.colors.mutedText }]}> 
+                        {user?.fullName ? `Xin chào ${user.fullName}. ` : ''}
+                        Quản lý vé đã đặt, thanh toán và hủy/hoàn vé
+                    </Text>
+                    <TouchableOpacity
+                        style={tw`mt-3 self-start rounded-lg border border-gray-200 bg-gray-50 px-3 py-2`}
+                        onPress={() => {
+                            logout()
+                            router.replace('/')
+                        }}
+                    >
+                        <Text style={tw`text-xs font-semibold text-gray-700`}>Đăng xuất</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
 
-            <View style={tw`flex-1 px-4 pt-4`}>
-                {isLoading ? (
-                    <View style={tw`flex-1 items-center justify-center`}>
-                        <ActivityIndicator size="large" color="#3B82F6" />
-                    </View>
-                ) : !data || data.items.length === 0 ? (
-                    <View style={tw`flex-1 items-center justify-center`}>
-                        <Ticket size={48} color="#9CA3AF" style={tw`mb-4`} />
-                        <Text style={tw`text-center text-lg text-gray-500`}>Ban chua co ve nao.</Text>
-                    </View>
-                ) : (
-                    <FlatList
-                        data={data.items}
-                        keyExtractor={(item) => item.id.toString()}
-                        renderItem={renderBookingCard}
-                        contentContainerStyle={tw`pb-20`}
-                        showsVerticalScrollIndicator={false}
-                    />
-                )}
+            <View style={tw`flex-1 pt-4`}>
+                <ResponsiveFrame style={tw`flex-1`}>
+                    {isLoading ? (
+                        <View style={tw`flex-1 items-center justify-center`}>
+                            <ActivityIndicator size="large" color={userTheme.colors.primaryStrong} />
+                        </View>
+                    ) : !data || data.items.length === 0 ? (
+                        <View style={tw`flex-1 items-center justify-center`}>
+                            <Ticket size={48} color="#9CA3AF" style={tw`mb-4`} />
+                            <Text style={tw`text-center text-lg text-gray-500`}>Bạn chưa có vé nào.</Text>
+                        </View>
+                    ) : (
+                        <FlatList
+                            data={data.items}
+                            keyExtractor={(item) => item.id.toString()}
+                            renderItem={renderBookingCard}
+                            contentContainerStyle={tw`pb-20`}
+                            showsVerticalScrollIndicator={false}
+                        />
+                    )}
+                </ResponsiveFrame>
             </View>
         </SafeAreaView>
     )

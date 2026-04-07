@@ -4,6 +4,9 @@ import { SafeAreaView } from 'react-native-safe-area-context'
 import { useRouter } from 'expo-router'
 import { Calendar, MapPin, Search, Shield, Users } from 'lucide-react-native'
 
+import { userTheme } from '@/src/constants/user-theme'
+import { ResponsiveFrame } from '@/src/components/common/responsive-frame'
+import { useWebBreakpoint } from '@/src/hooks/use-web-breakpoint'
 import { tw } from '@/src/lib/utils'
 import { useSearchLocations, type Location } from '@/src/modules/location'
 
@@ -54,7 +57,7 @@ function LocationInput({
             </View>
             {selected && (
                 <Text style={tw`mt-1 text-xs text-emerald-700`}>
-                    Da chon: {selected.name} ({selected.city})
+                    Đã chọn: {selected.name} ({selected.city})
                 </Text>
             )}
             {showOptions && options.length > 0 && (
@@ -75,8 +78,13 @@ function LocationInput({
     )
 }
 
-export function HomeSearchScreen() {
+interface HomeSearchContentProps {
+    routeBasePath?: '/search'
+}
+
+export function HomeSearchContent({ routeBasePath = '/search' }: HomeSearchContentProps) {
     const router = useRouter()
+    const { isMdUp } = useWebBreakpoint()
 
     const [originQuery, setOriginQuery] = useState('')
     const [destinationQuery, setDestinationQuery] = useState('')
@@ -97,7 +105,7 @@ export function HomeSearchScreen() {
         }
 
         router.push({
-            pathname: '/search-results',
+            pathname: routeBasePath as never,
             params: {
                 originId: originLocation.id.toString(),
                 destinationId: destinationLocation.id.toString(),
@@ -106,98 +114,128 @@ export function HomeSearchScreen() {
                 date: departureDate,
                 passengers: '1',
             },
-        })
+        } as never)
     }
 
     return (
-        <SafeAreaView style={tw`flex-1 bg-gray-50`}>
-            <ScrollView contentContainerStyle={tw`p-4 pb-10`}>
-                <View style={tw`mt-4 mb-6 rounded-3xl border border-blue-500 bg-blue-600 p-6 shadow-sm`}>
-                    <View style={tw`mb-2 self-start rounded-full bg-white/20 px-3 py-1`}>
-                        <Text style={tw`text-xs font-semibold text-white`}>Bus Ticketing</Text>
-                    </View>
-                    <Text style={tw`mb-1 text-2xl font-bold text-white`}>Dat ve xe khach</Text>
-                    <Text style={tw`text-blue-100`}>Tim chuyen nhanh, dat cho de dang va an toan</Text>
+        <>
+            <View
+                style={[
+                    tw`mt-4 mb-6 rounded-3xl p-6 shadow-sm`,
+                    { backgroundColor: userTheme.colors.primary, borderColor: userTheme.colors.primaryStrong, borderWidth: 1 },
+                ]}
+            >
+                <View style={[tw`mb-2 self-start rounded-full px-3 py-1`, { backgroundColor: 'rgba(255,255,255,0.28)' }]}>
+                    <Text style={[tw`text-xs font-semibold`, { color: userTheme.colors.surface }]}>Bus Ticketing</Text>
                 </View>
+                <Text style={[tw`mb-1 text-2xl font-bold`, { color: userTheme.colors.text }]}>Đặt vé xe khách</Text>
+                <Text style={[tw`text-sm`, { color: '#0F5250' }]}>Tìm chuyến nhanh, đặt chỗ dễ dàng và an toàn</Text>
+            </View>
 
-                <View style={tw`rounded-3xl border border-gray-100 bg-white p-4 shadow-sm`}>
-                    <LocationInput
-                        label="Diem di"
-                        placeholder="Nhap diem di"
-                        value={originQuery}
-                        onChangeText={(value) => {
-                            setOriginQuery(value)
-                            setOriginLocation(null)
-                        }}
-                        selected={originLocation}
-                        onPick={(location) => {
-                            setOriginLocation(location)
-                            setOriginQuery(location.name)
-                        }}
-                        options={originSearch.data ?? []}
-                        iconColor="#3B82F6"
+            <View style={[tw`rounded-3xl p-4 shadow-sm`, { backgroundColor: userTheme.colors.surface, borderColor: userTheme.colors.border, borderWidth: 1 }]}> 
+                <LocationInput
+                    label="Điểm đi"
+                    placeholder="Nhập điểm đi"
+                    value={originQuery}
+                    onChangeText={(value) => {
+                        setOriginQuery(value)
+                        setOriginLocation(null)
+                    }}
+                    selected={originLocation}
+                    onPick={(location) => {
+                        setOriginLocation(location)
+                        setOriginQuery(location.name)
+                    }}
+                    options={originSearch.data ?? []}
+                    iconColor="#3B82F6"
+                />
+
+                <LocationInput
+                    label="Điểm đến"
+                    placeholder="Nhập điểm đến"
+                    value={destinationQuery}
+                    onChangeText={(value) => {
+                        setDestinationQuery(value)
+                        setDestinationLocation(null)
+                    }}
+                    selected={destinationLocation}
+                    onPick={(location) => {
+                        setDestinationLocation(location)
+                        setDestinationQuery(location.name)
+                    }}
+                    options={destinationSearch.data ?? []}
+                    iconColor="#EF4444"
+                />
+
+                <Text style={[tw`text-xs mb-1`, { color: userTheme.colors.mutedText }]}>Ngày đi</Text>
+                <View style={[tw`mb-4 flex-row items-center rounded-xl bg-white px-3 py-3`, { borderColor: userTheme.colors.border, borderWidth: 1 }]}> 
+                    <Calendar size={18} color={userTheme.colors.success} />
+                    <TextInput
+                        style={[tw`ml-2 flex-1 text-base font-medium`, { color: userTheme.colors.text }]}
+                        placeholder="YYYY-MM-DD"
+                        value={departureDate}
+                        onChangeText={(value) => setDepartureDate(normalizeDateInput(value))}
                     />
-
-                    <LocationInput
-                        label="Diem den"
-                        placeholder="Nhap diem den"
-                        value={destinationQuery}
-                        onChangeText={(value) => {
-                            setDestinationQuery(value)
-                            setDestinationLocation(null)
-                        }}
-                        selected={destinationLocation}
-                        onPick={(location) => {
-                            setDestinationLocation(location)
-                            setDestinationQuery(location.name)
-                        }}
-                        options={destinationSearch.data ?? []}
-                        iconColor="#EF4444"
-                    />
-
-                    <Text style={tw`text-xs text-gray-500 mb-1`}>Ngay di</Text>
-                    <View style={tw`mb-4 flex-row items-center rounded-xl border border-gray-200 bg-white px-3 py-3`}>
-                        <Calendar size={18} color="#10B981" />
-                        <TextInput
-                            style={tw`ml-2 flex-1 text-base font-medium text-gray-900`}
-                            placeholder="YYYY-MM-DD"
-                            value={departureDate}
-                            onChangeText={(value) => setDepartureDate(normalizeDateInput(value))}
-                        />
-                    </View>
-
-                    <TouchableOpacity
-                        style={tw`${canSearch ? 'bg-blue-600' : 'bg-blue-300'} flex-row items-center justify-center rounded-xl py-4`}
-                        onPress={handleSearch}
-                        disabled={!canSearch}
-                    >
-                        <Search size={20} color="white" />
-                        <Text style={tw`ml-2 text-base font-bold text-white`}>Tim chuyen xe</Text>
-                    </TouchableOpacity>
-
-                    {(originSearch.isLoading || destinationSearch.isLoading) && (
-                        <Text style={tw`mt-3 text-center text-xs text-gray-500`}>Dang tim diem di/den...</Text>
-                    )}
-
-                    <Text style={tw`mt-3 text-center text-xs text-gray-400`}>
-                        Goi y nhap ten tinh/thanh de tim nhanh diem don-tra.
-                    </Text>
                 </View>
 
-                <View style={tw`mt-6 flex-row`}>
-                    <View style={tw`mr-2 flex-1 rounded-2xl border border-green-100 bg-green-50 p-4`}>
-                        <Shield size={18} color="#16A34A" />
-                        <Text style={tw`mt-2 text-sm font-bold text-green-700`}>Thanh toan an toan</Text>
-                        <Text style={tw`mt-1 text-xs text-green-700`}>Bao mat thong tin va giao dich.</Text>
-                    </View>
-                    <View style={tw`ml-2 flex-1 rounded-2xl border border-blue-100 bg-blue-50 p-4`}>
-                        <Users size={18} color="#2563EB" />
-                        <Text style={tw`mt-2 text-sm font-bold text-blue-700`}>Ho tro 24/7</Text>
-                        <Text style={tw`mt-1 text-xs text-blue-700`}>Nhan tu van nhanh khi can.</Text>
-                    </View>
-                </View>
+                <TouchableOpacity
+                    style={[
+                        tw`flex-row items-center justify-center rounded-xl py-4`,
+                        { backgroundColor: canSearch ? userTheme.colors.primaryStrong : '#7CDDD9' },
+                    ]}
+                    onPress={handleSearch}
+                    disabled={!canSearch}
+                >
+                    <Search size={20} color={userTheme.colors.surface} />
+                    <Text style={[tw`ml-2 text-base font-bold`, { color: userTheme.colors.surface }]}>Tìm chuyến xe</Text>
+                </TouchableOpacity>
 
-                <UpcomingTripsSection />
+                {(originSearch.isLoading || destinationSearch.isLoading) && (
+                    <Text style={tw`mt-3 text-center text-xs text-gray-500`}>Đang tìm điểm đi/đến...</Text>
+                )}
+
+                <Text style={[tw`mt-3 text-center text-xs`, { color: userTheme.colors.mutedText }]}> 
+                    Gợi ý nhập tên tỉnh/thành để tìm nhanh điểm đón-trả.
+                </Text>
+            </View>
+
+            <View style={[tw`mt-6`, isMdUp ? tw`flex-row` : tw`flex-col`]}>
+                <View style={[isMdUp ? tw`mr-2 flex-1` : tw`mb-3`, tw`rounded-2xl p-4`, { borderColor: '#BEECD8', borderWidth: 1, backgroundColor: '#ECFDF5' }]}> 
+                    <Shield size={18} color={userTheme.colors.success} />
+                    <Text style={[tw`mt-2 text-sm font-bold`, { color: '#166534' }]}>Thanh toán an toàn</Text>
+                    <Text style={[tw`mt-1 text-xs`, { color: '#166534' }]}>Bảo mật thông tin và giao dịch.</Text>
+                </View>
+                <View style={[isMdUp ? tw`ml-2 flex-1` : tw``, tw`rounded-2xl p-4`, { borderColor: '#FFE698', borderWidth: 1, backgroundColor: userTheme.colors.secondarySoft }]}> 
+                    <Users size={18} color={'#A16207'} />
+                    <Text style={[tw`mt-2 text-sm font-bold`, { color: '#A16207' }]}>Hỗ trợ 24/7</Text>
+                    <Text style={[tw`mt-1 text-xs`, { color: '#A16207' }]}>Nhận tư vấn nhanh khi cần.</Text>
+                </View>
+            </View>
+        </>
+    )
+}
+
+export function HomeSearchScreen() {
+    return (
+        <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
+            <ScrollView contentContainerStyle={tw`pb-10`}>
+                <ResponsiveFrame>
+                    <HomeSearchContent routeBasePath="/search" />
+                    <UpcomingTripsSection />
+                </ResponsiveFrame>
+            </ScrollView>
+        </SafeAreaView>
+    )
+}
+
+export function HomeSearchCompactScreen() {
+    return (
+        <SafeAreaView style={[tw`flex-1`, { backgroundColor: userTheme.colors.background }]}> 
+            <ScrollView contentContainerStyle={tw`pb-10`}>
+                <ResponsiveFrame>
+                    <HomeSearchContent routeBasePath="/search" />
+                    <UpcomingTripsSection />
+                </ResponsiveFrame>
             </ScrollView>
         </SafeAreaView>
     )
