@@ -128,19 +128,24 @@ func ScoreLocationMatch(target string, candidate LocationCandidate) int {
 		return 0
 	}
 
-	if name == target {
+	normalizedTarget := normalizeSearchTokens(target)
+	if normalizedTarget == "" {
+		return 0
+	}
+
+	if name == normalizedTarget {
 		return 100
 	}
 
-	if strings.Contains(name, target) || strings.Contains(target, name) {
+	if strings.Contains(name, normalizedTarget) || strings.Contains(normalizedTarget, name) {
 		return 90
 	}
 
-	if score := FuzzyLocationNameScore(target, name); score > 0 {
+	if score := FuzzyLocationNameScore(normalizedTarget, name); score > 0 {
 		return score
 	}
 
-	targetTokens := strings.Fields(target)
+	targetTokens := strings.Fields(normalizedTarget)
 	nameTokens := strings.Fields(name)
 	if len(targetTokens) == 0 || len(nameTokens) == 0 {
 		return 0
@@ -167,12 +172,36 @@ func ScoreLocationMatch(target string, candidate LocationCandidate) int {
 	}
 
 	score := overlap
-	if strings.Contains(NormalizeLocationText(candidate.City), target) {
-		score += 10
+	city := normalizeSearchTokens(candidate.City)
+	if city == normalizedTarget {
+		score += 80
+	} else if city != "" && (strings.Contains(city, normalizedTarget) || strings.Contains(normalizedTarget, city)) {
+		score += 50
 	}
-	if strings.Contains(NormalizeLocationText(candidate.Keywords), target) {
-		score += 20
+
+	keywords := normalizeSearchTokens(candidate.Keywords)
+	if keywords != "" && strings.Contains(keywords, normalizedTarget) {
+		score += 40
 	}
 
 	return score
+}
+
+func normalizeSearchTokens(value string) string {
+	normalized := NormalizeLocationText(value)
+	if normalized == "" {
+		return ""
+	}
+
+	builder := strings.Builder{}
+	builder.Grow(len(normalized))
+	for _, r := range normalized {
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			builder.WriteRune(r)
+			continue
+		}
+		builder.WriteRune(' ')
+	}
+
+	return strings.Join(strings.Fields(builder.String()), " ")
 }

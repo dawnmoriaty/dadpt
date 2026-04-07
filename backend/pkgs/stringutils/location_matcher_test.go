@@ -83,3 +83,17 @@ func TestFuzzyLocationNameScore_CloseNames(t *testing.T) {
 		t.Fatalf("expected positive score, got %d", score)
 	}
 }
+
+func TestScoreLocationMatch_CityBoostForExactCity(t *testing.T) {
+	score := ScoreLocationMatch("ha noi", LocationCandidate{Name: "Ben xe Gia Lam", City: "Ha Noi"})
+	if score < 80 {
+		t.Fatalf("expected strong city score, got %d", score)
+	}
+}
+
+func TestScoreLocationMatch_KeywordBoostForSlugStyle(t *testing.T) {
+	score := ScoreLocationMatch("ha noi", LocationCandidate{Name: "Ben xe Tay Phuong", Keywords: "kcntt,ha-noi"})
+	if score < 40 {
+		t.Fatalf("expected keyword score boost, got %d", score)
+	}
+}

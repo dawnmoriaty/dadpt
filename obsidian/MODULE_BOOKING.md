@@ -1,351 +1,1065 @@
 ---
 tags:
-  - module
+  - srs
+  - system-design
   - booking
-  - payment
+  - transaction
+  - concurrency
+  - payment-integration
   - event-driven
-created: 2026-04-01
-updated: 2026-04-01
+created: 2026-04-06
+updated: 2026-04-06
 ---
 
-# MODULE BOOKING
+# TÀI LIỆU ĐẶC TẢ VÀ THIẾT KẾ MODULE: BOOKING (ĐẶT VÉ)
 
-> [!abstract] Mục tiêu
-> Tài liệu mô tả đầy đủ cơ sở lý thuyết và đặc tả triển khai của module Booking trong hệ thống đặt vé xe liên tỉnh, tập trung vào tính đúng đắn giao dịch, kiểm soát đồng thời, phối hợp webhook thanh toán và liên kết kiến trúc hướng sự kiện.
-
-> [!info] Vai trò trong hệ thống
-> Booking là miền nghiệp vụ trung tâm. Mọi giá trị của hệ thống (doanh thu, độ tin cậy vận hành, trải nghiệm người dùng) đều quy tụ vào chất lượng thiết kế và triển khai của module này.
-
----
-
-## 1. Bối cảnh nghiệp vụ và bài toán cốt lõi
-
-Trong môi trường đặt vé trực tuyến, cùng một tài nguyên ghế có thể bị nhiều người dùng truy cập đồng thời. Nếu hệ thống không có cơ chế kiểm soát transaction và khóa tài nguyên phù hợp, nguy cơ overbooking là hiện hữu. Overbooking không chỉ gây lỗi kỹ thuật mà còn tạo thiệt hại nghiệp vụ: hoàn tiền cưỡng bức, tăng chi phí hỗ trợ khách hàng và suy giảm niềm tin thương hiệu.
-
-Bên cạnh đó, quá trình thanh toán trực tuyến diễn ra bất đồng bộ với API tạo booking. Trạng thái payment có thể đến muộn qua webhook, có thể lặp hoặc sai thứ tự. Điều này yêu cầu module Booking phải xử lý state transition thận trọng và idempotent.
-
-Do đó, module được thiết kế quanh ba trụ cột:
-
-1. **Correctness**: không vi phạm bất biến seat/booking/payment.
-2. **Concurrency Safety**: chống race condition trong luồng tạo vé.
-3. **Operational Resilience**: phối hợp webhook và event-driven không làm mất nhất quán.
+> [!abstract] TỔNG QUAN
+> Module Booking là **miền nghiệp vụ trung tâm**, quản lý toàn bộ quy trình đặt vé từ chọn chuyến → chọn ghế → thanh toán → hoàn tiền. Tập trung vào:
+> - **An toàn giao dịch**: ACID transactions, không overbooking
+> - **Kiểm soát đồng thời**: Distributed lock + row-level DB lock
+> - **Tích hợp thanh toán**: Webhook idempotent, state machine 6 trạng thái
+> - **Quản lý hoàn tiền**: 5-minute refund window, approval flow
+> - **Outbox pattern**: Event-driven integration với Notification/Analytics/Trip
+>
+> Là **nguồn gốc doanh thu** của platform — nên độ tin cậy là tối cao.
 
 ---
 
-## 2. Cơ sở lý thuyết áp dụng
+## 1. ĐẶC TẢ YÊU CẦU (SOFTWARE REQUIREMENT SPECIFICATION - SRS)
 
-### 2.1 ACID transaction trong miền booking
+### 1.1. Bối cảnh nghiệp vụ
 
-Giao dịch booking yêu cầu tính nguyên tử vì một thao tác tạo vé bao gồm nhiều bước phụ thuộc nhau: kiểm tra ghế, cập nhật ghế, tạo booking, tạo payment transaction (nếu online), và ghi outbox event. Nếu bất kỳ bước nào thất bại, toàn bộ thay đổi phải rollback.
+Bài toán cốt lõi: **Concurrency + Correctness**
+- Nhiều người dùng cùng lúc chọn ghế trên cùng 1 chuyến
+- Nếu không có lock, hai booking có thể claim cùng 1 ghế (overbooking)
+- Overbooking → refund cưỡng bức → tổn thất nặng nề
+- Thanh toán diễn ra bất đồng bộ: webhook từ PayOS có thể đến trể, lặp, hay sai thứ tự
+- Refund phải có approve flow (admin phải xem trước, chứng minh bồi thường)
 
-### 2.2 Kiểm soát đồng thời (Concurrency Control)
+### 1.2. Danh sách yêu cầu chức năng
 
-Module áp dụng phối hợp hai lớp bảo vệ:
+| ID | Tên chức năng | Mô tả | Ưu tiên | Độ phức tạp | Tác nhân |
+|-----|---------------|-------|---------|-------------|----------|
+| BK-01 | Tạo booking an toàn | Chọn ghế + tạo booking (với lock) | P1 | H | User/Voice |
+| BK-02 | Confirm thanh toán | Webhook từ PayOS cập nhật status → paid | P1 | H | PayOS webhook |
+| BK-03 | Cancel booking | Hủy booking pending, giải phóng ghế | P1 | M | User |
+| BK-04 | Xem bookings của tôi | List bookings user hiện tại (paginated) | P1 | M | User |
+| BK-05 | Yêu cầu hoàn tiền | User request refund (admin phải approve) | P1 | H | User |
+| BK-06 | Admin approve/reject refund | Admin xem, approve/reject refund requests | P2 | M | Admin |
+| BK-07 | Expire pending bookings | Cron job: booking pending > 10 min → expired | P1 | L | System |
+| BK-08 | Xem thống kê booking | Admin dashboard: tổng booking, doanh thu, stats | P2 | M | Admin |
+| BK-09 | Xem danh sách ghế chuyến | Show seated manifest (admin) | P2 | L | Admin |
+| BK-10 | Voice booking | Voice AI tạo booking qua lệnh nói | P1 | H | Voice Agent |
 
-- **Distributed lock** ở cấp ứng dụng (theo trip) nhằm giảm cạnh tranh nóng.
-- **Row-level lock** trong transaction DB để bảo đảm quyết định cuối cùng dựa trên trạng thái nhất quán.
-
-Mô hình kết hợp giúp giảm xác suất tranh chấp và vẫn giữ chuẩn đúng đắn ở tầng dữ liệu.
-
-### 2.3 Idempotency trong bối cảnh webhook/event
-
-Webhook thanh toán và consumer event đều có thể nhận lặp. Vì vậy, cập nhật trạng thái phải idempotent theo khóa giao dịch. Không giả định exactly-once delivery.
-
-### 2.4 Tách biệt deterministic core và AI-assisted flow
-
-AI có thể hỗ trợ đề xuất hoặc parse lệnh voice, nhưng quyết định tạo booking phải chạy qua cùng một lõi nghiệp vụ deterministic của module Booking.
-
----
-
-## 3. Mục tiêu chức năng và phi chức năng
-
-### 3.1 Yêu cầu chức năng
-
-| ID | Yêu cầu |
-|---|---|
-| BK-01 | Tạo booking an toàn trong bối cảnh đồng thời |
-| BK-02 | Hủy booking và giải phóng ghế |
-| BK-03 | Xử lý webhook thanh toán cập nhật trạng thái |
-| BK-04 | Worker expire booking quá hạn thanh toán |
-| BK-05 | Voice execute tạo booking `payment_method=cod`, `status=pending` |
-
-### 3.2 Yêu cầu phi chức năng
-
-- Độ tin cậy transaction cao, không mất nhất quán seat/booking.
-- Khả năng chịu lỗi tạm thời từ payment/broker.
-- Quan sát được toàn bộ vòng đời booking qua log/trace.
-- Khả năng mở rộng cho tải cao theo tuyến giờ cao điểm.
-
----
-
-## 4. Mô hình dữ liệu và bất biến nghiệp vụ
-
-### 4.1 Thực thể chính
-
-- `trips`
-- `bookings`
-- `payment_transactions`
-- `outbox_events`
-
-### 4.2 Bất biến dữ liệu bắt buộc
-
-- `available_seats >= 0`.
-- Danh sách ghế đã đặt không được giao nhau giữa các booking active cùng trip.
-- Booking online chỉ được đánh dấu `paid` khi transaction tương ứng thành công.
-- Booking `cod` không yêu cầu payment link tại thời điểm tạo.
-
-### 4.3 Vòng đời trạng thái booking
+### 1.3. Biểu đồ phân cấp chức năng (Functional Hierarchy - WBS)
 
 ```plantuml
-@startuml
-[*] --> pending
-pending --> paid : webhook success
-pending --> cancelled : user/admin cancel
-pending --> expired : ttl reached
-paid --> completed : trip completed
-cancelled --> [*]
-expired --> [*]
-completed --> [*]
-@enduml
+@startwbs
+* Quản lý Đặt Vé (Booking)
+** Lifecycle Đặt Vé (User)
+*** Tạo booking mới
+**** Chọn chuyến (trip)
+**** Chọn ghế (seats) với lock
+**** Nhập thông tin khách (name, phone, email)
+**** Chọn điểm dừng pickup/dropoff
+**** Chọn phương thức thanh toán (online/COD)
+**** Confirm → status=pending (10 min expiry)
+*** Thanh toán
+**** Nếu online (bankTransfer/visa)
+***** Redirect tới PayOS checkout
+***** PayOS webhook callback → ConfirmPayment
+***** Đổi status pending → paid
+**** Nếu COD
+***** Status ngay là paid (trust model)
+*** Hủy booking
+**** Nếu status=pending
+***** Release ghế, status=cancelled
+**** Nếu status=paid
+***** Block (chỉ via refund request)
+*** Yêu cầu hoàn tiền
+**** Input reason, refund amount
+**** Status: paid → refund_pending (admin review)
+**** Admin nhân viên approve/reject
+** Quản lý Hoàn Tiền (Refund)
+*** Request refund
+**** 5 phút window tính từ paid time
+**** Admin dashboard xem pending refunds
+*** Approve refund
+**** Admin confirm + reason
+**** Status: refund_pending → refunded
+**** Publish event booking.refund.approved
+*** Reject refund
+**** Admin từ chối + reason
+**** Status: refund_pending → paid (revert)
+** Admin Dashboard
+*** Booking stats
+**** Tổng bookings, unpaid, paid, refund pending, cancelled
+**** Total revenue (paid + refund pending)
+*** Revenue series
+**** Biểu đồ doanh thu theo ngày (7/30 ngày gần đây)
+*** Seat manifest
+**** Xem danh sách ghế/booking của 1 trip
+** Event-Driven Integration
+*** Events published
+**** booking.created → AI, Analytics
+**** booking.paid → Notification, Trip update
+**** booking.cancelled → Notification
+**** booking.refund.* → Analytics
+@endwbs
 ```
 
 ---
 
-## 5. Đặc tả Use Case trọng yếu - Create Booking
+## 2. BIỂU ĐỒ USE CASE & LUỒNG DỮ LIỆU
 
-### 5.1 Thông tin use case
-
-- **ID:** UC-BK-01
-- **Primary Actor:** Authenticated User
-- **Trigger:** Người dùng xác nhận đặt ghế trên một trip cụ thể.
-- **Tiền điều kiện:** Trip tồn tại, ghế hợp lệ, user đã xác thực.
-- **Hậu điều kiện:** Booking `pending` được tạo; ghế được cập nhật nhất quán.
-
-### 5.2 Luồng chính
-
-1. Nhận request và validate payload.
-2. Acquire distributed lock theo trip.
-3. Mở transaction DB, lock row trip.
-4. Kiểm tra ghế còn trống.
-5. Cập nhật seat allocation nguyên tử.
-6. Insert booking `pending`.
-7. Nếu online payment, insert payment transaction/link.
-8. Insert outbox event `booking.created`.
-9. Commit transaction.
-10. Trả response thành công.
-
-### 5.3 Luồng thay thế
-
-- Với `payment_method=cod`, bỏ qua bước tạo payment link online.
-
-### 5.4 Ngoại lệ
-
-- `SEATS_BEING_BOOKED` (lock cạnh tranh).
-- `SEATS_NOT_AVAILABLE` (ghế đã bị chiếm).
-- `INVALID_SEAT_CODE` (mã ghế sai định dạng hoặc không thuộc trip).
-- `PAYMENT_LINK_UNAVAILABLE` (chỉ luồng online).
-
-### 5.5 Tiêu chí chấp nhận
-
-- Hai request đồng thời cùng ghế chỉ một request thành công.
-- Booking tạo xong luôn phản ánh đúng số ghế còn lại.
-- Booking voice execute luôn `cod/pending`.
-
----
-
-## 6. Thiết kế luồng xử lý đồng thời
-
-### 6.1 Sequence tổng quát
+### 2.1. Use Case Diagram
 
 ```plantuml
 @startuml
+left to right direction
+skinparam actorStyle awesome
+
+actor "User/Guest" as User
+actor "Admin" as Admin
+actor "PayOS" as PayOS
+actor "Voice AI" as Voice
+actor "Notification Service" as Notify
+
+package "Module Booking" {
+    usecase "UC01: Create Booking" as UC1
+    usecase "UC02: Confirm Payment" as UC2
+    usecase "UC03: Cancel Booking" as UC3
+    usecase "UC04: Request Refund" as UC4
+    usecase "UC05: Approve Refund" as UC5
+    usecase "UC06: List My Bookings" as UC6
+    usecase "UC07: Expire Pending" as UC7
+    usecase "UC08: Admin List Bookings" as UC8
+    usecase "UC09: Voice Book" as UC9
+}
+
+User --> UC1
+User --> UC3
+User --> UC4
+User --> UC6
+
+PayOS --> UC2
+
+Admin --> UC5
+Admin --> UC8
+
+Voice --> UC9
+
+UC1 ..> UC2 : <<depends>>
+UC2 --> Notify : <<trigger>>
+UC3 --> Notify : <<trigger>>
+UC4 --> UC5 : <<precedes>>
+UC7 --> Notify : <<notification>>
+@enduml
+```
+
+### 2.2. Create Booking Sequence (Detailed)
+
+```plantuml
+@startuml
+title Create Booking - Concurrency Safe
+
 actor User
-participant "Booking Handler" as H
-participant "Booking UseCase" as U
-database "Redis" as R
-database "PostgreSQL" as DB
-participant "Outbox" as O
+participant "BookingHandler"
+participant "BookingUseCase"
+participant "DistributedLock"
+participant "TripLocker"
+database "PostgreSQL"
+participant "OutboxRepository"
+participant "MessageBroker"
 
-User -> H : POST /bookings
-H -> U : CreateBooking(input)
-U -> R : Acquire lock(trip)
-U -> DB : begin tx + lock trip row
-U -> DB : validate seats + update seats + insert booking
-U -> O : insert booking.created
-U -> DB : commit
-U --> H : BookingOutput
-H --> User : 201
+User -> BookingHandler: POST /bookings {tripId, seatCodes, guestInfo, paymentMethod}
+BookingHandler -> BookingUseCase: CreateBooking(input)
+
+BookingUseCase -> DistributedLock: Acquire(trip:1001, 30s)
+alt Lock acquired
+    DistributedLock --> BookingUseCase: true
+    
+    BookingUseCase -> TripLocker: LockTrip(tripId=1001)
+    TripLocker -> PostgreSQL: SELECT * FROM trips WHERE id=1001 FOR UPDATE
+    PostgreSQL --> TripLocker: *Trip
+    
+    alt Seats available?
+        TripLocker -> BookingUseCase: *TripSnapshot
+        BookingUseCase -> BookingUseCase: Generate bookingCode, expiresAt=now+10min
+        
+        BookingUseCase -> PostgreSQL: INSERT INTO bookings (code, status=pending, ...)
+        PostgreSQL --> BookingUseCase: *Booking
+        
+        BookingUseCase -> TripLocker: UpdateSeatsAtomic(tripId, ['A01','A02'], version)
+        PostgreSQL --> BookingUseCase: ✓
+        
+        BookingUseCase -> OutboxRepository: CreateEvent(booking.created, {...})
+        PostgreSQL --> OutboxRepository: ✓
+        
+        BookingUseCase -> MessageBroker: Publish(booking.created)
+        MessageBroker --> BookingUseCase: ack
+        
+        BookingUseCase --> BookingHandler: BookingOutput (with paymentURL if online)
+        BookingHandler --> User: 201 Created
+    else No seats
+        BookingUseCase --> BookingHandler: ErrSeatsNotAvailable
+        BookingHandler --> User: 409 Conflict
+    end
+    
+    DistributedLock -> DistributedLock: Release(trip:1001)
+else Lock timeout
+    DistributedLock --> BookingUseCase: false
+    BookingUseCase --> BookingHandler: ErrTripLocked
+    BookingHandler --> User: 503 Service Unavailable
+end
 @enduml
 ```
 
-### 6.2 Lý do kiến trúc khóa hai lớp
+---
 
-- Lock ở Redis giảm “thác lũ” request đổ vào DB cùng lúc.
-- Lock row DB bảo đảm quyết định cuối cùng theo dữ liệu nhất quán.
-- Cấu trúc này cân bằng giữa hiệu năng và an toàn dữ liệu.
+## 3. THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE DESIGN)
 
-### 6.3 Kịch bản tranh chấp điển hình
+### 3.1. ERD - Entity Relationship Diagram
 
-Hai user cùng đặt ghế A1:
+```plantuml
+@startuml
+skinparam linetype ortho
 
-1. Cả hai request tới gần đồng thời.
-2. Request 1 lấy lock trước, request 2 chờ hoặc bị từ chối mềm.
-3. Request 1 commit thành công cập nhật ghế.
-4. Request 2 kiểm tra lại thấy ghế không còn và trả conflict.
+entity "bookings" as Booking {
+    * id : BIGSERIAL <<PK>>
+    * code : VARCHAR(20) <<UNIQUE>>
+    --
+    * trip_id : BIGSERIAL <<FK>>
+    user_id : BIGINT <<FK>>
+    --
+    guest_info : JSONB {name, phone, email}
+    pickup_info : JSONB {name, time, surcharge}
+    dropoff_info : JSONB {name, time, surcharge}
+    --
+    seat_codes : TEXT[] {['A01','A02']}
+    total_amount : DECIMAL(10, 2)
+    --
+    status : VARCHAR(20) <<pending|paid|cancelled|expired|refund_pending|refunded>>
+    payment_method : VARCHAR(20) <<bank_transfer|cod|visa>>
+    expires_at : TIMESTAMPTZ
+    refund_reference : VARCHAR(255)
+    refund_note : TEXT
+    --
+    created_at : TIMESTAMPTZ
+    updated_at : TIMESTAMPTZ
+}
 
-Kết quả: không có overbooking.
+entity "payment_transactions" as Payment {
+    * id : VARCHAR(36) <<PK - UUID>>
+    --
+    * booking_id : BIGSERIAL <<FK>>
+    * order_code : BIGINT <<UNIQUE>>
+    --
+    amount : INT (nominal, in cents)
+    status : VARCHAR(20) <<pending|success|failed|refunded>>
+    payment_method : VARCHAR(20)
+    checkout_url : VARCHAR(2048)
+    qr_code : TEXT
+    --
+    webhook_data : JSONB <<audit>>
+    created_at : TIMESTAMPTZ
+    paid_at : TIMESTAMPTZ
+    refunded_at : TIMESTAMPTZ
+}
+
+entity "outbox_events" as Outbox {
+    * id : VARCHAR(36) <<PK - UUID>>
+    * topic : VARCHAR(255)
+    payload : JSONB
+    status : VARCHAR(20) <<pending|processed|failed>>
+    retry_count : INT DEFAULT 0
+    created_at : TIMESTAMPTZ
+}
+
+entity "trips" as Trip {
+    * id : BIGSERIAL <<PK>>
+    ...
+}
+
+entity "users" as User {
+    * id : BIGINT <<PK>>
+    ...
+}
+
+Booking }o--|| Trip : "trip_id"
+Booking }o--o{ User : "user_id (nullable)"
+Payment }o--|| Booking : "booking_id"
+
+@enduml
+```
+
+### 3.2. Booking Status State Machine
+
+| Status | Meaning | Transitions | Lifetime |
+|--------|---------|-------------|----------|
+| **pending** | Booking tạo, chờ thanh toán | → paid (via webhook) <br/> → cancelled (user action) <br/> → expired (10min timeout) | 0-10 min |
+| **paid** | Thanh toán thành công | → refund_pending (user request) <br/> → cancelled (admin action) | ∞ (until refund request) |
+| **cancelled** | Hủy booking (ghế trả) | [Terminal] | ∞ |
+| **expired** | Pending > 10 min (auto) | [Terminal] | ∞ |
+| **refund_pending** | Yêu cầu hoàn tiền (chờ admin) | → refunded (approve) <br/> → paid (reject) | 0-? (admin time) |
+| **refunded** | Hoàn tiền thực hiện | [Terminal] | ∞ |
+
+### 3.3. Từ điển dữ liệu (Data Dictionary)
+
+| Trường | Kiểu | Ràng buộc | Mô tả |
+|-------|------|-----------|-------|
+| `id` | BIGSERIAL | PK | Khóa chính booking |
+| `code` | VARCHAR(20) | UNIQUE, NOT NULL | Mã booking (8 ký tự hex) cho user view |
+| `trip_id` | BIGSERIAL | FK, NOT NULL | Tham chiếu chuyến |
+| `user_id` | BIGINT | FK, NULL | Tham chiếu user (nullable cho guest) |
+| `guest_info` | JSONB | NOT NULL | {name, phone, email} |
+| `seat_codes` | TEXT[] | NOT NULL, min 1, max 4 | Mảng ghế đã chọn |
+| `total_amount` | DECIMAL(10,2) | NOT NULL, > 0 | Giá final (base × modifier ± surcharge) |
+| `status` | VARCHAR(20) | DEFAULT 'pending' | Trạng thái (enum) |
+| `payment_method` | VARCHAR(20) | NOT NULL | 'bank_transfer', 'cod', 'visa' |
+| `expires_at` | TIMESTAMPTZ | NOT NULL | now() + 10 min |
+| `refund_reference` | VARCHAR(255) | NULL | ID của transaction refund (từ bank) |
+| `refund_note` | TEXT | NULL | Ghi chú hoàn tiền |
+| `created_at` | TIMESTAMPTZ | DEFAULT NOW() | Audit |
+| `updated_at` | TIMESTAMPTZ | DEFAULT NOW() | Audit |
+
+### 3.4. Guest Info JSON Example
+
+```json
+{
+    "name": "Nguyễn Văn A",
+    "phone": "0312345678",
+    "email": "user@example.com"
+}
+```
+
+### 3.5. Payment Transaction JSON Example
+
+```json
+{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "bookingId": 1001,
+    "orderCode": 2026040600001,
+    "amount": 36000000,  // 360,000 VND in cents
+    "status": "success",
+    "paymentMethod": "bank_transfer",
+    "checkoutURL": "https://payos.vn/web/...",
+    "qrCode": "data:image/png;base64,...",
+    "webhookData": { "code": "00", "msg": "Success", "data": {...} },
+    "createdAt": "2026-04-06T10:30:00Z",
+    "paidAt": "2026-04-06T10:35:15Z"
+}
+```
 
 ---
 
-## 7. Tích hợp thanh toán và webhook
+## 4. KIẾN TRÚC HỆ THỐNG (SYSTEM ARCHITECTURE)
 
-### 7.1 Vai trò webhook
+### 4.1. Hexagonal Architecture (Booking)
 
-Webhook là cơ chế đồng bộ bất đồng bộ trạng thái thanh toán từ cổng thanh toán về hệ thống. Module Booking không dựa vào callback frontend để xác nhận thanh toán cuối cùng.
+```
+HTTP HANDLERS (Create, GetByCode, ListUserBookings, CancelBooking, RequestRefund, ...)
+    ↓
+USE CASE LAYER (CreateBooking, ConfirmPayment, CancelBooking, ApproveRefund, ...)
+    ↓ DOMAIN LAYER (Booking Entity, Status Machine, Validation)
+    ↓ REPOSITORY INTERFACE (BookingRepository, TripLocker, OutboxRepository, PaymentRepository)
+    ↓
+REPOSITORY IMPLEMENTATION (sqlc queries, distributed lock, outbox writer)
+    ↓
+DATA LAYER (PostgreSQL, Redis, Message Broker, PayOS API)
+```
 
-### 7.2 Quy trình xử lý webhook
+### 4.2. API Endpoints - Full Reference
 
-1. Xác thực nguồn gửi webhook.
-2. Parse payload và chuẩn hóa dữ liệu.
-3. Tra cứu transaction theo khóa idempotency.
-4. Áp dụng state transition hợp lệ.
-5. Cập nhật booking tương ứng.
-6. Ghi event hậu xử lý (`booking.paid` hoặc tương đương).
+| HTTP | Endpoint | Auth | Input | Output | Status | Mô tả |
+|------|----------|------|-------|--------|--------|------|
+| **POST** | `/api/v1/bookings` | Auth | CreateBookingRequest | BookingOutput | 201/409 | Tạo booking |
+| **GET** | `/api/v1/bookings/code/:code` | Public | code (path) | BookingResponse | 200/404 | Get by code |
+| **GET** | `/api/v1/bookings` | Auth | query: page, limit | BookingListOutput | 200 | List my bookings |
+| **DELETE** | `/api/v1/bookings/:id` | Auth | id (path) | {} | 200/409 | Cancel booking |
+| **POST** | `/api/v1/bookings/:id/refund` | Auth | RefundRequestInput | Booking | 200/409 | Request refund |
+| **GET** | `/api/v1/admin/bookings` | Admin | filters | BookingListOutput | 200 | Admin list |
+| **POST** | `/api/v1/admin/bookings/:id/refund/approve` | Admin | ApproveInput | Booking | 200/409 | Approve refund |
+| **POST** | `/api/v1/admin/bookings/:id/refund/reject` | Admin | RejectInput | Booking | 200/409 | Reject refund |
+| **GET** | `/api/v1/admin/bookings/stats` | Admin | - | AdminBookingStatsOutput | 200 | Stats |
+| **GET** | `/api/v1/admin/bookings/revenue/series` | Admin | query: days | AdminRevenueSeriesOutput | 200 | Revenue chart |
+| **GET** | `/api/v1/admin/trips/:tripId/manifest` | Admin | tripId | TripSeatManifestOutput | 200 | Seat manifest |
+| **POST** | `/api/v1/payments/confirm` | Public | ConfirmPaymentInput | BookingOutput | 200/409 | Confirm payment (webhook) |
 
-### 7.3 Ràng buộc idempotency
+### 4.3. Repository Interface (18 Methods)
 
-- Cùng `order_code` xử lý nhiều lần không tạo trạng thái sai.
-- Transition từ `paid` sang trạng thái chưa thanh toán bị chặn trừ khi policy đặc biệt.
+```go
+type Repository interface {
+    // CRUD
+    Create(ctx, booking) (*Booking, error)
+    GetByID(ctx, id) (*Booking, error)
+    GetByCode(ctx, code) (*Booking, error)
+    
+    // List
+    ListByUser(ctx, userId, limit, offset) ([]*Booking, total, error)
+    ListAdminBookings(ctx, filter) ([]*Booking, total, error)
+    ListActiveByTrip(ctx, tripId) ([]*Booking, error)
+    ListRefundPending(ctx, limit, offset) ([]*Booking, total, error)
+    
+    // Status update
+    UpdateStatus(ctx, id, status) (*Booking, error)
+    MarkPaid(ctx, id) (*Booking, error)
+    MarkExpired(ctx, id) (*Booking, error)
+    MarkRefundPending(ctx, id) (*Booking, error)
+    MarkRefunded(ctx, id) (*Booking, error)
+    MarkRefundedWithMeta(ctx, id, refundRef, refundNote) (*Booking, error)
+    RevertToPaid(ctx, id) (*Booking, error)
+    
+    // Queries
+    GetExpiredPending(ctx, limit) ([]*Booking, error)
+    ListActiveSeatCodesByUserTrip(ctx, userId, tripId) ([]string, error)
+    
+    // Admin
+    GetAdminStats(ctx) (*AdminBookingStatsOutput, error)
+    GetAdminRevenueSeries(ctx, days) ([]*AdminRevenueSeriesPoint, error)
+}
+```
 
----
+### 4.4. Request/Response DTOs
 
-## 8. Liên kết Event-Driven và Outbox
+**CreateBookingRequest**:
+```json
+{
+    "tripId": 1001,
+    "seatCodes": ["A01", "A02"],
+    "guestInfo": {"name": "Nguyễn Văn A", "phone": "0312345678"},
+    "pickupInfo": {"name": "Bến xe Miền Đông Mới", "time": "06:00", "surcharge": 0},
+    "dropoffInfo": {"name": "Bến xe Nước Ngầm", "time": "09:00", "surcharge": 0},
+    "paymentMethod": "bank_transfer"
+}
+```
 
-### 8.1 Quan hệ với MODULE_EVENT_DRIVEN_BOOKING_PLAN
+**BookingOutput** (Create response):
+```json
+{
+    "booking": {
+        "id": 1,
+        "code": "BK2026ABCD",
+        "tripId": 1001,
+        "seatCodes": ["A01", "A02"],
+        "totalAmount": 720000,
+        "status": "pending",
+        "expiresAt": "2026-04-06T10:40:00Z"
+    },
+    "tripInfo": {...},
+    "orderCode": 2026040600001,
+    "paymentURL": "https://payos.vn/web/...",
+    "qrCode": "data:image/png;base64,..."
+}
+```
 
-Booking là producer chính của event nghiệp vụ. Mỗi mutation quan trọng của booking phải đi kèm một outbox event trong cùng transaction để phục vụ tích hợp downstream đáng tin cậy.
-
-### 8.2 Event phát sinh từ Booking
-
-- `booking.created`
-- `booking.paid`
-- `booking.cancelled`
-- `booking.expired`
-
-### 8.3 Nguyên tắc publish an toàn
-
-- Không publish trực tiếp trong request path nếu phá vỡ latency SLO.
-- Ưu tiên outbox worker để chuẩn hóa retry/quan sát.
-
----
-
-## 9. Luồng voice execute trong miền booking
-
-### 9.1 Ràng buộc nghiệp vụ
-
-- Voice execute sử dụng `payment_method=cod`.
-- Booking trả về trạng thái `pending`.
-- Không tạo payment link online cho voice execute mặc định.
-
-### 9.2 Lợi ích thiết kế
-
-- Giảm phụ thuộc vào cổng thanh toán trong luồng voice nhanh.
-- Tăng tỷ lệ hoàn tất đặt vé trong tình huống thao tác tối giản.
-- Giữ toàn vẹn quy tắc booking vì vẫn đi qua core use case.
-
----
-
-## 10. Yêu cầu phi chức năng chi tiết
-
-### 10.1 Performance
-
-- Thời gian giữ lock tối thiểu cần thiết.
-- Tách truy vấn read-heavy khỏi write path nơi có thể.
-
-### 10.2 Reliability
-
-- Retry có kiểm soát cho thao tác ngoại vi.
-- Worker expire chạy định kỳ để dọn booking pending quá hạn.
-
-### 10.3 Security
-
-- Validate input ở boundary.
-- Kiểm soát quyền hủy booking theo vai trò/chủ sở hữu.
-- Bảo vệ endpoint webhook bằng cơ chế xác thực nguồn.
-
-### 10.4 Observability
-
-- Log bắt buộc có `booking_id`, `trip_id`, `user_id`, `trace_id`.
-- Metrics theo dõi tỷ lệ conflict, tỷ lệ expire, tỷ lệ webhook success.
-
----
-
-## 11. Phân tích rủi ro và chiến lược giảm thiểu
-
-### 11.1 Rủi ro race condition còn sót
-
-- **Nguyên nhân:** lock không bao phủ đủ miền cạnh tranh.
-- **Giảm thiểu:** chuẩn hóa khóa theo `trip_id`, kiểm chứng bằng stress test.
-
-### 11.2 Rủi ro timeout thanh toán
-
-- **Nguyên nhân:** gateway trễ hoặc mất callback tức thời.
-- **Giảm thiểu:** webhook là nguồn sự thật, worker expire xử lý tồn đọng.
-
-### 11.3 Rủi ro sai lệch trạng thái liên module
-
-- **Nguyên nhân:** tích hợp bất đồng bộ lỗi hoặc out-of-order.
-- **Giảm thiểu:** outbox + idempotent consumer + transition guard.
-
----
-
-## 12. Kế hoạch kiểm thử module
-
-### 12.1 Unit tests
-
-- Validate seat set hợp lệ.
-- Kiểm tra transition trạng thái booking.
-- Kiểm tra policy voice `cod/pending`.
-
-### 12.2 Integration tests
-
-- Tạo booking đồng thời cùng trip.
-- Nhận webhook success/failed/cancelled.
-- Expire worker giải phóng ghế đúng hạn.
-
-### 12.3 Stress tests
-
-- Mô phỏng burst traffic giờ cao điểm.
-- Đo tỷ lệ conflict hợp lý và không overbooking.
-
-### 12.4 Tiêu chí nghiệm thu
-
-- Không phát sinh overbooking trong test đồng thời.
-- Webhook duplicate không gây sai trạng thái.
-- Luồng voice execute luôn tuân thủ `cod/pending`.
+**BookingResponse** (Other operations):
+```json
+{
+    "id": 1,
+    "code": "BK2026ABCD",
+    "tripId": 1001,
+    "status": "paid",
+    "totalAmount": 720000,
+    "seatCodes": ["A01", "A02"],
+    "guestInfo": {...},
+    "pickupInfo": {...},
+    "dropoffInfo": {...},
+    "paymentMethod": "bank_transfer",
+    "refundReference": null,
+    "createdAt": "2026-04-06T10:30:00Z",
+    "updatedAt": "2026-04-06T10:35:00Z"
+}
+```
 
 ---
 
-## 13. Quy chuẩn vận hành production
+## 5. KIỂM SOÁT ĐỒNG THỜI (CONCURRENCY CONTROL)
 
-- Thiết lập cảnh báo khi conflict ratio tăng bất thường.
-- Theo dõi backlog booking pending gần ngưỡng expire.
-- Có playbook xử lý sự cố webhook trễ/lặp.
-- Có quy trình đối soát booking-payment theo chu kỳ.
+### 5.1. Hai-lớp Lock Strategy
+
+**Lớp 1: Distributed Lock (Application Level)**
+```
+Purpose: Prevent thundering herd on same trip
+Implementation: Redis key = "trip:lock:{tripId}" with TTL=30s
+Granularity: Per trip
+Benefit: Reduce contention, faster lock acquisition
+```
+
+**Lớp 2: Row-level Lock (Database Level)**
+```
+SQL: SELECT * FROM trips WHERE id=? FOR UPDATE
+Purpose: Final consistency check before UpdateSeatsAtomic
+Benefit: Atomic + isolated from other transactions
+```
+
+### 5.2. Race Condition Example & Resolution
+
+**Race Condition Scenario**:
+```
+Trip A01 available: 1 seat
+User 1: Read available=1 ✓
+User 2: Read available=1 ✓
+User 1: Book A01 → available=0
+User 2: Book A01 → ERROR (duplicate)
+
+Without lock: OVERBOOKING BUG
+```
+
+**With Distributed Lock + DB Lock**:
+```
+User 1: Acquire distributed lock ✓
+User 2: Acquire distributed lock → WAIT (blocked)
+User 1: SELECT * FROM trips FOR UPDATE → lock trip row
+User 1: Check seats: available ✓
+User 1: UpdateSeatsAtomic → [A01] added
+User 1: Release lock
+User 2: Acquire lock ✓
+User 2: SELECT * FROM trips FOR UPDATE
+User 2: Check seats: available=0 → ERROR ErrSeatsNotAvailable
+User 2: Release lock
+```
+
+### 5.3. TripLocker Interface
+
+```go
+type TripLocker interface {
+    // Lock trip for atomic seat update
+    LockTrip(ctx, tripID) (*TripSnapshot, error)
+    
+    // Atomic: check version, add seats, update available_seats
+    UpdateSeatsAtomic(ctx, tripID, seatCodes, seatCount, version) error
+    
+    // Release seats (on booking cancel or timeout)
+    ReleaseSeats(ctx, tripID, seatCodes, seatCount) error
+}
+```
 
 ---
 
-## 14. Khả năng mở rộng và tiến hóa
+## 6. TÁCH RIÊNG VỀ OUTBOX & EVENT-DRIVEN
 
-- Tách read model phục vụ truy vấn lịch sử booking lớn.
-- Hỗ trợ nhiều phương thức thanh toán với lớp anti-corruption.
-- Mở rộng policy dynamic hold seat trong giai đoạn pre-booking.
+### 6.1. Outbox Pattern (Transactional Outbox)
+
+```
+Problem: CreateBooking inserts booking + publishes event
+         If broker down, event lost
+         
+Solution: Outbox pattern
+         - Within same transaction: INSERT booking + INSERT outbox_event
+         - Background worker: poll outbox, publish, mark processed
+         - Guaranteed delivery (at-least-once) with idempotency
+```
+
+### 6.2. Events Published
+
+| Event | When | Payload | Consumer |
+|-------|------|---------|----------|
+| `booking.created` | After booking created | {bookingId, code, tripId, total} | AI, Analytics, Notification |
+| `booking.paid` | After webhook success | {bookingId, code, amount, orderId} | Notification, Trip (update seats), Analytics |
+| `booking.cancelled` | After user cancel | {bookingId, code, reason} | Notification, Trip (release seats) |
+| `booking.expired` | After 10min timeout | {bookingId, code} | Notification, Trip (release seats) |
+| `booking.refund.requested` | After refund request | {bookingId, reason} | Notification, Analytics |
+| `booking.refund.approved` | After admin approve | {bookingId, refundAmount, reference} | Notification, Accounting |
+| `booking.refund.rejected` | After admin reject | {bookingId, reason} | Notification |
+
+### 6.3. Outbox Event Structure
+
+```json
+{
+    "id": "550e8400-e29b-41d4-a716-446655440000",
+    "topic": "booking.created",
+    "payload": {
+        "bookingId": 1,
+        "code": "BK2026ABCD",
+        "tripId": 1001,
+        "totalAmount": 720000,
+        "paymentMethod": "bank_transfer",
+        "createdAt": "2026-04-06T10:30:00Z"
+    },
+    "status": "pending",
+    "retryCount": 0,
+    "createdAt": "2026-04-06T10:30:00Z"
+}
+```
+
+### 6.4. Outbox Publisher Background Job
+
+```go
+// Pseudo-code: OutboxPublisherWorker
+func PublishOutboxEvents(ctx context.Context) {
+    for {
+        // Get pending events (batch 50)
+        events, _ := outboxRepo.GetPendingEvents(ctx, 50)
+        
+        for _, event := range events {
+            // Publish to Kafka
+            err := messageBroker.Publish(event.Topic, event.Payload)
+            
+            if err == nil {
+                // Mark processed
+                outboxRepo.MarkProcessed(ctx, event.ID)
+            } else {
+                // Retry logic
+                outboxRepo.MarkFailed(ctx, event.ID)
+            }
+        }
+        
+        time.Sleep(100 * time.Millisecond)
+    }
+}
+```
 
 ---
 
-## 15. Tiêu chí chấp nhận tổng hợp
+## 7. TÍCH HỢP THANH TOÁN (PAYMENT GATEWAY INTEGRATION)
 
-- Module bảo toàn bất biến dữ liệu ghế/booking/payment.
-- Luồng tạo vé chịu được cạnh tranh cao và không mất nhất quán.
-- Webhook và event-driven tích hợp an toàn, idempotent.
-- Tài liệu nghiệp vụ và hành vi triển khai khớp nhau.
+### 7.1. Payment Lifecycle (PayOS)
+
+```plantuml
+@startuml
+title Payment Lifecycle (PayOS Integration)
+
+participant User
+participant "BookingHandler"
+participant "PayOS"
+participant "WebhookReceiver"
+participant "BookingUseCase"
+
+User -> BookingHandler: POST /bookings {paymentMethod: bank_transfer}
+BookingHandler -> BookingUseCase: CreateBooking(...)
+BookingUseCase -> BookingUseCase: Create payment transaction (status=pending)
+BookingUseCase -> PayOS: CreatePaymentLink(orderCode, amount)
+PayOS --> BookingUseCase: {checkoutURL, qrCode}
+BookingUseCase --> BookingHandler: BookingOutput
+BookingHandler --> User: 201 Created (redirect to checkoutURL)
+
+User -> PayOS: Scan QR / Enter details
+PayOS -> PayOS: Process payment
+PayOS -> WebhookReceiver: POST /webhooks/payment {code, orderCode, ...}
+
+WebhookReceiver -> WebhookReceiver: Verify webhook signature
+WebhookReceiver -> BookingUseCase: ConfirmPayment(orderCode, status=success)
+BookingUseCase -> BookingUseCase: Update payment transaction status=success
+BookingUseCase -> BookingUseCase: Update booking status: pending → paid
+BookingUseCase -> MessageBroker: Publish(booking.paid)
+WebhookReceiver --> PayOS: 200 OK
+@enduml
+```
+
+### 7.2. Idempotent Webhook Handling
+
+```go
+// Problem: Webhook liệu đến 2 lần, 2 requests có cùng orderCode
+// Solution: Check idempotency key before processing
+
+func ConfirmPayment(ctx context.Context, input *ConfirmPaymentInput) error {
+    // 1. Get existing payment transaction by orderCode
+    existing, _ := paymentRepo.GetByOrderCode(input.OrderCode)
+    
+    if existing != nil && existing.Status == "success" {
+        // Already processed → return success (idempotent)
+        return nil
+    }
+    
+    // 2. First time → process
+    tx := &PaymentTransaction{
+        OrderCode: input.OrderCode,
+        Status: input.Status,
+        WebhookData: input.WebhookData,
+    }
+    paymentRepo.MarkSuccess(ctx, input.OrderCode, input.WebhookData)
+    
+    // 3. Update booking
+    booking.Status = StatusPaid
+    bookingRepo.UpdateStatus(ctx, booking.ID, StatusPaid)
+    
+    return nil
+}
+```
+
+### 7.3. Payment Methods Support
+
+| Method | Implementation | User Flow | System Flow |
+|--------|-----------------|-----------|-------------|
+| **bank_transfer** | PayOS integration | QR scan → confirm payment | Webhook → status=paid |
+| **visa** | PayOS integration | Card checkout → confirm | Webhook → status=paid |
+| **cod** | Trust-based, no gateway | No checkout needed | status=paid immediately |
+
+---
+
+## 8. HOÀN TIỀN (REFUND MANAGEMENT)
+
+### 8.1. Refund State Machine
+
+```plantuml
+@startuml
+state "PAID" as s1 {
+    s1 : Đã thanh toán
+    s1 : 5-minute refund window
+}
+
+state "REFUND_PENDING" as s2 {
+    s2 : Chờ admin xem xét
+    s2 : Admin approve/reject
+}
+
+state "REFUNDED" as s3 {
+    s3 : Hoàn tiền thành công
+}
+
+state "PAID_REVERTED" as s4 {
+    s4 : Hoàn tiền bị từ chối
+    s4 : Quay lại trạng thái paid
+}
+
+[*] --> s1 : webhook success
+
+s1 --> s2 : User request refund\n(within 5 min)
+
+s2 --> s3 : Admin approve\n+ refund reference
+
+s2 --> s4 : Admin reject
+
+s3 --> [*]
+s4 --> s1 : Revert to paid
+
+@enduml
+```
+
+### 8.2. Refund Request Input & Admin Dashboard
+
+**RefundRequestInput**:
+```json
+{
+    "bookingId": 1,
+    "reason": "Thay đổi lịch để",
+    "refundReference": "REF001" [optional - admin chỉ định],
+    "refundNote": "Approve vì X" [admin fill],
+    "confirmCode": "CONFIRM123"
+}
+```
+
+**Admin Refund Dashboard**:
+- List pending refunds (paginated, sortable by date)
+- Show booking details: passenger name, amount, trip info
+- One-click approve/reject with comment
+
+### 8.3. Refund Processing Flow (Admin)
+
+```plantuml
+@startuml
+participant Admin
+participant "AdminHandler"
+participant "BookingUseCase"
+participant "PaymentGateway"
+database "PostgreSQL"
+
+Admin -> AdminHandler: POST /admin/bookings/1/refund/approve\n{refundReference, refundNote}
+AdminHandler -> BookingUseCase: ApproveRefund(input)
+
+BookingUseCase -> PostgreSQL: SELECT booking WHERE id=1
+PostgreSQL --> BookingUseCase: *Booking(status=refund_pending)
+
+BookingUseCase -> PaymentGateway: CancelPaymentLink(orderCode, reason)
+PaymentGateway --> BookingUseCase: ✓ (refund initiated)
+
+BookingUseCase -> PostgreSQL: UPDATE booking\nSET status=refunded, refund_reference=?, refund_note=?
+PostgreSQL --> BookingUseCase: *Booking(status=refunded)
+
+BookingUseCase -> OutboxRepository: CreateEvent(booking.refund.approved, {...})
+
+BookingUseCase --> AdminHandler: *Booking
+AdminHandler --> Admin: 200 OK
+@enduml
+```
+
+---
+
+## 9. QUY TẮC NGHIỆP VỤ (BUSINESS RULES)
+
+### 9.1. Validation Rules
+
+| Rule | Condition | Error |
+|------|-----------|--------|
+| Seat codes valid | 1-4 seats, format A01-Z99 | ErrInvalidSeatCode |
+| Seats consecutive | Same row (A01, A02, ...) | ErrSeatsNotConsecutive |
+| Guest info complete | name, phone required | ErrInvalidGuestInfo |
+| Seats available | Trip has booked_seats check | ErrSeatsNotAvailable |
+| Payment method valid | IN (bank_transfer, cod, visa) | ErrInvalidPaymentMethod |
+| Booking not expired | Status ≠ pending OR now < expiresAt | ErrBookingExpired |
+
+### 9.2. Status Transition Rules
+
+| From | To | Condition | Action |
+|-----|----|-----------|----|
+| pending | paid | Webhook success OR admin action | Update payment + publish event |
+| pending | expired | 10 min timeout via cron | Release seats + notify |
+| pending | cancelled | User cancel request | Release seats + refund if any |
+| paid | refund_pending | User request within 5 min | Create refund request |
+| refund_pending | refunded | Admin approve | Process refund via PayOS |
+| refund_pending | paid | Admin reject | Revert status |
+
+### 9.3. Concurrency Rules
+
+| Rule | Enforcement |
+|------|------------|
+| One booking per (user, trip, seatCode) | DB constraint UNIQUE(booking) |
+| Seat lock during CreateBooking | Distributed lock + FOR UPDATE |
+| Atomic seat update with version check | Optimistic locking via version |
+| Event published within transaction | Outbox pattern |
+
+### 9.4. Refund Rules
+
+| Rule | Condition |
+|------|-----------|
+| Refund window | 5 minutes after booking paid |
+| Max refund per booking | 1 refund request at a time |
+| Auto-approve pending amount | If admin confirms reference |
+| Notification required | User + admin notified |
+
+---
+
+## 10. XỬ LÝ LỖI (ERROR HANDLING)
+
+### 10.1. Domain Errors → HTTP Status Mapping
+
+| Domain Error | HTTP Status | Error Code | Message |
+|--------------|-------------|------------|---------|
+| ErrSeatsNotAvailable | 409 | SEATS_NA | Ghế đã được đặt |
+| ErrSeatsNotConsecutive | 400 | INVALID_SEATS | Ghế phải cùng hàng |
+| ErrInvalidGuestInfo | 400 | INVALID_INPUT | Thông tin khách không đủ |
+| ErrTripLocked | 503 | SYSTEM_BUSY | Hệ thống đang xử lý, thử lại |
+| ErrConcurrentModification | 409 | CONFLICT | Booking đã bị sửa, reload |
+| ErrBookingNotFound | 404 | NOT_FOUND | Không tìm thấy booking |
+| ErrBookingExpired | 410 | EXPIRED | Booking hết hạn |
+| ErrBookingCannotCancel | 409 | CANNOT_CANCEL | Booking không thể hủy |
+| ErrRefundWindowExpired | 400 | REFUND_EXPIRED | Quá 5 phút, không hoàn tiền |
+| ErrPaymentNotFound | 404 | PAYMENT_NA | Thanh toán không tìm thấy |
+| ErrPaymentAlreadyDone | 409 | PAYMENT_DONE | Thanh toán đã xử lý |
+| ErrPaymentLinkUnavailable | 503 | GATEWAY_ERROR | Lỗi cổng thanh toán |
+
+### 10.2. Error Response Example
+
+```json
+{
+    "success": false,
+    "error": {
+        "code": "SEATS_NA",
+        "message": "Ghế A01 đã được đặt, vui lòng chọn ghế khác",
+        "timestamp": "2026-04-06T10:30:45Z",
+        "details": {
+            "tripId": 1001,
+            "requestedSeats": ["A01"],
+            "availableSeats": ["A03", "A04", "B01"]
+        }
+    }
+}
+```
+
+---
+
+## 11. BIỂU ĐỒ TUẦN TỰ CHI TIẾT (SEQUENCE DIAGRAMS)
+
+### 11.1. Cancel Booking Flow
+
+```plantuml
+@startuml
+title Cancel Booking - Release Seats
+
+participant User
+participant "BookingHandler"
+participant "BookingUseCase"
+participant "TripLocker"
+participant "Trip Repository"
+database "PostgreSQL"
+
+User -> BookingHandler: DELETE /bookings/1
+BookingHandler -> BookingUseCase: CancelBooking(bookingId=1)
+
+BookingUseCase -> PostgreSQL: SELECT booking WHERE id=1
+PostgreSQL --> BookingUseCase: *Booking(status=pending, seats=[A01,A02])
+
+alt Status = pending?
+    BookingUseCase -> TripLocker: ReleaseSeats(tripId, [A01,A02], count=2)
+    TripLocker -> PostgreSQL: UPDATE trips\nSET booked_seats = array_remove(...),\navailable_seats = available_seats + 2
+    
+    BookingUseCase -> PostgreSQL: UPDATE bookings SET status=cancelled
+    
+    BookingUseCase -> OutboxRepository: CreateEvent(booking.cancelled, {...})
+    
+    BookingUseCase --> BookingHandler: OK
+    BookingHandler --> User: 200 OK
+else Status != pending
+    BookingUseCase --> BookingHandler: ErrBookingCannotCancel
+    BookingHandler --> User: 409 Conflict
+end
+@enduml
+```
+
+### 11.2. Confirm Payment (Webhook) Flow
+
+```plantuml
+@startuml
+title Webhook: Confirm Payment (Idempotent)
+
+participant PayOS
+participant "WebhookReceiver"
+participant "BookingUseCase"
+participant "PaymentRepo"
+database "PostgreSQL"
+
+PayOS -> WebhookReceiver: POST /webhooks/payment\n{orderCode, code, msg}
+WebhookReceiver -> WebhookReceiver: Verify webhook signature
+
+WebhookReceiver -> BookingUseCase: ConfirmPayment(orderCode, status=success)
+
+BookingUseCase -> PaymentRepo: GetByOrderCode(orderCode)
+PaymentRepo -> PostgreSQL: SELECT FROM payment_transactions WHERE order_code=?
+PostgreSQL --> PaymentRepo: *PaymentTransaction(status) OR nil
+
+alt Already processed?
+    PaymentRepo --> BookingUseCase: Exists, status=success
+    BookingUseCase --> WebhookReceiver: OK (idempotent)
+else First time
+    BookingUseCase -> PaymentRepo: MarkSuccess(orderCode, webhookData)
+    PostgreSQL --> BookingUseCase: ✓
+    
+    BookingUseCase -> PostgreSQL: SELECT booking WHERE id=?
+    BookingUseCase -> PostgreSQL: UPDATE bookings SET status=paid
+    
+    BookingUseCase -> OutboxRepository: CreateEvent(booking.paid, {...})
+    
+    BookingUseCase --> WebhookReceiver: OK
+end
+
+WebhookReceiver --> PayOS: 200 OK
+@enduml
+```
+
+---
+
+## 12. TỐI ƯU QUERY & PERFORMANCE
+
+### 12.1. Index Strategy
+
+```sql
+-- List bookings by user
+CREATE INDEX idx_bookings_user_created 
+    ON bookings (user_id, created_at DESC);
+
+-- Find expired pending bookings (cron job)
+CREATE INDEX idx_bookings_status_expires 
+    ON bookings (status, expires_at)
+    WHERE status = 'pending';
+
+-- Payment transaction lookup by order code
+CREATE INDEX idx_payment_transactions_order_code 
+    ON payment_transactions (order_code);
+
+-- Booking lookup by code (user search)
+CREATE INDEX idx_bookings_code 
+    ON bookings (code) 
+    WHERE status != 'cancelled';
+
+-- Refund pending bookings (admin review)
+CREATE INDEX idx_bookings_refund_pending 
+    ON bookings (status, updated_at DESC)
+    WHERE status = 'refund_pending';
+
+-- Seat tracking by trip
+CREATE INDEX idx_bookings_trip_active 
+    ON bookings (trip_id, status)
+    WHERE status IN ('pending', 'paid');
+```
+
+### 12.2. Query Examples
+
+**List user bookings (paginated)**:
+```sql
+SELECT b.* FROM bookings b
+WHERE b.user_id = $1
+  AND b.status NOT IN ('cancelled', 'expired')
+ORDER BY b.created_at DESC
+LIMIT $2 OFFSET $3;
+```
+
+**Find expired pending bookings (cron)**:
+```sql
+SELECT b.* FROM bookings b
+WHERE b.status = 'pending'
+  AND b.expires_at < NOW()
+LIMIT 100;
+```
+
+### 12.3. Performance Targets
+
+| Query | Expected Time | Cache | Notes |
+|-------|---|---|---|
+| CreateBooking (with lock) | 200-500ms | - | Includes lock wait + DB write |
+| GetBookingByCode | 5ms | - | PK/UNIQUE lookup |
+| ListUserBookings (20) | 20ms | 30sec | Paginated, recent first |
+| ConfirmPayment (webhook) | 50ms | - | Idempotent check |
+| ListExpiredPending (cron) | 100ms | - | Batch 100 |
+
+---
+
+## 13. DEPLOYMENT & OPERATIONS
+
+### 13.1. Requirements Checklist
+
+- [ ] PostgreSQL with distributed lock table (Redis ready)
+- [ ] Message Broker (Kafka/RabbitMQ) with topics created
+- [ ] Outbox Publisher background worker running
+- [ ] Pending booking expiry cron job (every 1 min)
+- [ ] PayOS API credentials configured (if online payment enabled)
+- [ ] Webhook receiver endpoint public + verified
+- [ ] JWT middleware protecting /bookings endpoints
+- [ ] Structured logging with correlationId
+
+### 13.2. Monitoring Metrics
+
+```
+- Booking creation rate (per minute)
+- Payment webhook latency (p99 < 500ms)
+- Lock contention (% timeouts)
+- Pending booking count (alert if > 1000)
+- Expired bookings per hour
+- Refund request count (metric)
+- Payment success rate (target > 99%)
+- Overbooking incidents (target = 0)
+```
+
+### 13.3. Disaster Recovery
+
+```
+Backup:
+- Daily PostgreSQL snapshots
+- Redis data replication (master-slave)
+- Kafka message retention: 7 days
+
+Recovery:
+- If DB down: restore snapshot, replay events from Kafka
+- If Redis down: lock temporarily slower (no distributed lock)
+- If Kafka down: buffer events locally, retry after recovery
+```
+
+---
+
+## 14. FUTURE ENHANCEMENTS
+
+| #  | Feature | Priority | Effort | Impact |
+|----|---------|----------|--------|--------|
+| F-01 | Group booking discount | P2 | M | Revenue +5% |
+| F-02 | Seat selection UI improvements | P2 | M | UX |
+| F-03 | Partial refund support | P2 | H | Flexibility |
+| F-04 | Booking insurance add-on | P3 | H | Revenue |
+| F-05 | Multi-step payment (installments) | P3 | H | Conversion |
+| F-06 | Real-time seat WebSocket | P2 | M | UX |
+| F-07 | Automatic refund (no admin) | P2 | L | Operational |
+
+---
+
+**Document Version**: 2.0 (Full Professional SRS + Concurrency Design + Payment Integration)
+**Last Updated**: 2026-04-06
+**Status**: ✅ COMPLETE - Ready for Development

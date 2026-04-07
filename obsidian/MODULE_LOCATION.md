@@ -1,47 +1,143 @@
 ---
 tags:
-  - module
+  - srs
+  - system-design
   - location
-created: 2026-04-01
-updated: 2026-04-01
+  - master-data
+created: 2026-04-06
+updated: 2026-04-06
 ---
 
-# MODULE LOCATION
+# TÀI LIỆU ĐẶC TẢ VÀ THIẾT KẾ MODULE: LOCATION (ĐỊA ĐIỂM)
 
-> [!abstract] M?c ti�u
-> Qu?n l� d? li?u di?m di/di?m d?n v� kh? nang tra c?u linh ho?t d? ph?c v? search trip, chat clarification v� voice resolve trong m�i tru?ng ng�n ng? t? nhi�n.
+> [!abstract] TỔNG QUAN
+> Module Location quản lý các địa điểm dừng/khởi hành trong hệ thống (bến xe, ga, điểm dừng). Mỗi Location đại diện một điểm địa lý cụ thể với tên, thành phố, địa chỉ, từ khóa tìm kiếm, và ảnh. Module cung cấp:
+> - **CRUD** đầy đủ cho master data
+> - **Search** thông minh qua keywords, city, name
+> - **Public API** để autocomplete khi người dùng chọn điểm dừng
+>
+> Là **master data** chi phối trải nghiệm của khách hàng (tìm kiếm chuyến → chọn từ/đến).
 
-## 1. B?i c?nh nghi?p v?
+---
 
-Location l� n?n d? li?u d?nh danh h�nh tr�nh. Ngu?i d�ng c� th? nh?p d?a danh theo nhi?u bi?n th?: t�n d?y d?, t�n t?t, bi?t danh v�ng mi?n, ho?c ph�t �m g?n d�ng qua voice. Backend du?c thi?t k? theo ki?n tr�c Hexagonal d? d? b?o tr�, d? thay d?i.
+## 1. ĐẶC TẢ YÊU CẦU
 
-## 2. Y�u c?u ch?c nang v� API Endpoints
+### 1.1. Danh sách yêu cầu chức năng
 
-H? th?ng cung c?p c�c API th�ng qua HTTP Handler, ph�n chia r� public v� dmin.
+| ID | Tên chức năng | Mục đích | Ưu tiên | Độ phức tạp | Tác nhân |
+|-----|---------------|---------|---------|-------------|----------|
+| LOC-01 | Tạo địa điểm | Admin tạo bến xe / địa điểm dừng | P1 | L | Admin |
+| LOC-02 | Xem danh sách | Admin liệt kê địa điểm (phân trang, lọc) | P1 | L | Admin |
+| LOC-03 | Xem chi tiết | Lấy thông tin chi tiết địa điểm | P2 | L | Admin/Public |
+| LOC-04 | Cập nhật | Chỉnh sửa thông tin, keywords, ảnh | P2 | L | Admin |
+| LOC-05 | Xóa địa điểm | Xóa (chỉ nếu không có trips FK) | P3 | L | Admin |
+| LOC-06 | Search công khai | Public autocomplete search | P1 | M | Public |
 
-| ID | Ch?c nang | Phuong th?c & URL | �?i tu?ng | Ph�n h? (gin) |
-|---|---|---|---|---|
-| LOC-01 | T�m ki?m location (autocomplete) | GET /api/v1/locations/search?q= | User/App | public |
-| LOC-02 | T?o location m?i | POST /api/v1/admin/locations | Admin | dmin |
-| LOC-03 | L?y danh s�ch location (Paging) | GET /api/v1/admin/locations?q=&city=&page= | Admin | dmin |
-| LOC-04 | Xem chi ti?t location | GET /api/v1/admin/locations/:id | Admin | dmin |
-| LOC-05 | Ch?nh s?a location | PUT /api/v1/admin/locations/:id | Admin | dmin |
-| LOC-06 | X�a location | DELETE /api/v1/admin/locations/:id | Admin | dmin |
+---
 
-## 3. Ki?n tr�c lu?ng x? l� (Th?c t? Backend)
+## 2. BIỂU ĐỒ USE CASE
 
-- **HTTP Handler:** Validate JSON, parse Query params (Paging, Query).
-- **UseCase:** Ch?a logic nghi?p v? x? l� d? li?u v� l?i c? th? (v� d?: ErrLocationNotFound, ErrLocationNameRequired, ErrLocationCityRequired).
-- **Repository:** Ch?u tr�ch nhi?m tuong t�c v?i PostgreSQL qua sqlc, ph?c v? c�c query t�m ki?m, c?p nh?t.
-- **DTOs:** Chuy?n d?i d? li?u Domain Entity (domain.Location) th�nh API Response (v� d?: dto.LocationResponse, dto.CreateLocationRequest).
+```plantuml
+@startuml
+left to right direction
+skinparam actorStyle awesome
 
-## 4. Quy t?c nghi?p v? & B?t l?i
+actor "Admin" as Admin
+actor "Public" as Public
 
-- **Name:** B?t bu?c c� (ErrLocationNameRequired), kh�ng du?c qu� ng?n (ErrLocationNameTooShort).
-- **City:** B?t bu?c c� c?p t?nh/th�nh (ErrLocationCityRequired), kh�ng du?c qu� ng?n (ErrLocationCityTooShort).
-- T�m ki?m (Search): Y�u c?u tr�ch xu?t query param. Ph�n bi?t du?c List (c� ph�n trang) v� Search (ph?c v? dropdown autocomplete nhanh m� kh�ng ph�n trang).
+package "Module Location" {
+    usecase "UC01: Tạo" as UC1
+    usecase "UC02: Danh sách" as UC2
+    usecase "UC03: Chi tiết" as UC3
+    usecase "UC04: Cập nhật" as UC4
+    usecase "UC05: Xóa" as UC5
+    usecase "UC06: Search" as UC6
+}
 
-## 5. Ti�u ch� ch?p nh?n
+Admin --> UC1
+Admin --> UC2
+Admin --> UC3
+Admin --> UC4
+Admin --> UC5
 
-- To�n b? flow tu�n th? strict Hexagonal pattern (t? gin router d?n handler, usecase, repository, database).
-- X? l� l?i m?ch l?c th�ng qua package pkgErrors d? tr? v? d�ng format chung c?a h? th?ng.
+Public --> UC3
+Public --> UC6
+@enduml
+```
+
+---
+
+## 3. THIẾT KẾ CƠ SỞ DỮ LIỆU
+
+### 3.1. Bảng locations
+
+| Tên trường | Kiểu | Ràng buộc | Mô tả |
+|------------|------|-----------|-------|
+| id | SERIAL | PK | Khóa chính |
+| name | VARCHAR(255) | NOT NULL, >= 2 | Tên bến xe |
+| city | VARCHAR(100) | NOT NULL, >= 2 | Thành phố |
+| address | VARCHAR(255) | NULL | Địa chỉ chi tiết |
+| keywords | TEXT | NULL | Từ khóa (sai gon, hcm, quan 9) |
+| image_url | VARCHAR(255) | NULL | URL ảnh |
+
+### 3.2. Ví dụ dữ liệu
+
+| id | name | city | keywords |
+|----|------|------|----------|
+| 1 | Bến xe Miền Đông Mới | Hồ Chí Minh | sai gon, hcm, quan 9 |
+| 2 | Bến xe Nước Ngầm | Hà Nội | ha noi, nuoc ngam |
+
+---
+
+## 4. KIẾN TRÚC HỆ THỐNG
+
+### 4.1. API Endpoints
+
+| HTTP | Endpoint | Auth | Mô tả |
+|------|----------|------|-------|
+| POST | `/api/v1/admin/locations` | Admin | Tạo |
+| GET | `/api/v1/admin/locations` | Admin | Danh sách admin |
+| GET | `/api/v1/locations` | Public | Danh sách public |
+| GET | `/api/v1/locations/:id` | Public | Chi tiết |
+| PUT | `/api/v1/admin/locations/:id` | Admin | Cập nhật |
+| DELETE | `/api/v1/admin/locations/:id` | Admin | Xóa |
+| GET | `/api/v1/locations/search?q=miền` | Public | Search |
+
+### 4.2. Response
+
+**LocationResponse:**
+```json
+{
+    "id": 1,
+    "name": "Bến xe Miền Đông Mới",
+    "city": "Hồ Chí Minh",
+    "address": "Q9, P. Linh Chiểu",
+    "keywords": "sai gon, hcm, quan 9",
+    "imageUrl": "https://cdn.example.com/..."
+}
+```
+
+---
+
+## 5. QUY TẮC NGHIỆP VỤ
+
+| Quy tắc | Mô tả |
+|--------|-------|
+| BR-VAL-01 | Name bắt buộc, >= 2 ký tự |
+| BR-VAL-02 | City bắt buộc, >= 2 ký tự |
+| BR-DEL-01 | Không xóa nếu trips FK exists |
+| BR-SEARCH-01 | Search qua name, keywords, city (ILIKE) |
+| BR-SEARCH-02 | Max limit = 200 (prevent abuse) |
+
+---
+
+## 6. XỬ LÝ LỖI
+
+| Error | HTTP | Code |
+|-------|------|------|
+| ErrLocationNotFound | 404 | LOCATION_NOT_FOUND |
+| ErrLocationNameRequired | 400 | NAME_REQUIRED |
+| ErrLocationCityRequired | 400 | CITY_REQUIRED |
+
+---
+
